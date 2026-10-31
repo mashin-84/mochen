@@ -2656,7 +2656,7 @@
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* ===== v0.6.1 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+      /* ===== v0.6.2 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
@@ -2683,6 +2683,99 @@
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
+
+      /* ===== 第 9 關 心魔・墨塵（原型）：鏡像墨塵、依玩家習慣調整 ===== */
+      Stages[9].mirror = true;
+      Stages[9].artId = 9;
+      Stages[9].moves = {
+        slash_combo: { name: "青雲斬・三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.20, comboDamagePerHit: 95, windup: 0.42, active: 0.62, recover: 0.50, range: 185, lunge: 300, damage: 285, parryPostureDmg: 20 },
+        counter_stance: { name: "反制架式", isCounter: true, windup: 0.18, active: 1.5, recover: 0.45, range: 0, lunge: -160, damage: 0 },
+        counter_slash: { name: "彈刀反擊", windup: 0.22, active: 0.14, recover: 0.55, range: 200, lunge: 420, damage: 150, parryPostureDmg: 22 },
+        dash_strike: { name: "瞬步突襲", windup: 0.40, active: 0.16, recover: 0.50, range: 230, lunge: 1000, damage: 170, parryPostureDmg: 20 },
+        heavy: { name: "蓄力重斬", armor: true, windup: 0.75, active: 0.18, recover: 0.70, range: 210, lunge: 300, damage: 260, parryPostureDmg: 26 },
+        heal: { name: "回生酒", isHeal: true, windup: 0.20, active: 1.2, recover: 0.40, range: 0, lunge: 0, damage: 0 },
+        sword_wave: { name: "劍氣", isRanged: true, bulletCount: 1, bulletSpeed: 900, bulletTrajectory: "linear", bulletColor: "#f87171", windup: 0.38, active: 0.20, recover: 0.50, range: 700, lunge: 0, damage: 120, parryPostureDmg: 18 },
+        predict: { name: "預判落點", isTeleport: true, teleportBehind: true, teleportDelay: 0.18, windup: 0.42, active: 0.15, recover: 0.50, range: 180, lunge: 200, damage: 160, parryPostureDmg: 20 },
+        grab_peril: { name: "【危】一劍青雲 (極限側閃)", ultimate: true, isPerilous: true, perilType: "grab", windup: 0.80, active: 0.18, recover: 0.70, range: 170, lunge: 0, damage: 330 }
+      };
+      Object.values(Stages[9].moves).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
+      Stages[9].dialogue = {
+        pre: [
+          { speaker: "墨塵", text: "……營火的倒影，怎麼自己站起來了。", role: "mochen" },
+          { speaker: "心魔・墨塵", text: "你一路斬了那麼多人，還沒問過自己，為什麼揮劍。", role: "boss" },
+          { speaker: "墨塵", text: "（握緊劍柄）不必答你。劍下見分曉。", role: "mochen" }
+        ],
+        post: [
+          { speaker: "心魔・墨塵", text: "……原來你早就知道答案。", role: "boss" },
+          { speaker: "墨塵", text: "（光點盡數沒入劍身）是。所以我不再怕你。", role: "mochen" }
+        ]
+      };
+
+      /* 心魔「適應」記錄：依玩家近期習慣挑招 */
+      const Mirror = {
+        atkStreak: 0, atkT: 0, dashTimes: [], farT: 0, nearT: 0, lastAct: null, healCd: 0, t: 0,
+        reset() { this.atkStreak = 0; this.atkT = -9; this.dashTimes = []; this.farT = 0; this.nearT = 0; this.lastAct = null; this.healCd = 8; this.t = 0; },
+        noteAttack() { if (this.t - this.atkT < 1.3) this.atkStreak++; else this.atkStreak = 1; this.atkT = this.t; this.lastAct = "attack"; },
+        noteDash() { this.dashTimes.push(this.t); this.lastAct = "dash"; },
+        noteCharge() { this.lastAct = "charge"; },
+        noteParry() { this.lastAct = "parry"; },
+        recentDashes() { this.dashTimes = this.dashTimes.filter(x => this.t - x < 6); return this.dashTimes.length; },
+        tick(dt, dist) {
+          this.t += dt;
+          if (this.healCd > 0) this.healCd -= dt;
+          if (this.t - this.atkT > 1.3) this.atkStreak = 0;
+          this.farT = dist > 380 ? this.farT + dt : Math.max(0, this.farT - dt * 2);
+          this.nearT = dist < 170 ? this.nearT + dt : Math.max(0, this.nearT - dt * 2);
+        }
+      };
+      function bossMoveData() { const st = Stages[Boss.stageId]; return st && st.moves ? st.moves[Boss.moveType] : null; }
+      function mirrorEchoMove() {
+        return { attack: "slash_combo", dash: "dash_strike", charge: "heavy", parry: "sword_wave" }[Mirror.lastAct] || "slash_combo";
+      }
+      function mirrorPick(dist) {
+        const r = Math.random();
+        if (Boss.ultCd <= 0 && dist < 400 && r < 0.6) return "grab_peril";
+        if (Mirror.atkStreak >= 5 && dist < 330) { Mirror.atkStreak = 0; return "counter_stance"; }
+        if (Mirror.recentDashes() >= 3) { Mirror.dashTimes.length = 0; return "predict"; }
+        if (Mirror.farT > 2.2) { Mirror.farT = 0; return "sword_wave"; }
+        if (Mirror.nearT > 2.5 && dist < 220) { Mirror.nearT = 0; return "counter_stance"; }
+        if (Boss.hp / Boss.maxHp < 0.6 && Mirror.healCd <= 0 && Math.random() < 0.3) { Mirror.healCd = 18; return "heal"; }
+        if (dist > 300) return Math.random() < 0.5 ? "dash_strike" : (Math.random() < 0.5 ? "sword_wave" : null);
+        if (Mirror.lastAct && Math.random() < 0.2) return mirrorEchoMove();
+        const q = Math.random();
+        return q < 0.45 ? "slash_combo" : q < 0.65 ? "dash_strike" : q < 0.9 ? "heavy" : "sword_wave";
+      }
+      function mirrorAI(dt, dist) {
+        Mirror.tick(dt, dist);
+        const p2 = Config.bossPhase === 2;
+        if (dist > 230) { Boss.state = "approach"; Boss.vx = Boss.facing * (p2 ? 340 : 280); }
+        else { Boss.state = "idle"; Boss.vx *= Math.pow(0.08, dt); }
+        if (Boss.aiCooldown > 0) return;
+        const pick = mirrorPick(dist);
+        if (!pick) { Boss.aiCooldown = 0.25; return; }
+        triggerBossMove(pick, p2 && pick !== "counter_stance" ? [mirrorEchoMove()] : []);
+        if (pick === "counter_stance") {
+          spawnFloatingText(Boss.x, Boss.y - 125, "【反制架式】停手！", "#f87171", 1.2);
+          hintOnce("mirror_counter", "心魔架起反制：這時別攻擊，等它收架或拉開距離");
+        } else if (pick === "predict") {
+          spawnFloatingText(Boss.x, Boss.y - 125, "〔預判你的落點〕", "#c084fc", 1.1);
+        }
+      }
+      /* 玩家攻擊命中反制架式：彈開並反擊 */
+      function mirrorTryCounter() {
+        const m = bossMoveData();
+        if (!(m && m.isCounter && Boss.state === "active")) return false;
+        Boss.flashFrames = 3;
+        Sound.play("parry", 1.0, 0.9);
+        triggerHitstop(6);
+        triggerShake(Player.facing, -0.2, 22, 0.25);
+        spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "parry", Player.facing);
+        spawnFloatingText(Boss.x, Boss.y - 125, "【彈開！】", "#f87171", 1.2);
+        Player.vx = -Player.facing * 380;
+        Player.stamina = Math.max(0, Player.stamina - 30);
+        triggerBossMove("counter_slash");
+        return true;
+      }
 
 /* v0.4.14 人物放大：Boss 招式的判定距離同步放大（aerial 的 range 為 0 不受影響） */
       Object.values(LegacyStages).forEach(st => {
@@ -3118,6 +3211,7 @@
 
       function doChargedAttack() {
         Sound.resume();
+        Mirror.noteCharge();
         if (Player.state === "execution" || Player.state === "hitstun") return;
 
         // 蓄力重擊：消耗 25 體力；體力 < 25 時阻斷並提示
@@ -3163,6 +3257,7 @@
 
       function doNormalAttack() {
         Sound.resume();
+        Mirror.noteAttack();
         if (Player.state === "execution" || Player.state === "hitstun") {
           bufferAction("attack");
           return;
@@ -3247,6 +3342,7 @@
 
       function doParry() {
         Sound.resume();
+        Mirror.noteParry();
         if (Player.state === "execution") return;
         if (Player.state === "hitstun") {
           if (Player.stateTimer > 0.16) {
@@ -3273,6 +3369,7 @@
 
       function doDash() {
         Sound.resume();
+        Mirror.noteDash();
         if (Player.state === "execution") return;
 
         // 【替身殘影反切】(Stage 3+ Unlocked mechanic):
@@ -4196,7 +4293,7 @@
               spawnFloatingText(zX, Config.groundY - 50, "【煞氣絕地形成】！", "#f87171", 1.15);
             }
 
-            if (!move.isRanged && !move.isZone) {
+            if (!move.isRanged && !move.isZone && !move.isCounter && !move.isHeal) {
               Sound.play("slash", 0.85, Boss.isPerilous ? 0.72 : 0.95);
               if (Boss.perilType !== "grab") {
                 const bType = Stages[Boss.stageId].bodyType || "human";
@@ -4222,6 +4319,10 @@
 
         if (Boss.state === "active") {
           Boss.stateTimer -= dt;
+          if (move.isHeal) {
+            Boss.hp = Math.min(Boss.maxHp, Boss.hp + Boss.maxHp * 0.08 * dt / (move.active || 1.2));
+            if (Math.random() < dt * 14) spawnSparks(Boss.x + (Math.random() - 0.5) * 50, Boss.y - 40 - Math.random() * 60, "hit", 1);
+          }
 
           if (move.isAerial) {
             Boss.aerialTimer += dt;
@@ -4304,7 +4405,7 @@
           }
 
           const swingProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
-          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && swingProgress >= 0.35) {
+          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && swingProgress >= 0.35) {
             if (Boss.perilType === "grab") {
               const d = Math.abs(Player.x - Boss.grabZoneX);
               if (d <= move.range * 0.75 && Player.y >= Config.groundY - 70) {
@@ -4350,6 +4451,7 @@
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
+        if (stage.mirror) { mirrorAI(dt, dist); return; }
 
         if (dist > 220) {
           Boss.state = "approach";
@@ -4504,10 +4606,12 @@
 
               // 隻狼式「打鐵攻防轉換律動」：
               // 1. 若 Boss 處於大硬直（破防 staggered / 定身 frozen / 剛被看破或踩頭 recover / 擊落 grounded）: 實打實肉體受創！
-              const isPunishWindow = (Boss.state === "staggered" || Boss.state === "frozen" || Boss.state === "recover" || Boss.state === "grounded");
+              const isPunishWindow = (Boss.state === "staggered" || Boss.state === "frozen" || Boss.state === "recover" || Boss.state === "grounded" || (Boss.state === "active" && !!(bossMoveData() && bossMoveData().isHeal)));
 
               // 蓄力重擊命中判定 (D 項要求)
-              if (Player.isChargedAttack) {
+              if (mirrorTryCounter()) {
+                /* 心魔反制架式：已彈開 */
+              } else if (Player.isChargedAttack) {
                 const stage = Stages[Boss.stageId];
                 const currentMove = stage && stage.moves ? stage.moves[Boss.moveType] : null;
                 const isBossWindupWithArmor = (Boss.state === "windup" && currentMove && currentMove.armor);
@@ -5591,7 +5695,7 @@
             }
           }
 
-          /* v0.6.1 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
+          /* v0.6.2 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
              沒有 sprite 的關卡退回程式繪製。可用 Stages[n].spriteScale / spriteStride 覆寫。 */
           const BOSS_FRAME_NAMES = [
             "01_idle1", "02_idle2", "03_walk1", "04_walk2",
@@ -5756,7 +5860,46 @@
           ctx.shadowBlur = Config.bossPhase === 2 ? 18 : 12;
         }
 
-        if (useBossSprite) {
+        if (stage.mirror && MC_READY === 16) {
+          let f = "01_idle1", img = null;
+          const mt = Boss.moveType, st = Boss.state;
+          const heavyLike = (mt === "heavy" || mt === "grab_peril");
+          if (st === "hurt" || st === "staggered" || st === "frozen") f = "16_hurt";
+          else if (st === "windup" || st === "active" || (st === "recover" && Boss.moveType)) {
+            if (mt === "counter_stance") f = "13_parry";
+            else if (mt === "heal") f = "15_drink";
+            else if (mt === "dash_strike") f = st === "windup" ? "01_idle1" : st === "active" ? "14_dash" : "11_thrust";
+            else if (heavyLike) f = st === "windup" ? "12_charge" : st === "active" ? "11_thrust" : "10_slash2";
+            else if (mt === "predict") f = st === "windup" ? "14_dash" : "09_slash1";
+            else if (mt === "slash_combo") f = (st === "active" && Boss.comboHitsLeft % 2 === 0) ? "10_slash2" : "09_slash1";
+            else f = st === "windup" ? "09_slash1" : "10_slash2";
+          } else if (st === "approach" || (st === "idle" && Math.abs(Boss.vx) > 40)) {
+            let ddx = Boss.mx === undefined ? 0 : Math.abs(Boss.x - Boss.mx); if (ddx > 60) ddx = 0;
+            Boss.mph = ((Boss.mph || 0) + ddx / 238) % 1;
+            if (MCR_READY === 10) img = MCR_IMGS[Math.floor(Boss.mph * 10) % 10];
+            else f = ["03_run1", "04_run2", "05_run3", "06_run4"][Math.floor(performance.now() / 110) % 4];
+          } else f = Math.floor(performance.now() / 600) % 2 === 0 ? "01_idle1" : "02_idle2";
+          Boss.mx = Boss.x;
+          if (!img) img = MC_IMGS[f];
+          let a = 1;
+          if (Game.bossDeath && performance.now() >= Game.bossDeath.start) {
+            const bd = Game.bossDeath;
+            img = MC_IMGS["16_hurt"];
+            if (bd.out) a = Math.max(0, 1 - (performance.now() - bd.t0) / 1500);
+          }
+          ctx.save();
+          ctx.globalAlpha = a;
+          if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
+          else ctx.filter = "brightness(0.5) contrast(1.15) drop-shadow(0 0 12px rgba(220,38,38,0.95))";
+          ctx.translate(Boss.x, Boss.y);
+          const hrM = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
+          if (hrM > 0) ctx.rotate(-Boss.facing * 0.045 * hrM * hrM);
+          const SM = MC_SCALE * (MC_FRAME_SCALE[f] || 1) * (stage.size || 1);
+          ctx.scale(Boss.facing > 0 ? SM : -SM, SM);
+          ctx.drawImage(img, -450, -529);
+          ctx.filter = "none";
+          ctx.restore();
+        } else if (useBossSprite) {
           let dx = SP.lastX === null ? 0 : Math.abs(Boss.x - SP.lastX);
           if (dx > 60) dx = 0;
           SP.lastX = Boss.x;
@@ -6615,6 +6758,7 @@
         Game.slowT = 0;
         Game.slowScale = 1;
         Boss.ultCd = 12;
+        Mirror.reset();
         Boss.hitReactT = 0;
         Game.flyingSwords = [];
         Game.hazardZones = [];
