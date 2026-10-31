@@ -2136,6 +2136,8 @@
       /* =========================================================================
        * 2. 全十五難關卡資料庫 (ALL 15 STAGES DATABASE)
        * ========================================================================= */
+      const CHAR_K = 1.25; /* 人物與判定的整體放大倍率（v0.4.14） */
+
       const Stages = {
         // --- 卷一【問心出山】(1-5) ---
         1: {
@@ -2585,6 +2587,11 @@
       Stages[13].moves.exclusive_aerial = { name: "無相升天・虛空劫光", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 3, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 150 };
       Stages[15].moves.exclusive_aerial = { name: "天道升天・神罰降世", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 4, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 180 };
 
+      /* v0.4.14 人物放大：Boss 招式的判定距離同步放大（aerial 的 range 為 0 不受影響） */
+      Object.values(Stages).forEach(st => {
+        Object.values(st.moves || {}).forEach(m => { if (m && m.range) m.range = Math.round(m.range * CHAR_K); });
+      });
+
       /* Mind Seals System (心印系統 - 5 Types, Max 2 Equipped) */
       const MindSeals = {
         wenxin: {
@@ -2700,8 +2707,8 @@
         y: Config.groundY,
         vx: 0,
         vy: 0,
-        w: 50,
-        h: 90,
+        w: 62,
+        h: 112,
         facing: 1,
 
         hp: 1000,
@@ -2740,8 +2747,8 @@
         y: Config.groundY,
         vx: 0,
         vy: 0,
-        w: 80,
-        h: 130,
+        w: 100,
+        h: 162,
         facing: -1,
 
         hp: 2200,
@@ -2848,14 +2855,14 @@
         Boss.flashFrames = Math.max(Boss.flashFrames, heavy ? 5 : guard ? 2 : 4);
 
         const hx = Boss.x - dir * 22;
-        const hy = Boss.y - (Boss.stageId === 1 ? 120 : 70);
+        const hy = Boss.y - (Boss.stageId === 1 ? 150 : 88);
         if (!guard) {
           Game.comboCount++;
           Game.comboTimer = 2.0;
         }
         const cc = Game.comboCount;
         const baseAng = step === 2 ? -0.6 : 0.6;
-        const slashLen = heavy ? 190 : guard ? 90 : 135;
+        const slashLen = (heavy ? 190 : guard ? 90 : 135) * CHAR_K;
         const tierColor = cc >= 8 ? "#fb923c" : cc >= 5 ? "#fde047" : cc >= 3 ? "#67e8f9" : "#e0f2fe";
         const color = guard ? "#cbd5e1" : heavy ? (cc >= 8 ? "#fb923c" : "#fde047") : tierColor;
         Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: baseAng, len: slashLen, life: heavy ? 0.16 : 0.11, maxLife: heavy ? 0.16 : 0.11, w: heavy ? 7 : 4.5, color });
@@ -3006,7 +3013,7 @@
         Sound.play("slash", 1.0, 0.85);
 
         const hasEcho11 = Progress.echoes && Progress.echoes.includes(11);
-        const arcRadius = Math.round(145 * (hasEcho11 ? 1.08 : 1.0));
+        const arcRadius = Math.round(145 * CHAR_K * (hasEcho11 ? 1.08 : 1.0));
         const arcColor = hasEcho11 ? "#0284c7" : "#f59e0b"; // 卷三回響11：斬擊弧光改天青色，範圍+8%
 
         Game.slashArcs.push({
@@ -3073,7 +3080,7 @@
         Sound.play("slash", 0.85, 0.95 + Player.comboStep * 0.08);
 
         const hasEcho11 = Progress.echoes && Progress.echoes.includes(11);
-        const baseRadius = isRiposte ? 130 : Player.comboStep === 3 ? 118 : 96;
+        const baseRadius = (isRiposte ? 130 : Player.comboStep === 3 ? 118 : 96) * CHAR_K;
         const arcRadius = Math.round(baseRadius * (hasEcho11 ? 1.08 : 1.0));
         const arcColor = isRiposte ? "#fde047" : (hasEcho11 ? "#0284c7" : "#38bdf8"); // 回響11天青色
 
@@ -4317,7 +4324,7 @@
           if (Player.state === "attack" && !Player.attackHitRegistered && Player.stateTimer > 0.04) {
             const dx = Boss.x - Player.x;
             const inFront = dx * Player.facing >= -30;
-            const baseReach = Player.isChargedAttack ? 175 : Player.comboStep === 3 ? 165 : 140;
+            const baseReach = (Player.isChargedAttack ? 175 : Player.comboStep === 3 ? 165 : 140) * CHAR_K;
             const hasEcho11 = Progress.echoes && Progress.echoes.includes(11);
             const reach = Math.round(baseReach * (hasEcho11 ? 1.08 : 1.0)); // 卷三回響11：攻擊範圍+8%
             if (inFront && Math.abs(dx) <= reach && Math.abs(Player.y - Boss.y) < 120) {
@@ -5059,7 +5066,7 @@
           ];
           const MB1_IMGS = {};
           let MB1_READY = 0;
-          const MB1_SCALE = 0.51;
+          const MB1_SCALE = 0.64;
 
           MB1_NAMES.forEach(name => {
             const img = new Image();
@@ -5069,7 +5076,7 @@
             MB1_IMGS[name] = img;
           });
 
-          const MB1_STRIDE = 190;
+          const MB1_STRIDE = 238;
           let MBW_PHASE = 0;
           let MBW_LASTX = null;
           const MBW_IMGS = [];
@@ -5265,7 +5272,8 @@
             ctx.rotate(-Boss.facing * lean * a);
             ctx.scale(1 + 0.04 * a, 1 - 0.04 * a);
           }
-          ctx.scale(Boss.facing > 0 ? MB1_SCALE : -MB1_SCALE, MB1_SCALE);
+          const bossK = MB1_SCALE * (stage.size || 1);
+          ctx.scale(Boss.facing > 0 ? bossK : -bossK, bossK);
           ctx.drawImage(bossImg, -450, -560);
           
           ctx.filter = "none";
@@ -5657,7 +5665,7 @@
       ];
       const MC_IMGS = {};
       let MC_READY = 0;
-      const MC_SCALE = 0.405;
+      const MC_SCALE = 0.506;
       const MC_FRAME_SCALE = { "11_thrust": 1.12 };
 
       MC_NAMES.forEach(name => {
@@ -5668,7 +5676,7 @@
         MC_IMGS[name] = img;
       });
 
-      const MC_STRIDE = 200;
+      const MC_STRIDE = 250;
       let MC_PHASE = 0;
       let MC_LASTX = null;
       const MCR_IMGS = [];
@@ -6049,7 +6057,7 @@
         Game.floatingTexts = [];
         Game.executionLines = [];
         Game.clones = [];
-        Game.camera.targetZoom = 1.0;
+        Game.camera.targetZoom = 1.0 - Math.min(0.25, ((stage.size || 1) - 1) * 0.3);
         const focusX = Player.x * 0.64 + Boss.x * 0.36;
         Game.camera.x = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, focusX - Config.baseWidth * 0.5));
         Game.cutsceneActive = false; // Never freeze battle on startup!
