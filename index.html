@@ -6846,7 +6846,7 @@
       }
 
       const elHintToast = document.createElement("div");
-      elHintToast.style.cssText = "position:fixed;left:50%;top:17%;transform:translateX(-50%);z-index:29;pointer-events:none;opacity:0;padding:6px 18px;border-radius:999px;background:rgba(10,15,26,.85);border:1px solid rgba(250,204,21,.55);color:#fde68a;font-family:'Noto Serif TC',serif;font-weight:700;font-size:clamp(12px,2.6vh,17px);white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.6);";
+      elHintToast.style.cssText = "position:fixed;left:50%;top:17%;transform:translateX(-50%);z-index:29;pointer-events:none;opacity:0;padding:10px 28px;border-radius:999px;background:rgba(10,15,26,.9);border:1.5px solid rgba(250,204,21,.7);color:#fde68a;font-family:'Noto Serif TC',serif;font-weight:900;font-size:clamp(17px,4.2vh,30px);letter-spacing:.04em;text-align:center;max-width:88vw;box-shadow:0 6px 22px rgba(0,0,0,.7),0 0 18px rgba(250,204,21,.18);";
       document.body.appendChild(elHintToast);
       let hintToastTimer = null;
       function showHintToast(text) {
@@ -6860,7 +6860,7 @@
         hintToastTimer = setTimeout(() => {
           elHintToast.style.transition = "opacity .5s ease-in";
           elHintToast.style.opacity = "0";
-        }, 3200);
+        }, 6500);
       }
 
       const btnBattleLog = document.getElementById("btn-battle-log");
