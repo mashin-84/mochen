@@ -2656,7 +2656,7 @@
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* ===== v0.6.4 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+      /* ===== v0.6.5 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
@@ -5597,13 +5597,14 @@
 
         if (artMode) {
           const gg = ctx.createLinearGradient(0, Config.groundY, 0, Config.baseHeight + 120);
-          gg.addColorStop(0, "#2b3550");
-          gg.addColorStop(1, "#0b1020");
+          gg.addColorStop(0, "#9aa7bf");
+          gg.addColorStop(0.3, "#74829f");
+          gg.addColorStop(1, "#3d4863");
           ctx.fillStyle = gg;
           ctx.fillRect(0, Config.groundY, Config.worldWidth, Config.baseHeight - Config.groundY + 120);
           const mg2 = ctx.createLinearGradient(0, Config.groundY - 70, 0, Config.groundY);
           mg2.addColorStop(0, "rgba(220,235,255,0)");
-          mg2.addColorStop(1, "rgba(220,235,255,0.28)");
+          mg2.addColorStop(1, "rgba(220,235,255,0.35)");
           ctx.fillStyle = mg2;
           ctx.fillRect(0, Config.groundY - 70, Config.worldWidth, 70);
         } else {
@@ -5620,7 +5621,7 @@
 
         ctx.font = "600 11px var(--font-serif)";
         ctx.textAlign = "center";
-        for (let x = 0; x <= Config.worldWidth; x += 160) {
+        for (let x = 0; x <= Config.worldWidth && !artMode; x += 160) {
           const major = x % 640 === 0;
           ctx.strokeStyle = major ? varColor(bg) : "rgba(148, 163, 184, 0.15)";
           ctx.lineWidth = major ? 1.8 : 1;
@@ -5724,7 +5725,7 @@
             }
           }
 
-          /* v0.6.4 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
+          /* v0.6.5 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
              沒有 sprite 的關卡退回程式繪製。可用 Stages[n].spriteScale / spriteStride 覆寫。 */
           const BOSS_FRAME_NAMES = [
             "01_idle1", "02_idle2", "03_walk1", "04_walk2",
@@ -7603,6 +7604,14 @@
         DLG.onEnd = onEnd || null;
         DLG.openedAt = performance.now();
         DLG.leftKey = "mochen";
+        /* 劇情站位：主角面朝右（在左），其他角色面朝左（在右） */
+        Player.facing = 1;
+        Boss.facing = -1;
+        if (Game.mode === "hub") {
+          if (Player.x > HUB_NPC_X - 60) Player.x = HUB_NPC_X - 110;
+        } else if (Player.x > Boss.x - 120) {
+          Player.x = Math.max(120, Boss.x - 220);
+        }
         const hasM = lines.some(l => l.role === "mochen");
         const firstOther = lines.find(l => l.role !== "mochen" && l.role !== "narrator");
         DLG.rightKey = firstOther ? dlgPortraitKey(firstOther.role) : null;
