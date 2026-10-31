@@ -2188,7 +2188,7 @@
       /* =========================================================================
        * 2. 全十五難關卡資料庫 (ALL 15 STAGES DATABASE)
        * ========================================================================= */
-      const HUB_START_X = -720, HUB_NPC_X = -520, HUB_GATE_X = -210, ARENA_ENTER_X = 900; /* 營地座標（位於戰場左側的負座標區） */
+      const HUB_START_X = -720, HUB_NPC_X = -520, HUB_GATE_X = -150, ARENA_ENTER_X = 900; /* 營地座標（位於戰場左側的負座標區） */
       const CHAR_K = 1.25; /* 人物與判定的整體放大倍率（v0.4.14） */
 
       const Stages = {
@@ -2640,6 +2640,14 @@
       Stages[13].moves.exclusive_aerial = { name: "無相升天・虛空劫光", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 3, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 150 };
       Stages[15].moves.exclusive_aerial = { name: "天道升天・神罰降世", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 4, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 180 };
 
+      /* 營地劇情（打完上一關、回到營地時播放；暫代文字，之後可整段替換）。其他關卡可用同樣格式加在 Stages[n].dialogue.camp */
+      Stages[2].dialogue.camp = [
+        { speaker: "師妹", role: "shidi", text: "師兄，你受傷了。先在營火邊歇一會兒吧。" },
+        { speaker: "墨塵", role: "mochen", text: "不礙事。統領臨死前說，掌門已在天門絕巔恭候……司徒掌門，是要把我們一路逼上去。" },
+        { speaker: "師妹", role: "shidi", text: "前面是千幻長老的八荒千幻迷陣。他以前……最疼我們的。" },
+        { speaker: "墨塵", role: "mochen", text: "疼不疼，劍下見分曉。休息夠了，我們走。" }
+      ];
+
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(Stages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
@@ -2747,6 +2755,7 @@
         comboTimer: 0,
         introT: 0,
         mode: "battle",
+        bossDeath: null,
         hubStage: 1,
         hubNpcNear: false,
         gateClosed: true,
@@ -3941,6 +3950,13 @@
       }
 
       function updateBossAI(dt) {
+        if (Game.bossDeath) {
+          Boss.vx = 0;
+          Boss.state = "recover";
+          Boss.stateTimer = 9;
+          Boss.isPerilous = false;
+          return;
+        }
         const stage = Stages[Boss.stageId];
 
         // C3: 命中預測與提示記錄
@@ -5038,7 +5054,7 @@
       function hubTick(dt) {
         if (Game.mode === "hub") {
           Game.hubNpcNear = Math.abs(Player.x - HUB_NPC_X) < 130 && Player.y >= Config.groundY - 4;
-          if (Player.x >= -30) {
+          if (Player.x >= HUB_GATE_X) {
             Game.mode = "enter";
             document.body.classList.remove("hub-mode");
             hapticBuzz(25);
@@ -5066,11 +5082,23 @@
         setTelemetry(`〔啟程：進入${stage.chapter}！〕`);
       }
 
-      function returnToHub(stageId) {
+      function returnToHub(stageId, opts) {
         Game.hubStage = Math.max(1, Math.min(15, stageId || 1));
         try { localStorage.setItem("qingyun_hubstage", String(Game.hubStage)); } catch (e) { }
         loadStage(Game.hubStage, { hub: true });
         Game.cutsceneActive = false;
+        if (opts && opts.camp) {
+          const stH = Stages[Game.hubStage];
+          const cl = stH && stH.dialogue && stH.dialogue.camp;
+          let seen = false;
+          try { seen = localStorage.getItem("qingyun_camp_" + Game.hubStage) === "1"; } catch (e) { }
+          if (cl && cl.length && !seen) {
+            setTimeout(() => dlgStart(cl, () => {
+              try { localStorage.setItem("qingyun_camp_" + Game.hubStage, "1"); } catch (e) { }
+              hintOnce("hub_go", "向右走進山門，挑戰下一關");
+            }), 450);
+          }
+        }
       }
 
       const HUB_TIPS = [
@@ -5502,6 +5530,13 @@
             MB1_IMGS[name] = img;
           });
 
+          const MBD = { kneel: { ok: false, img: new Image() }, fall: { ok: false, img: new Image() }, lie: { ok: false, img: new Image() } };
+          MBD.kneel.img.onload = () => { MBD.kneel.ok = true; };
+          MBD.fall.img.onload = () => { MBD.fall.ok = true; };
+          MBD.lie.img.onload = () => { MBD.lie.ok = true; };
+          MBD.kneel.img.src = "assets/boss1/17_kneel.webp";
+          MBD.fall.img.src = "assets/boss1/18_fall.webp";
+          MBD.lie.img.src = "assets/boss1/19_lie.webp";
           const MB1_STRIDE = 238;
           let MBW_PHASE = 0;
           let MBW_LASTX = null;
@@ -5684,14 +5719,33 @@
             imgKey = "15_hurt";
             bossImg = null;
           }
+          let deathRot = 0, deathAlpha = 1;
+          if (Game.bossDeath && performance.now() >= Game.bossDeath.start) {
+            const bd = Game.bossDeath;
+            bossImg = null;
+            imgKey = "16_stagger";
+            if (!bd.out) {
+              if (MBD.kneel.ok) bossImg = MBD.kneel.img;
+            } else {
+              const e = (performance.now() - bd.t0) / 1000;
+              if (e < 0.5) {
+                if (MBD.fall.ok) bossImg = MBD.fall.img; else deathRot = (e / 0.5) * 1.45;
+              } else {
+                if (MBD.lie.ok) bossImg = MBD.lie.img; else deathRot = 1.45;
+                if (e >= 1.2) deathAlpha = Math.max(0, 1 - (e - 1.2) / 0.8);
+              }
+            }
+          }
           if (!bossImg) bossImg = MB1_IMGS[imgKey];
 
           ctx.save();
+          if (deathAlpha < 1) ctx.globalAlpha = deathAlpha;
           if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
           else if (Boss.state === "frozen") ctx.filter = "hue-rotate(160deg) brightness(1.1)";
           else if (Boss.isPerilous) ctx.filter = "drop-shadow(0 0 10px #ef4444)";
 
           ctx.translate(Boss.x, Boss.y);
+          if (deathRot) ctx.rotate(-Boss.facing * deathRot);
           if (hrP > 0) {
             const a = hrP * hrP;
             const lean = Boss.hitReactKind === "heavy" ? 0.07 : Boss.hitReactKind === "block" ? 0.025 : 0.045;
@@ -6476,6 +6530,7 @@
         Game.hitFx = [];
         Game.comboCount = 0;
         Game.comboTimer = 0;
+        Game.bossDeath = null;
         Game.ultDim = 0;
         Game.slowT = 0;
         Game.slowScale = 1;
@@ -6613,8 +6668,19 @@
         Game.cutsceneActive = true;
         const stC = Stages[clearedStageId];
         const post = stC && stC.dialogue && stC.dialogue.post;
-        if (post && post.length) dlgStart(post, () => showSettlement(clearedStageId));
-        else showSettlement(clearedStageId);
+        if (post && post.length) dlgStart(post, () => bossDeathOut(() => showSettlement(clearedStageId)));
+        else bossDeathOut(() => showSettlement(clearedStageId));
+      }
+
+      function bossDeathOut(cb) {
+        Game.cutsceneActive = true;
+        if (Game.bossDeath) {
+          Game.bossDeath.out = true;
+          Game.bossDeath.t0 = performance.now();
+          setTimeout(cb, 2100);
+        } else {
+          cb();
+        }
       }
 
       function showSettlement(clearedStageId) {
@@ -6664,7 +6730,7 @@
       document.getElementById("btn-next-stage").addEventListener("click", () => {
         elSettlementModal.classList.remove("open");
         Game.cutsceneActive = false;
-        returnToHub(Boss.stageId < 15 ? Boss.stageId + 1 : 1);
+        returnToHub(Boss.stageId < 15 ? Boss.stageId + 1 : 1, { camp: true });
       });
 
       const elChapterListModal = document.getElementById("chapter-list-modal");
@@ -7365,6 +7431,8 @@
       }
 
       function bossKillCinematic() {
+        Boss.isPerilous = false;
+        Game.bossDeath = { start: performance.now() + 700, out: false, t0: 0 };
         setTimeout(() => {
           Game.slowT = 0.9;
           Game.slowScale = 0.25;
