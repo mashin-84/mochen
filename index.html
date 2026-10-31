@@ -2656,7 +2656,7 @@
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* ===== v0.6.3 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+      /* ===== v0.6.4 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
@@ -2683,6 +2683,9 @@
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
+      /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
+      Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
+      Stages[1].moves.charge_rush = { name: "神衛衝鋒 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 760, windup: 0.70, active: 0.60, recover: 0.85, range: 150, lunge: 760, damage: 230, parryPostureDmg: 24 };
 
       /* ===== 第 9 關 心魔・墨塵（原型）：鏡像墨塵、依玩家習慣調整 ===== */
       Stages[9].mirror = true;
@@ -4022,7 +4025,8 @@
               reflected: false,
               life: 2.5,
               color: bColor,
-              trajectory: traj
+              trajectory: traj,
+              kind: (m && m.bulletKind) || null
             });
             Sound.play("flysword", 0.7, 0.95 + i * 0.1);
           }, i * 200);
@@ -4063,6 +4067,8 @@
         Boss.aerialBreak = 0;
         Boss.aerialTimer = 0;
         Boss.aerialShotTimer = m.aerialShotInterval || 1.1;
+        Boss.jumpedOver = false;
+        if (m.isCharge) hintOnce("charge", "【衝鋒】跳躍越過，或在它貼近時瞬步閃開");
 
         if (m.isAerial) {
           const hits = m.aerialBreakHits || 3;
@@ -4319,6 +4325,18 @@
 
         if (Boss.state === "active") {
           Boss.stateTimer -= dt;
+          if (move.isCharge) {
+            Boss.vx = Boss.facing * (move.chargeSpeed || 760);
+            if (Math.random() < dt * 40) emitDust(Boss.x - Boss.facing * 30, Config.groundY, -Boss.facing, 2, 0.8);
+            const cdx = Player.x - Boss.x;
+            if (!Boss.hitRegistered && Player.state !== "execution" && Math.abs(cdx) <= move.range && cdx * Boss.facing > -40 && Player.y >= Config.groundY - 60) {
+              Boss.hitRegistered = true;
+              resolveBossStrike(move);
+            } else if (!Boss.hitRegistered && Math.abs(cdx) <= move.range && Player.y < Config.groundY - 60 && !Boss.jumpedOver) {
+              Boss.jumpedOver = true;
+              spawnFloatingText(Player.x, Player.y - 95, "躍過【衝鋒】！", "#34d399", 1.05);
+            }
+          }
           if (move.isHeal) {
             Boss.hp = Math.min(Boss.maxHp, Boss.hp + Boss.maxHp * 0.08 * dt / (move.active || 1.2));
             if (Math.random() < dt * 14) spawnSparks(Boss.x + (Math.random() - 0.5) * 50, Boss.y - 40 - Math.random() * 60, "hit", 1);
@@ -4405,7 +4423,7 @@
           }
 
           const swingProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
-          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && swingProgress >= 0.35) {
+          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isCharge && swingProgress >= 0.35) {
             if (Boss.perilType === "grab") {
               const d = Math.abs(Player.x - Boss.grabZoneX);
               if (d <= move.range * 0.75 && Player.y >= Config.groundY - 70) {
@@ -5685,17 +5703,28 @@
               ctx.save();
               ctx.translate(sw.x, sw.y);
               if (sw.dir < 0) ctx.scale(-1, 1);
+              if (sw.kind === "halberd") {
+                const hc = sw.reflected ? "#fde047" : "#f59e0b";
+                ctx.shadowColor = hc;
+                ctx.shadowBlur = 14;
+                ctx.fillStyle = "#78350f";
+                ctx.fillRect(-52, -2.5, 96, 5); /* 戈柄 */
+                ctx.fillStyle = hc;
+                ctx.beginPath(); ctx.moveTo(44, -9); ctx.lineTo(70, 0); ctx.lineTo(44, 9); ctx.closePath(); ctx.fill(); /* 戈尖 */
+                ctx.fillRect(30, -12, 8, 24); /* 橫刃 */
+              } else {
               ctx.fillStyle = sw.reflected ? "#fde047" : "#38bdf8";
               ctx.shadowColor = sw.reflected ? "#fde047" : "#38bdf8";
               ctx.shadowBlur = 12;
               ctx.fillRect(-24, -3, 48, 6);
               ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
               ctx.fillRect(-18, -1.5, 36, 3);
+              }
               ctx.restore();
             }
           }
 
-          /* v0.6.3 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
+          /* v0.6.4 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
              沒有 sprite 的關卡退回程式繪製。可用 Stages[n].spriteScale / spriteStride 覆寫。 */
           const BOSS_FRAME_NAMES = [
             "01_idle1", "02_idle2", "03_walk1", "04_walk2",
@@ -5911,16 +5940,16 @@
           } else if (Boss.state === "staggered" || Boss.state === "frozen") {
             imgKey = "16_stagger";
           } else if (Boss.state === "windup") {
-            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo") imgKey = "08_windup_thrust";
+            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo" || Boss.moveType === "charge_rush") imgKey = "08_windup_thrust";
             else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
             else imgKey = "07_windup";
           } else if (Boss.state === "active") {
-            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo") imgKey = "11_thrust";
+            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo" || Boss.moveType === "charge_rush") imgKey = "11_thrust";
             else if (Boss.moveType === "sweep_peril") imgKey = "13_sweep";
             else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
             else imgKey = "09_slash";
           } else if (Boss.state === "recover") {
-            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo") imgKey = "12_thrust_rec";
+            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo" || Boss.moveType === "charge_rush") imgKey = "12_thrust_rec";
             else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
             else imgKey = "10_slash_rec";
           } else if (Boss.state === "approach" || (Boss.state === "idle" && Math.abs(Boss.vx) > 40)) {
