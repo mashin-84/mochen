@@ -2641,11 +2641,12 @@
       Stages[15].moves.exclusive_aerial = { name: "天道升天・神罰降世", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 4, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 180 };
 
       /* 營地劇情（打完上一關、回到營地時播放；暫代文字，之後可整段替換）。其他關卡可用同樣格式加在 Stages[n].dialogue.camp */
+      Stages[1].dialogue.post.forEach(l => { if (l.role === "boss" || l.role === "mochen") l.expr = "alt"; });
       Stages[2].dialogue.camp = [
         { speaker: "師妹", role: "shidi", text: "師兄，你受傷了。先在營火邊歇一會兒吧。" },
-        { speaker: "墨塵", role: "mochen", text: "不礙事。統領臨死前說，掌門已在天門絕巔恭候……司徒掌門，是要把我們一路逼上去。" },
+        { speaker: "墨塵", role: "mochen", expr: "alt", text: "不礙事。統領臨死前說，掌門已在天門絕巔恭候……司徒掌門，是要把我們一路逼上去。" },
         { speaker: "師妹", role: "shidi", text: "前面是千幻長老的八荒千幻迷陣。他以前……最疼我們的。" },
-        { speaker: "墨塵", role: "mochen", text: "疼不疼，劍下見分曉。休息夠了，我們走。" }
+        { speaker: "墨塵", role: "mochen", expr: "alt", text: "疼不疼，劍下見分曉。休息夠了，我們走。" }
       ];
 
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
@@ -5050,6 +5051,26 @@
         }
       }
 
+      /* ====================== 背景美術（有圖就用圖，沒圖退回程式繪製） ====================== */
+      const BG_ART = { camp: { ok: false, img: new Image() }, s1: { ok: false, img: new Image() } };
+      BG_ART.camp.img.onload = () => { BG_ART.camp.ok = true; };
+      BG_ART.s1.img.onload = () => { BG_ART.s1.ok = true; };
+      BG_ART.camp.img.src = "assets/bg/camp.webp";
+      BG_ART.s1.img.src = "assets/bg/arena1.webp";
+
+      function drawArenaArt(camX, stageId) {
+        const A = stageId === 1 ? BG_ART.s1 : null;
+        if (!A || !A.ok) return false;
+        const h = Config.baseHeight;
+        const w = h * (A.img.naturalWidth / A.img.naturalHeight);
+        const f = Math.max(0, (w - Config.baseWidth) / (Config.worldWidth - Config.baseWidth));
+        const cx = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, camX));
+        ctx.drawImage(A.img, cx * (1 - f), 0, w, h);
+        ctx.fillStyle = "rgba(8, 14, 38, 0.4)";
+        ctx.fillRect(cx - 400, 0, Config.baseWidth + 800, h + 200);
+        return true;
+      }
+
       /* ====================== 營地（Hub）與進場 ====================== */
       function hubTick(dt) {
         if (Game.mode === "hub") {
@@ -5126,6 +5147,9 @@
         ctx.rect(-1280, -400, 1280, 1400);
         ctx.clip();
 
+        if (BG_ART.camp.ok) {
+          ctx.drawImage(BG_ART.camp.img, -1280, 0, 1280, 720);
+        } else {
         const sky = ctx.createLinearGradient(0, 0, 0, gy);
         sky.addColorStop(0, "#070b18");
         sky.addColorStop(0.55, "#16223d");
@@ -5192,6 +5216,7 @@
         };
         tent(-1130, 1.0);
         tent(-380, 0.8);
+        }
 
         // 營火
         const fx = -900;
@@ -5347,6 +5372,8 @@
         const bg = stage.bgType;
 
         ctx.save();
+        const artMode = drawArenaArt(camX, Boss.stageId);
+        if (!artMode) {
         // Dynamic Moon / Star / Sky Celestial Body
         const orbX = camX + 850 - camX * 0.08;
         const orbY = 160;
@@ -5394,8 +5421,10 @@
         ctx.closePath();
         ctx.fill();
 
+        }
+
         // Arena Ground & Pillars
-        for (let x = 200; x <= Config.worldWidth - 200; x += 300) {
+        for (let x = 200; x <= Config.worldWidth - 200 && !artMode; x += 300) {
           ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
           ctx.fillRect(x - 16, Config.groundY - 250, 32, 250);
           ctx.strokeStyle = varColor(bg);
@@ -5407,10 +5436,23 @@
           ctx.fill();
         }
 
-        ctx.fillStyle = "#070c14";
-        ctx.fillRect(0, Config.groundY, Config.worldWidth, Config.baseHeight - Config.groundY + 120);
+        if (artMode) {
+          const gg = ctx.createLinearGradient(0, Config.groundY, 0, Config.baseHeight + 120);
+          gg.addColorStop(0, "#2b3550");
+          gg.addColorStop(1, "#0b1020");
+          ctx.fillStyle = gg;
+          ctx.fillRect(0, Config.groundY, Config.worldWidth, Config.baseHeight - Config.groundY + 120);
+          const mg2 = ctx.createLinearGradient(0, Config.groundY - 70, 0, Config.groundY);
+          mg2.addColorStop(0, "rgba(220,235,255,0)");
+          mg2.addColorStop(1, "rgba(220,235,255,0.28)");
+          ctx.fillStyle = mg2;
+          ctx.fillRect(0, Config.groundY - 70, Config.worldWidth, 70);
+        } else {
+          ctx.fillStyle = "#070c14";
+          ctx.fillRect(0, Config.groundY, Config.worldWidth, Config.baseHeight - Config.groundY + 120);
+        }
 
-        ctx.strokeStyle = varColor(bg);
+        ctx.strokeStyle = artMode ? "rgba(210, 230, 255, 0.5)" : varColor(bg);
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, Config.groundY);
@@ -7294,12 +7336,13 @@
         return portraitState[key];
       }
       const PORTRAIT_GLYPH = { mochen: "墨", shidi: "妹" };
+      ["mochen", "mochen_alt", "shidi", "shidi_alt", "boss1", "boss1_alt"].forEach(k => getPortrait(k));
       const elDlg = document.createElement("div");
       elDlg.style.cssText = "position:fixed;inset:0;z-index:40;display:none;user-select:none;-webkit-user-select:none;touch-action:manipulation;";
       elDlg.innerHTML = '<style>@keyframes dlgBlink{0%,100%{opacity:1}50%{opacity:.2}}</style>' +
         '<div style="position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(0deg,rgba(2,4,12,.9),rgba(2,4,12,0));"></div>' +
-        '<div id="dlg-pl" style="position:absolute;left:4%;bottom:20%;width:min(28vw,380px);height:min(62vh,540px);display:flex;align-items:flex-end;justify-content:center;transition:filter .25s,opacity .25s;"></div>' +
-        '<div id="dlg-pr" style="position:absolute;right:4%;bottom:20%;width:min(28vw,380px);height:min(62vh,540px);display:flex;align-items:flex-end;justify-content:center;transition:filter .25s,opacity .25s;"></div>' +
+        '<div id="dlg-pl" style="position:absolute;left:2%;bottom:20%;width:min(42vw,560px);height:min(62vh,540px);display:flex;align-items:flex-end;justify-content:center;transition:filter .25s,opacity .25s;"></div>' +
+        '<div id="dlg-pr" style="position:absolute;right:2%;bottom:20%;width:min(42vw,560px);height:min(62vh,540px);display:flex;align-items:flex-end;justify-content:center;transition:filter .25s,opacity .25s;"></div>' +
         '<div id="dlg-box" style="position:absolute;left:6%;right:6%;bottom:3.5%;min-height:21%;padding:3vh 3vw 2vh 3vw;border:1.5px solid rgba(250,204,21,.55);border-radius:12px;background:rgba(8,12,24,.92);box-shadow:0 8px 30px rgba(0,0,0,.7);font-family:\'Noto Serif TC\',serif;">' +
         '<div id="dlg-name" style="position:absolute;left:20px;top:-16px;padding:2px 18px;border-radius:999px;background:linear-gradient(180deg,#b45309,#78350f);border:1.5px solid #fde68a;color:#fef3c7;font-weight:900;font-size:clamp(13px,2.8vh,19px);letter-spacing:.2em;"></div>' +
         '<div id="dlg-text" style="color:#f1f5f9;font-size:clamp(15px,3.6vh,24px);line-height:1.7;min-height:3.4em;"></div>' +
@@ -7320,17 +7363,21 @@
       function dlgFillPane(pane, key, role) {
         pane.innerHTML = "";
         if (!key) return;
-        const ps = getPortrait(key);
+        let ps = getPortrait(key);
+        if (!ps.ok && /_alt$/.test(key)) {
+          const bps = getPortrait(key.replace(/_alt$/, ""));
+          if (bps.ok) ps = bps;
+        }
         if (ps.ok) {
           const im = document.createElement("img");
           im.src = ps.img.src;
           im.style.cssText = "height:100%;max-width:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 6px 14px rgba(0,0,0,.7));";
           pane.appendChild(im);
         } else {
-          const g = PORTRAIT_GLYPH[key] || (Stages[Boss.stageId].name || "將").charAt(0);
+          const g = PORTRAIT_GLYPH[key.replace(/_alt$/, "")] || (Stages[Boss.stageId].name || "將").charAt(0);
           const d = document.createElement("div");
           d.textContent = g;
-          d.style.cssText = "width:min(14vw,150px);height:min(14vw,150px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:min(8vw,80px);font-weight:900;color:#fef3c7;font-family:'Noto Serif TC',serif;background:radial-gradient(circle at 35% 30%," + (key === "mochen" ? "#38bdf8,#0c4a6e" : key === "shidi" ? "#a5b4fc,#3730a3" : "#f87171,#7f1d1d") + ");border:3px solid rgba(253,230,138,.8);box-shadow:0 8px 24px rgba(0,0,0,.7);margin-bottom:4vh;";
+          d.style.cssText = "width:min(14vw,150px);height:min(14vw,150px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:min(8vw,80px);font-weight:900;color:#fef3c7;font-family:'Noto Serif TC',serif;background:radial-gradient(circle at 35% 30%," + (/^mochen/.test(key) ? "#38bdf8,#0c4a6e" : /^shidi/.test(key) ? "#a5b4fc,#3730a3" : "#f87171,#7f1d1d") + ");border:3px solid rgba(253,230,138,.8);box-shadow:0 8px 24px rgba(0,0,0,.7);margin-bottom:4vh;";
           pane.appendChild(d);
         }
       }
@@ -7357,15 +7404,20 @@
         const line = DLG.lines[i];
         elDlgName.textContent = line.speaker || "";
         elDlgName.style.display = line.role === "narrator" ? "none" : "block";
-        if (line.role !== "mochen" && line.role !== "narrator") {
-          const k = dlgPortraitKey(line.role);
+        const exSuf = line.expr === "alt" ? "_alt" : "";
+        if (line.role === "mochen") {
+          const kL = "mochen" + exSuf;
+          if (kL !== DLG.leftKey) { DLG.leftKey = kL; dlgFillPane(elDlgL, kL); }
+        } else if (line.role !== "narrator") {
+          const baseK = dlgPortraitKey(line.role);
+          const k = baseK ? baseK + exSuf : null;
           if (k && k !== DLG.rightKey) { DLG.rightKey = k; dlgFillPane(elDlgR, k); }
         }
         const nar = line.role === "narrator";
         elDlgL.style.filter = nar || line.role === "mochen" ? (nar ? "brightness(.45)" : "none") : "brightness(.45)";
         elDlgR.style.filter = nar || line.role === "mochen" ? "brightness(.45)" : "none";
-        elDlgL.style.opacity = nar ? ".5" : "1";
-        elDlgR.style.opacity = nar ? ".5" : "1";
+        elDlgL.style.opacity = nar ? "0" : "1";
+        elDlgR.style.opacity = nar ? "0" : "1";
         if (DLG.timer) clearInterval(DLG.timer);
         DLG.full = line.text;
         DLG.typing = true;
