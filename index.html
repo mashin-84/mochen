@@ -2973,8 +2973,8 @@
 
         Player.state = "attack";
         Player.isChargedAttack = false;
-        Player.stateTimer = Player.comboStep === 3 ? 0.40 : 0.30;
-        Player.comboWindow = 0.55;
+        Player.stateTimer = Player.comboStep === 3 ? 0.75 : 0.55;
+        Player.comboWindow = 0.85;
         Player.attackHitRegistered = false;
         Player.vx = Player.facing * (isRiposte ? 440 : Player.comboStep === 3 ? 340 : 220);
 
@@ -3566,7 +3566,8 @@
             Player.flashFrames = 1;
             Sound.play("block", 0.85, 1.0);
             triggerHitstop(3);
-            triggerShake(dir, 0.15, 9, 0.16);
+            triggerShake(dir, 0.15, 12, 0.2);
+            Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.03);
             spawnSparks(cx, cy, "block", dir);
             damageBossPosture(6, null);
             spawnFloatingText(Player.x, Player.y - 95, `普通格擋 (+${el}ms 偏慢)`, "#cbd5e1", 0.95);
@@ -3594,9 +3595,11 @@
         Progress.parryCount++;
 
         Sound.play("parry", 0.95, 0.96 + Math.random() * 0.08);
-        triggerHitstop(Config.parryHitstopFrames);
-        triggerShake(dir, -0.2, 18, 0.25);
+        triggerHitstop(Config.parryHitstopFrames + 4);
+        triggerShake(dir, -0.2, 32, 0.34);
+        Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.10);
         spawnSparks(cx, cy, "parry", dir);
+        spawnSparks(cx, cy, "mikiri", dir);
 
         damageBossPosture(postureGain, `完美招架！架勢 +${postureGain}%`);
         spawnFloatingText(Player.x, Player.y - 112, `【青雲完美彈反】${el}ms!`, "#fde047", 1.25);
@@ -4324,7 +4327,7 @@
           if (Keys.right) dir += 1;
 
           if (dir !== 0) {
-            Player.vx = dir * 520;
+            Player.vx = dir * 580;
             Player.facing = dir;
             if (Player.y >= Config.groundY - 2) Player.state = "move";
           } else {
