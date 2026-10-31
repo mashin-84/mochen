@@ -5383,6 +5383,25 @@
         ctx.restore();
       }
 
+      const MC_NAMES = [
+        "01_idle1", "02_idle2", "03_run1", "04_run2",
+        "05_run3", "06_run4", "07_jump", "08_fall",
+        "09_slash1", "10_slash2", "11_thrust", "12_charge",
+        "13_parry", "14_dash", "15_drink", "16_hurt"
+      ];
+      const MC_IMGS = {};
+      let MC_READY = 0;
+      const MC_SCALE = 0.27;
+      const MC_FRAME_SCALE = { "11_thrust": 1.12 };
+
+      MC_NAMES.forEach(name => {
+        const img = new Image();
+        img.onload = () => { MC_READY++; };
+        img.onerror = () => { console.warn("Failed to load: " + name); };
+        img.src = 'assets/mc/' + name + '.webp';
+        MC_IMGS[name] = img;
+      });
+
       function drawPlayer() {
         ctx.save();
         const px = Player.x - Player.w * 0.5;
@@ -5393,7 +5412,43 @@
         ctx.ellipse(Player.x, Config.groundY + 3, Player.w * 0.55, 7, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        if (Player.scarfNodes.length > 1) {
+        if (MC_READY === 16) {
+          let frame = "01_idle1";
+          const isAirborne = Player.y < Config.groundY - 2;
+
+          if (Player.state === "execution" || (Player.riposteTimer > 0 && Player.state === "attack")) {
+            frame = "11_thrust";
+          } else if (Player.state === "hitstun" || Player.state === "staggered" || Player.state === "frozen") {
+            frame = "16_hurt";
+          } else if (Player.state === "drink") {
+            frame = "15_drink";
+          } else if (Player.state === "dash") {
+            frame = "14_dash";
+          } else if (Player.state === "parry") {
+            frame = "13_parry";
+          } else if (Player.state === "attack") {
+            frame = Player.comboStep % 2 !== 0 ? "09_slash1" : "10_slash2";
+          } else if (Player.isChargingAttack) {
+            frame = "12_charge";
+          } else if (isAirborne) {
+            frame = Player.vy < 0 ? "07_jump" : "08_fall";
+          } else if (Player.state === "move") {
+            const runIdx = Math.floor(performance.now() / 110) % 4;
+            frame = ["03_run1", "04_run2", "05_run3", "06_run4"][runIdx];
+          } else {
+            frame = Math.floor(performance.now() / 600) % 2 === 0 ? "01_idle1" : "02_idle2";
+          }
+
+          ctx.save();
+          if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
+          ctx.translate(Player.x, Player.y);
+          const S = MC_SCALE * (MC_FRAME_SCALE[frame] || 1);
+          ctx.scale(Player.facing > 0 ? S : -S, S);
+          ctx.drawImage(MC_IMGS[frame], -450, -529);
+          if (Player.flashFrames > 0) ctx.filter = "none";
+          ctx.restore();
+        } else {
+          if (Player.scarfNodes.length > 1) {
           ctx.strokeStyle = "rgba(56, 189, 248, 0.65)";
           ctx.lineWidth = 6;
           ctx.lineCap = "round";
@@ -5448,6 +5503,7 @@
           ctx.fillRect(0, -3.5, 76, 7);
         }
         ctx.restore();
+        }
 
         // 蓄力圓形進度環視覺提示 (D 項要求)
         if (Player.isChargingAttack) {
