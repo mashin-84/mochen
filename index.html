@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>一念飛仙外傳-墨塵傳 — 全十五難絕巔硬核動作RPG</title>
+  <title>一念飛仙外傳-墨塵傳 — 全九難絕巔硬核動作RPG</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1982,11 +1982,11 @@
       </div>
     </div>
 
-    <!-- 十五難絕顛全卷選關浮層 (All 15 Stages Modal) -->
+    <!-- 九難絕顛全卷選關浮層 (All 9 Stages Modal) -->
     <div id="chapter-list-modal" class="cult-modal-backdrop">
       <div class="cult-scroll-box" style="max-height: 85vh; overflow-y: auto;">
         <div class="modal-banner-row">
-          <span class="modal-chapter-tag">《一念飛仙外傳-墨塵傳》・十五難絕顛全卷</span>
+          <span class="modal-chapter-tag">《一念飛仙外傳-墨塵傳》・九難絕顛全卷</span>
           <button type="button" id="btn-close-chapter-list" class="cult-header-btn">關閉 ✕</button>
         </div>
         <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6; font-family: var(--font-serif);">
@@ -2015,7 +2015,7 @@
           </button>
           <button type="button" id="btn-chapter-list" class="menu-tile-btn">
             <span>⛩️</span>
-            <span>十五難全卷選關</span>
+            <span>九難全卷選關</span>
           </button>
           <button type="button" id="btn-drawer-toggle" class="menu-tile-btn">
             <span>⚔️</span>
@@ -2036,6 +2036,10 @@
           <button type="button" id="btn-haptic" class="menu-tile-btn">
             <span>📳</span>
             <span id="menu-haptic-txt">震動回饋：強</span>
+          </button>
+          <button type="button" id="btn-testall" class="menu-tile-btn">
+            <span>🧪</span>
+            <span id="menu-testall-txt">測試全解鎖：關</span>
           </button>
           <button type="button" id="btn-audio-toggle" class="menu-tile-btn">
             <span>🔊</span>
@@ -2186,12 +2190,12 @@
       };
 
       /* =========================================================================
-       * 2. 全十五難關卡資料庫 (ALL 15 STAGES DATABASE)
+       * 2. 全九難關卡資料庫 (ALL 9 STAGES DATABASE)
        * ========================================================================= */
       const HUB_START_X = -720, HUB_NPC_X = -520, HUB_GATE_X = -150, ARENA_ENTER_X = 900; /* 營地座標（位於戰場左側的負座標區） */
       const CHAR_K = 1.25; /* 人物與判定的整體放大倍率（v0.4.14） */
 
-      const Stages = {
+      const LegacyStages = {
         // --- 卷一【問心出山】(1-5) ---
         1: {
           id: 1, volume: 1, name: "赤煞神衛統領",
@@ -2556,10 +2560,10 @@
         },
         15: {
           id: 15, volume: 3, name: "天道劫眼・化身",
-          chapter: "卷三【登天斬道】第十五難・命運閉環",
+          chapter: "卷三【登天斬道】第九難・命運閉環",
           realmBadge: "天道秩序・滅世雷劫法相", arenaName: "天門絕巔 2.5x 空間",
           bgType: "heaven_peak", maxHp: 6600, maxPosture: 190, deathblows: 2,
-          unlockText: "【通關全十五難・天道閉環】墨塵燃盡元神斬出絕命「一劍青雲」，護送師弟妹殘魂入珠，太初玄天珠化為質樸灰珠遁入人間輪迴！",
+          unlockText: "【通關全九難・天道閉環】墨塵燃盡元神斬出絕命「一劍青雲」，護送師弟妹殘魂入珠，太初玄天珠化為質樸灰珠遁入人間輪迴！",
           loreSnippet: "〔終局命運：墨塵長笑力竭隕落，灰珠穿越萬載輪迴直墜人間山村破廟……完美閉環銜接《一念飛仙》第一章妖潮之夜！〕",
           moves: {
             slash1: { name: "天道劫光・湮滅", windup: 0.38, active: 0.14, recover: 0.28, range: 200, lunge: 420, damage: 220, parryPostureDmg: 32 },
@@ -2586,63 +2590,63 @@
         }
       };
 
-      [1, 2, 3, 4, 5, 11, 14].forEach(id => Stages[id].bodyType = "human");
-      Stages[6].bodyType = "beast";
-      [7, 8, 9, 10, 12, 13].forEach(id => Stages[id].bodyType = "spirit");
-      Stages[15].bodyType = "eye";
+      [1, 2, 3, 4, 5, 11, 14].forEach(id => LegacyStages[id].bodyType = "human");
+      LegacyStages[6].bodyType = "beast";
+      [7, 8, 9, 10, 12, 13].forEach(id => LegacyStages[id].bodyType = "spirit");
+      LegacyStages[15].bodyType = "eye";
 
-      Stages[6].moves.slash1.anim = "bite";
-      Stages[6].moves.exclusive_combo.anim = "claw";
-      Stages[6].moves.thrust_peril.anim = "pounce";
+      LegacyStages[6].moves.slash1.anim = "bite";
+      LegacyStages[6].moves.exclusive_combo.anim = "claw";
+      LegacyStages[6].moves.thrust_peril.anim = "pounce";
 
       // 階段 F：第 7~10 關專屬動作 (anim)
-      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[7].moves[k]) Stages[7].moves[k].anim = "claw"; });
-      Stages[7].moves.exclusive_zone.anim = "slam";
+      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[7].moves[k]) LegacyStages[7].moves[k].anim = "claw"; });
+      LegacyStages[7].moves.exclusive_zone.anim = "slam";
 
-      ["slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[8].moves[k]) Stages[8].moves[k].anim = "fan"; });
-      Stages[8].moves.slash1.anim = "ribbon";
-      Stages[8].moves.exclusive_teleport.anim = "vanish";
+      ["slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[8].moves[k]) LegacyStages[8].moves[k].anim = "fan"; });
+      LegacyStages[8].moves.slash1.anim = "ribbon";
+      LegacyStages[8].moves.exclusive_teleport.anim = "vanish";
 
-      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[9].moves[k]) Stages[9].moves[k].anim = "claw"; });
-      Stages[9].moves.exclusive_bullet.anim = "cast";
+      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[9].moves[k]) LegacyStages[9].moves[k].anim = "claw"; });
+      LegacyStages[9].moves.exclusive_bullet.anim = "cast";
 
-      ["slash1", "slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[10].moves[k]) Stages[10].moves[k].anim = "overhead"; });
-      Stages[10].moves.exclusive_combo.anim = "spin";
+      ["slash1", "slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[10].moves[k]) LegacyStages[10].moves[k].anim = "overhead"; });
+      LegacyStages[10].moves.exclusive_combo.anim = "spin";
 
       // 階段 F：第 11~15 關專屬動作 (anim)
-      ["slash1", "slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[11].moves[k]) Stages[11].moves[k].anim = "slam"; });
-      Stages[11].moves.exclusive_feint.anim = "overhead";
-      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[12].moves[k]) Stages[12].moves[k].anim = "cast"; });
-      Stages[12].moves.exclusive_zone.anim = "slam";
-      ["slash1", "slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[13].moves[k]) Stages[13].moves[k].anim = "cast"; });
-      Stages[13].moves.exclusive_teleport.anim = "vanish";
-      ["slash1", "exclusive_combo", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[14].moves[k]) Stages[14].moves[k].anim = "slash"; });
-      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(Stages[15].moves[k]) Stages[15].moves[k].anim = "slash"; });
-      Stages[15].moves.exclusive_bullet.anim = "cast";
-      Stages[15].moves.exclusive_feint.anim = "fan";
+      ["slash1", "slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[11].moves[k]) LegacyStages[11].moves[k].anim = "slam"; });
+      LegacyStages[11].moves.exclusive_feint.anim = "overhead";
+      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[12].moves[k]) LegacyStages[12].moves[k].anim = "cast"; });
+      LegacyStages[12].moves.exclusive_zone.anim = "slam";
+      ["slash1", "slash2", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[13].moves[k]) LegacyStages[13].moves[k].anim = "cast"; });
+      LegacyStages[13].moves.exclusive_teleport.anim = "vanish";
+      ["slash1", "exclusive_combo", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[14].moves[k]) LegacyStages[14].moves[k].anim = "slash"; });
+      ["slash1", "flyswords", "thrust_peril", "sweep_peril", "grab_peril"].forEach(k => { if(LegacyStages[15].moves[k]) LegacyStages[15].moves[k].anim = "slash"; });
+      LegacyStages[15].moves.exclusive_bullet.anim = "cast";
+      LegacyStages[15].moves.exclusive_feint.anim = "fan";
 
       // 階段 F：第 1~5 關專屬動作 (anim)
-      Stages[1].moves.slash1.anim = "slash";
-      Stages[1].moves.exclusive_combo.anim = "thrust";
-      Stages[1].moves.thrust_peril.anim = "thrust";
-      Stages[2].moves.slash1.anim = "fan";
-      Stages[2].moves.exclusive_teleport.anim = "vanish";
-      Stages[2].moves.exclusive_zone.anim = "cast";
-      Stages[3].moves.slash1.anim = "dual";
-      Stages[3].moves.exclusive_combo.anim = "dual";
-      Stages[3].moves.exclusive_feint.anim = "dual";
-      Stages[3].moves.slash2.anim = "dual";
-      Stages[4].moves.exclusive_feint.anim = "overhead";
-      Stages[4].moves.exclusive_zone.anim = "slam";
-      Stages[5].moves.exclusive_bullet.anim = "cast";
+      LegacyStages[1].moves.slash1.anim = "slash";
+      LegacyStages[1].moves.exclusive_combo.anim = "thrust";
+      LegacyStages[1].moves.thrust_peril.anim = "thrust";
+      LegacyStages[2].moves.slash1.anim = "fan";
+      LegacyStages[2].moves.exclusive_teleport.anim = "vanish";
+      LegacyStages[2].moves.exclusive_zone.anim = "cast";
+      LegacyStages[3].moves.slash1.anim = "dual";
+      LegacyStages[3].moves.exclusive_combo.anim = "dual";
+      LegacyStages[3].moves.exclusive_feint.anim = "dual";
+      LegacyStages[3].moves.slash2.anim = "dual";
+      LegacyStages[4].moves.exclusive_feint.anim = "overhead";
+      LegacyStages[4].moves.exclusive_zone.anim = "slam";
+      LegacyStages[5].moves.exclusive_bullet.anim = "cast";
 
-      Stages[8].moves.exclusive_aerial = { name: "魅影升天・天女散花", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 3, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 130 };
-      Stages[13].moves.exclusive_aerial = { name: "無相升天・虛空劫光", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 3, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 150 };
-      Stages[15].moves.exclusive_aerial = { name: "天道升天・神罰降世", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 4, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 180 };
+      LegacyStages[8].moves.exclusive_aerial = { name: "魅影升天・天女散花", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 3, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 130 };
+      LegacyStages[13].moves.exclusive_aerial = { name: "無相升天・虛空劫光", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 3, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 150 };
+      LegacyStages[15].moves.exclusive_aerial = { name: "天道升天・神罰降世", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 4, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 180 };
 
       /* 營地劇情（打完上一關、回到營地時播放；暫代文字，之後可整段替換）。其他關卡可用同樣格式加在 Stages[n].dialogue.camp */
-      Stages[1].dialogue.post.forEach(l => { if (l.role === "boss" || l.role === "mochen") l.expr = "alt"; });
-      Stages[2].dialogue.camp = [
+      LegacyStages[1].dialogue.post.forEach(l => { if (l.role === "boss" || l.role === "mochen") l.expr = "alt"; });
+      LegacyStages[2].dialogue.camp = [
         { speaker: "師妹", role: "shidi", text: "師兄，你受傷了。先在營火邊歇一會兒吧。" },
         { speaker: "墨塵", role: "mochen", expr: "alt", text: "不礙事。統領臨死前說，掌門已在天門絕巔恭候……司徒掌門，是要把我們一路逼上去。" },
         { speaker: "師妹", role: "shidi", text: "前面是千幻長老的八荒千幻迷陣。他以前……最疼我們的。" },
@@ -2650,10 +2654,37 @@
       ];
 
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
-      Object.values(Stages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
+      Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* v0.4.14 人物放大：Boss 招式的判定距離同步放大（aerial 的 range 為 0 不受影響） */
-      Object.values(Stages).forEach(st => {
+      /* ===== v0.6.0 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+         artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
+      const NINE_MAP = [
+        /* [新編號, 舊編號, 卷, 名稱, HP] */
+        [1, 1, 1, null, 2200], [2, 2, 1, null, 2600], [3, 3, 1, "莫無咎＋玄鐵真君", 3200],
+        [4, 5, 2, null, 3600], [5, 6, 2, "九幽魔將", 4600], [6, 8, 2, "魅月仙子＋化血老祖", 5000],
+        [7, 11, 3, "金甲天將＋玄武神相", 5400], [8, 14, 3, null, 7000], [9, 14, 3, "心魔・墨塵", 5200]
+      ];
+      const NUM_ZH = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+      const VOL_TAG = { 1: "卷一【問心出山】", 2: "卷二【九幽劫難】", 3: "卷三【登天斬道】" };
+      const Stages = {};
+      NINE_MAP.forEach(([nid, lid, vol, nm, hp]) => {
+        const L = LegacyStages[lid];
+        const st = Object.assign({}, L, { id: nid, artId: lid, volume: vol, maxHp: hp });
+        if (nm) st.name = nm;
+        const sub = (L.chapter.split("難・")[1] || L.name);
+        st.chapter = `${VOL_TAG[vol]}第${NUM_ZH[nid]}難・${sub}`;
+        if (nid === 9) {
+          const F = LegacyStages[15];
+          st.dialogue = F.dialogue; st.loreSnippet = F.loreSnippet;
+          st.unlockText = F.unlockText.replace("十五難", "九難");
+          st.chapter = `${VOL_TAG[3]}第九難・心魔・命運閉環`;
+        }
+        Stages[nid] = st;
+      });
+      Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
+
+/* v0.4.14 人物放大：Boss 招式的判定距離同步放大（aerial 的 range 為 0 不受影響） */
+      Object.values(LegacyStages).forEach(st => {
         Object.values(st.moves || {}).forEach(m => { if (m && m.range) m.range = Math.round(m.range * CHAR_K); });
       });
 
@@ -2686,9 +2717,13 @@
         }
       };
 
+      const TestAll = { on: false };
+      try { TestAll.on = localStorage.getItem("qingyun_testall") === "1"; } catch (e) { }
+      function getClearedMax() { let v = 0; try { v = parseInt(localStorage.getItem("qingyun_cleared") || "0", 10) || 0; } catch (e) { } return Math.max(0, Math.min(9, v)); }
+      function refreshUnlocked() { Progress.unlockedStages = TestAll.on ? 9 : Math.min(9, getClearedMax() + 1); }
       const Progress = {
         currentStage: 1,
-        unlockedStages: 15, // Unlock all stages so user can test and play ANY stage freely!
+        unlockedStages: 1, // 依進度解鎖；設定裡的「測試：全解鎖」可全開
         airDashUnlocked: true,
         equippedSeals: ["wenxin"],
         battleStartTime: 0,
@@ -2818,6 +2853,7 @@
       };
 
       const Boss = {
+        artId: 1,
         stageId: 1,
         x: 1680,
         y: Config.groundY,
@@ -2932,7 +2968,7 @@
         Boss.flashFrames = Math.max(Boss.flashFrames, heavy ? 5 : guard ? 2 : 4);
 
         const hx = Boss.x - dir * 22;
-        const hy = Boss.y - (Boss.stageId === 1 ? 150 : 88);
+        const hy = Boss.y - (Boss.artId === 1 ? 150 : 88);
         if (!guard) {
           Game.comboCount++;
           Game.comboTimer = 2.0;
@@ -3195,8 +3231,8 @@
       }
 
       function getStageParryBonus() {
-        if (Boss.stageId <= 5) return 40;
-        if (Boss.stageId <= 10) return 20;
+        if (Boss.stageId <= 3) return 40;
+        if (Boss.stageId <= 6) return 20;
         return 0;
       }
 
@@ -3464,8 +3500,8 @@
       }
 
       function getExecutionDmgRatio(stageId) {
-        if (stageId <= 5) return 0.45;
-        if (stageId <= 10) return 0.30;
+        if (stageId <= 3) return 0.45;
+        if (stageId <= 6) return 0.30;
         return 0.20;
       }
 
@@ -4173,7 +4209,7 @@
                   startAngle: Boss.perilType === "sweep" ? 0.25 : -1.15,
                   endAngle: Boss.perilType === "sweep" ? 1.35 : 0.95,
                   life: 0.19, maxLife: 0.19,
-                  color: Boss.isPerilous ? "#ef4444" : Boss.stageId >= 11 ? "#fde047" : "#fb923c",
+                  color: Boss.isPerilous ? "#ef4444" : Boss.artId >= 11 ? "#fde047" : "#fb923c",
                   isRiposte: false,
                   arcType: aType
                 });
@@ -4204,7 +4240,7 @@
                 damage: move.damage || 130,
                 reflected: false,
                 life: 3.0,
-                color: Boss.stageId >= 11 ? "#fde047" : "#c084fc",
+                color: Boss.artId >= 11 ? "#fde047" : "#c084fc",
                 trajectory: "linear",
                 isAerialShot: true
               });
@@ -4234,7 +4270,7 @@
               
               let sAngle = Boss.comboHitsLeft % 2 === 0 ? 0.25 : -1.15;
               let eAngle = Boss.comboHitsLeft % 2 === 0 ? 1.35 : 0.95;
-              if (Boss.stageId === 14 && Boss.moveType === "exclusive_combo") {
+              if (Boss.artId === 14 && Boss.moveType === "exclusive_combo") {
                 if (Boss.comboHitsLeft === 2) { sAngle = -0.5; eAngle = -1.5; }
                 else if (Boss.comboHitsLeft === 1) { sAngle = -0.2; eAngle = 0.2; }
                 else { sAngle = 1.5; eAngle = 0.5; }
@@ -5104,7 +5140,7 @@
       }
 
       function returnToHub(stageId, opts) {
-        Game.hubStage = Math.max(1, Math.min(15, stageId || 1));
+        Game.hubStage = Math.max(1, Math.min(9, stageId || 1));
         try { localStorage.setItem("qingyun_hubstage", String(Game.hubStage)); } catch (e) { }
         loadStage(Game.hubStage, { hub: true });
         Game.cutsceneActive = false;
@@ -5606,7 +5642,7 @@
 
         // Phase 2 Flaming Aura Particles
         for (const ap of Boss.auraParticles) {
-          ctx.fillStyle = Boss.stageId >= 11 ? "rgba(245, 158, 11, 0.6)" : Boss.stageId >= 6 ? "rgba(168, 85, 247, 0.55)" : "rgba(239, 68, 68, 0.55)";
+          ctx.fillStyle = Boss.artId >= 11 ? "rgba(245, 158, 11, 0.6)" : Boss.artId >= 6 ? "rgba(168, 85, 247, 0.55)" : "rgba(239, 68, 68, 0.55)";
           ctx.beginPath();
           ctx.arc(ap.x, ap.y, ap.size, 0, Math.PI * 2);
           ctx.fill();
@@ -5618,7 +5654,7 @@
         const anim = moveData ? (moveData.anim || "slash") : "slash";
         const isAction = Boss.state === "windup" || Boss.state === "active";
         const actionP = isAction ? (1 - Boss.stateTimer / (Boss.stateDur || 1)) : 0;
-        const useBossSprite = (Boss.stageId === 1 && MB1_READY === 16);
+        const useBossSprite = (Boss.artId === 1 && MB1_READY === 16);
         
         // C5: 前搖動作後傾 (狼王改為下壓蹲伏，其餘保持旋轉後傾)
         ctx.save();
@@ -5651,7 +5687,7 @@
             if (Boss.state === "windup") globalA = Math.max(0, 1 - windupP * 1.5);
             else if (Boss.state === "active") globalA = 1.0;
             
-            if (Boss.stageId === 8) {
+            if (Boss.artId === 8) {
                 ctx.fillStyle = "#f472b6";
                 let scatter = 0;
                 if (Boss.state === "windup") scatter = windupP * 80;
@@ -5663,7 +5699,7 @@
                         ctx.fill();
                     }
                 }
-            } else if (Boss.stageId === 13) {
+            } else if (Boss.artId === 13) {
                 if (Boss.state === "windup" && windupP > 0) {
                     ctx.save();
                     ctx.strokeStyle = "#c084fc";
@@ -5706,10 +5742,10 @@
           ctx.shadowBlur = 20;
         } else {
           // Volume-based & archetype-based palette
-          if (Boss.stageId <= 5) {
+          if (Boss.artId <= 5) {
             bodyColor = Config.bossPhase === 2 ? "#7f1d1d" : "#991b1b";
             strokeColor = Config.bossPhase === 2 ? "#fca5a5" : "#f87171";
-          } else if (Boss.stageId <= 10) {
+          } else if (Boss.artId <= 10) {
             bodyColor = Config.bossPhase === 2 ? "#581c87" : "#4a044e";
             strokeColor = Config.bossPhase === 2 ? "#d8b4fe" : "#c084fc";
           } else {
@@ -5838,7 +5874,7 @@
         } else if (bodyType === "spirit") {
           const floatY = by + Math.sin(performance.now() * 0.003) * 15;
           let yOffset = 0;
-          if (Boss.stageId === 12 && anim === "slam" && Boss.state === "active") {
+          if (Boss.artId === 12 && anim === "slam" && Boss.state === "active") {
               yOffset = 40 * actionP; // 身體下沉
           }
           const grad = ctx.createLinearGradient(0, floatY + yOffset, 0, floatY + yOffset + Boss.h);
@@ -5847,7 +5883,7 @@
           ctx.fillStyle = grad;
           ctx.fillRect(bx, floatY + yOffset, Boss.w, Boss.h);
           ctx.strokeRect(bx, floatY + yOffset, Boss.w, Boss.h);
-          if (Boss.stageId === 7) {
+          if (Boss.artId === 7) {
             let wingExt = 35;
             if (anim === "slam") {
                 if (Boss.state === "windup") wingExt = 35 + windupP * 45;
@@ -5859,7 +5895,7 @@
             ctx.lineTo(Boss.x + wingExt, floatY + 20);
             ctx.stroke();
           }
-          if (Boss.stageId === 12 && anim === "slam" && Boss.state === "active") {
+          if (Boss.artId === 12 && anim === "slam" && Boss.state === "active") {
               ctx.save();
               ctx.fillStyle = "rgba(125, 211, 252, 0.6)";
               ctx.fillRect(Boss.x - 150 * actionP, Config.groundY - 10, 300 * actionP, 10);
@@ -5955,7 +5991,7 @@
           } else if (anim === "spin") {
             if (Boss.state === "windup") angle = Boss.facing > 0 ? -1.0 : Math.PI + 1.0;
             else if (Boss.state === "active") angle = (performance.now() * 0.015) % (Math.PI * 2);
-          } else if (Boss.stageId === 14 && Boss.moveType === "exclusive_combo" && Boss.state === "active") {
+          } else if (Boss.artId === 14 && Boss.moveType === "exclusive_combo" && Boss.state === "active") {
             if (Boss.comboHitsLeft === 2) angle = Boss.facing > 0 ? -1.0 : Math.PI + 1.0;
             else if (Boss.comboHitsLeft === 1) angle = Boss.facing > 0 ? 0 : Math.PI;
             else angle = Boss.facing > 0 ? 1.0 : Math.PI - 1.0;
@@ -5971,10 +6007,10 @@
 
           ctx.fillStyle = isFlashing ? "#ffffff" : Boss.isPerilous ? "#ef4444" : strokeColor;
 
-          if (anim === "cast" || (anim === "slam" && Boss.stageId === 7)) {
+          if (anim === "cast" || (anim === "slam" && Boss.artId === 7)) {
             ctx.fillRect(5, -5, 12, 10);
             ctx.fillRect(15, 10, 12, 10);
-            if (Boss.stageId === 5 && (Boss.state === "windup" || Boss.state === "active")) {
+            if (Boss.artId === 5 && (Boss.state === "windup" || Boss.state === "active")) {
               ctx.save();
               ctx.rotate(-angle);
               for (let i = 0; i < 5; i++) {
@@ -5991,7 +6027,7 @@
               }
               ctx.restore();
             }
-            if (Boss.stageId === 9 && Boss.state === "windup") {
+            if (Boss.artId === 9 && Boss.state === "windup") {
               ctx.save();
               ctx.rotate(-angle);
               ctx.fillStyle = "#ef4444";
@@ -6000,7 +6036,7 @@
               ctx.fill();
               ctx.restore();
             }
-          } else if (anim === "dual" || Boss.stageId === 3) {
+          } else if (anim === "dual" || Boss.artId === 3) {
             if (Boss.feintPauseTimer > 0) {
               ctx.save();
               ctx.rotate(Math.PI / 4);
@@ -6014,7 +6050,7 @@
               ctx.fillRect(10, 8, 55, 7);
               ctx.fillRect(0, -5, 65, 8);
             }
-          } else if (Boss.stageId === 4) {
+          } else if (Boss.artId === 4) {
             ctx.fillRect(0, -10, 140, 20);
             if (anim === "slam" && Boss.state === "active") {
               ctx.save();
@@ -6028,7 +6064,7 @@
               ctx.stroke();
               ctx.restore();
             }
-          } else if (Boss.stageId === 10) {
+          } else if (Boss.artId === 10) {
             ctx.fillRect(anim === "spin" ? -50 : 0, -6, 115, 12);
             if (anim === "spin" && Boss.state === "active") {
                 ctx.save();
@@ -6037,7 +6073,7 @@
                 ctx.rotate(0.5); ctx.fillRect(-50, -6, 115, 12);
                 ctx.restore();
             }
-          } else if (Boss.stageId === 11) {
+          } else if (Boss.artId === 11) {
             ctx.save();
             ctx.fillStyle = strokeColor;
             if (anim === "overhead" && (Boss.state === "windup" || Boss.feintPauseTimer > 0)) {
@@ -6049,7 +6085,7 @@
                 ctx.fillRect(10, 5, 90, 14);
             }
             ctx.restore();
-          } else if (Boss.stageId === 14) {
+          } else if (Boss.artId === 14) {
             if (Boss.moveType === "exclusive_combo" && Boss.state === "active") {
                  if (Boss.comboHitsLeft === 2) angle = Boss.facing > 0 ? -1.0 : Math.PI + 1.0;
                  else if (Boss.comboHitsLeft === 1) angle = Boss.facing > 0 ? 0 : Math.PI;
@@ -6061,7 +6097,7 @@
             } else {
                  ctx.fillRect(0, -6, 115, 12);
             }
-          } else if (anim === "fan" || anim === "ribbon" || Boss.stageId === 2 || Boss.stageId === 8) {
+          } else if (anim === "fan" || anim === "ribbon" || Boss.artId === 2 || Boss.artId === 8) {
             if (anim === "ribbon") {
               ctx.beginPath();
               if (Boss.state === "active") {
@@ -6530,6 +6566,7 @@
 
         Progress.currentStage = stageId;
         Boss.stageId = stageId;
+        Boss.artId = stage.artId || stageId;
         Boss.maxHp = stage.maxHp;
         Boss.hp = stage.maxHp;
         Boss.maxPosture = stage.maxPosture;
@@ -6728,6 +6765,8 @@
       function showSettlement(clearedStageId) {
         Game.cutsceneActive = true;
         Sound.play("victory", 1.0, 1.0);
+        try { if (clearedStageId > getClearedMax()) localStorage.setItem("qingyun_cleared", String(clearedStageId)); } catch (e) { }
+        refreshUnlocked();
 
         const stage = Stages[clearedStageId];
         document.getElementById("settle-stage-tag").textContent = `【${stage.chapter}】大捷`;
@@ -6743,16 +6782,17 @@
         document.getElementById("settle-mikiri-count").textContent = `${Progress.mikiriCount} 次`;
         document.getElementById("settle-time-val").textContent = `${elapsedSec} 秒`;
 
-        // 卷三通關回響解鎖 (11~14關)
-        if (clearedStageId >= 11 && clearedStageId <= 14) {
+        // 通關回響解鎖（第5~8關）
+        if (clearedStageId >= 5 && clearedStageId <= 8) {
+          const echoId = clearedStageId + 6; /* 第5~8關 → 回響 11~14（效果編號沿用） */
           if (!Progress.echoes) Progress.echoes = [];
-          if (!Progress.echoes.includes(clearedStageId)) {
-            Progress.echoes.push(clearedStageId);
+          if (!Progress.echoes.includes(echoId)) {
+            Progress.echoes.push(echoId);
             savePersistedEchoes();
           }
         }
 
-        if (clearedStageId < 15) {
+        if (clearedStageId < 9) {
           document.getElementById("btn-next-stage").textContent = `返回營地・下一難：第 ${clearedStageId + 1} 難 ➔`;
         } else {
           // Final stage completed!
@@ -6772,7 +6812,7 @@
       document.getElementById("btn-next-stage").addEventListener("click", () => {
         elSettlementModal.classList.remove("open");
         Game.cutsceneActive = false;
-        returnToHub(Boss.stageId < 15 ? Boss.stageId + 1 : 1, { camp: true });
+        returnToHub(Boss.stageId < 9 ? Boss.stageId + 1 : 1, { camp: true });
       });
 
       const elChapterListModal = document.getElementById("chapter-list-modal");
@@ -6806,7 +6846,7 @@
           div.innerHTML = `
             <div>
               <span class="vol-badge ${volClass}">${volLabel}</span>
-              <b style="font-family: var(--font-serif); color: ${isCurrent ? 'var(--qingyun-cyan)' : sId === 15 ? '#f87171' : '#f1f5f9'};">第 ${st.id} 難：${st.name}</b>
+              <b style="font-family: var(--font-serif); color: ${isCurrent ? 'var(--qingyun-cyan)' : sId === 9 ? '#f87171' : '#f1f5f9'};">第 ${st.id} 難：${st.name}</b>
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">${st.chapter}</div>
             </div>
             ${badgeHtml}
@@ -6964,7 +7004,7 @@
             elSpeakerRealm.textContent = "〔天道宿命記載〕";
           } else {
             // Boss
-            elAvatarHolder.textContent = Boss.stageId >= 11 ? "⚡" : Boss.stageId >= 6 ? "👹" : "⚔️";
+            elAvatarHolder.textContent = Boss.artId >= 11 ? "⚡" : Boss.artId >= 6 ? "👹" : "⚔️";
             elAvatarRole.textContent = "守關者";
             elAvatarRole.style.color = "#f87171";
             elSpeakerRealm.textContent = `【${Stages[Boss.stageId].realmBadge}】`;
@@ -7044,7 +7084,7 @@
 
           // 1. Cinematic Background Gradient based on stage
           const bgGrad = cinemaCtx.createLinearGradient(0, 0, 0, h);
-          if (this.stage.id === 15) {
+          if (this.stage.id === 9) {
             bgGrad.addColorStop(0, "#2e1065");
             bgGrad.addColorStop(0.5, "#4c0519");
             bgGrad.addColorStop(1, "#030712");
@@ -7070,7 +7110,7 @@
           // Celestial Moon / Eye
           const moonX = w * 0.72;
           const moonY = h * 0.32;
-          cinemaCtx.fillStyle = this.stage.id === 15 ? "rgba(244, 63, 94, 0.8)" : "rgba(254, 243, 199, 0.85)";
+          cinemaCtx.fillStyle = this.stage.id === 9 ? "rgba(244, 63, 94, 0.8)" : "rgba(254, 243, 199, 0.85)";
           cinemaCtx.shadowColor = cinemaCtx.fillStyle;
           cinemaCtx.shadowBlur = 24;
           cinemaCtx.beginPath();
@@ -7120,8 +7160,8 @@
           // Boss Silhouette on right
           const bX = w * 0.76;
           const bY = h * 0.75;
-          cinemaCtx.fillStyle = this.stage.id === 15 ? "#831843" : "#7f1d1d";
-          cinemaCtx.strokeStyle = this.stage.id === 15 ? "#f43f5e" : "#f87171";
+          cinemaCtx.fillStyle = this.stage.id === 9 ? "#831843" : "#7f1d1d";
+          cinemaCtx.strokeStyle = this.stage.id === 9 ? "#f43f5e" : "#f87171";
           cinemaCtx.lineWidth = 2.5;
           cinemaCtx.fillRect(bX - 20, bY - 65, 40, 65);
           cinemaCtx.strokeRect(bX - 20, bY - 65, 40, 65);
@@ -7964,6 +8004,19 @@
         });
       }
 
+      const btnTestAll = document.getElementById("btn-testall");
+      const menuTestAllTxt = document.getElementById("menu-testall-txt");
+      if (menuTestAllTxt) menuTestAllTxt.textContent = TestAll.on ? "測試全解鎖：開" : "測試全解鎖：關";
+      if (btnTestAll) {
+        btnTestAll.addEventListener("click", () => {
+          TestAll.on = !TestAll.on;
+          try { localStorage.setItem("qingyun_testall", TestAll.on ? "1" : "0"); } catch (e) { }
+          refreshUnlocked();
+          menuTestAllTxt.textContent = TestAll.on ? "測試全解鎖：開" : "測試全解鎖：關";
+          renderChapterList();
+        });
+      }
+
       const btnMenuAudio = document.getElementById("btn-audio-toggle");
       const menuAudioTxt = document.getElementById("menu-audio-txt");
       if (btnMenuAudio) {
@@ -8008,12 +8061,13 @@
       }
 
       window.onload = function () {
+        refreshUnlocked();
         loadPersistedEchoes();
         initScenery();
         initScarf();
         let hs0 = 1;
         try { hs0 = parseInt(localStorage.getItem("qingyun_hubstage") || "1", 10) || 1; } catch (e) { }
-        returnToHub(hs0);
+        returnToHub(Math.max(1, Math.min(hs0, Progress.unlockedStages)));
         Game.cutsceneActive = false;
         testOrientation();
         resizeCanvas();
