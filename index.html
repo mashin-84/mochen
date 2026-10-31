@@ -1652,6 +1652,8 @@
       .hud-header .hud-mid-col { grid-column: 1 / 3 !important; width: 100% !important; flex: none !important; justify-content: center !important; }
       .hud-header .main-menu-btn { width: 30px !important; height: 30px !important; }
     }
+
+    body.hub-mode .cultivation-card.boss { visibility: hidden !important; }
 </style>
 </head>
 <body>
@@ -2186,6 +2188,7 @@
       /* =========================================================================
        * 2. 全十五難關卡資料庫 (ALL 15 STAGES DATABASE)
        * ========================================================================= */
+      const HUB_START_X = -720, HUB_NPC_X = -520, HUB_GATE_X = -210, ARENA_ENTER_X = 900; /* 營地座標（位於戰場左側的負座標區） */
       const CHAR_K = 1.25; /* 人物與判定的整體放大倍率（v0.4.14） */
 
       const Stages = {
@@ -2743,6 +2746,12 @@
         comboCount: 0,
         comboTimer: 0,
         introT: 0,
+        mode: "battle",
+        hubStage: 1,
+        hubNpcNear: false,
+        gateClosed: true,
+        pendingPre: false,
+        dlgFocus: false,
         ultDim: 0,
         slowT: 0,
         slowScale: 1,
@@ -3034,6 +3043,11 @@
 
       function startAttackCharge() {
         Sound.resume();
+        if (Game.mode === "hub") {
+          if (Game.hubNpcNear) hubTalk();
+          return;
+        }
+        if (Game.mode === "enter") return;
         if (Player.state === "execution" || Player.state === "hitstun") {
           bufferAction("attack");
           return;
@@ -4343,6 +4357,12 @@
         if (Game.cutsceneActive) return;
         if (Game.introT > 0) {
           Game.introT -= dt;
+          if (Game.introT <= 0 && Game.pendingPre) {
+            Game.pendingPre = false;
+            const stP = Stages[Boss.stageId];
+            Game.dlgFocus = true;
+            dlgStart(stP.dialogue.pre, () => { Game.dlgFocus = false; });
+          }
           return;
         }
 
@@ -4562,6 +4582,7 @@
           let dir = 0;
           if (Keys.left) dir -= 1;
           if (Keys.right) dir += 1;
+          if (Game.mode === "enter") dir = 1;
 
           if (dir !== 0) {
             Player.vx = dir * 580;
@@ -4588,7 +4609,7 @@
           Player.hasVaulted = false; if (Player.state === "jump") Player.state = "idle";
         }
 
-        Player.x = Math.max(70, Math.min(Config.worldWidth - 70, Player.x));
+        Player.x = Math.max(Game.mode === "battle" ? 70 : -1210, Math.min(Config.worldWidth - 70, Player.x));
 
         // 揚塵與落地回饋
         {
@@ -4616,6 +4637,13 @@
           if (onGroundD && Game._prevPState !== "move" && Player.state === "move") emitDust(Player.x - Player.facing * 10, Config.groundY, -Player.facing, 4, 1.0);
           if (onGroundD && Game._prevPState === "move" && Player.state === "idle") emitDust(Player.x, Config.groundY, Player.facing, 4, 0.9);
           Game._prevPState = Player.state;
+        }
+
+        if (Game.mode !== "battle") {
+          hubTick(dt);
+          updateCamera(dt, false);
+          syncHUD();
+          return;
         }
 
         updateBossAI(dt);
@@ -4798,11 +4826,14 @@
       function updateCamera(dt, hitstopOnly) {
         const cam = Game.camera;
         if (!hitstopOnly) {
-          const introOn = Game.introT > 0;
+          const introOn = Game.introT > 0 || Game.dlgFocus;
           const uw = Game.ultDim || 0;
           const focusX = introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
-          const targetX = focusX - Config.baseWidth * 0.5;
-          const clampedX = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, targetX));
+          let targetX = focusX - Config.baseWidth * 0.5;
+          let minCam = 0;
+          if (Game.mode === "hub") { targetX = -1280; minCam = -1280; }
+          else if (Game.mode === "enter") { targetX = Player.x - 420; minCam = -1280; }
+          const clampedX = Math.max(minCam, Math.min(Config.worldWidth - Config.baseWidth, targetX));
           cam.x += (clampedX - cam.x) * Math.min(1, dt * 8.5);
           const zTarget = cam.targetZoom + (introOn ? 0.2 : 0) + 0.14 * uw;
           cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * 7.5);
@@ -4861,6 +4892,7 @@
         ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 + shakeOffY);
 
         drawDynamicBackground(cam.x);
+        if (Game.mode !== "battle") drawHubScene();
 
         if (Game.ultDim > 0.01) {
           ctx.save();
@@ -5000,6 +5032,286 @@
           ctx.fillText("【 破 勢 處 決 ・ 一 劍 青 雲 】", w * 0.5, h * 0.24 + 12);
           ctx.restore();
         }
+      }
+
+      /* ====================== 營地（Hub）與進場 ====================== */
+      function hubTick(dt) {
+        if (Game.mode === "hub") {
+          Game.hubNpcNear = Math.abs(Player.x - HUB_NPC_X) < 130 && Player.y >= Config.groundY - 4;
+          if (Player.x >= -30) {
+            Game.mode = "enter";
+            document.body.classList.remove("hub-mode");
+            hapticBuzz(25);
+            Sound.play("slash", 0.4, 0.7);
+          }
+        } else if (Game.mode === "enter") {
+          if (Player.x > 80) Game.gateClosed = true;
+          if (Player.x >= ARENA_ENTER_X) {
+            Player.vx = 0;
+            Player.state = "idle";
+            Player.facing = 1;
+            beginBattleIntro();
+          }
+        }
+      }
+
+      function beginBattleIntro() {
+        Game.mode = "battle";
+        const stage = Stages[Boss.stageId];
+        Game.introT = 1.9;
+        Game.pendingPre = !!(stage.dialogue && stage.dialogue.pre && stage.dialogue.pre.length);
+        Progress.battleStartTime = performance.now();
+        showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
+        Sound.play("execution", 0.45, 0.7);
+        setTelemetry(`〔啟程：進入${stage.chapter}！〕`);
+      }
+
+      function returnToHub(stageId) {
+        Game.hubStage = Math.max(1, Math.min(15, stageId || 1));
+        try { localStorage.setItem("qingyun_hubstage", String(Game.hubStage)); } catch (e) { }
+        loadStage(Game.hubStage, { hub: true });
+        Game.cutsceneActive = false;
+      }
+
+      const HUB_TIPS = [
+        "戰鬥中看到紅色「危」字，就是殺招：突刺要用瞬步，橫掃要跳起來踩頭。",
+        "招架要抓準時機，敵人出招的瞬間按下，才能彈開並削弱它的架勢。",
+        "敵人的架勢滿格就會崩潰，這時貼身普攻就能發動處決。",
+        "葫蘆裡的青雲仙釀可以回血，但每場只有三口，喝的時候別被打斷。"
+      ];
+      let hubTipIdx = 0;
+      function hubTalk() {
+        const st = Stages[Game.hubStage];
+        const lines = [
+          { speaker: "師妹", role: "shidi", text: `師兄，前面就是「${st.name}」了。` },
+          { speaker: "師妹", role: "shidi", text: HUB_TIPS[hubTipIdx % HUB_TIPS.length] }
+        ];
+        hubTipIdx++;
+        dlgStart(lines, null);
+      }
+
+      function drawHubScene() {
+        const t = performance.now() / 1000;
+        const gy = Config.groundY;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(-1280, -400, 1280, 1400);
+        ctx.clip();
+
+        const sky = ctx.createLinearGradient(0, 0, 0, gy);
+        sky.addColorStop(0, "#070b18");
+        sky.addColorStop(0.55, "#16223d");
+        sky.addColorStop(1, "#3a3a5e");
+        ctx.fillStyle = sky;
+        ctx.fillRect(-1280, -400, 1280, gy + 400);
+
+        for (let i = 0; i < 46; i++) {
+          const x = -1280 + ((i * 263) % 1280);
+          const y = 18 + ((i * 97) % 300);
+          ctx.fillStyle = `rgba(255,255,255,${0.35 + 0.35 * Math.sin(t * 1.4 + i)})`;
+          ctx.fillRect(x, y, i % 3 === 0 ? 2 : 1.4, i % 3 === 0 ? 2 : 1.4);
+        }
+
+        const mg = ctx.createRadialGradient(-360, 150, 10, -360, 150, 110);
+        mg.addColorStop(0, "rgba(254,243,199,0.95)");
+        mg.addColorStop(0.35, "rgba(254,243,199,0.35)");
+        mg.addColorStop(1, "rgba(254,243,199,0)");
+        ctx.fillStyle = mg;
+        ctx.beginPath();
+        ctx.arc(-360, 150, 110, 0, Math.PI * 2);
+        ctx.fill();
+
+        const ridge = (col, base, amp, f, ph) => {
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.moveTo(-1280, gy);
+          for (let x = -1280; x <= 0; x += 20) {
+            ctx.lineTo(x, base - amp * (0.6 + 0.4 * Math.sin(x * f + ph)) - amp * 0.5 * Math.sin(x * f * 2.3 + ph * 2));
+          }
+          ctx.lineTo(0, gy);
+          ctx.closePath();
+          ctx.fill();
+        };
+        ridge("#15203a", gy - 190, 130, 0.006, 1.2);
+        ridge("#0f182c", gy - 90, 90, 0.009, 4.1);
+
+        ctx.fillStyle = "#141b27";
+        ctx.fillRect(-1280, gy, 1280, 400);
+        ctx.fillStyle = "rgba(120,160,200,0.35)";
+        ctx.fillRect(-1280, gy, 1280, 2);
+
+        const tent = (cx, sc) => {
+          ctx.fillStyle = "#2a3347";
+          ctx.beginPath();
+          ctx.moveTo(cx - 120 * sc, gy);
+          ctx.lineTo(cx, gy - 160 * sc);
+          ctx.lineTo(cx + 120 * sc, gy);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "rgba(160,190,230,0.3)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          const dg = ctx.createLinearGradient(0, gy - 100 * sc, 0, gy);
+          dg.addColorStop(0, "#0d1119");
+          dg.addColorStop(1, "rgba(255,150,70,0.28)");
+          ctx.fillStyle = dg;
+          ctx.beginPath();
+          ctx.moveTo(cx - 34 * sc, gy);
+          ctx.lineTo(cx, gy - 100 * sc);
+          ctx.lineTo(cx + 34 * sc, gy);
+          ctx.closePath();
+          ctx.fill();
+        };
+        tent(-1130, 1.0);
+        tent(-380, 0.8);
+
+        // 營火
+        const fx = -900;
+        const fl = 0.3 + 0.06 * Math.sin(t * 9) + 0.03 * Math.sin(t * 23);
+        const fg = ctx.createRadialGradient(fx, gy - 30, 10, fx, gy - 30, 300);
+        fg.addColorStop(0, `rgba(255,150,60,${fl})`);
+        fg.addColorStop(1, "rgba(255,150,60,0)");
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = fg;
+        ctx.fillRect(fx - 300, gy - 330, 600, 360);
+        ctx.restore();
+        ctx.fillStyle = "#3b2a1f";
+        ctx.save();
+        ctx.translate(fx, gy - 6);
+        ctx.rotate(0.35);
+        ctx.fillRect(-34, -5, 68, 10);
+        ctx.rotate(-0.7);
+        ctx.fillRect(-34, -5, 68, 10);
+        ctx.restore();
+        for (let k = -1; k <= 1; k++) {
+          const bx = fx + k * 15;
+          const h = 56 + 22 * Math.sin(t * 8 + k * 2) + (k === 0 ? 18 : 0);
+          const sw = 5 * Math.sin(t * 6 + k);
+          const fgr = ctx.createLinearGradient(0, gy - 10, 0, gy - 10 - h);
+          fgr.addColorStop(0, "#f97316");
+          fgr.addColorStop(0.6, "#fbbf24");
+          fgr.addColorStop(1, "rgba(254,240,138,0.85)");
+          ctx.fillStyle = fgr;
+          ctx.beginPath();
+          ctx.moveTo(bx - 13, gy - 10);
+          ctx.quadraticCurveTo(bx - 11, gy - 10 - h * 0.6, bx + sw, gy - 10 - h);
+          ctx.quadraticCurveTo(bx + 11, gy - 10 - h * 0.6, bx + 13, gy - 10);
+          ctx.closePath();
+          ctx.fill();
+        }
+        for (let i = 0; i < 10; i++) {
+          const p = (t * 0.55 + i * 0.37) % 1;
+          ctx.fillStyle = `rgba(255,200,110,${1 - p})`;
+          ctx.beginPath();
+          ctx.arc(fx + Math.sin(i * 7 + t) * 22 * p, gy - 30 - p * 150, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 師妹（暫代造型）
+        {
+          const nx = HUB_NPC_X;
+          ctx.fillStyle = "#c7d2fe";
+          ctx.beginPath();
+          ctx.moveTo(nx - 22, gy);
+          ctx.lineTo(nx - 13, gy - 76);
+          ctx.lineTo(nx + 13, gy - 76);
+          ctx.lineTo(nx + 22, gy);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = "#6366f1";
+          ctx.fillRect(nx - 14, gy - 52, 28, 6);
+          ctx.fillStyle = "#f5d9c4";
+          ctx.beginPath();
+          ctx.arc(nx, gy - 90, 13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#1f1b2e";
+          ctx.beginPath();
+          ctx.arc(nx, gy - 94, 14, Math.PI, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(nx - 14, gy - 94, 6, 26);
+          const oy = gy - 108 + Math.sin(t * 2) * 5;
+          const og = ctx.createRadialGradient(nx + 38, oy, 2, nx + 38, oy, 18);
+          og.addColorStop(0, "rgba(219,234,254,1)");
+          og.addColorStop(1, "rgba(96,165,250,0)");
+          ctx.fillStyle = og;
+          ctx.beginPath();
+          ctx.arc(nx + 38, oy, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = "700 15px 'Noto Serif TC', serif";
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#c7d2fe";
+          ctx.fillText("師妹", nx, gy - 120);
+          if (Game.hubNpcNear) {
+            ctx.fillStyle = "rgba(10,15,26,0.88)";
+            ctx.fillRect(nx - 52, gy - 160, 104, 24);
+            ctx.strokeStyle = "rgba(250,204,21,0.7)";
+            ctx.strokeRect(nx - 52, gy - 160, 104, 24);
+            ctx.fillStyle = "#fde68a";
+            ctx.font = "700 13px 'Noto Serif TC', serif";
+            ctx.fillText("攻擊鍵・交談", nx, gy - 143);
+          }
+        }
+
+        // 山門
+        {
+          const gx = HUB_GATE_X;
+          const st = Stages[Game.hubStage];
+          const pg = ctx.createLinearGradient(0, gy - 250, 0, gy);
+          pg.addColorStop(0, "rgba(255,90,60,0)");
+          pg.addColorStop(1, `rgba(255,90,60,${0.4 + 0.08 * Math.sin(t * 3)})`);
+          if (Game.gateClosed) {
+            ctx.fillStyle = "#1b0f0f";
+            ctx.fillRect(gx - 76, gy - 250, 152, 250);
+            ctx.fillStyle = "#d4a64a";
+            for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) ctx.fillRect(gx - 60 + c * 36, gy - 220 + r * 52, 6, 6);
+          } else {
+            ctx.fillStyle = "#0a0608";
+            ctx.fillRect(gx - 76, gy - 250, 152, 250);
+            ctx.fillStyle = pg;
+            ctx.fillRect(gx - 76, gy - 250, 152, 250);
+          }
+          for (const px of [gx - 98, gx + 76]) {
+            ctx.fillStyle = "#7a1b1b";
+            ctx.fillRect(px, gy - 262, 22, 262);
+            ctx.fillStyle = "#b3382c";
+            ctx.fillRect(px + 3, gy - 262, 5, 262);
+            ctx.fillStyle = "#2a2f3a";
+            ctx.fillRect(px - 6, gy - 14, 34, 14);
+          }
+          ctx.fillStyle = "#8b2323";
+          ctx.fillRect(gx - 116, gy - 288, 232, 26);
+          ctx.fillStyle = "#3a1414";
+          ctx.beginPath();
+          ctx.moveTo(gx - 140, gy - 288);
+          ctx.lineTo(gx + 140, gy - 288);
+          ctx.lineTo(gx + 112, gy - 322);
+          ctx.lineTo(gx - 112, gy - 322);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "#d4a64a";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = "#fde68a";
+          ctx.font = "900 17px 'Noto Serif TC', serif";
+          ctx.textAlign = "center";
+          ctx.fillText(`第 ${st.id} 難`, gx, gy - 268);
+          ctx.shadowColor = "rgba(253,230,138,0.8)";
+          ctx.shadowBlur = 14;
+          ctx.font = "900 24px 'Noto Serif TC', serif";
+          ctx.fillText(st.name, gx, gy - 346);
+          ctx.shadowBlur = 0;
+          ctx.font = "700 12px 'Noto Serif TC', serif";
+          ctx.fillStyle = "rgba(253,230,138,0.85)";
+          ctx.fillText(st.realmBadge, gx, gy - 326 + 0);
+          if (!Game.gateClosed && Player.x > gx - 560) {
+            const ap = 0.55 + 0.45 * Math.sin(t * 5);
+            ctx.fillStyle = `rgba(253,230,138,${ap})`;
+            ctx.font = "900 20px 'Noto Serif TC', serif";
+            ctx.fillText("向右進入 ▶", gx - 190, gy - 30);
+          }
+        }
+        ctx.restore();
       }
 
       function drawDynamicBackground(camX) {
@@ -6116,7 +6428,7 @@
       /* =========================================================================
        * 6. 關卡切換、心印裝配與結算推進系統 (PROGRESSION & STAGE SWITCHING)
        * ========================================================================= */
-      function loadStage(stageId) {
+      function loadStage(stageId, opts) {
         const stage = Stages[stageId];
         if (!stage) return;
 
@@ -6199,9 +6511,24 @@
         renderChapterList();
 
         setTelemetry(`〔啟程：進入${stage.chapter}！〕`);
-        Game.introT = 1.9;
-        showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
-        Sound.play("execution", 0.45, 0.7);
+        Game.mode = (opts && opts.hub) ? "hub" : "battle";
+        Game.gateClosed = Game.mode === "battle";
+        Game.dlgFocus = false;
+        Game.hubNpcNear = false;
+        document.body.classList.toggle("hub-mode", Game.mode === "hub");
+        if (Game.mode === "hub") {
+          Game.introT = 0;
+          Game.pendingPre = false;
+          Player.x = HUB_START_X;
+          Player.facing = 1;
+          Game.camera.x = -1280;
+          Game.camera.zoom = 1;
+        } else {
+          Game.introT = 1.9;
+          Game.pendingPre = !(opts && opts.skipPre) && !!(stage.dialogue && stage.dialogue.pre && stage.dialogue.pre.length);
+          showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
+          Sound.play("execution", 0.45, 0.7);
+        }
         // Story is available via 📜 button without freezing startup
       }
 
@@ -6284,6 +6611,14 @@
       const elSettlementModal = document.getElementById("settlement-modal");
       function handleStageClear(clearedStageId) {
         Game.cutsceneActive = true;
+        const stC = Stages[clearedStageId];
+        const post = stC && stC.dialogue && stC.dialogue.post;
+        if (post && post.length) dlgStart(post, () => showSettlement(clearedStageId));
+        else showSettlement(clearedStageId);
+      }
+
+      function showSettlement(clearedStageId) {
+        Game.cutsceneActive = true;
         Sound.play("victory", 1.0, 1.0);
 
         const stage = Stages[clearedStageId];
@@ -6310,10 +6645,10 @@
         }
 
         if (clearedStageId < 15) {
-          document.getElementById("btn-next-stage").textContent = `啟程・挑戰第 ${clearedStageId + 1} 難 ➔`;
+          document.getElementById("btn-next-stage").textContent = `返回營地・下一難：第 ${clearedStageId + 1} 難 ➔`;
         } else {
           // Final stage completed!
-          document.getElementById("btn-next-stage").textContent = `通關天道閉環・重返第一難 ↺`;
+          document.getElementById("btn-next-stage").textContent = `通關天道閉環・返回營地 ↺`;
         }
 
         renderChapterList();
@@ -6323,17 +6658,13 @@
       document.getElementById("btn-replay-stage").addEventListener("click", () => {
         elSettlementModal.classList.remove("open");
         Game.cutsceneActive = false;
-        loadStage(Boss.stageId);
+        loadStage(Boss.stageId, { skipPre: true });
       });
 
       document.getElementById("btn-next-stage").addEventListener("click", () => {
         elSettlementModal.classList.remove("open");
         Game.cutsceneActive = false;
-        if (Boss.stageId < 15) {
-          loadStage(Boss.stageId + 1);
-        } else {
-          loadStage(1);
-        }
+        returnToHub(Boss.stageId < 15 ? Boss.stageId + 1 : 1);
       });
 
       const elChapterListModal = document.getElementById("chapter-list-modal");
@@ -6359,7 +6690,7 @@
           if (isCurrent) {
             badgeHtml = `<span class="realm-seal-badge realm-player">當前實戰中</span>`;
           } else if (isUnlocked) {
-            badgeHtml = `<span class="cult-header-btn" style="padding: 2px 8px; color: var(--amber-light);">點擊切換</span>`;
+            badgeHtml = `<span class="cult-header-btn" style="padding: 2px 8px; color: var(--amber-light);">前往營地門口</span>`;
           } else {
             badgeHtml = `<span style="font-size: 11px; color: var(--text-muted);">未解鎖</span>`;
           }
@@ -6376,7 +6707,7 @@
           if (isUnlocked && !isCurrent) {
             div.addEventListener("click", () => {
               elChapterListModal.classList.remove("open");
-              loadStage(sId);
+              returnToHub(sId);
             });
           }
 
@@ -6883,6 +7214,145 @@
           showHintToast("教學提示已重置，下次遇到會再提示一次");
         });
       }
+
+      /* ====================== 場景對話框（半身像＋底部文字框） ====================== */
+      const DLG = { active: false, lines: [], idx: 0, typing: false, timer: null, onEnd: null, full: "", openedAt: 0, leftKey: "mochen", rightKey: null };
+      const portraitState = {};
+      function getPortrait(key) {
+        if (!portraitState[key]) {
+          const st = { ok: false, img: new Image() };
+          st.img.onload = () => { st.ok = true; };
+          st.img.src = "assets/portrait/" + key + ".webp";
+          portraitState[key] = st;
+        }
+        return portraitState[key];
+      }
+      const PORTRAIT_GLYPH = { mochen: "墨", shidi: "妹" };
+      const elDlg = document.createElement("div");
+      elDlg.style.cssText = "position:fixed;inset:0;z-index:40;display:none;user-select:none;-webkit-user-select:none;touch-action:manipulation;";
+      elDlg.innerHTML = '<style>@keyframes dlgBlink{0%,100%{opacity:1}50%{opacity:.2}}</style>' +
+        '<div style="position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(0deg,rgba(2,4,12,.9),rgba(2,4,12,0));"></div>' +
+        '<div id="dlg-pl" style="position:absolute;left:4%;bottom:20%;width:min(28vw,380px);height:min(62vh,540px);display:flex;align-items:flex-end;justify-content:center;transition:filter .25s,opacity .25s;"></div>' +
+        '<div id="dlg-pr" style="position:absolute;right:4%;bottom:20%;width:min(28vw,380px);height:min(62vh,540px);display:flex;align-items:flex-end;justify-content:center;transition:filter .25s,opacity .25s;"></div>' +
+        '<div id="dlg-box" style="position:absolute;left:6%;right:6%;bottom:3.5%;min-height:21%;padding:3vh 3vw 2vh 3vw;border:1.5px solid rgba(250,204,21,.55);border-radius:12px;background:rgba(8,12,24,.92);box-shadow:0 8px 30px rgba(0,0,0,.7);font-family:\'Noto Serif TC\',serif;">' +
+        '<div id="dlg-name" style="position:absolute;left:20px;top:-16px;padding:2px 18px;border-radius:999px;background:linear-gradient(180deg,#b45309,#78350f);border:1.5px solid #fde68a;color:#fef3c7;font-weight:900;font-size:clamp(13px,2.8vh,19px);letter-spacing:.2em;"></div>' +
+        '<div id="dlg-text" style="color:#f1f5f9;font-size:clamp(15px,3.6vh,24px);line-height:1.7;min-height:3.4em;"></div>' +
+        '<div style="position:absolute;right:22px;bottom:8px;color:#fde68a;font-size:16px;animation:dlgBlink 1s infinite;">▼</div></div>' +
+        '<button id="dlg-skip" type="button" style="position:absolute;right:14px;top:15%;padding:6px 16px;border-radius:999px;border:1px solid rgba(250,204,21,.5);background:rgba(8,12,24,.8);color:#fde68a;font-family:\'Noto Serif TC\',serif;font-size:14px;font-weight:700;cursor:pointer;">跳過 ⏭</button>';
+      document.body.appendChild(elDlg);
+      const elDlgL = elDlg.querySelector("#dlg-pl");
+      const elDlgR = elDlg.querySelector("#dlg-pr");
+      const elDlgName = elDlg.querySelector("#dlg-name");
+      const elDlgText = elDlg.querySelector("#dlg-text");
+
+      function dlgPortraitKey(role) {
+        if (role === "mochen") return "mochen";
+        if (role === "shidi") return "shidi";
+        if (role === "narrator") return null;
+        return "boss" + Boss.stageId;
+      }
+      function dlgFillPane(pane, key, role) {
+        pane.innerHTML = "";
+        if (!key) return;
+        const ps = getPortrait(key);
+        if (ps.ok) {
+          const im = document.createElement("img");
+          im.src = ps.img.src;
+          im.style.cssText = "height:100%;max-width:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 6px 14px rgba(0,0,0,.7));";
+          pane.appendChild(im);
+        } else {
+          const g = PORTRAIT_GLYPH[key] || (Stages[Boss.stageId].name || "將").charAt(0);
+          const d = document.createElement("div");
+          d.textContent = g;
+          d.style.cssText = "width:min(14vw,150px);height:min(14vw,150px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:min(8vw,80px);font-weight:900;color:#fef3c7;font-family:'Noto Serif TC',serif;background:radial-gradient(circle at 35% 30%," + (key === "mochen" ? "#38bdf8,#0c4a6e" : key === "shidi" ? "#a5b4fc,#3730a3" : "#f87171,#7f1d1d") + ");border:3px solid rgba(253,230,138,.8);box-shadow:0 8px 24px rgba(0,0,0,.7);margin-bottom:4vh;";
+          pane.appendChild(d);
+        }
+      }
+      function dlgStart(lines, onEnd) {
+        if (!lines || !lines.length) { if (onEnd) onEnd(); return; }
+        DLG.active = true;
+        DLG.lines = lines;
+        DLG.idx = 0;
+        DLG.onEnd = onEnd || null;
+        DLG.openedAt = performance.now();
+        DLG.leftKey = "mochen";
+        const hasM = lines.some(l => l.role === "mochen");
+        const firstOther = lines.find(l => l.role !== "mochen" && l.role !== "narrator");
+        DLG.rightKey = firstOther ? dlgPortraitKey(firstOther.role) : null;
+        dlgFillPane(elDlgL, hasM ? "mochen" : null);
+        dlgFillPane(elDlgR, DLG.rightKey);
+        Game.cutsceneActive = true;
+        elDlg.style.display = "block";
+        dlgShow(0);
+      }
+      function dlgShow(i) {
+        if (i >= DLG.lines.length) { dlgFinish(); return; }
+        DLG.idx = i;
+        const line = DLG.lines[i];
+        elDlgName.textContent = line.speaker || "";
+        elDlgName.style.display = line.role === "narrator" ? "none" : "block";
+        if (line.role !== "mochen" && line.role !== "narrator") {
+          const k = dlgPortraitKey(line.role);
+          if (k && k !== DLG.rightKey) { DLG.rightKey = k; dlgFillPane(elDlgR, k); }
+        }
+        const nar = line.role === "narrator";
+        elDlgL.style.filter = nar || line.role === "mochen" ? (nar ? "brightness(.45)" : "none") : "brightness(.45)";
+        elDlgR.style.filter = nar || line.role === "mochen" ? "brightness(.45)" : "none";
+        elDlgL.style.opacity = nar ? ".5" : "1";
+        elDlgR.style.opacity = nar ? ".5" : "1";
+        if (DLG.timer) clearInterval(DLG.timer);
+        DLG.full = line.text;
+        DLG.typing = true;
+        elDlgText.textContent = "";
+        elDlgText.style.color = nar ? "#cbd5e1" : "#f1f5f9";
+        elDlgText.style.fontStyle = nar ? "italic" : "normal";
+        let n = 0;
+        DLG.timer = setInterval(() => {
+          n++;
+          elDlgText.textContent = DLG.full.substring(0, n);
+          if (n >= DLG.full.length) { clearInterval(DLG.timer); DLG.typing = false; }
+        }, 28);
+      }
+      function dlgNext() {
+        if (!DLG.active) return;
+        if (performance.now() - DLG.openedAt < 350) return;
+        if (DLG.typing) {
+          clearInterval(DLG.timer);
+          DLG.typing = false;
+          elDlgText.textContent = DLG.full;
+        } else {
+          dlgShow(DLG.idx + 1);
+        }
+      }
+      function dlgFinish() {
+        if (DLG.timer) clearInterval(DLG.timer);
+        DLG.active = false;
+        DLG.typing = false;
+        elDlg.style.display = "none";
+        Game.cutsceneActive = false;
+        const cb = DLG.onEnd;
+        DLG.onEnd = null;
+        if (cb) cb();
+      }
+      elDlg.addEventListener("pointerdown", (e) => {
+        if (e.target && e.target.id === "dlg-skip") return;
+        e.preventDefault();
+        dlgNext();
+      });
+      elDlg.querySelector("#dlg-skip").addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (performance.now() - DLG.openedAt < 350) return;
+        dlgFinish();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (!DLG.active) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        if (e.repeat) return;
+        if (e.code === "Space" || e.code === "Enter" || e.code === "KeyJ") dlgNext();
+        else if (e.code === "Escape") dlgFinish();
+      }, true);
 
       function bossPhaseCinematic() {
         showBanner("煞氣暴走", "二　階　段", 1500, "#f87171");
@@ -7396,7 +7866,8 @@
       if (btnMenuRestart) {
         btnMenuRestart.addEventListener("click", () => {
           if (elSysMenuModal) elSysMenuModal.classList.remove("open");
-          loadStage(Boss.stageId);
+          if (Game.mode === "hub") returnToHub(Boss.stageId);
+          else loadStage(Boss.stageId, { skipPre: true });
         });
       }
 
@@ -7420,13 +7891,31 @@
         loadPersistedEchoes();
         initScenery();
         initScarf();
-        loadStage(1);
-        Game.cutsceneActive = false; // Battle is active immediately!
+        let hs0 = 1;
+        try { hs0 = parseInt(localStorage.getItem("qingyun_hubstage") || "1", 10) || 1; } catch (e) { }
+        returnToHub(hs0);
+        Game.cutsceneActive = false;
         testOrientation();
         resizeCanvas();
         if (raf) cancelAnimationFrame(raf);
         lastTime = performance.now();
         raf = requestAnimationFrame(loop);
+        let seenPro = false;
+        try { seenPro = localStorage.getItem("qingyun_prologue") === "1"; } catch (e) { }
+        if (!seenPro) {
+          setTimeout(() => {
+            dlgStart([
+              { speaker: "天道", role: "narrator", text: "青雲山，子時。後山的禁制已被九幽魔氣侵蝕，山下人間，劫火漸起。" },
+              { speaker: "師妹", role: "shidi", text: "師兄，玄天珠一直在發燙……統領就守在山門之外，我們躲不過了。" },
+              { speaker: "墨塵", role: "mochen", text: "躲不了，便闖過去。掌門引魔入山，今夜我必須帶你們離開。" },
+              { speaker: "師妹", role: "shidi", text: "那我跟在師兄身邊。師兄……請務必小心。" },
+              { speaker: "天道", role: "narrator", text: "（向右走進山門，便是第一難。）" }
+            ], () => {
+              try { localStorage.setItem("qingyun_prologue", "1"); } catch (e) { }
+              hintOnce("hub_go", "向右走進山門，挑戰下一關");
+            });
+          }, 500);
+        }
       };
     })();
   </script>
