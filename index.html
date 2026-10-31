@@ -1703,7 +1703,8 @@
           <div class="bar-row">
             <span class="bar-title">真元</span>
             <div class="gauge-track">
-              <div id="boss-hp-bar" class="gauge-fill gauge-hp-boss" style="width: 100%;"></div>
+              <div id="boss-hp-ghost" style="position:absolute;left:0;top:0;height:100%;width:100%;background:rgba(255,255,255,0.88);border-radius:3px;"></div>
+              <div id="boss-hp-bar" class="gauge-fill gauge-hp-boss" style="position:relative;width: 100%;"></div>
             </div>
             <span id="boss-hp-txt" style="font-family: var(--font-mono); font-size: 10px; width: 38px; text-align: right; color: #fca5a5;">2200</span>
           </div>
@@ -2671,6 +2672,7 @@
         particles: [],
         shockwaves: [],
         slashArcs: [],
+        hitFx: [],
         afterimages: [],
         floatingTexts: [],
         flyingSwords: [],
@@ -2750,6 +2752,9 @@
         comboHitTimer: 0,
         aiCooldown: 0.6,
         flashFrames: 0,
+        hitReactT: 0,
+        hitReactDur: 0.14,
+        hitReactKind: "hit",
         staggerTimer: 0,
         frozenTimer: 0,
         grabZoneX: 0,
@@ -2794,6 +2799,48 @@
         Game.camera.shakeAmp = amp * Config.shakeMultiplier;
         Game.camera.shakeDuration = dur;
         Game.camera.shakeTime = 0;
+      }
+
+      /* v0.4.11 普攻打擊感：kind = "hit"(受擊) | "heavy"(重擊/第三段) | "block"(敵將格擋) */
+      function bossHitFx(kind) {
+        const dir = Player.facing;
+        const step = Player.comboStep || 1;
+        const heavy = kind === "heavy";
+        const guard = kind === "block";
+        Boss.hitReactKind = kind;
+        Boss.hitReactDur = heavy ? 0.2 : guard ? 0.1 : 0.14;
+        Boss.hitReactT = Boss.hitReactDur;
+        Boss.flashFrames = Math.max(Boss.flashFrames, heavy ? 5 : guard ? 2 : 4);
+
+        const hx = Boss.x - dir * 22;
+        const hy = Boss.y - (Boss.stageId === 1 ? 120 : 70);
+        const baseAng = step === 2 ? -0.6 : 0.6;
+        const slashLen = heavy ? 190 : guard ? 90 : 135;
+        const color = guard ? "#cbd5e1" : heavy ? "#fde047" : "#e0f2fe";
+        Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: baseAng, len: slashLen, life: heavy ? 0.16 : 0.11, maxLife: heavy ? 0.16 : 0.11, w: heavy ? 7 : 4.5, color });
+        if (heavy) Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: -baseAng, len: slashLen * 0.85, life: 0.16, maxLife: 0.16, w: 5.5, color });
+
+        const n = heavy ? 12 : guard ? 6 : 8;
+        for (let i = 0; i < n; i++) {
+          const sp = (heavy ? 520 : 400) * (0.5 + Math.random() * 0.7);
+          const a = (Math.random() - 0.5) * 1.5;
+          Game.hitFx.push({
+            type: "spark", x: hx, y: hy,
+            vx: Math.cos(a) * sp * dir, vy: Math.sin(a) * sp - 120,
+            life: 0.22 + Math.random() * 0.12, maxLife: 0.34,
+            color: guard ? "#fdba74" : "#fef3c7", size: 2.4 + Math.random() * 1.8
+          });
+        }
+
+        if (heavy) {
+          triggerHitstop(8);
+          triggerShake(dir, -0.15, 18, 0.22);
+          Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.03);
+          Boss.vx = dir * 130;
+          Sound.play("slash", 0.55, 0.6);
+        }
+        if (!guard) Sound.play("block", 0.3, 0.55 + 0.08 * step);
+        Sound.play("hit", guard ? 0.3 : 0.55, 0.78 + 0.1 * step);
       }
 
       function spawnSparks(x, y, type, dirX = 1) {
@@ -4157,6 +4204,18 @@
 
         if (Player.flashFrames > 0) Player.flashFrames--;
         if (Boss.flashFrames > 0) Boss.flashFrames--;
+        if (Boss.hitReactT > 0) Boss.hitReactT = Math.max(0, Boss.hitReactT - dt);
+        for (let i = Game.hitFx.length - 1; i >= 0; i--) {
+          const fx = Game.hitFx[i];
+          fx.life -= dt;
+          if (fx.type === "spark") {
+            fx.x += fx.vx * dt;
+            fx.y += fx.vy * dt;
+            fx.vy += 520 * dt;
+            fx.vx *= Math.pow(0.12, dt);
+          }
+          if (fx.life <= 0) Game.hitFx.splice(i, 1);
+        }
 
         if (Player.invulnTimer > 0) Player.invulnTimer = Math.max(0, Player.invulnTimer - dt);
         if (Player.comboWindow > 0) Player.comboWindow = Math.max(0, Player.comboWindow - dt);
@@ -4241,6 +4300,7 @@
                   triggerHitstop(Config.slashHitstopFrames + 1);
                   triggerShake(Player.facing, -0.15, 14, 0.18);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
+                  bossHitFx("heavy");
                   spawnFloatingText(Boss.x, Boss.y - 105, `-${dmg} (蓄力重斬)`, "#38bdf8", 1.15);
                   setTelemetry(`青雲蓄力重斬命中！造成 ${dmg} 點實質氣血傷害！`);
                 }
@@ -4269,6 +4329,7 @@
                 spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
 
                 damageBossPosture(post, null, Boss.maxPosture * 0.6);
+                bossHitFx(Player.comboStep === 3 ? "heavy" : "hit");
                 spawnFloatingText(Boss.x + (Math.random() - 0.5) * 28, Boss.y - 105, `-${dmg}`, "#38bdf8", Player.comboStep === 3 ? 1.15 : 0.98);
                 setTelemetry(`破綻重創！青雲劍斬中敵酋 (-${dmg} 氣血 / 架勢 +${post}%)`);
               } else {
@@ -4283,6 +4344,7 @@
                   triggerHitstop(3);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "block", Player.facing);
                   damageBossPosture(5, null, Boss.maxPosture * 0.6);
+                  bossHitFx("block");
                   spawnFloatingText(Boss.x, Boss.y - 95, `敵將格擋 (第${Boss.consecutiveBlocks}劍)`, "#cbd5e1", 0.95);
                   setTelemetry(`〔交鋒：敵將舉兵格擋第 ${Boss.consecutiveBlocks} 劍，注意彈刀！〕`);
                 } else {
@@ -4642,6 +4704,7 @@
         drawPlayer();
         drawArcs();
         drawSparks();
+        drawHitFx();
 
         if (Game.executionLines && Game.executionLines.length > 0) {
           for (const l of Game.executionLines) {
@@ -5084,6 +5147,11 @@
           } else {
             imgKey = Math.floor(performance.now() / 700) % 2 === 0 ? "01_idle1" : "02_idle2";
           }
+          const hrP = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
+          if (hrP > 0.4 && Boss.hitReactKind !== "block" && (Boss.state === "idle" || Boss.state === "approach" || Boss.state === "recover")) {
+            imgKey = "15_hurt";
+            bossImg = null;
+          }
           if (!bossImg) bossImg = MB1_IMGS[imgKey];
 
           ctx.save();
@@ -5092,6 +5160,12 @@
           else if (Boss.isPerilous) ctx.filter = "drop-shadow(0 0 10px #ef4444)";
 
           ctx.translate(Boss.x, Boss.y);
+          if (hrP > 0) {
+            const a = hrP * hrP;
+            const lean = Boss.hitReactKind === "heavy" ? 0.07 : Boss.hitReactKind === "block" ? 0.025 : 0.045;
+            ctx.rotate(-Boss.facing * lean * a);
+            ctx.scale(1 + 0.04 * a, 1 - 0.04 * a);
+          }
           ctx.scale(Boss.facing > 0 ? MB1_SCALE : -MB1_SCALE, MB1_SCALE);
           ctx.drawImage(bossImg, -450, -560);
           
@@ -5749,6 +5823,40 @@
         }
       }
 
+      function drawHitFx() {
+        for (const fx of Game.hitFx) {
+          const a = Math.max(0, fx.life / fx.maxLife);
+          ctx.save();
+          if (fx.type === "slash") {
+            const cx = Math.cos(fx.ang) * fx.dir, cy = Math.sin(fx.ang);
+            const half = fx.len * 0.5 * (1.15 - 0.3 * a);
+            const x0 = fx.x - cx * half, y0 = fx.y - cy * half, x1 = fx.x + cx * half, y1 = fx.y + cy * half;
+            ctx.globalAlpha = a;
+            ctx.strokeStyle = fx.color;
+            ctx.shadowColor = fx.color;
+            ctx.shadowBlur = 14;
+            ctx.lineCap = "round";
+            ctx.lineWidth = fx.w * (0.4 + 0.6 * a);
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.quadraticCurveTo(fx.x - cy * fx.dir * 10, fx.y + cx * 10, x1, y1);
+            ctx.stroke();
+            ctx.lineWidth = Math.max(1, fx.w * 0.3 * a);
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+          } else {
+            ctx.globalAlpha = a;
+            ctx.fillStyle = fx.color;
+            ctx.shadowColor = fx.color;
+            ctx.shadowBlur = 6;
+            ctx.translate(fx.x, fx.y);
+            ctx.rotate(Math.atan2(fx.vy, fx.vx));
+            ctx.fillRect(-fx.size * 2, -fx.size * 0.4, fx.size * 4, fx.size * 0.8);
+          }
+          ctx.restore();
+        }
+      }
+
       function drawSparks() {
         for (const sw of Game.shockwaves) {
           ctx.save();
@@ -5825,6 +5933,8 @@
         Game.particles = [];
         Game.shockwaves = [];
         Game.slashArcs = [];
+        Game.hitFx = [];
+        Boss.hitReactT = 0;
         Game.flyingSwords = [];
         Game.hazardZones = [];
         Game.afterimages = [];
@@ -6441,6 +6551,8 @@
       const elStaminaBar = document.getElementById("player-stamina-bar");
       const elPlayerState = document.getElementById("player-state-txt");
       const elBossHpBar = document.getElementById("boss-hp-bar");
+      const elBossHpGhost = document.getElementById("boss-hp-ghost");
+      let bossGhostPct = 100, bossGhostLast = 100, bossGhostHold = 0, bossGhostT = 0;
       const elBossHpTxt = document.getElementById("boss-hp-txt");
       const elBossPostureBar = document.getElementById("boss-posture-bar");
       const elBossPostureTxt = document.getElementById("boss-posture-txt");
@@ -6472,7 +6584,18 @@
         elStaminaBar.style.width = `${(Player.stamina / Player.maxStamina) * 100}%`;
         elPlayerState.textContent = Player.state.toUpperCase();
 
-        elBossHpBar.style.width = `${(Boss.hp / Boss.maxHp) * 100}%`;
+        const bossHpPct = (Boss.hp / Boss.maxHp) * 100;
+        elBossHpBar.style.width = `${bossHpPct}%`;
+        {
+          const nowT = performance.now();
+          const dtG = Math.min(100, nowT - (bossGhostT || nowT));
+          bossGhostT = nowT;
+          if (bossHpPct < bossGhostLast - 0.01) bossGhostHold = nowT + 380;
+          bossGhostLast = bossHpPct;
+          if (bossHpPct >= bossGhostPct) bossGhostPct = bossHpPct;
+          else if (nowT > bossGhostHold) bossGhostPct = Math.max(bossHpPct, bossGhostPct - dtG * 0.035);
+          elBossHpGhost.style.width = `${bossGhostPct}%`;
+        }
         elBossHpTxt.textContent = Math.round(Boss.hp);
         const pPct = Math.min(100, Math.round((Boss.posture / Boss.maxPosture) * 100));
         elBossPostureBar.style.width = `${pPct}%`;
