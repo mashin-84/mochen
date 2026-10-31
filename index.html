@@ -2656,7 +2656,7 @@
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* ===== v0.6.6 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+      /* ===== v0.7.0 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
@@ -2682,6 +2682,9 @@
         Stages[nid] = st;
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
+      Stages[1].bg = "arena1";
+      Stages[2].bg = "arena2"; Stages[2].bgDim = 0.25;
+      Stages[2].dialogue.post.forEach(l => { if (l.role === "boss") l.expr = "alt"; });
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
@@ -5217,15 +5220,26 @@
       BG_ART.camp.img.src = "assets/bg/camp.webp";
       BG_ART.s1.img.src = "assets/bg/arena1.webp";
 
+      /* 戰場背景資料化：Stages[n].bg = "arena2" → assets/bg/arena2.webp；Stages[n].bgDim 為暗化（預設 0.4） */
+      function getBgArt(key) {
+        if (!BG_ART[key]) {
+          const a = { ok: false, img: new Image() };
+          a.img.onload = () => { a.ok = true; };
+          a.img.src = "assets/bg/" + key + ".webp";
+          BG_ART[key] = a;
+        }
+        return BG_ART[key];
+      }
       function drawArenaArt(camX, stageId) {
-        const A = stageId === 1 ? BG_ART.s1 : null;
+        const stBg = Stages[stageId];
+        const A = stBg && stBg.bg ? getBgArt(stBg.bg) : null;
         if (!A || !A.ok) return false;
         const h = Config.baseHeight;
         const w = h * (A.img.naturalWidth / A.img.naturalHeight);
         const f = Math.max(0, (w - Config.baseWidth) / (Config.worldWidth - Config.baseWidth));
         const cx = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, camX));
         ctx.drawImage(A.img, cx * (1 - f), 0, w, h);
-        ctx.fillStyle = "rgba(8, 14, 38, 0.4)";
+        ctx.fillStyle = `rgba(8, 14, 38, ${stBg.bgDim === undefined ? 0.4 : stBg.bgDim})`;
         ctx.fillRect(cx - 400, 0, Config.baseWidth + 800, h + 200);
         return true;
       }
@@ -5725,7 +5739,7 @@
             }
           }
 
-          /* v0.6.6 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
+          /* v0.7.0 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
              沒有 sprite 的關卡退回程式繪製。可用 Stages[n].spriteScale / spriteStride 覆寫。 */
           const BOSS_FRAME_NAMES = [
             "01_idle1", "02_idle2", "03_walk1", "04_walk2",
@@ -6741,6 +6755,8 @@
         Boss.stageId = stageId;
         Boss.artId = stage.artId || stageId;
         if (stage.sprite) getBossSprite(stage.sprite);
+        getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");
+        if (stage.bg) getBgArt(stage.bg);
         Boss.maxHp = stage.maxHp;
         Boss.hp = stage.maxHp;
         Boss.maxPosture = stage.maxPosture;
