@@ -2656,7 +2656,7 @@
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* ===== v0.6.0 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+      /* ===== v0.6.1 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
@@ -2682,6 +2682,7 @@
         Stages[nid] = st;
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
+      Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
 
 /* v0.4.14 人物放大：Boss 招式的判定距離同步放大（aerial 的 range 為 0 不受影響） */
       Object.values(LegacyStages).forEach(st => {
@@ -2968,7 +2969,7 @@
         Boss.flashFrames = Math.max(Boss.flashFrames, heavy ? 5 : guard ? 2 : 4);
 
         const hx = Boss.x - dir * 22;
-        const hy = Boss.y - (Boss.artId === 1 ? 150 : 88);
+        const hy = Boss.y - (Stages[Boss.stageId].sprite ? 150 : 88);
         if (!guard) {
           Game.comboCount++;
           Game.comboTimer = 2.0;
@@ -5590,43 +5591,41 @@
             }
           }
 
-          const MB1_NAMES = [
+          /* v0.6.1 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
+             沒有 sprite 的關卡退回程式繪製。可用 Stages[n].spriteScale / spriteStride 覆寫。 */
+          const BOSS_FRAME_NAMES = [
             "01_idle1", "02_idle2", "03_walk1", "04_walk2",
             "05_walk3", "06_walk4", "07_windup", "08_windup_thrust",
             "09_slash", "10_slash_rec", "11_thrust", "12_thrust_rec",
             "13_sweep", "14_cast", "15_hurt", "16_stagger"
           ];
-          const MB1_IMGS = {};
-          let MB1_READY = 0;
-          const MB1_SCALE = 0.64;
-
-          MB1_NAMES.forEach(name => {
-            const img = new Image();
-            img.onload = () => { MB1_READY++; };
-            img.onerror = () => { console.warn("Failed to load: " + name); };
-            img.src = 'assets/boss1/' + name + '.webp';
-            MB1_IMGS[name] = img;
-          });
-
-          const MBD = { kneel: { ok: false, img: new Image() }, fall: { ok: false, img: new Image() }, lie: { ok: false, img: new Image() } };
-          MBD.kneel.img.onload = () => { MBD.kneel.ok = true; };
-          MBD.fall.img.onload = () => { MBD.fall.ok = true; };
-          MBD.lie.img.onload = () => { MBD.lie.ok = true; };
-          MBD.kneel.img.src = "assets/boss1/17_kneel.webp";
-          MBD.fall.img.src = "assets/boss1/18_fall.webp";
-          MBD.lie.img.src = "assets/boss1/19_lie.webp";
-          const MB1_STRIDE = 238;
-          let MBW_PHASE = 0;
-          let MBW_LASTX = null;
-          const MBW_IMGS = [];
-          let MBW_READY = 0;
-          for (let i = 1; i <= 12; i++) {
-            const num = String(i).padStart(2, '0');
-            const img = new Image();
-            img.onload = () => { MBW_READY++; };
-            img.onerror = () => { console.warn("Failed to load: walk_" + num); };
-            img.src = 'assets/boss1/walk_' + num + '.webp';
-            MBW_IMGS.push(img);
+          const BossSprites = {};
+          function getBossSprite(key) {
+            if (!key) return null;
+            if (BossSprites[key]) return BossSprites[key];
+            const dir = "assets/" + key + "/";
+            const sp = { key, imgs: {}, ready: 0, walk: [], walkReady: 0, phase: 0, lastX: null,
+              death: { kneel: { ok: false, img: new Image() }, fall: { ok: false, img: new Image() }, lie: { ok: false, img: new Image() } } };
+            BOSS_FRAME_NAMES.forEach(name => {
+              const img = new Image();
+              img.onload = () => { sp.ready++; };
+              img.onerror = () => { console.warn("Failed to load: " + dir + name); };
+              img.src = dir + name + ".webp";
+              sp.imgs[name] = img;
+            });
+            [["kneel", "17_kneel"], ["fall", "18_fall"], ["lie", "19_lie"]].forEach(([k, f]) => {
+              const d = sp.death[k];
+              d.img.onload = () => { d.ok = true; };
+              d.img.src = dir + f + ".webp";
+            });
+            for (let i = 1; i <= 12; i++) {
+              const img = new Image();
+              img.onload = () => { sp.walkReady++; };
+              img.src = dir + "walk_" + String(i).padStart(2, "0") + ".webp";
+              sp.walk.push(img);
+            }
+            BossSprites[key] = sp;
+            return sp;
           }
 
                 function drawBossEntity() {
@@ -5654,7 +5653,8 @@
         const anim = moveData ? (moveData.anim || "slash") : "slash";
         const isAction = Boss.state === "windup" || Boss.state === "active";
         const actionP = isAction ? (1 - Boss.stateTimer / (Boss.stateDur || 1)) : 0;
-        const useBossSprite = (Boss.artId === 1 && MB1_READY === 16);
+        const SP = getBossSprite(stage.sprite);
+        const useBossSprite = !!(SP && SP.ready === 16);
         
         // C5: 前搖動作後傾 (狼王改為下壓蹲伏，其餘保持旋轉後傾)
         ctx.save();
@@ -5757,9 +5757,9 @@
         }
 
         if (useBossSprite) {
-          let dx = MBW_LASTX === null ? 0 : Math.abs(Boss.x - MBW_LASTX);
+          let dx = SP.lastX === null ? 0 : Math.abs(Boss.x - SP.lastX);
           if (dx > 60) dx = 0;
-          MBW_LASTX = Boss.x;
+          SP.lastX = Boss.x;
 
           let imgKey = "01_idle1";
           let bossImg = null;
@@ -5781,10 +5781,10 @@
             else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
             else imgKey = "10_slash_rec";
           } else if (Boss.state === "approach" || (Boss.state === "idle" && Math.abs(Boss.vx) > 40)) {
-            MBW_PHASE += dx / MB1_STRIDE;
-            MBW_PHASE %= 1;
-            if (MBW_READY === 12) {
-              bossImg = MBW_IMGS[Math.floor(MBW_PHASE * 12) % 12];
+            SP.phase += dx / (stage.spriteStride || 238);
+            SP.phase %= 1;
+            if (SP.walkReady === 12) {
+              bossImg = SP.walk[Math.floor(SP.phase * 12) % 12];
             } else {
               const walkIdx = Math.floor(performance.now() / 140) % 4;
               imgKey = ["03_walk1", "04_walk2", "05_walk3", "06_walk4"][walkIdx];
@@ -5803,18 +5803,18 @@
             bossImg = null;
             imgKey = "16_stagger";
             if (!bd.out) {
-              if (MBD.kneel.ok) bossImg = MBD.kneel.img;
+              if (SP.death.kneel.ok) bossImg = SP.death.kneel.img;
             } else {
               const e = (performance.now() - bd.t0) / 1000;
               if (e < 0.5) {
-                if (MBD.fall.ok) bossImg = MBD.fall.img; else deathRot = (e / 0.5) * 1.45;
+                if (SP.death.fall.ok) bossImg = SP.death.fall.img; else deathRot = (e / 0.5) * 1.45;
               } else {
-                if (MBD.lie.ok) bossImg = MBD.lie.img; else deathRot = 1.45;
+                if (SP.death.lie.ok) bossImg = SP.death.lie.img; else deathRot = 1.45;
                 if (e >= 1.2) deathAlpha = Math.max(0, 1 - (e - 1.2) / 0.8);
               }
             }
           }
-          if (!bossImg) bossImg = MB1_IMGS[imgKey];
+          if (!bossImg) bossImg = SP.imgs[imgKey];
 
           ctx.save();
           if (deathAlpha < 1) ctx.globalAlpha = deathAlpha;
@@ -5830,7 +5830,7 @@
             ctx.rotate(-Boss.facing * lean * a);
             ctx.scale(1 + 0.04 * a, 1 - 0.04 * a);
           }
-          const bossK = MB1_SCALE * (stage.size || 1);
+          const bossK = (stage.spriteScale || 0.64) * (stage.size || 1);
           ctx.scale(Boss.facing > 0 ? bossK : -bossK, bossK);
           ctx.drawImage(bossImg, -450, -560);
           
@@ -6567,6 +6567,7 @@
         Progress.currentStage = stageId;
         Boss.stageId = stageId;
         Boss.artId = stage.artId || stageId;
+        if (stage.sprite) getBossSprite(stage.sprite);
         Boss.maxHp = stage.maxHp;
         Boss.hp = stage.maxHp;
         Boss.maxPosture = stage.maxPosture;
