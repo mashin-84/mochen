@@ -2656,7 +2656,7 @@
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* ===== v0.6.2 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+      /* ===== v0.6.3 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
@@ -5695,7 +5695,7 @@
             }
           }
 
-          /* v0.6.2 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
+          /* v0.6.3 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
              沒有 sprite 的關卡退回程式繪製。可用 Stages[n].spriteScale / spriteStride 覆寫。 */
           const BOSS_FRAME_NAMES = [
             "01_idle1", "02_idle2", "03_walk1", "04_walk2",
@@ -5782,7 +5782,7 @@
             leanAngle = -Boss.facing * windupP * 0.25;
         }
 
-        if (useBossSprite) {
+        if (useBossSprite || (stage.mirror && MC_READY === 16)) {
             leanAngle = 0;
             crouchY = 0;
         }
