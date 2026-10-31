@@ -1981,6 +1981,10 @@
             <span>✨</span>
             <span id="menu-parry-cue-txt">格擋提示：強</span>
           </button>
+          <button type="button" id="btn-haptic" class="menu-tile-btn">
+            <span>📳</span>
+            <span id="menu-haptic-txt">震動回饋：強</span>
+          </button>
           <button type="button" id="btn-audio-toggle" class="menu-tile-btn">
             <span>🔊</span>
             <span id="menu-audio-txt">音效：開啟中</span>
@@ -2641,11 +2645,14 @@
         shakeMultiplier: 1.0,
 
         bossPhase: 1,
-        parryCueLevel: 2
+        parryCueLevel: 2,
+        hapticLevel: 2
       };
       try {
         const savedCue = localStorage.getItem("qingyun_parry_cue");
         if (savedCue !== null) Config.parryCueLevel = parseInt(savedCue, 10);
+        const savedHap = localStorage.getItem("qingyun_haptic");
+        if (savedHap !== null) Config.hapticLevel = parseInt(savedHap, 10);
       } catch (e) {}
 
       const Game = {
@@ -2708,6 +2715,7 @@
         riposteTimer: 0,
         invulnTimer: 0,
         flashFrames: 0,
+        atkCd: 0,
         canDoubleJump: true,
         canAirDash: true,
 
@@ -2788,6 +2796,15 @@
         }
       }
 
+      function hapticBuzz(p) {
+        if (!Config.hapticLevel) return;
+        try {
+          if (!navigator.vibrate) return;
+          const k = Config.hapticLevel === 1 ? 0.6 : 1;
+          navigator.vibrate(Array.isArray(p) ? p.map(x => Math.max(1, Math.round(x * k))) : Math.max(1, Math.round(p * k)));
+        } catch (e) { }
+      }
+
       function triggerHitstop(frames) {
         Game.hitstopFrames = Math.max(Game.hitstopFrames, Math.round(frames));
       }
@@ -2839,6 +2856,7 @@
           Boss.vx = dir * 130;
           Sound.play("slash", 0.55, 0.6);
         }
+        hapticBuzz(heavy ? [30, 20, 35] : guard ? 10 : 18);
         if (!guard) Sound.play("block", 0.3, 0.55 + 0.08 * step);
         Sound.play("hit", guard ? 0.3 : 0.55, 0.78 + 0.1 * step);
       }
@@ -2955,6 +2973,7 @@
         Player.state = "attack";
         Player.isChargedAttack = true;
         Player.stateTimer = 0.32;
+        Player.atkCd = 0.32;
         Player.facing = Boss.x >= Player.x ? 1 : -1;
         Player.attackHitRegistered = false;
         Player.comboStep = 4; // 蓄力重斬標記
@@ -3001,7 +3020,7 @@
           return;
         }
         if (Player.state === "drink") Player.state = "idle";
-        if (Player.state === "attack" && Player.stateTimer > 0.08) {
+        if (Player.atkCd > 0.08) {
           bufferAction("attack");
           return;
         }
@@ -3021,6 +3040,7 @@
         Player.state = "attack";
         Player.isChargedAttack = false;
         Player.stateTimer = Player.comboStep === 3 ? 0.75 : 0.55;
+        Player.atkCd = Player.stateTimer;
         Player.comboWindow = 0.85;
         Player.attackHitRegistered = false;
         Player.vx = Player.facing * (isRiposte ? 440 : Player.comboStep === 3 ? 340 : 220);
@@ -3324,6 +3344,7 @@
       }
 
       function performExecution() {
+        hapticBuzz([40, 30, 40, 30, 90]);
         Player.state = "execution";
         Player.invulnTimer = 1.4;
         Player.facing = Boss.x >= Player.x ? 1 : -1;
@@ -3615,6 +3636,7 @@
             triggerHitstop(3);
             triggerShake(dir, 0.15, 12, 0.2);
             Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.03);
+            hapticBuzz(22);
             spawnSparks(cx, cy, "block", dir);
             damageBossPosture(6, null);
             spawnFloatingText(Player.x, Player.y - 95, `普通格擋 (+${el}ms 偏慢)`, "#cbd5e1", 0.95);
@@ -3645,6 +3667,7 @@
         triggerHitstop(Config.parryHitstopFrames + 4);
         triggerShake(dir, -0.2, 32, 0.34);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.10);
+        hapticBuzz([25, 30, 45]);
         spawnSparks(cx, cy, "parry", dir);
         spawnSparks(cx, cy, "mikiri", dir);
 
@@ -3677,6 +3700,7 @@
         Player.flashFrames = 2;
 
         Sound.play("hit", 0.9, 0.85);
+        hapticBuzz(70);
         triggerHitstop(4);
         triggerShake(dir, 0.3, 16, 0.24);
         spawnSparks(Player.x, Player.y - 48, "hit", dir);
@@ -4204,6 +4228,7 @@
 
         if (Player.flashFrames > 0) Player.flashFrames--;
         if (Boss.flashFrames > 0) Boss.flashFrames--;
+        if (Player.atkCd > 0) Player.atkCd = Math.max(0, Player.atkCd - dt);
         if (Boss.hitReactT > 0) Boss.hitReactT = Math.max(0, Boss.hitReactT - dt);
         for (let i = Game.hitFx.length - 1; i >= 0; i--) {
           const fx = Game.hitFx[i];
@@ -4339,7 +4364,7 @@
                 if (Boss.consecutiveBlocks < 3) {
                   // Boss 普通格擋：沉悶鐵鳴，橘紅小火花，積累架勢，不傷氣血！
                   Boss.flashFrames = 1;
-                  Boss.vx = Player.facing * 45;
+                  Boss.vx = Player.facing * 120;
                   Sound.play("block", 0.9, 1.0);
                   triggerHitstop(3);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "block", Player.facing);
@@ -4380,6 +4405,11 @@
             Player.state = Player.y < Config.groundY - 4 ? "jump" : "idle";
             Game.camera.targetZoom = 1.0;
           }
+        }
+
+        // 移動取消：攻擊後搖後半段按方向鍵可直接跑開（出招間隔仍由 atkCd 控制，不會變快）
+        if (Player.state === "attack" && !Player.isChargedAttack && (Keys.left || Keys.right) && Player.stateTimer < (Player.comboStep === 3 ? 0.38 : 0.28) && Player.y >= Config.groundY - 2) {
+          Player.state = "move";
         }
 
         // Horizontal Movement
@@ -5929,6 +5959,7 @@
         Player.assistAvailable = true;
         Player.tishenActive = false;
         Player.parryCooldown = 0;
+        Player.atkCd = 0;
 
         Game.particles = [];
         Game.shockwaves = [];
@@ -6983,6 +7014,19 @@
           Config.parryCueLevel = (Config.parryCueLevel + 1) % 3;
           menuParryCueTxt.textContent = cueTexts[Config.parryCueLevel];
           try { localStorage.setItem("qingyun_parry_cue", Config.parryCueLevel); } catch (e) {}
+        });
+      }
+
+      const btnMenuHaptic = document.getElementById("btn-haptic");
+      const menuHapticTxt = document.getElementById("menu-haptic-txt");
+      const hapticTexts = ["震動回饋：關", "震動回饋：弱", "震動回饋：強"];
+      if (menuHapticTxt) menuHapticTxt.textContent = hapticTexts[Config.hapticLevel] || hapticTexts[2];
+      if (btnMenuHaptic) {
+        btnMenuHaptic.addEventListener("click", () => {
+          Config.hapticLevel = (Config.hapticLevel + 1) % 3;
+          menuHapticTxt.textContent = hapticTexts[Config.hapticLevel];
+          try { localStorage.setItem("qingyun_haptic", Config.hapticLevel); } catch (e) {}
+          hapticBuzz(40);
         });
       }
 
