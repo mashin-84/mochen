@@ -2587,6 +2587,9 @@
       Stages[13].moves.exclusive_aerial = { name: "無相升天・虛空劫光", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 3, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 150 };
       Stages[15].moves.exclusive_aerial = { name: "天道升天・神罰降世", isAerial: true, lunge: 0, range: 0, aerialBreakHits: 4, aerialShotInterval: 1.1, aerialMaxDuration: 9, anim: "sky", windup: 1.0, active: 9.0, recover: 1.0, damage: 180 };
 
+      /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
+      Object.values(Stages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
+
       /* v0.4.14 人物放大：Boss 招式的判定距離同步放大（aerial 的 range 為 0 不受影響） */
       Object.values(Stages).forEach(st => {
         Object.values(st.moves || {}).forEach(m => { if (m && m.range) m.range = Math.round(m.range * CHAR_K); });
@@ -2689,6 +2692,10 @@
         hitFx: [],
         comboCount: 0,
         comboTimer: 0,
+        introT: 0,
+        ultDim: 0,
+        slowT: 0,
+        slowScale: 1,
         _wasAir: false,
         _dustAcc: 0,
         _prevPState: "idle",
@@ -2773,6 +2780,7 @@
         comboHitTimer: 0,
         aiCooldown: 0.6,
         flashFrames: 0,
+        ultCd: 12,
         hitReactT: 0,
         hitReactDur: 0.14,
         hitReactKind: "hit",
@@ -3451,6 +3459,7 @@
             Player.vx = -Boss.facing * 400;
             spawnFloatingText(Boss.x, Boss.y - 150, `一劍青雲 -${execDmg}`, "#ef4444", 1.5);
             if (!wasPhase2) {
+              bossPhaseCinematic();
               spawnFloatingText(Boss.x, Boss.y - 180, "【一劍青雲・極】三絕斬魄！二階段破入！", "#fde047", 1.3);
               setTelemetry(`★【一劍青雲・極】重創敵將氣血 -${execDmg} 破入二階段！`);
               document.getElementById("boss-realm-badge").textContent = "二階段・狂暴質變";
@@ -3459,6 +3468,7 @@
           } else {
             Boss.hp = 0;
             Boss.deathblows = 0;
+            bossKillCinematic();
             Boss.state = "recover";
             Boss.stateTimer = 2.2;
             spawnFloatingText(Boss.x, Boss.y - 155, `一劍青雲 -${execDmg}`, "#ef4444", 1.5);
@@ -3466,7 +3476,7 @@
             setTelemetry("★【一劍青雲・極】終局三絕裂空！大敵伏誅，戰績結算繪卷展開！");
             setTimeout(() => {
               handleStageClear(Boss.stageId);
-            }, 1900);
+            }, 2500);
           }
         } else {
           // 未解鎖時（Progress.unlockedStages < 5）：維持原版單段處決演出與結算
@@ -3517,6 +3527,7 @@
 
             spawnFloatingText(Boss.x, Boss.y - 145, `一劍青雲 -${execDmg}`, "#ef4444", 1.4);
             if (!wasPhase2) {
+              bossPhaseCinematic();
               spawnFloatingText(Boss.x, Boss.y - 175, "【二階段暴怒突破】解鎖全新連環殺招！", "#ef4444", 1.2);
               setTelemetry(`★ 破勢忍殺 -${execDmg}！Boss 煞氣魔化爆發，解鎖【二階段專屬殺招】！`);
               document.getElementById("boss-realm-badge").textContent = "二階段・狂暴質變";
@@ -3525,6 +3536,7 @@
           } else {
             Boss.hp = 0;
             Boss.deathblows = 0;
+            bossKillCinematic();
             Boss.state = "recover";
             Boss.stateTimer = 2.0;
             spawnFloatingText(Boss.x, Boss.y - 145, `一劍青雲 -${execDmg}`, "#ef4444", 1.4);
@@ -3532,7 +3544,7 @@
             setTelemetry("★ 終局忍殺！本關大捷，戰績結算繪卷展開！");
             setTimeout(() => {
               handleStageClear(Boss.stageId);
-            }, 1800);
+            }, 2400);
           }
         }
       }
@@ -3812,6 +3824,13 @@
         Boss.stateDur = m.windup * phaseMod;
         Boss.isPerilous = !!m.isPerilous;
         Boss.perilType = m.perilType || null;
+        if (m.ultimate) {
+          Boss.ultCd = Config.bossPhase === 2 ? 16 : 24;
+          const ultName = String(m.name).replace(/【危】/, "").replace(/\s*[（(].*[）)]\s*/, "");
+          showBanner(ultName, "大　招", Math.round(m.windup * 1000) + 350, "#fca5a5");
+          Sound.play("peril", 1.0, 0.7);
+          hapticBuzz([30, 40, 60]);
+        }
         Boss.hitRegistered = false;
         Boss.comboChain = queue;
         Boss.grabZoneX = Player.x;
@@ -4214,8 +4233,12 @@
         if (Boss.aiCooldown <= 0) {
           const r = Math.random();
           const moveKeys = Object.keys(stage.moves);
-          if (Config.bossPhase === 2) {
-            const pick = moveKeys[Math.floor(Math.random() * moveKeys.length)];
+          const ultKey = moveKeys.find(k => stage.moves[k].ultimate);
+          if (ultKey && Boss.ultCd <= 0 && Math.random() < 0.6) {
+            triggerBossMove(ultKey);
+          } else if (Config.bossPhase === 2) {
+            const pool = moveKeys.filter(k => !stage.moves[k].ultimate);
+            const pick = pool[Math.floor(Math.random() * pool.length)];
             triggerBossMove(pick);
           } else {
             if (stage.moves.exclusive_aerial && Math.random() < 0.18) triggerBossMove("exclusive_aerial");
@@ -4255,6 +4278,10 @@
 
         // Pause active combat actions only during story cutscenes
         if (Game.cutsceneActive) return;
+        if (Game.introT > 0) {
+          Game.introT -= dt;
+          return;
+        }
 
         executeBuffered();
 
@@ -4267,6 +4294,14 @@
         if (Player.flashFrames > 0) Player.flashFrames--;
         if (Boss.flashFrames > 0) Boss.flashFrames--;
         if (Player.atkCd > 0) Player.atkCd = Math.max(0, Player.atkCd - dt);
+        if (Boss.ultCd > 0) Boss.ultCd -= dt;
+        {
+          const stU = Stages[Boss.stageId];
+          const mU = stU && stU.moves ? stU.moves[Boss.moveType] : null;
+          const ultOn = !!(mU && mU.ultimate && (Boss.state === "windup" || Boss.state === "active"));
+          Game.ultDim += ((ultOn ? 1 : 0) - Game.ultDim) * Math.min(1, dt * (ultOn ? 6 : 4));
+          if (Game.ultDim < 0.01) Game.ultDim = 0;
+        }
         if (Game.comboTimer > 0) {
           Game.comboTimer -= dt;
           if (Game.comboTimer <= 0) Game.comboCount = 0;
@@ -4700,11 +4735,14 @@
       function updateCamera(dt, hitstopOnly) {
         const cam = Game.camera;
         if (!hitstopOnly) {
-          const focusX = Player.x * 0.64 + Boss.x * 0.36;
+          const introOn = Game.introT > 0;
+          const uw = Game.ultDim || 0;
+          const focusX = introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
           const targetX = focusX - Config.baseWidth * 0.5;
           const clampedX = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, targetX));
           cam.x += (clampedX - cam.x) * Math.min(1, dt * 8.5);
-          cam.zoom += (cam.targetZoom - cam.zoom) * Math.min(1, dt * 7.5);
+          const zTarget = cam.targetZoom + (introOn ? 0.2 : 0) + 0.14 * uw;
+          cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * 7.5);
         }
 
         if (cam.shakeTime < cam.shakeDuration) {
@@ -4760,6 +4798,19 @@
         ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 + shakeOffY);
 
         drawDynamicBackground(cam.x);
+
+        if (Game.ultDim > 0.01) {
+          ctx.save();
+          ctx.fillStyle = `rgba(2, 4, 14, ${0.62 * Game.ultDim})`;
+          ctx.fillRect(-3000, -3000, Config.worldWidth + 6000, 7000);
+          const ug = ctx.createRadialGradient(Boss.x, Boss.y - 110, 20, Boss.x, Boss.y - 110, 420);
+          ug.addColorStop(0, `rgba(255, 70, 50, ${0.34 * Game.ultDim})`);
+          ug.addColorStop(1, "rgba(255, 70, 50, 0)");
+          ctx.globalCompositeOperation = "lighter";
+          ctx.fillStyle = ug;
+          ctx.fillRect(Boss.x - 450, Boss.y - 560, 900, 700);
+          ctx.restore();
+        }
 
         // Draw Hazard Zones (原語 4)
         if (Game.hazardZones && Game.hazardZones.length > 0) {
@@ -6050,6 +6101,10 @@
         Game.hitFx = [];
         Game.comboCount = 0;
         Game.comboTimer = 0;
+        Game.ultDim = 0;
+        Game.slowT = 0;
+        Game.slowScale = 1;
+        Boss.ultCd = 12;
         Boss.hitReactT = 0;
         Game.flyingSwords = [];
         Game.hazardZones = [];
@@ -6081,6 +6136,9 @@
         renderChapterList();
 
         setTelemetry(`〔啟程：進入${stage.chapter}！〕`);
+        Game.introT = 1.9;
+        showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
+        Sound.play("execution", 0.45, 0.7);
         // Story is available via 📜 button without freezing startup
       }
 
@@ -6686,6 +6744,62 @@
         elHurtFlash.style.transition = "opacity 0.45s ease-out";
         elHurtFlash.style.opacity = "0";
       }
+
+      const elBanner = document.createElement("div");
+      elBanner.style.cssText = "position:fixed;left:0;right:0;top:26%;z-index:31;pointer-events:none;text-align:center;opacity:0;font-family:'Noto Serif TC',serif;";
+      elBanner.innerHTML = '<div style="font-weight:900;font-size:clamp(30px,8.5vh,76px);letter-spacing:.18em;text-shadow:0 0 18px rgba(0,0,0,.9),0 0 30px currentColor"></div><div style="margin-top:.5vh;font-weight:700;font-size:clamp(13px,2.8vh,24px);letter-spacing:.5em;opacity:.9;text-shadow:0 0 10px rgba(0,0,0,.9)"></div>';
+      document.body.appendChild(elBanner);
+      let bannerTimer = null;
+      function showBanner(title, sub, holdMs, color) {
+        elBanner.style.color = color || "#fde68a";
+        elBanner.children[0].textContent = title;
+        elBanner.children[1].textContent = sub || "";
+        elBanner.children[0].style.transition = "none";
+        elBanner.children[0].style.letterSpacing = ".6em";
+        elBanner.style.transition = "none";
+        elBanner.style.opacity = "0";
+        void elBanner.offsetWidth;
+        elBanner.style.transition = "opacity .3s ease-out";
+        elBanner.children[0].style.transition = "letter-spacing .6s ease-out";
+        elBanner.children[0].style.letterSpacing = ".18em";
+        elBanner.style.opacity = "1";
+        if (bannerTimer) clearTimeout(bannerTimer);
+        bannerTimer = setTimeout(() => {
+          elBanner.style.transition = "opacity .45s ease-in";
+          elBanner.style.opacity = "0";
+        }, holdMs || 1200);
+      }
+
+      const elScreenFlash = document.createElement("div");
+      elScreenFlash.style.cssText = "position:fixed;inset:0;z-index:26;pointer-events:none;opacity:0;";
+      document.body.appendChild(elScreenFlash);
+      function screenFlash(color, a, sec) {
+        elScreenFlash.style.background = color;
+        elScreenFlash.style.transition = "none";
+        elScreenFlash.style.opacity = String(a);
+        void elScreenFlash.offsetWidth;
+        elScreenFlash.style.transition = `opacity ${sec}s ease-out`;
+        elScreenFlash.style.opacity = "0";
+      }
+
+      function bossPhaseCinematic() {
+        showBanner("煞氣暴走", "二　階　段", 1500, "#f87171");
+        screenFlash("rgba(255,255,255,0.9)", 0.75, 0.55);
+        triggerShake(0, 1, 40, 0.6);
+        Game.slowT = 0.8;
+        Game.slowScale = 0.3;
+        Sound.play("peril", 1.0, 0.6);
+        hapticBuzz([60, 40, 120]);
+      }
+
+      function bossKillCinematic() {
+        setTimeout(() => {
+          Game.slowT = 0.9;
+          Game.slowScale = 0.25;
+          screenFlash("rgba(255,255,255,0.95)", 0.7, 1.1);
+          hapticBuzz([40, 30, 100]);
+        }, 700);
+      }
       const elBossHpTxt = document.getElementById("boss-hp-txt");
       const elBossPostureBar = document.getElementById("boss-posture-bar");
       const elBossPostureTxt = document.getElementById("boss-posture-txt");
@@ -7080,7 +7194,13 @@
       function loop(now) {
         const dt = Math.min((now - lastTime) / 1000, 0.05);
         lastTime = now;
-        updatePhysics(dt);
+        let simDt = dt;
+        if (Game.slowT > 0) {
+          Game.slowT -= dt;
+          simDt = dt * Game.slowScale;
+          if (Game.slowT <= 0) Game.slowScale = 1;
+        }
+        updatePhysics(simDt);
         render();
         raf = requestAnimationFrame(loop);
       }
