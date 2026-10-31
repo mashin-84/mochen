@@ -4870,22 +4870,40 @@
         ctx.restore();
       }
 
-      function drawFlyingSwords() {
-        for (const sw of Game.flyingSwords) {
-          ctx.save();
-          ctx.translate(sw.x, sw.y);
-          if (sw.dir < 0) ctx.scale(-1, 1);
-          ctx.fillStyle = sw.reflected ? "#fde047" : "#38bdf8";
-          ctx.shadowColor = sw.reflected ? "#fde047" : "#38bdf8";
-          ctx.shadowBlur = 12;
-          ctx.fillRect(-24, -3, 48, 6);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-          ctx.fillRect(-18, -1.5, 36, 3);
-          ctx.restore();
-        }
-      }
+          function drawFlyingSwords() {
+            for (const sw of Game.flyingSwords) {
+              ctx.save();
+              ctx.translate(sw.x, sw.y);
+              if (sw.dir < 0) ctx.scale(-1, 1);
+              ctx.fillStyle = sw.reflected ? "#fde047" : "#38bdf8";
+              ctx.shadowColor = sw.reflected ? "#fde047" : "#38bdf8";
+              ctx.shadowBlur = 12;
+              ctx.fillRect(-24, -3, 48, 6);
+              ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+              ctx.fillRect(-18, -1.5, 36, 3);
+              ctx.restore();
+            }
+          }
 
-            function drawBossEntity() {
+          const MB1_NAMES = [
+            "01_idle1", "02_idle2", "03_walk1", "04_walk2",
+            "05_walk3", "06_walk4", "07_windup", "08_windup_thrust",
+            "09_slash", "10_slash_rec", "11_thrust", "12_thrust_rec",
+            "13_sweep", "14_cast", "15_hurt", "16_stagger"
+          ];
+          const MB1_IMGS = {};
+          let MB1_READY = 0;
+          const MB1_SCALE = 0.34;
+
+          MB1_NAMES.forEach(name => {
+            const img = new Image();
+            img.onload = () => { MB1_READY++; };
+            img.onerror = () => { console.warn("Failed to load: " + name); };
+            img.src = 'assets/boss1/' + name + '.webp';
+            MB1_IMGS[name] = img;
+          });
+
+                function drawBossEntity() {
         ctx.save();
         const bx = Boss.x - Boss.w * 0.5;
         const by = Boss.y - Boss.h;
@@ -4910,7 +4928,8 @@
         const anim = moveData ? (moveData.anim || "slash") : "slash";
         const isAction = Boss.state === "windup" || Boss.state === "active";
         const actionP = isAction ? (1 - Boss.stateTimer / (Boss.stateDur || 1)) : 0;
-
+        const useBossSprite = (Boss.stageId === 1 && MB1_READY === 16);
+        
         // C5: 前搖動作後傾 (狼王改為下壓蹲伏，其餘保持旋轉後傾)
         ctx.save();
         let leanAngle = 0;
@@ -4931,6 +4950,11 @@
             leanAngle = Boss.facing * windupP * 0.2; // 身體前傾壓低
         } else {
             leanAngle = -Boss.facing * windupP * 0.25;
+        }
+
+        if (useBossSprite) {
+            leanAngle = 0;
+            crouchY = 0;
         }
 
         if (anim === "vanish") {
@@ -5006,6 +5030,44 @@
           ctx.shadowBlur = Config.bossPhase === 2 ? 18 : 12;
         }
 
+        if (useBossSprite) {
+          let imgKey = "01_idle1";
+          if (Boss.state === "hurt") {
+            imgKey = "15_hurt";
+          } else if (Boss.state === "staggered" || Boss.state === "frozen") {
+            imgKey = "16_stagger";
+          } else if (Boss.state === "windup") {
+            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo") imgKey = "08_windup_thrust";
+            else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
+            else imgKey = "07_windup";
+          } else if (Boss.state === "active") {
+            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo") imgKey = "11_thrust";
+            else if (Boss.moveType === "sweep_peril") imgKey = "13_sweep";
+            else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
+            else imgKey = "09_slash";
+          } else if (Boss.state === "recover") {
+            if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo") imgKey = "12_thrust_rec";
+            else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
+            else imgKey = "10_slash_rec";
+          } else if (Boss.state === "approach") {
+            const walkIdx = Math.floor(performance.now() / 140) % 4;
+            imgKey = ["03_walk1", "04_walk2", "05_walk3", "06_walk4"][walkIdx];
+          } else {
+            imgKey = Math.floor(performance.now() / 700) % 2 === 0 ? "01_idle1" : "02_idle2";
+          }
+
+          ctx.save();
+          if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
+          else if (Boss.state === "frozen") ctx.filter = "hue-rotate(160deg) brightness(1.1)";
+          else if (Boss.isPerilous) ctx.filter = "drop-shadow(0 0 10px #ef4444)";
+
+          ctx.translate(Boss.x, Boss.y);
+          ctx.scale(Boss.facing > 0 ? MB1_SCALE : -MB1_SCALE, MB1_SCALE);
+          ctx.drawImage(MB1_IMGS[imgKey], -450, -560);
+          
+          ctx.filter = "none";
+          ctx.restore();
+        } else {
         ctx.fillStyle = bodyColor;
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 2.5;
@@ -5288,17 +5350,18 @@
               ctx.closePath();
               ctx.fill();
             }
-          } else {
-            if (anim === "thrust" && Boss.state === "active") {
-              const ext = Math.sin(actionP * Math.PI) * 45;
-              ctx.fillRect(ext, -6, 115, 12);
-            } else {
-              ctx.fillRect(0, -6, 115, 12);
+              } else {
+                if (anim === "thrust" && Boss.state === "active") {
+                  const ext = Math.sin(actionP * Math.PI) * 45;
+                  ctx.fillRect(ext, -6, 115, 12);
+                } else {
+                  ctx.fillRect(0, -6, 115, 12);
+                }
+              }
+              ctx.restore();
             }
-          }
-          ctx.restore();
-        }
-        ctx.restore(); // 結束後傾變換
+            } // 結束 if (useBossSprite) else
+            ctx.restore(); // 結束後傾變換
 
         // C4: 提示畫面 (強/弱)
         if (Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35 && Config.parryCueLevel > 0) {
