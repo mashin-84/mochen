@@ -2973,7 +2973,7 @@
 
         Player.state = "attack";
         Player.isChargedAttack = false;
-        Player.stateTimer = Player.comboStep === 3 ? 0.28 : 0.21;
+        Player.stateTimer = Player.comboStep === 3 ? 0.40 : 0.30;
         Player.comboWindow = 0.55;
         Player.attackHitRegistered = false;
         Player.vx = Player.facing * (isRiposte ? 440 : Player.comboStep === 3 ? 340 : 220);
@@ -3484,14 +3484,15 @@
         syncAssistUI();
       }
 
-      function damageBossPosture(amount, label) {
+      function damageBossPosture(amount, label, cap) {
         if (Boss.state === "staggered") return;
         
         let postureGain = amount;
         if (Progress.equippedSeals.includes("wenxin")) postureGain *= 2.0;
         if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) postureGain *= 1.8;
 
-        Boss.posture = Math.min(Boss.maxPosture, Boss.posture + postureGain);
+        if (cap) Boss.posture = Math.max(Boss.posture, Math.min(cap, Boss.posture + postureGain));
+        else Boss.posture = Math.min(Boss.maxPosture, Boss.posture + postureGain);
         Boss.postureDecayDelay = 3.0;
 
         if (Boss.posture >= Boss.maxPosture) {
@@ -4244,7 +4245,7 @@
                 Boss.consecutiveBlocks = 0;
                 let dmg = Player.comboStep === 3 ? 120 : 75;
                 if (Progress.echoes && Progress.echoes.includes(14)) dmg = Math.round(dmg * 1.10); // 卷三回響14：連段傷害+10%
-                let post = Boss.state === "frozen" ? 18 : Player.comboStep === 3 ? 15 : 10;
+                let post = Boss.state === "frozen" ? 18 : Player.comboStep === 3 ? 9 : 6;
                 if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) {
                   dmg = Math.round(dmg * 1.8);
                   post = Math.round(post * 1.8);
@@ -4264,7 +4265,7 @@
                 triggerShake(Player.facing, -0.15, 11, 0.16);
                 spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
 
-                damageBossPosture(post, null);
+                damageBossPosture(post, null, Boss.maxPosture * 0.6);
                 spawnFloatingText(Boss.x + (Math.random() - 0.5) * 28, Boss.y - 105, `-${dmg}`, "#38bdf8", Player.comboStep === 3 ? 1.15 : 0.98);
                 setTelemetry(`破綻重創！青雲劍斬中敵酋 (-${dmg} 氣血 / 架勢 +${post}%)`);
               } else {
@@ -4278,7 +4279,7 @@
                   Sound.play("block", 0.9, 1.0);
                   triggerHitstop(3);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "block", Player.facing);
-                  damageBossPosture(8, null);
+                  damageBossPosture(5, null, Boss.maxPosture * 0.6);
                   spawnFloatingText(Boss.x, Boss.y - 95, `敵將格擋 (第${Boss.consecutiveBlocks}劍)`, "#cbd5e1", 0.95);
                   setTelemetry(`〔交鋒：敵將舉兵格擋第 ${Boss.consecutiveBlocks} 劍，注意彈刀！〕`);
                 } else {
@@ -4323,7 +4324,7 @@
           if (Keys.right) dir += 1;
 
           if (dir !== 0) {
-            Player.vx = dir * 410;
+            Player.vx = dir * 520;
             Player.facing = dir;
             if (Player.y >= Config.groundY - 2) Player.state = "move";
           } else {
