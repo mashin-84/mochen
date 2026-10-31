@@ -4903,6 +4903,20 @@
             MB1_IMGS[name] = img;
           });
 
+          const MB1_STRIDE = 190;
+          let MBW_PHASE = 0;
+          let MBW_LASTX = null;
+          const MBW_IMGS = [];
+          let MBW_READY = 0;
+          for (let i = 1; i <= 12; i++) {
+            const num = String(i).padStart(2, '0');
+            const img = new Image();
+            img.onload = () => { MBW_READY++; };
+            img.onerror = () => { console.warn("Failed to load: walk_" + num); };
+            img.src = 'assets/boss1/walk_' + num + '.webp';
+            MBW_IMGS.push(img);
+          }
+
                 function drawBossEntity() {
         ctx.save();
         const bx = Boss.x - Boss.w * 0.5;
@@ -5031,7 +5045,12 @@
         }
 
         if (useBossSprite) {
+          let dx = MBW_LASTX === null ? 0 : Math.abs(Boss.x - MBW_LASTX);
+          if (dx > 60) dx = 0;
+          MBW_LASTX = Boss.x;
+
           let imgKey = "01_idle1";
+          let bossImg = null;
           if (Boss.state === "hurt") {
             imgKey = "15_hurt";
           } else if (Boss.state === "staggered" || Boss.state === "frozen") {
@@ -5049,12 +5068,19 @@
             if (Boss.moveType === "thrust_peril" || Boss.moveType === "exclusive_combo") imgKey = "12_thrust_rec";
             else if (Boss.moveType === "grab_peril") imgKey = "14_cast";
             else imgKey = "10_slash_rec";
-          } else if (Boss.state === "approach") {
-            const walkIdx = Math.floor(performance.now() / 140) % 4;
-            imgKey = ["03_walk1", "04_walk2", "05_walk3", "06_walk4"][walkIdx];
+          } else if (Boss.state === "approach" || (Boss.state === "idle" && Math.abs(Boss.vx) > 40)) {
+            MBW_PHASE += dx / MB1_STRIDE;
+            MBW_PHASE %= 1;
+            if (MBW_READY === 12) {
+              bossImg = MBW_IMGS[Math.floor(MBW_PHASE * 12) % 12];
+            } else {
+              const walkIdx = Math.floor(performance.now() / 140) % 4;
+              imgKey = ["03_walk1", "04_walk2", "05_walk3", "06_walk4"][walkIdx];
+            }
           } else {
             imgKey = Math.floor(performance.now() / 700) % 2 === 0 ? "01_idle1" : "02_idle2";
           }
+          if (!bossImg) bossImg = MB1_IMGS[imgKey];
 
           ctx.save();
           if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
@@ -5063,7 +5089,7 @@
 
           ctx.translate(Boss.x, Boss.y);
           ctx.scale(Boss.facing > 0 ? MB1_SCALE : -MB1_SCALE, MB1_SCALE);
-          ctx.drawImage(MB1_IMGS[imgKey], -450, -560);
+          ctx.drawImage(bossImg, -450, -560);
           
           ctx.filter = "none";
           ctx.restore();
@@ -5465,6 +5491,20 @@
         MC_IMGS[name] = img;
       });
 
+      const MC_STRIDE = 220;
+      let MC_PHASE = 0;
+      let MC_LASTX = null;
+      const MCR_IMGS = [];
+      let MCR_READY = 0;
+      for (let i = 1; i <= 10; i++) {
+        const num = String(i).padStart(2, '0');
+        const img = new Image();
+        img.onload = () => { MCR_READY++; };
+        img.onerror = () => { console.warn("Failed to load: run_" + num); };
+        img.src = 'assets/mc/run_' + num + '.webp';
+        MCR_IMGS.push(img);
+      }
+
       function drawPlayer() {
         ctx.save();
         const px = Player.x - Player.w * 0.5;
@@ -5476,7 +5516,17 @@
         ctx.fill();
 
         if (MC_READY === 16) {
+          let dx = MC_LASTX === null ? 0 : Math.abs(Player.x - MC_LASTX);
+          if (dx > 60) dx = 0;
+          MC_LASTX = Player.x;
+
+          if (Player.state === "move" && Player.y >= Config.groundY - 2) {
+            MC_PHASE += dx / MC_STRIDE;
+            MC_PHASE %= 1;
+          }
+
           let frame = "01_idle1";
+          let playerImg = null;
           const isAirborne = Player.y < Config.groundY - 2;
 
           if (Player.state === "execution" || (Player.riposteTimer > 0 && Player.state === "attack")) {
@@ -5496,10 +5546,18 @@
           } else if (isAirborne) {
             frame = Player.vy < 0 ? "07_jump" : "08_fall";
           } else if (Player.state === "move") {
-            const runIdx = Math.floor(performance.now() / 110) % 4;
-            frame = ["03_run1", "04_run2", "05_run3", "06_run4"][runIdx];
+            if (MCR_READY === 10) {
+              playerImg = MCR_IMGS[Math.floor(MC_PHASE * 10) % 10];
+            } else {
+              const runIdx = Math.floor(performance.now() / 110) % 4;
+              frame = ["03_run1", "04_run2", "05_run3", "06_run4"][runIdx];
+            }
           } else {
             frame = Math.floor(performance.now() / 600) % 2 === 0 ? "01_idle1" : "02_idle2";
+          }
+
+          if (!playerImg) {
+            playerImg = MC_IMGS[frame];
           }
 
           ctx.save();
@@ -5507,7 +5565,7 @@
           ctx.translate(Player.x, Player.y);
           const S = MC_SCALE * (MC_FRAME_SCALE[frame] || 1);
           ctx.scale(Player.facing > 0 ? S : -S, S);
-          ctx.drawImage(MC_IMGS[frame], -450, -529);
+          ctx.drawImage(playerImg, -450, -529);
           if (Player.flashFrames > 0) ctx.filter = "none";
           ctx.restore();
         } else {
