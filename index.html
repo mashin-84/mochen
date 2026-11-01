@@ -2727,7 +2727,7 @@
         /* 叛宗劍陣：不再用拔劍姿勢，改成舉劍→劍雨落下插地 */
         M.grab_peril.swordRain = 9; M.grab_peril.frames = { windup: "07_windup", active: "09_slash", recover: "10_slash_rec" };
         Stages[3].stances = {
-          A: { sprite: "boss3", stride: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"],
+          A: { sprite: "boss3", stride: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], remap: { "12_thrust_rec": "10_slash_rec" }, /* 雙劍表第 12 格只畫了手、沒有劍，突刺收招改用第 10 格 */
             pool: [["slash1", 26], ["exclusive_combo", 22], ["exclusive_feint", 20], ["slash2", 10], ["dash_rush", 8], ["thrust_peril", 7], ["sweep_peril", 7]],
             far: ["dash_rush"], farP2: [] },
           B: { sprite: "boss3b", stride: 200, walkSeq: ["03_walk1", "01_idle1", "03_walk1", "02_idle2"], alias: { thrust_peril: "heavy_thrust" },
@@ -6130,6 +6130,7 @@
             if (PZ) imgKey = PZ[Boss.state === "windup" ? 0 : Boss.state === "active" ? 1 : 2];
           }
           if (moveData && moveData.frames && moveData.frames[Boss.state]) imgKey = moveData.frames[Boss.state];
+          if (stnD && stnD.remap && stnD.remap[imgKey]) imgKey = stnD.remap[imgKey]; /* 動作表某格畫壞時改用別格 */
           const hrP = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
           if (hrP > 0.4 && Boss.hitReactKind !== "block" && (Boss.state === "idle" || Boss.state === "approach" || Boss.state === "recover")) {
             imgKey = "15_hurt";
