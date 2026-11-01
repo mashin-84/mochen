@@ -2067,7 +2067,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.6";
+      const ASSET_VER = "0.8.7";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3032,6 +3032,8 @@
         canDoubleJump: true,
         canAirDash: true,
         airAtkUsed: false,
+        lastDeflectMs: 0,
+        chainCount: 0,
         isAirAtk: false,
         isDive: false,
         riposteAtk: false,
@@ -4096,8 +4098,10 @@
         if (Player.invulnTimer > 0) { if (Player.state === "dash") perfectDodgeFx("【完美閃避】", 8); return; }
 
         if (Player.state === "parry") {
-          const el = Math.max(1, Math.round(performance.now() - Player.parryStartMs));
+          let el = Math.max(1, Math.round(performance.now() - Player.parryStartMs));
           const currentWindow = getParryWindowMs(false);
+          /* v0.8.7 連段招架：剛完美招架後 270ms 內的下一刀，只要還舉著劍就算完美（連段不必每刀重按；最後一刀「遲刃」超過 270ms 仍要重新按） */
+          if (Player.lastDeflectMs && performance.now() - Player.lastDeflectMs <= 300) el = Math.min(el, currentWindow);
 
           if (el <= currentWindow) {
             doPerfectDeflect(cx, cy, dir, el, move.parryPostureDmg || 22);
@@ -4135,6 +4139,12 @@
         // 完美招架不耗體力，且即刻恢復 20 劍勢體力！
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 20);
         Player.vx = dir * 140;
+        const nowD = performance.now();
+        const chained = Player.lastDeflectMs && nowD - Player.lastDeflectMs <= 300 && Player.state === "parry";
+        Player.lastDeflectMs = nowD;
+        Player.chainCount = chained ? (Player.chainCount || 1) + 1 : 1;
+        if (Player.state === "parry") Player.stateTimer = Math.max(Player.stateTimer, 0.28); /* 完美招架後舉劍多撐一會兒，接得住連段的下一刀 */
+        if (chained) Player.stamina = Math.max(0, Player.stamina - 14); /* 連段招架：體力只回 +6（基本 +20 先扣 14） */
         Player.riposteTimer = 1.2;
         hintOnce("riposte", "完美招架後 1.2 秒內出刀＝【破勢反擊】，架勢傷害加倍（劍身泛金光）");
         Boss.vx = -dir * 110;
@@ -4150,7 +4160,7 @@
         if (fxReady("air")) spawnFx("air", 2, cx, cy, { w: 320, dur: 0.42 });
 
         damageBossPosture(postureGain, `完美招架！架勢 +${postureGain}%`);
-        spawnFloatingText(Player.x, Player.y - 112, `【青雲完美彈反】${el}ms!`, "#fde047", 1.25);
+        spawnFloatingText(Player.x, Player.y - 112, chained ? `【連段招架 ×${Player.chainCount}】` : `【青雲完美彈反】${el}ms!`, "#fde047", 1.25);
         setTelemetry(`★ 完美招架 (${el}ms)｜Hitstop ${Config.parryHitstopFrames}f｜Boss架勢大削`);
       }
 
@@ -5514,6 +5524,7 @@
         }
 
         drawMist();
+        drawFx(true);
         drawFlyingSwords();
         drawBossEntity();
         drawPlayer();
@@ -7128,7 +7139,7 @@
           facing: o.facing || 1, anchor: o.anchor || "c", rot: o.rot || 0, alpha: o.alpha == null ? 1 : o.alpha,
           loop: !!o.loop, fps: o.fps || 12, follow: o.follow || null, add: o.add !== false,
           vx: o.vx || 0, vy: o.vy || 0, grav: o.grav || 0, grow: o.grow || 0,
-          col: o.col == null ? -1 : o.col, spin: o.spin || 0
+          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back
         });
         if (Game.fxList.length > 60) Game.fxList.shift();
       }
@@ -7162,8 +7173,9 @@
           if (m.x < cx - 520) m.x = cx + Config.baseWidth + 300;
         }
       }
-      function drawFx() {
+      function drawFx(back) {
         for (const f of Game.fxList) {
+          if (!!f.back !== !!back) continue;
           const sh = fxSheet(f.sheet);
           if (!sh.ok) continue;
           const t = f.age / f.dur;
@@ -7218,7 +7230,7 @@
       /* 落地塵浪＋碎石（第 1 關：躍擊落地、下劈落地） */
       function landingFx(x, power, rocks) {
         if (!fxReady("scene")) return;
-        spawnFx("scene", 3, x, Config.groundY + 4, { anchor: "b", w: 170 * power, col: Math.floor(Math.random() * 4), dur: 0.7, grow: 0.45, add: false, alpha: 0.9, vy: -6 });
+        spawnFx("scene", 3, x, Config.groundY + 6, { anchor: "b", back: true, w: 230 * power, h: 125 * power, col: Math.floor(Math.random() * 4), dur: 0.7, grow: 0.3, add: false, alpha: 0.8 });
         for (let i = 0; i < rocks; i++) {
           spawnFx("scene", 2, x + (Math.random() - 0.5) * 40, Config.groundY - 14, { w: 46 + Math.random() * 34, col: Math.floor(Math.random() * 4), dur: 1.0, add: false,
             vx: (Math.random() - 0.5) * 560, vy: -(300 + Math.random() * 260), grav: 1600, spin: (Math.random() - 0.5) * 9 });
