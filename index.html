@@ -2062,6 +2062,17 @@
     (function () {
       "use strict";
 
+      /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
+      const ASSET_VER = "0.7.8";
+      (function () {
+        const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+        if (!d || !d.set) return;
+        Object.defineProperty(HTMLImageElement.prototype, "src", {
+          get: d.get, configurable: true, enumerable: d.enumerable,
+          set(v) { if (typeof v === "string" && v.indexOf("assets/") === 0 && v.indexOf("?") < 0) v += "?v=" + ASSET_VER; d.set.call(this, v); }
+        });
+      })();
+
       /* =========================================================================
        * 1. 零延遲 Web Audio API 劍鳴與金石交鳴合成引擎
        * ========================================================================= */
@@ -4001,6 +4012,13 @@
         setTelemetry(`★ 完美招架 (${el}ms)｜Hitstop ${Config.parryHitstopFrames}f｜Boss架勢大削`);
       }
 
+      function zoneDamage(dmg, tag) {
+        dmg = Math.max(1, Math.round(dmg));
+        if (Player.hp - dmg <= 0) { takeDamage(dmg, 0, tag); return; } /* 致命時走原本流程（替身、問心重整） */
+        Progress.damageTaken += dmg; Player.hp -= dmg; Player.flashFrames = 1;
+        Sound.play("hit", 0.35, 0.7); hurtFlash(0.3); hapticBuzz(25);
+        spawnFloatingText(Player.x, Player.y - 100, `${tag} -${dmg}`, "#f87171", 0.8);
+      }
       function takeDamage(dmg, dir, tag) {
         Progress.damageTaken += dmg;
         if (Player.hp - dmg <= 0 && (Player.tishenActive || (Player.selectedAssist === "tishen" && Player.assistAvailable))) {
@@ -4945,7 +4963,9 @@
             if (hz.warningTimer <= 0) {
               const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && Player.y >= Config.groundY - 20;
               if (inZone && Player.invulnTimer <= 0 && Player.state !== "execution") {
-                takeDamage(Math.round(hz.damagePerSec * dt), 0, "身陷煞氣絕地！");
+                /* v0.7.8 煞氣地形是持續傷害：每 0.3 秒結算一次、不硬直不停頓，可以走出去（以前每幀 takeDamage 會一直硬直卡死） */
+                hz.tickT = (hz.tickT || 0) - dt;
+                if (hz.tickT <= 0) { hz.tickT = 0.3; zoneDamage(hz.damagePerSec * 0.3, "身陷煞氣絕地！"); }
               }
             }
             if (hz.duration <= 0) {
