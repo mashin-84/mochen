@@ -3495,12 +3495,12 @@
         if (!isAirborne) emitDust(Player.x, Config.groundY, -dir, 6, 1.3);
 
         if (isAirborne) {
-          // 空中二段瞬身：水平位移 520、無敵 0.15 秒、落地重置、不與 hasVaulted 互相覆蓋、不造成無限滯空
-          Player.stateTimer = 0.15;
+          // 空中二段瞬身：v0.7.10 速度、距離與地面瞬步相同（780 × 0.22 秒）；無敵 0.15 秒、落地重置、不造成無限滯空
+          Player.stateTimer = 0.22;
           let invulnDuration = 0.15;
           if (Progress.equippedSeals.includes("tafeng")) invulnDuration *= 1.5;
           Player.invulnTimer = invulnDuration;
-          Player.vx = dir * (520 / 0.15);
+          Player.vx = dir * 780;
           Player.vy = Math.min(Player.vy, 80); // 重力自然接續，絕不無限浮空
         } else {
           // 地面常規瞬步
@@ -3519,7 +3519,7 @@
         }
         if (isAirborne) {
           spawnSparks(Player.x, Player.y - 20, "mikiri", dir);
-          spawnFloatingText(Player.x, Player.y - 95, "【空中踏風瞬身】位移 520！", "#34d399", 1.15);
+          spawnFloatingText(Player.x, Player.y - 95, "【空中踏風瞬身】", "#34d399", 1.15);
         }
         Sound.play("slash", 0.55, 1.4);
 
