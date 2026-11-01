@@ -2727,10 +2727,10 @@
         /* 叛宗劍陣：不再用拔劍姿勢，改成舉劍→劍雨落下插地 */
         M.grab_peril.swordRain = 9; M.grab_peril.frames = { windup: "07_windup", active: "09_slash", recover: "10_slash_rec" };
         Stages[3].stances = {
-          A: { sprite: "boss3", stride: 250,
+          A: { sprite: "boss3", stride: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"],
             pool: [["slash1", 26], ["exclusive_combo", 22], ["exclusive_feint", 20], ["slash2", 10], ["dash_rush", 8], ["thrust_peril", 7], ["sweep_peril", 7]],
             far: ["dash_rush"], farP2: [] },
-          B: { sprite: "boss3b", stride: 200, alias: { thrust_peril: "heavy_thrust" },
+          B: { sprite: "boss3b", stride: 200, walkSeq: ["03_walk1", "01_idle1", "03_walk1", "02_idle2"], alias: { thrust_peril: "heavy_thrust" },
             pool: [["heavy_slam", 30], ["heavy_slash", 22], ["heavy_zone", 18], ["heavy_thrust", 15], ["heavy_sweep", 15]],
             poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 18], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
             far: [], farP2: ["heavy_zone"] }
@@ -6113,7 +6113,10 @@
           } else if (Boss.state === "approach" || (Boss.state === "idle" && Math.abs(Boss.vx) > 40)) {
             SP.phase += dx / ((stnD && stnD.stride) || stage.spriteStride || 238);
             SP.phase %= 1;
-            if (SP.walkReady === 12) {
+            if (stnD && stnD.walkSeq) {
+              /* v0.7.6 姿態可指定用動作表內的格子循環走路（影片抽幀畫風和動作表差太多時用） */
+              imgKey = stnD.walkSeq[Math.floor(SP.phase * stnD.walkSeq.length) % stnD.walkSeq.length];
+            } else if (SP.walkReady === 12) {
               bossImg = SP.walk[Math.floor(SP.phase * 12) % 12];
             } else {
               const walkIdx = Math.floor(performance.now() / 140) % 4;
