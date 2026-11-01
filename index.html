@@ -2067,7 +2067,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.4";
+      const ASSET_VER = "0.8.5";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -6180,7 +6180,7 @@
                 ctx.fillStyle = hc;
                 ctx.beginPath(); ctx.moveTo(44, -9); ctx.lineTo(70, 0); ctx.lineTo(44, 9); ctx.closePath(); ctx.fill(); /* 戈尖 */
                 ctx.fillRect(30, -12, 8, 24); /* 橫刃 */
-                if (fxReady("boss2")) { ctx.globalCompositeOperation = "lighter"; ctx.drawImage(fxSheet("boss2").img, (Math.floor(performance.now() / 70) % 4) * 256, 0, 256, 256, -202, -160, 320, 320); ctx.globalCompositeOperation = "source-over"; }
+                if (fxReady("boss2")) { ctx.shadowBlur = 0; ctx.shadowColor = "transparent"; ctx.globalCompositeOperation = "lighter"; ctx.drawImage(fxSheet("boss2").img, (Math.floor(performance.now() / 70) % 4) * 256, 0, 256, 256, -202, -160, 320, 320); ctx.globalCompositeOperation = "source-over"; }
               } else {
               ctx.fillStyle = sw.reflected ? "#fde047" : "#38bdf8";
               ctx.shadowColor = sw.reflected ? "#fde047" : "#38bdf8";
