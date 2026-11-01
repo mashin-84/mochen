@@ -2063,7 +2063,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.7.9";
+      const ASSET_VER = "0.8.0";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2708,9 +2708,6 @@
       Stages[2].p1Pool = [["slash1", 30], ["flyswords", 20], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
       Stages[2].farMoves = ["flyswords"];
       Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
-      /* 第 1 關一階段權重池：專屬連段與第二斬也會出現 */
-      Stages[1].p1Pool = [["slash1", 30], ["exclusive_combo", 20], ["slash2", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
-      Stages[1].farMovesP2 = ["halberd_throw", "charge_rush"]; /* 二階段拉開距離時擲戈／衝鋒 */
 
       /* ===== v0.7.4/0.7.5 第 3 關 莫無咎（雙姿態）：一階段 A＝青雲雙劍（快）、進二階段換 B＝玄鐵重劍（慢）===== */
       Stages[3].sprite = "boss3";
@@ -2751,6 +2748,29 @@
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
       Stages[1].moves.charge_rush = { name: "神衛衝鋒 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 760, windup: 0.70, active: 0.60, recover: 0.85, range: 150, lunge: 760, damage: 230, parryPostureDmg: 24 };
+      /* ===== v0.8.0 第 1 關改為完整版的王：跳躍、後撤、衝步、繞背、延遲補刀、震退、怒氣，並依玩家打法調整招式 ===== */
+      (function () {
+        const M = Stages[1].moves;
+        M.charge_rush.chainOnHit = true; /* 衝鋒命中才接追擊 */
+        M.leap_slam = { name: "【危】神衛躍斬 (閃開，或起跳踩頭)", isLeap: true, isPerilous: true, perilType: "leap", leapH: 250, frames: { windup: "08_windup_thrust", recover: "10_slash_rec" }, windup: 0.72, active: 0.55, recover: 0.78, range: 190, lunge: 0, damage: 280, parryPostureDmg: 22 };
+        M.backstep = { name: "神衛後撤", isMobility: true, frames: { windup: "04_walk2", active: "04_walk2", recover: "01_idle1" }, windup: 0.10, active: 0.28, recover: 0.10, range: 0, lunge: -900, damage: 0 };
+        M.dash_in = { name: "神衛衝步", isMobility: true, frames: { windup: "03_walk1", active: "03_walk1", recover: "01_idle1" }, windup: 0.12, active: 0.22, recover: 0.06, range: 0, lunge: 1100, damage: 0 };
+        M.combo_delay = { name: "神衛斷雲連戟・遲刃 (最後一刀慢半拍)", isCombo: true, pose: "thrust", comboTotalHits: 3, comboInterval: 0.22, comboLastDelay: 0.36, comboDamagePerHit: 110, windup: 0.44, active: 1.15, recover: 0.45, range: 185, lunge: 380, damage: 130, parryPostureDmg: 16 };
+        M.shock_push = { name: "神衛震戟 (霸體・震退)", armor: true, pushback: 780, windup: 0.52, active: 0.14, recover: 0.55, range: 215, lunge: 120, damage: 90, parryPostureDmg: 18 };
+        M.shadow_strike = { name: "神衛影遁斬 (繞背)", isTeleport: true, teleportBehind: true, teleportDelay: 0.4, teleportText: "【神衛影遁】", teleportColor: "#f87171", windup: 0.62, active: 0.13, recover: 0.38, range: 175, lunge: 260, damage: 170, parryPostureDmg: 20 };
+        M.rage_chain = { name: "神衛怒煞連戟 (霸體)", isRage: true, armor: true, isCombo: true, pose: "thrust", comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 105, windup: 0.60, active: 0.75, recover: 0.65, range: 195, lunge: 420, damage: 200, parryPostureDmg: 24 };
+        Stages[1].pool = [
+          ["slash1", 14, "break"], ["slash2", 9], ["exclusive_combo", 11], ["combo_delay", 11], ["thrust_peril", 9], ["sweep_peril", 8],
+          ["leap_slam", 11, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],
+          ["backstep+halberd_throw", 9, "ranged"], ["shock_push", 8, "push"]
+        ];
+        Stages[1].poolP2 = Stages[1].pool.concat([
+          ["charge_rush+thrust_peril", 10, "chase"], ["leap_slam+slash2", 8, "mobility"], ["shadow_strike+exclusive_combo", 8, "chase"]
+        ]);
+        Stages[1].farMoves = ["halberd_throw", "dash_in+slash2", "leap_slam"];
+        Stages[1].farMovesP2 = ["charge_rush+thrust_peril", "shadow_strike"];
+        Stages[1].rageMove = "rage_chain"; Stages[1].rageEvery = 0.2; /* 每損失 20% 氣血累積滿怒氣 */
+      })();
 
       /* ===== 第 9 關 心魔・墨塵（原型）：鏡像墨塵、依玩家習慣調整 ===== */
       Stages[9].mirror = true;
@@ -3061,7 +3081,12 @@
         aerialShotTimer: 0,
         groundedTimer: 0,
         stance: "A",
-        stanceCount: 0
+        stanceCount: 0,
+        rage: 0,
+        lastHp: 0,
+        landedHit: false,
+        leapStartX: 0,
+        leapLandX: 0
       };
 
       function initScenery() {
@@ -3327,7 +3352,7 @@
 
       function doNormalAttack() {
         Sound.resume();
-        Mirror.noteAttack();
+        Mirror.noteAttack(); Reader.note("atk");
         if (Player.state === "execution" || Player.state === "hitstun") {
           bufferAction("attack");
           return;
@@ -3412,7 +3437,7 @@
 
       function doParry() {
         Sound.resume();
-        Mirror.noteParry();
+        Mirror.noteParry(); Reader.note("parry");
         if (Player.state === "execution") return;
         if (Player.state === "hitstun") {
           if (Player.stateTimer > 0.16) {
@@ -3439,7 +3464,7 @@
 
       function doDash() {
         Sound.resume();
-        Mirror.noteDash();
+        Mirror.noteDash(); Reader.note("dash");
         if (Player.state === "execution") return;
 
         // 【替身殘影反切】(Stage 3+ Unlocked mechanic):
@@ -3544,7 +3569,7 @@
 
         if (Player.y >= Config.groundY - 4) {
           Player.y = Config.groundY;
-          Player.vy = -860;
+          Player.vy = -860; Reader.note("jump");
           Player.state = "jump";
           Player.canDoubleJump = true;
           Player.canAirDash = true;
@@ -3643,7 +3668,7 @@
         Player.invulnTimer = 0.35;
         Boss.flashFrames = 2;
 
-        const isSweep = Boss.isPerilous && Boss.perilType === "sweep";
+        const isSweep = Boss.isPerilous && (Boss.perilType === "sweep" || (Boss.perilType === "leap" && Boss.state === "active"));
         if (isSweep) {
           Boss.hitRegistered = true;
           Boss.isPerilous = false;
@@ -3915,6 +3940,18 @@
         }
       }
 
+      /* v0.8.0 完美閃避：瞬步無敵期間剛好吃掉一次攻擊 → 短暫慢動作＋回體力（冷卻 8 秒，避免變成無腦閃） */
+      let lastPerfectDodgeMs = -99999;
+      function perfectDodgeFx(label, stamina) {
+        const now = performance.now();
+        Player.stamina = Math.min(Player.maxStamina, Player.stamina + stamina);
+        if (now - lastPerfectDodgeMs < 8000) return;
+        lastPerfectDodgeMs = now;
+        Progress.perfectDodgeCount = (Progress.perfectDodgeCount || 0) + 1;
+        Game.slowT = 0.5; Game.slowScale = 0.28;
+        spawnFloatingText(Player.x, Player.y - 125, label, "#7dd3fc", 1.2);
+        hapticBuzz([15, 20, 15]);
+      }
       function resolveBossStrike(move) {
         const cx = (Player.x + Boss.x) * 0.5;
         const cy = Player.y - 50;
@@ -3936,6 +3973,7 @@
             // 成功【極限側閃】退還 10 點劍勢體力
             Player.stamina = Math.min(Player.maxStamina, Player.stamina + 10);
             spawnFloatingText(Player.x, Player.y - 105, "【極限側閃】殘影反制！(劍勢+10)", "#38bdf8", 1.2);
+            perfectDodgeFx("【完美閃避】", 0);
             setTelemetry("✦ 極限側閃成功！避開【危】字殺招並獲追斬強化！(返還 10 點劍勢)");
             return;
           }
@@ -3953,7 +3991,7 @@
           return;
         }
 
-        if (Player.invulnTimer > 0) return;
+        if (Player.invulnTimer > 0) { if (Player.state === "dash") perfectDodgeFx("【完美閃避】", 8); return; }
 
         if (Player.state === "parry") {
           const el = Math.max(1, Math.round(performance.now() - Player.parryStartMs));
@@ -4020,6 +4058,7 @@
         spawnFloatingText(Player.x, Player.y - 100, `${tag} -${dmg}`, "#f87171", 0.8);
       }
       function takeDamage(dmg, dir, tag) {
+        Boss.landedHit = true;
         Progress.damageTaken += dmg;
         if (Player.hp - dmg <= 0 && (Player.tishenActive || (Player.selectedAssist === "tishen" && Player.assistAvailable))) {
           Player.assistAvailable = false;
@@ -4114,7 +4153,7 @@
       function stanceOf(stage) { return stage.stances ? stage.stances[Boss.stance] : null; }
       function stanceKey(stage, k) { const st = stanceOf(stage); return (st && st.alias && st.alias[k]) || k; }
       function weightedPick(list, moves) {
-        const pp = list.filter(e => moves[e[0]]);
+        const pp = list.filter(e => moves[e[0].split("+")[0]]);
         let tot = 0; pp.forEach(e => tot += e[1]);
         let roll = Math.random() * tot, pk = pp[0][0];
         for (const e of pp) { roll -= e[1]; if (roll <= 0) { pk = e[0]; break; } }
@@ -4128,6 +4167,25 @@
           spawnFloatingText(Boss.x, Boss.y - 135, Boss.stance === "B" ? "〔拔出玄鐵重劍〕" : "〔青雲雙劍〕", "#a5b4fc", 1.2);
         }
       }
+      /* v0.8.0 讀玩家打法：近 8 秒的招架／瞬步／跳躍／攻擊次數＋貼身比例；Boss 招式池依此調整權重 */
+      const Reader = { parry: [], dash: [], jump: [], atk: [], nearAvg: 0,
+        note(k) { const a = this[k]; a.push(performance.now() / 1000); if (a.length > 24) a.shift(); },
+        count(k, sec) { const n = performance.now() / 1000; return this[k].filter(t => n - t < sec).length; },
+        reset() { this.parry = []; this.dash = []; this.jump = []; this.atk = []; this.nearAvg = 0; } };
+      /* 招式池：[[招式key（可用 + 串接：先出前者、收招後接後者）, 權重, 標籤], …]；標籤 break＝霸體破防、ranged／chase＝遠程追擊、push＝震退、mobility＝走位 */
+      function pickFromPool(list, moves) {
+        const parry = Reader.count("parry", 8), dash = Reader.count("dash", 8), near = Reader.nearAvg;
+        const pp = list.filter(e => moves[e[0].split("+")[0]]).map(e => {
+          let w = e[1]; const tag = e[2];
+          if (tag === "break" && parry >= 3) w *= 2.5;
+          if ((tag === "ranged" || tag === "chase") && dash >= 3) w *= 2.2;
+          if (tag === "push" && near > 0.65) w *= 2.6;
+          if (tag === "mobility" && near > 0.65) w *= 1.5;
+          return [e[0], w];
+        });
+        return weightedPick(pp, moves);
+      }
+      function triggerMacro(k) { const parts = k.split("+"); triggerBossMove(parts[0], parts.slice(1)); }
       function triggerBossMove(moveKey, queue = []) {
         if (Boss.state === "staggered" || Boss.state === "frozen") return;
         const stage = Stages[Boss.stageId];
@@ -4136,6 +4194,8 @@
 
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         Boss.moveType = moveKey;
+        Boss.landedHit = false;
+        if (m.isRage) { spawnFloatingText(Boss.x, Boss.y - 150, "〔怒氣爆發〕", "#f87171", 1.3); Sound.play("peril", 0.8, 0.8); Boss.flashFrames = 4; }
         if (stage.stances && !m.isSwitch) Boss.stanceCount++;
         if (m.isSwitch) hintOnce("stance", "【換姿】莫無咎拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
@@ -4196,11 +4256,15 @@
           return;
         }
         const stage = Stages[Boss.stageId];
+        /* v0.8.0 怒氣：累積 Boss 受到的傷害；貼身比例（讀玩家打法用） */
+        if (Boss.lastHp > Boss.hp) Boss.rage += Boss.lastHp - Boss.hp;
+        Boss.lastHp = Boss.hp;
+        Reader.nearAvg += (((Math.abs(Player.x - Boss.x) < 230) ? 1 : 0) - Reader.nearAvg) * Math.min(1, dt / 6);
 
         // C3: 命中預測與提示記錄
         Boss.nextImpactIn = 999;
         const moveForCue = stage && stage.moves ? stage.moves[Boss.moveType] : null;
-        if (moveForCue && (Boss.state === "windup" || Boss.state === "active") && !moveForCue.isRanged && !moveForCue.isZone && !moveForCue.isSwitch) {
+        if (moveForCue && (Boss.state === "windup" || Boss.state === "active") && !moveForCue.isRanged && !moveForCue.isZone && !moveForCue.isSwitch && !moveForCue.isMobility) {
             if (moveForCue.isAerial) {
                 if (Boss.state === "active") {
                     Boss.nextImpactIn = Boss.aerialShotTimer;
@@ -4359,13 +4423,14 @@
               Boss.facing = Player.facing;
               Boss.flashFrames = 3;
               Sound.play("assist", 0.85, 1.45);
-              spawnFloatingText(Boss.x, Boss.y - 120, "【虛空瞬襲】！", "#c084fc", 1.2);
+              spawnFloatingText(Boss.x, Boss.y - 120, move.teleportText || "【虛空瞬襲】！", move.teleportColor || "#c084fc", 1.2);
             }
           }
 
           Boss.stateTimer -= dt;
-          if (Boss.perilType === "grab" && Boss.stateTimer > 0.2) {
+          if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
             Boss.grabZoneX += (Player.x - Boss.grabZoneX) * Math.min(1, dt * 6);
+            if (Boss.perilType === "leap") { const mx = (Boss.__leapMax = (stage.moves[Boss.moveType].leapMax || 480)); Boss.grabZoneX = Boss.x + Math.max(-mx, Math.min(mx, Boss.grabZoneX - Boss.x)); } /* 躍擊最遠飛行距離 */
           }
           if (Boss.stateTimer <= 0) {
             Boss.state = "active";
@@ -4377,6 +4442,12 @@
               for (let k = -2; k <= 2; k++) emitDust(Boss.grabZoneX + k * move.range * 0.3, Config.groundY, k < 0 ? -1 : 1, 2, 0.8);
               triggerShake(Boss.facing, 0, 16, 0.3); Sound.play("peril", 0.7, 1.4);
             }
+            if (move.isLeap) {
+              Boss.leapStartX = Boss.x;
+              Boss.leapLandX = Math.max(120, Math.min(Config.worldWidth - 120, Boss.grabZoneX - Boss.facing * 55));
+              Boss.vx = 0; Sound.play("slash", 0.6, 0.7); emitDust(Boss.x, Config.groundY, -Boss.facing, 5, 1.1);
+            }
+            if (move.isMobility) Sound.play("slash", 0.4, 1.7);
             if (move.isSwitch) {
               Boss.stance = Boss.stance === "A" ? "B" : "A";
               Boss.hitRegistered = true; Boss.flashFrames = 3;
@@ -4406,7 +4477,7 @@
               spawnFloatingText(zX, Config.groundY - 50, "【煞氣絕地形成】！", "#f87171", 1.15);
             }
 
-            if (!move.isRanged && !move.isZone && !move.isCounter && !move.isHeal && !move.isSwitch) {
+            if (!move.isRanged && !move.isZone && !move.isCounter && !move.isHeal && !move.isSwitch && !move.isMobility && !move.isLeap) {
               Sound.play("slash", 0.85, Boss.isPerilous ? 0.72 : 0.95);
               if (Boss.perilType !== "grab") {
                 const bType = Stages[Boss.stageId].bodyType || "human";
@@ -4432,6 +4503,13 @@
 
         if (Boss.state === "active") {
           Boss.stateTimer -= dt;
+          if (move.isLeap) {
+            const lt = Math.min(1, Math.max(0, 1 - Boss.stateTimer / (Boss.stateDur || 1)));
+            Boss.x = Boss.leapStartX + (Boss.leapLandX - Boss.leapStartX) * lt;
+            Boss.y = Config.groundY - (move.leapH || 230) * Math.sin(lt * Math.PI);
+            Boss.vx = 0;
+          }
+          if (move.isMobility && Math.random() < dt * 28) emitDust(Boss.x - Math.sign(Boss.vx || 1) * 30, Config.groundY, -Math.sign(Boss.vx || 1), 2, 0.8);
           if (move.isCharge) {
             Boss.vx = Boss.facing * (move.chargeSpeed || 760);
             if (Math.random() < dt * 40) emitDust(Boss.x - Boss.facing * 30, Config.groundY, -Boss.facing, 2, 0.8);
@@ -4488,6 +4566,7 @@
             if (Boss.comboHitTimer <= 0) {
               Boss.comboHitTimer = move.comboInterval || 0.20;
               Boss.comboHitsLeft--;
+              if (Boss.comboHitsLeft === 1 && move.comboLastDelay) Boss.comboHitTimer = move.comboLastDelay; /* 補刀延遲：逼玩家不要連按招架 */
               Boss.hitRegistered = false;
 
               Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
@@ -4530,7 +4609,7 @@
           }
 
           const swingProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
-          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isCharge && swingProgress >= 0.35) {
+          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isCharge && !move.isLeap && !move.isMobility && swingProgress >= 0.35) {
             if (Boss.perilType === "grab") {
               const d = Math.abs(Player.x - Boss.grabZoneX);
               if (d <= move.range * 0.75 && Player.y >= Config.groundY - 70) {
@@ -4544,11 +4623,22 @@
               if (inFront && dist <= move.range) {
                 Boss.hitRegistered = true;
                 resolveBossStrike(move);
+                if (move.pushback && Player.state !== "parry" && Player.invulnTimer <= 0.05) Player.vx = (Player.x >= Boss.x ? 1 : -1) * move.pushback;
               }
             }
           }
 
           if (Boss.stateTimer <= 0) {
+            if (move.isLeap) {
+              /* 躍擊落地：砸地塵土＋震動；落點範圍內且在地面才命中（跳起可躲，空中按跳躍可踩頭） */
+              Boss.x = Boss.leapLandX; Boss.y = Config.groundY;
+              for (let k = -1; k <= 1; k++) emitDust(Boss.x + k * 70, Config.groundY, k || 1, 3, 1.0);
+              triggerShake(Boss.facing, 0, 20, 0.25); Sound.play("peril", 0.6, 1.3);
+              if (!Boss.hitRegistered && Player.state !== "execution" && Math.abs(Player.x - Boss.x) <= move.range && Player.y >= Config.groundY - 70) {
+                Boss.hitRegistered = true;
+                resolveBossStrike(move);
+              }
+            }
             Boss.state = "recover";
             Boss.stateTimer = move.recover * (Config.bossPhase === 2 ? 0.75 : 1.0);
             Boss.isPerilous = false;
@@ -4561,6 +4651,8 @@
           Boss.stateTimer -= dt;
           Boss.vx *= Math.pow(0.04, dt);
           if (Boss.stateTimer <= 0) {
+            const mPrev = stage.moves[Boss.moveType];
+            if (Boss.comboChain && Boss.comboChain.length > 0 && mPrev && mPrev.chainOnHit && !Boss.landedHit) Boss.comboChain = [];
             if (Boss.comboChain && Boss.comboChain.length > 0) {
               const next = Boss.comboChain.shift();
               triggerBossMove(next, Boss.comboChain);
@@ -4588,9 +4680,9 @@
           /* v0.7.2 遠距招式：stage.farMoves（兩階段）＋ stage.farMovesP2（僅二階段），約每 0.5 秒一次機會 */
           const farBase = stn ? (stn.far || []) : (stage.farMoves || []);
           const farP2 = stn ? (stn.farP2 || []) : (stage.farMovesP2 || []);
-          const farList = farBase.concat(Config.bossPhase === 2 ? farP2 : []).filter(k => stage.moves[k]);
+          const farList = farBase.concat(Config.bossPhase === 2 ? farP2 : []).filter(k => stage.moves[k.split("+")[0]]);
           if (farList.length && Boss.aiCooldown <= 0 && Math.random() < dt * 2) {
-            triggerBossMove(farList[Math.floor(Math.random() * farList.length)]);
+            triggerMacro(farList[Math.floor(Math.random() * farList.length)]);
             return;
           }
           if (dist < 360 && Boss.aiCooldown <= 0 && Math.random() < 0.45) {
@@ -4606,6 +4698,10 @@
           const ultKey = moveKeys.find(k => stage.moves[k].ultimate);
           if (ultKey && Boss.ultCd <= 0 && Math.random() < 0.6) {
             triggerBossMove(ultKey);
+          } else if (stage.rageMove && stage.moves[stage.rageMove] && Boss.rage >= stage.maxHp * (stage.rageEvery || 0.18)) {
+            Boss.rage = 0; triggerBossMove(stage.rageMove);
+          } else if (!stn && stage.pool) {
+            triggerMacro(pickFromPool(Config.bossPhase === 2 && stage.poolP2 ? stage.poolP2 : stage.pool, stage.moves));
           } else if (stn && stn.pool) {
             triggerBossMove(weightedPick(Config.bossPhase === 2 && stn.poolP2 ? stn.poolP2 : stn.pool, stage.moves));
           } else if (Config.bossPhase === 2) {
@@ -5859,8 +5955,8 @@
           ctx.strokeStyle = `rgba(248, 113, 113, ${0.5 + p * 0.45})`;
           ctx.lineWidth = 2;
           ctx.strokeRect(Boss.x - m.range, Config.groundY - 26, m.range * 2, 26);
-        } else if (Boss.perilType === "grab") {
-          const r = m.range * 0.75;
+        } else if (Boss.perilType === "grab" || Boss.perilType === "leap") {
+          const r = m.range * (Boss.perilType === "leap" ? 1.0 : 0.75);
           ctx.fillStyle = `rgba(220, 38, 38, ${0.18 + p * 0.35})`;
           ctx.beginPath();
           ctx.ellipse(Boss.grabZoneX, Config.groundY, r, 20, 0, 0, Math.PI * 2);
@@ -6150,6 +6246,7 @@
             if (PZ) imgKey = PZ[Boss.state === "windup" ? 0 : Boss.state === "active" ? 1 : 2];
           }
           if (moveData && moveData.frames && moveData.frames[Boss.state]) imgKey = moveData.frames[Boss.state];
+          if (moveData && moveData.isLeap && Boss.state === "active") imgKey = (1 - Boss.stateTimer / (Boss.stateDur || 1)) < 0.5 ? "07_windup" : "09_slash";
           if (stnD && stnD.remap && stnD.remap[imgKey]) imgKey = stnD.remap[imgKey]; /* 動作表某格畫壞時改用別格 */
           const hrP = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
           if (hrP > 0.4 && Boss.hitReactKind !== "block" && (Boss.state === "idle" || Boss.state === "approach" || Boss.state === "recover")) {
@@ -6945,6 +7042,7 @@
         Boss.aerialShotTimer = 0;
         Boss.groundedTimer = 0;
         Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0;
+        Boss.rage = 0; Boss.lastHp = stage.maxHp; Boss.landedHit = false; Reader.reset();
         Config.bossPhase = 1;
 
         Player.x = 960;
