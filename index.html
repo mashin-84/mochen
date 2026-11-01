@@ -1953,7 +1953,7 @@
           <div class="settlement-score-box">
             <div>
               <div class="score-item-title">戰意評級</div>
-              <div class="score-item-val" style="color: #fde047;">甲上・劍神</div>
+              <div class="score-item-val" id="settle-grade" style="color: #fde047;">甲上・劍神</div>
             </div>
             <div>
               <div class="score-item-title">完美彈刀</div>
@@ -1962,6 +1962,10 @@
             <div>
               <div class="score-item-title">踏劍看破</div>
               <div class="score-item-val" id="settle-mikiri-count">3 次</div>
+            </div>
+            <div>
+              <div class="score-item-title">被擊／完美閃避</div>
+              <div class="score-item-val" id="settle-hit-dodge">0 / 0</div>
             </div>
             <div>
               <div class="score-item-title">通關耗時</div>
@@ -2063,7 +2067,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.0";
+      const ASSET_VER = "0.8.1";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3024,6 +3028,10 @@
         atkCd: 0,
         canDoubleJump: true,
         canAirDash: true,
+        airAtkUsed: false,
+        isAirAtk: false,
+        isDive: false,
+        riposteAtk: false,
 
         inputBuffer: null,
 
@@ -3322,6 +3330,7 @@
 
         Player.state = "attack";
         Player.isChargedAttack = true;
+        Player.isAirAtk = false; Player.isDive = false; Player.riposteAtk = false;
         Player.stateTimer = 0.32;
         Player.atkCd = 0.32;
         Player.facing = Boss.x >= Player.x ? 1 : -1;
@@ -3375,10 +3384,12 @@
           bufferAction("attack");
           return;
         }
+        if (Player.y < Config.groundY - 24) { doAirAttack(); return; }
         Player.stamina = Math.max(0, Player.stamina - 15);
 
         Player.facing = Boss.x >= Player.x ? 1 : -1;
         const isRiposte = Player.riposteTimer > 0;
+        Player.isAirAtk = false; Player.isDive = false; Player.riposteAtk = isRiposte;
         if (isRiposte) {
           Player.riposteTimer = 0;
           Player.comboStep = 3;
@@ -3415,6 +3426,80 @@
           color: arcColor,
           isRiposte
         });
+      }
+
+      /* v0.8.1 空中攻擊：凌空斬（空中一次）／下劈（下落中在 Boss 上方）。落地前不會被 atkCd 卡住 */
+      function doAirAttack() {
+        if (Player.airAtkUsed) { bufferAction("attack"); return; }
+        Player.airAtkUsed = true;
+        Player.stamina = Math.max(0, Player.stamina - 12);
+        Player.staminaRecoverDelay = 0.35;
+        Player.facing = Boss.x >= Player.x ? 1 : -1;
+        const dxA = Math.abs(Boss.x - Player.x);
+        const dive = Player.vy > -120 && dxA <= 130 * CHAR_K && Player.y < Boss.y - 50;
+        const isRiposte = Player.riposteTimer > 0;
+        Player.riposteTimer = 0;
+        Player.riposteAtk = isRiposte;
+        Player.state = "attack";
+        Player.isChargedAttack = false;
+        Player.isAirAtk = true;
+        Player.isDive = dive;
+        Player.comboStep = dive ? 2 : 1;
+        Player.comboWindow = 0;
+        Player.attackHitRegistered = false;
+        Player.stateTimer = dive ? 0.9 : 0.4;
+        Player.atkCd = dive ? 0.5 : 0.4;
+        Sound.play("slash", 0.85, dive ? 0.8 : 1.15);
+        if (dive) {
+          Player.vx = Player.facing * 60;
+          Player.vy = 980;
+          Game.afterimages.push({ x: Player.x, y: Player.y, w: Player.w, h: Player.h, alpha: 0.5, color: "#fde047" });
+          spawnFloatingText(Player.x, Player.y - 120, "【凌空下劈】", "#fde047", 1.1);
+          hintOnce("dive", "下落時在敵人頭頂按攻擊＝下劈，架勢傷害更高（每次騰空限一次）");
+        } else {
+          Player.vx = Player.facing * 200;
+          Player.vy = Math.min(Player.vy, 0) * 0.3 - 60;
+          Game.slashArcs.push({
+            x: Player.x + Player.facing * 18, y: Player.y - 48, facing: Player.facing,
+            radius: Math.round(110 * CHAR_K), startAngle: -1.1, endAngle: 0.9,
+            life: 0.17, maxLife: 0.17, color: isRiposte ? "#fde047" : "#7dd3fc", isRiposte
+          });
+          hintOnce("airslash", "空中按攻擊＝凌空斬（每次騰空限一次）");
+        }
+      }
+
+      function airAttackHit() {
+        const dx = Boss.x - Player.x;
+        const dive = Player.isDive;
+        const reach = (dive ? 100 : 135) * CHAR_K;
+        const hitX = dive ? Math.abs(dx) <= reach : (dx * Player.facing >= -30 && Math.abs(dx) <= reach);
+        const hitY = dive ? (Player.y >= Boss.y - Boss.h * 0.95 && Player.y <= Boss.y + 30) : Math.abs(Player.y - Boss.y) < 170;
+        if (!hitX || !hitY) return;
+        Player.attackHitRegistered = true;
+        if (mirrorTryCounter()) return;
+        const isPunish = (Boss.state === "staggered" || Boss.state === "frozen" || Boss.state === "recover" || Boss.state === "grounded");
+        let dmg = dive ? 85 : 55;
+        let post = dive ? 18 : 7;
+        if (isPunish) { dmg = Math.round(dmg * 1.6); post = Math.round(post * 1.3); }
+        if (Player.riposteAtk) { post *= 2; Player.riposteAtk = false; }
+        if (Progress.echoes && Progress.echoes.includes(14)) dmg = Math.round(dmg * 1.10);
+        if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) dmg = Math.round(dmg * 1.8);
+        Boss.consecutiveBlocks = 0;
+        Boss.hp = Math.max(1, Boss.hp - dmg);
+        Boss.flashFrames = 2;
+        Boss.vx = Player.facing * 70;
+        Sound.play("hit", 0.9, dive ? 0.8 : 1.05);
+        triggerHitstop(Config.slashHitstopFrames + (dive ? 2 : 0));
+        triggerShake(Player.facing, dive ? 0.6 : -0.15, dive ? 20 : 11, dive ? 0.24 : 0.16);
+        spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - (dive ? Boss.h * 0.85 : 62), "hit", Player.facing);
+        bossHitFx(dive ? "heavy" : "hit");
+        damageBossPosture(post, null, Boss.maxPosture * (dive ? 0.8 : 0.6));
+        spawnFloatingText(Boss.x + (Math.random() - 0.5) * 24, Boss.y - 105, `-${dmg}${dive ? " 下劈" : " 凌空"}`, "#7dd3fc", dive ? 1.2 : 1.0);
+        setTelemetry(`${dive ? "凌空下劈" : "凌空斬"}命中 (-${dmg} 氣血 / 架勢 +${post}%)`);
+        if (dive) {
+          Player.vy = -420; Player.vx = -Player.facing * 160; Player.stateTimer = 0.12;
+          hapticBuzz(20);
+        }
       }
 
       function doAttack() {
@@ -3644,7 +3729,7 @@
         Player.vx = 0;
         Player.vy = 0;
         Player.invulnTimer = 0.45;
-        Player.riposteTimer = 0.9;
+        Player.riposteTimer = 1.2;
         Player.flashFrames = 2;
         Boss.flashFrames = 3;
         // 成功【踏劍看破】退還 10 點劍勢體力
@@ -3969,7 +4054,7 @@
           if (Player.invulnTimer > 0) {
             Sound.play("slash", 0.7, 1.6);
             triggerHitstop(4);
-            Player.riposteTimer = 0.85;
+            Player.riposteTimer = 1.2;
             // 成功【極限側閃】退還 10 點劍勢體力
             Player.stamina = Math.min(Player.maxStamina, Player.stamina + 10);
             spawnFloatingText(Player.x, Player.y - 105, "【極限側閃】殘影反制！(劍勢+10)", "#38bdf8", 1.2);
@@ -4033,7 +4118,8 @@
         // 完美招架不耗體力，且即刻恢復 20 劍勢體力！
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 20);
         Player.vx = dir * 140;
-        Player.riposteTimer = 0.85;
+        Player.riposteTimer = 1.2;
+        hintOnce("riposte", "完美招架後 1.2 秒內出刀＝【破勢反擊】，架勢傷害加倍（劍身泛金光）");
         Boss.vx = -dir * 110;
         Progress.parryCount++;
 
@@ -4059,6 +4145,7 @@
       }
       function takeDamage(dmg, dir, tag) {
         Boss.landedHit = true;
+        Progress.hitCount = (Progress.hitCount || 0) + 1;
         Progress.damageTaken += dmg;
         if (Player.hp - dmg <= 0 && (Player.tishenActive || (Player.selectedAssist === "tishen" && Player.assistAvailable))) {
           Player.assistAvailable = false;
@@ -4837,7 +4924,9 @@
         if (Player.state === "attack" || Player.state === "parry" || Player.state === "dash" || Player.state === "drink" || Player.state === "hitstun" || Player.state === "execution") {
           Player.stateTimer -= dt;
 
-          if (Player.state === "attack" && !Player.attackHitRegistered && Player.stateTimer > 0.04) {
+          if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02) {
+            airAttackHit();
+          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04) {
             const dx = Boss.x - Player.x;
             const inFront = dx * Player.facing >= -30;
             const baseReach = (Player.isChargedAttack ? 175 : Player.comboStep === 3 ? 165 : 140) * CHAR_K;
@@ -4848,7 +4937,7 @@
 
               // 隻狼式「打鐵攻防轉換律動」：
               // 1. 若 Boss 處於大硬直（破防 staggered / 定身 frozen / 剛被看破或踩頭 recover / 擊落 grounded）: 實打實肉體受創！
-              const isPunishWindow = (Boss.state === "staggered" || Boss.state === "frozen" || Boss.state === "recover" || Boss.state === "grounded" || (Boss.state === "active" && !!(bossMoveData() && bossMoveData().isHeal)));
+              const isPunishWindow = Player.riposteAtk || (Boss.state === "staggered" || Boss.state === "frozen" || Boss.state === "recover" || Boss.state === "grounded" || (Boss.state === "active" && !!(bossMoveData() && bossMoveData().isHeal)));
 
               // 蓄力重擊命中判定 (D 項要求)
               if (mirrorTryCounter()) {
@@ -4899,6 +4988,7 @@
                 let dmg = Player.comboStep === 3 ? 120 : 75;
                 if (Progress.echoes && Progress.echoes.includes(14)) dmg = Math.round(dmg * 1.10); // 卷三回響14：連段傷害+10%
                 let post = Boss.state === "frozen" ? 18 : Player.comboStep === 3 ? 9 : 6;
+                if (Player.riposteAtk) { post *= 2; dmg = Math.round(dmg * 1.25); Player.riposteAtk = false; spawnFloatingText(Player.x, Player.y - 125, "【破勢反擊】架勢加倍！", "#fde047", 1.2); }
                 if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) {
                   dmg = Math.round(dmg * 1.8);
                   post = Math.round(post * 1.8);
@@ -5006,6 +5096,12 @@
           Player.vy = 0;
           Player.canDoubleJump = true;
           Player.canAirDash = true;
+          Player.airAtkUsed = false;
+          if (Player.state === "attack" && Player.isDive) {
+            Player.stateTimer = Math.min(Player.stateTimer, 0.2);
+            emitDust(Player.x, Config.groundY, 1, 5, 1.4); emitDust(Player.x, Config.groundY, -1, 5, 1.4);
+            triggerShake(0, 1, 10, 0.18);
+          }
           Player.hasVaulted = false; if (Player.state === "jump") Player.state = "idle";
         }
 
@@ -5969,6 +6065,26 @@
           ctx.stroke();
         }
         ctx.restore();
+        drawThreatMarker(m);
+      }
+
+      /* v0.8.1 預警顏色統一：黃＝可招架、紅＝危（閃／跳／側閃）、藍＝霸體（打不斷，用蓄力重斬破、或閃開） */
+      function drawThreatMarker(m) {
+        if (Boss.state !== "windup" || !m || m.isMobility || !(m.damage > 0 || m.isCombo || m.isZone)) return;
+        let col = "#facc15", key = "tg_yellow", txt = "黃圈：可招架（在紅圈收縮到底時按招架）";
+        if (Boss.isPerilous) { col = "#ef4444"; key = "tg_red"; txt = "紅圈【危】：不能硬擋，閃避、跳過或側閃"; }
+        else if (m.armor) { col = "#60a5fa"; key = "tg_blue"; txt = "藍圈：霸體，普攻打不斷；可招架或閃開"; }
+        hintOnce(key, txt);
+        const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
+        const cx = Boss.x, cy = Boss.y - Boss.h - 30;
+        ctx.save();
+        ctx.strokeStyle = col; ctx.fillStyle = col;
+        ctx.globalAlpha = 0.9;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(cx, cy, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.35 + 0.5 * p;
+        ctx.beginPath(); ctx.arc(cx, cy, 11 + 26 * (1 - p), 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
       }
 
           function drawFlyingSwords() {
@@ -6714,6 +6830,18 @@
         ctx.ellipse(Player.x, Config.groundY + 3, Player.w * 0.55, 7, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        /* 破勢反擊窗口：腳下金環隨剩餘時間收縮，提示「現在出刀架勢加倍」 */
+        if (Player.riposteTimer > 0 && Player.state !== "hitstun") {
+          const k = Math.min(1, Player.riposteTimer / 1.2);
+          ctx.save();
+          ctx.globalAlpha = 0.35 + 0.35 * Math.abs(Math.sin(performance.now() / 90));
+          ctx.strokeStyle = "#fde047"; ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.ellipse(Player.x, Config.groundY + 3, 26 + 46 * k, 6 + 8 * k, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
         if (MC_READY === 16) {
           let dx = MC_LASTX === null ? 0 : Math.abs(Player.x - MC_LASTX);
           if (dx > 60) dx = 0;
@@ -6728,7 +6856,7 @@
           let playerImg = null;
           const isAirborne = Player.y < Config.groundY - 2;
 
-          if (Player.state === "execution" || (Player.riposteTimer > 0 && Player.state === "attack")) {
+          if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
             frame = "11_thrust";
           } else if (Player.state === "hitstun" || Player.state === "staggered" || Player.state === "frozen") {
             frame = "16_hurt";
@@ -6738,6 +6866,8 @@
             frame = "14_dash";
           } else if (Player.state === "parry") {
             frame = "13_parry";
+          } else if (Player.state === "attack" && Player.isDive) {
+            frame = "08_fall";
           } else if (Player.state === "attack") {
             frame = Player.comboStep % 2 !== 0 ? "09_slash1" : "10_slash2";
           } else if (Player.isChargingAttack) {
@@ -7093,6 +7223,8 @@
         Progress.parryCount = 0;
         Progress.mikiriCount = 0;
         Progress.damageTaken = 0;
+        Progress.hitCount = 0;
+        Progress.perfectDodgeCount = 0;
 
         // UI Header Updates
         const realmBadge = document.getElementById("boss-realm-badge");
@@ -7244,6 +7376,14 @@
         document.getElementById("settle-parry-count").textContent = `${Progress.parryCount} 次`;
         document.getElementById("settle-mikiri-count").textContent = `${Progress.mikiriCount} 次`;
         document.getElementById("settle-time-val").textContent = `${elapsedSec} 秒`;
+        {
+          const hits = Progress.hitCount || 0, dodges = Progress.perfectDodgeCount || 0;
+          document.getElementById("settle-hit-dodge").textContent = `${hits} / ${dodges}`;
+          /* 評級：被擊越少、完美招架／閃避越多越高；耗時過長微扣 */
+          let score = 100 - hits * 9 + Math.min(20, Progress.parryCount * 2) + Math.min(10, dodges * 3) - (elapsedSec > 240 ? 10 : 0);
+          const grade = score >= 105 ? "甲上・劍神" : score >= 85 ? "甲・劍豪" : score >= 65 ? "乙・劍客" : score >= 40 ? "丙・習劍" : "丁・險勝";
+          document.getElementById("settle-grade").textContent = grade;
+        }
 
         // 通關回響解鎖（第5~8關）
         if (clearedStageId >= 5 && clearedStageId <= 8) {
