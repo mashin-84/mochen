@@ -2656,7 +2656,7 @@
       /* v0.4.15 大招：每個 Boss 的 grab_peril（陣法類招式）視為大招 */
       Object.values(LegacyStages).forEach(st => { if (st.moves && st.moves.grab_peril) st.moves.grab_peril.ultimate = true; });
 
-      /* ===== v0.7.0 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
+      /* ===== v0.7.1 九難：由舊 15 關資料組出新的 9 關（舊資料留在 LegacyStages 當招式素材庫）=====
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
@@ -2684,6 +2684,9 @@
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
       Stages[1].bg = "arena1";
       Stages[2].bg = "arena2"; Stages[2].bgDim = 0.25;
+      Stages[2].sprite = "boss2";
+      /* 招式可用 frames 指定各階段使用的姿勢（windup/active/recover → 動作表檔名） */
+      ["exclusive_zone", "flyswords"].forEach(k => { const m = Stages[2].moves[k]; if (m) m.frames = { windup: "14_cast", active: "14_cast", recover: "14_cast" }; });
       Stages[2].dialogue.post.forEach(l => { if (l.role === "boss") l.expr = "alt"; });
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
@@ -5739,7 +5742,7 @@
             }
           }
 
-          /* v0.7.0 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
+          /* v0.7.1 Boss 精靈資料化：Stages[n].sprite = "boss1" 即讀 assets/boss1/（16 格標準 + walk_01..12 + 17~19 倒地）。
              沒有 sprite 的關卡退回程式繪製。可用 Stages[n].spriteScale / spriteStride 覆寫。 */
           const BOSS_FRAME_NAMES = [
             "01_idle1", "02_idle2", "03_walk1", "04_walk2",
@@ -5979,6 +5982,7 @@
           } else {
             imgKey = Math.floor(performance.now() / 700) % 2 === 0 ? "01_idle1" : "02_idle2";
           }
+          if (moveData && moveData.frames && moveData.frames[Boss.state]) imgKey = moveData.frames[Boss.state];
           const hrP = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
           if (hrP > 0.4 && Boss.hitReactKind !== "block" && (Boss.state === "idle" || Boss.state === "approach" || Boss.state === "recover")) {
             imgKey = "15_hurt";
