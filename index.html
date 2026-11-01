@@ -1832,6 +1832,11 @@
           <input type="range" id="range-shake" min="0" max="200" step="10" value="100" />
           <span id="label-shake" style="font-family: var(--font-mono); width: 44px; text-align: right; color: var(--amber-light);">100%</span>
         </div>
+        <div class="slider-tile">
+          <span>背景音樂音量 (BGM)</span>
+          <input type="range" id="range-bgm" min="0" max="100" step="5" value="50" />
+          <span id="label-bgm" style="font-family: var(--font-mono); width: 44px; text-align: right; color: var(--amber-light);">50%</span>
+        </div>
       </div>
     </div>
 
@@ -2067,7 +2072,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.8";
+      const ASSET_VER = "0.8.9";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2114,7 +2119,22 @@
           return buf;
         },
 
+        /* v0.8.9 外部音效（取自一念飛仙倉庫 sfx/）：載入失敗就維持程式合成音 */
+        loadSamples() {
+          const list = { s_hit: "sfx_hit", s_hurt: "sfx_hurt", s_skill: "sfx_skill", s_ult: "sfx_ult", s_thunder: "sfx_thunder" };
+          Object.keys(list).forEach((k) => {
+            try {
+              fetch(`assets/sfx/${list[k]}.mp3?v=${ASSET_VER}`)
+                .then((r) => r.arrayBuffer())
+                .then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no)))
+                .then((buf) => { this.buffers[k] = buf; })
+                .catch(() => { });
+            } catch (e) { }
+          });
+        },
+
         bake() {
+          this.loadSamples();
           this.buffers.parry = this.bakeBuffer(0.42, (t) => {
             const env = Math.exp(-t * 13);
             const transient = (Math.random() * 2 - 1) * Math.exp(-t * 90) * 0.75;
@@ -2203,6 +2223,46 @@
           } catch (e) {}
         }
       };
+
+
+      /* =========================================================================
+       * v0.8.9 背景音樂（取自一念飛仙倉庫 music/）：淡入淡出、可調音量、隨靜音鍵
+       * ========================================================================= */
+      const STAGE_BGM = { 1: "weiju" }; /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
+      const Music = {
+        tracks: [], vol: 0.5, name: null,
+        init() {
+          try { const v = parseFloat(localStorage.getItem("qingyun_bgmvol")); if (!isNaN(v)) this.vol = Math.max(0, Math.min(1, v)); } catch (e) { }
+          setInterval(() => this.tick(), 50);
+          document.addEventListener("visibilitychange", () => {
+            this.tracks.forEach((t) => { if (document.hidden) t.el.pause(); else if (t.target > 0) this.tryPlay(t); });
+          });
+          const retry = () => this.tracks.forEach((t) => { if (t.target > 0 && t.el.paused) this.tryPlay(t); });
+          window.addEventListener("pointerdown", retry, true);
+          window.addEventListener("keydown", retry, true);
+        },
+        tryPlay(t) { try { const pr = t.el.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } },
+        play(name) {
+          if (this.name === name) { const t = this.tracks.find((x) => x.name === name && x.target > 0); if (t) return; }
+          this.fadeOut();
+          const el = new Audio(`assets/music/${name}.webm?v=${ASSET_VER}`);
+          el.loop = true; el.preload = "auto"; el.volume = 0;
+          const t = { name, el, cur: 0, target: 1 };
+          this.tracks.push(t); this.name = name;
+          this.tryPlay(t);
+        },
+        fadeOut() { this.tracks.forEach((t) => { t.target = 0; }); this.name = null; },
+        setVol(v) { this.vol = Math.max(0, Math.min(1, v)); try { localStorage.setItem("qingyun_bgmvol", String(this.vol)); } catch (e) { } },
+        tick() {
+          for (let i = this.tracks.length - 1; i >= 0; i--) {
+            const t = this.tracks[i];
+            t.cur += (t.target - t.cur) * 0.08;
+            if (t.target === 0 && t.cur < 0.01) { t.el.pause(); this.tracks.splice(i, 1); continue; }
+            t.el.volume = Math.max(0, Math.min(1, t.cur * this.vol * (Sound.muted ? 0 : 1)));
+          }
+        }
+      };
+      Music.init();
 
       /* =========================================================================
        * 2. 全九難關卡資料庫 (ALL 9 STAGES DATABASE)
@@ -3511,6 +3571,7 @@
         Boss.flashFrames = 2;
         Boss.vx = Player.facing * 70;
         Sound.play("hit", 0.9, dive ? 0.8 : 1.05);
+        Sound.play("s_hit", 0.6, dive ? 0.9 : 1.0);
         triggerHitstopMs(hitstopByDmg(dmg) + (dive ? 15 : 0));
         triggerShake(Player.facing, dive ? 0.6 : -0.15, dive ? 20 : 11, dive ? 0.24 : 0.16);
         spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - (dive ? Boss.h * 0.85 : 62), "hit", Player.facing);
@@ -3850,6 +3911,7 @@
 
           // 第一段定格與震屏
           Sound.play("execution", 0.95, 1.15);
+          Sound.play("s_ult", 0.6, 1.0);
           triggerHitstop(6);
           triggerShake(Player.facing, -0.3, 30, 0.25);
           spawnSparks(Boss.x, Boss.y - 65, "execution", Player.facing);
@@ -4211,6 +4273,7 @@
         const heavyHit = dmg >= 250;
         Sound.play("hit", 0.9, 0.85);
         Sound.play("hit", 0.7, 0.55);
+        Sound.play("s_hurt", heavyHit ? 0.9 : 0.7, heavyHit ? 0.9 : 1.0);
         hapticBuzz(heavyHit ? [60, 30, 90] : 70);
         triggerHitstopMs(heavyHit ? 100 : 70);
         triggerShake(dir, 0.3, heavyHit ? 34 : 24, heavyHit ? 0.36 : 0.28);
@@ -5059,6 +5122,7 @@
 
                   damageBossPosture(10, null); // 普通重斬架勢，不得有破防加成！
                   Sound.play("hit", 0.9, 0.88);
+                  Sound.play("s_hit", 0.7, 0.9);
                   triggerHitstopMs(hitstopByDmg(dmg));
                   triggerShake(Player.facing, -0.15, 14, 0.18);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
@@ -5087,6 +5151,7 @@
                 Boss.vx = Player.facing * 75;
 
                 Sound.play("hit", 0.85, 0.95 + Player.comboStep * 0.06);
+                Sound.play("s_hit", 0.6, 0.95 + Player.comboStep * 0.05);
                 triggerHitstopMs(hitstopByDmg(dmg));
                 triggerShake(Player.facing, -0.15, 11, 0.16);
                 spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
@@ -7459,6 +7524,9 @@
       function loadStage(stageId, opts) {
         const stage = Stages[stageId];
         if (!stage) return;
+        if (opts && opts.hub) Music.fadeOut();
+        else if (STAGE_BGM[stageId]) Music.play(STAGE_BGM[stageId]);
+        else Music.fadeOut();
 
         Progress.currentStage = stageId;
         Boss.stageId = stageId;
@@ -7654,6 +7722,7 @@
       const elSettlementModal = document.getElementById("settlement-modal");
       function handleStageClear(clearedStageId) {
         Game.cutsceneActive = true;
+        Music.fadeOut();
         const stC = Stages[clearedStageId];
         const post = stC && stC.dialogue && stC.dialogue.post;
         if (post && post.length) dlgStart(post, () => bossDeathOut(() => showSettlement(clearedStageId)));
@@ -8721,6 +8790,11 @@
         Config.parryHitstopFrames = Number(rHitstop.value);
         lHitstop.textContent = `${Config.parryHitstopFrames}幀`;
       });
+
+      const rBgm = document.getElementById("range-bgm");
+      const lBgm = document.getElementById("label-bgm");
+      rBgm.value = Math.round(Music.vol * 100); lBgm.textContent = `${rBgm.value}%`;
+      rBgm.addEventListener("input", () => { Music.setVol(Number(rBgm.value) / 100); lBgm.textContent = `${rBgm.value}%`; });
 
       const rShake = document.getElementById("range-shake");
       const lShake = document.getElementById("label-shake");
