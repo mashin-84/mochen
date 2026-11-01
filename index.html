@@ -2688,6 +2688,17 @@
       /* 招式可用 frames 指定各階段使用的姿勢（windup/active/recover → 動作表檔名） */
       ["exclusive_zone", "flyswords"].forEach(k => { const m = Stages[2].moves[k]; if (m) m.frames = { windup: "14_cast", active: "14_cast", recover: "14_cast" }; });
       Stages[2].dialogue.post.forEach(l => { if (l.role === "boss") l.expr = "alt"; });
+      /* v0.7.2 第 2 關招式審查：一階段權重池（特色招式也要出現）、遠距招、二階段新增 2 招 */
+      Stages[2].moves.slash1.damage = 150;
+      Stages[2].moves.exclusive_teleport.parryPostureDmg = 16;
+      Stages[2].moves.exclusive_zone.zoneTargetP2 = true; /* 二階段罡風陣鎖定玩家位置 */
+      Stages[2].moves.teleport_combo = { name: "千幻鏡影・雙襲", isTeleport: true, teleportBehind: true, teleportDelay: 0.22, isCombo: true, comboTotalHits: 2, comboInterval: 0.22, comboDamagePerHit: 95, windup: 0.52, active: 0.50, recover: 0.40, range: 170, lunge: 260, damage: 190, parryPostureDmg: 18 };
+      Stages[2].moves.sky_swords = { name: "羅天飛劍・垂落", isRanged: true, bulletCount: 5, bulletSpeed: 700, bulletTrajectory: "vertical", bulletColor: "#38bdf8", frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.20, recover: 0.60, range: 600, lunge: 0, damage: 100, parryPostureDmg: 18 };
+      Stages[2].p1Pool = [["slash1", 30], ["flyswords", 20], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
+      Stages[2].farMoves = ["flyswords"];
+      Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
+      /* 第 1 關一階段權重池：專屬連段與第二斬也會出現 */
+      Stages[1].p1Pool = [["slash1", 30], ["exclusive_combo", 20], ["slash2", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
@@ -4010,7 +4021,7 @@
             let svy = 0;
 
             if (traj === "vertical") {
-              sx = Player.x + (i - 1) * 130;
+              sx = Player.x + (i - (count - 1) / 2) * 130;
               sy = 20;
               svx = 0;
               svy = speed * 1.1;
@@ -4289,7 +4300,7 @@
             }
             // 原語 (4) 區域封鎖：召喚地表持續傷害區域
             if (move.isZone) {
-              const zX = move.zoneTargetPlayer ? Player.x : Boss.x + Boss.facing * (move.range * 0.5);
+              const zX = (move.zoneTargetPlayer || (move.zoneTargetP2 && Config.bossPhase === 2)) ? Player.x : Boss.x + Boss.facing * (move.range * 0.5);
               Game.hazardZones.push({
                 x: zX,
                 y: Config.groundY,
@@ -4480,6 +4491,12 @@
         if (dist > 220) {
           Boss.state = "approach";
           Boss.vx = Boss.facing * (Config.bossPhase === 2 ? 320 : 260);
+          /* v0.7.2 遠距招式：stage.farMoves（兩階段）＋ stage.farMovesP2（僅二階段），約每 0.5 秒一次機會 */
+          const farList = (stage.farMoves || []).concat(Config.bossPhase === 2 ? (stage.farMovesP2 || []) : []).filter(k => stage.moves[k]);
+          if (farList.length && Boss.aiCooldown <= 0 && Math.random() < dt * 2) {
+            triggerBossMove(farList[Math.floor(Math.random() * farList.length)]);
+            return;
+          }
           if (dist < 360 && Boss.aiCooldown <= 0 && Math.random() < 0.45) {
             triggerBossMove("thrust_peril");
           }
@@ -4497,6 +4514,13 @@
             const pool = moveKeys.filter(k => !stage.moves[k].ultimate);
             const pick = pool[Math.floor(Math.random() * pool.length)];
             triggerBossMove(pick);
+          } else if (stage.p1Pool && stage.p1Pool.length) {
+            /* v0.7.2 一階段權重池：[[招式key, 權重], ...] */
+            const pp = stage.p1Pool.filter(e => stage.moves[e[0]]);
+            let tot = 0; pp.forEach(e => tot += e[1]);
+            let roll = Math.random() * tot, pk = pp[0][0];
+            for (const e of pp) { roll -= e[1]; if (roll <= 0) { pk = e[0]; break; } }
+            triggerBossMove(pk);
           } else {
             if (stage.moves.exclusive_aerial && Math.random() < 0.18) triggerBossMove("exclusive_aerial");
             else if (r < 0.45) triggerBossMove(moveKeys[0]);
