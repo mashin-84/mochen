@@ -2701,7 +2701,7 @@
       Stages[1].p1Pool = [["slash1", 30], ["exclusive_combo", 20], ["slash2", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
       Stages[1].farMovesP2 = ["halberd_throw", "charge_rush"]; /* 二階段拉開距離時擲戈／衝鋒 */
 
-      /* ===== v0.7.4 第 3 關 莫無咎（雙姿態）：A＝青雲雙劍（快）、B＝玄鐵重劍（慢），每 3 招換姿（二階段每 2 招）===== */
+      /* ===== v0.7.4/0.7.5 第 3 關 莫無咎（雙姿態）：一階段 A＝青雲雙劍（快）、進二階段換 B＝玄鐵重劍（慢）===== */
       Stages[3].sprite = "boss3";
       Stages[3].bg = "arena3"; Stages[3].bgDim = 0.2;
       Stages[3].dialogue.post.forEach(l => { if (l.role === "boss") l.expr = "alt"; });
@@ -2719,19 +2719,20 @@
         M.heavy_zone = { name: "戒律鎮壓 (跳起)", isZone: true, zoneType: "fire", zoneWidth: 380, zoneDuration: 2.6, zoneDamagePerSec: 160, zoneTargetP2: true, frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.20, recover: 0.45, range: 330, lunge: 0, damage: 140 };
         M.heavy_thrust = { name: "【危】玄鐵撼嶽撞 (前閃看破)", pose: "thrust", windup: 0.65, active: 0.22, recover: 0.68, range: 270, lunge: 860, damage: 330, isPerilous: true, perilType: "thrust" };
         M.heavy_sweep = { name: "【危】千鈞橫江斬 (起跳踩頭)", pose: "sweep", windup: 0.66, active: 0.24, recover: 0.65, range: 250, lunge: 260, damage: 300, isPerilous: true, perilType: "sweep" };
-        /* 二階段：雙劍快攻 + 重劍落地震波 */
-        M.sword_cleave = { name: "雙劍重劈 (連斬接震波)", isCombo: true, comboTotalHits: 2, comboInterval: 0.22, comboDamagePerHit: 100, isZone: true, zoneType: "fire", zoneWidth: 300, zoneDuration: 2.2, zoneDamagePerSec: 150, windup: 0.60, active: 0.55, recover: 0.55, range: 190, lunge: 300, damage: 200, parryPostureDmg: 18 };
+        /* 二階段（重劍）：連斬接落地震波 */
+        M.sword_cleave = { name: "玄鐵重劈 (連斬接震波)", isCombo: true, comboTotalHits: 2, comboInterval: 0.26, comboDamagePerHit: 120, isZone: true, zoneType: "fire", zoneWidth: 340, zoneDuration: 2.4, zoneDamagePerSec: 150, windup: 0.70, active: 0.62, recover: 0.60, range: 210, lunge: 280, damage: 240, parryPostureDmg: 26 };
         /* 換姿：0.6 秒拔劍前搖（無傷害，可趁機攻擊） */
         M.stance_switch = { name: "拔劍換姿", isSwitch: true, frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.05, recover: 0.15, range: 0, lunge: 0, damage: 0 };
-        Stages[3].switchEvery = 3; Stages[3].switchEveryP2 = 2;
+        Stages[3].stanceByPhase = { 1: "A", 2: "B" }; /* 一階段雙劍、二階段玄鐵重劍（進二階段時拔重劍） */
+        /* 叛宗劍陣：不再用拔劍姿勢，改成舉劍→劍雨落下插地 */
+        M.grab_peril.swordRain = 9; M.grab_peril.frames = { windup: "07_windup", active: "09_slash", recover: "10_slash_rec" };
         Stages[3].stances = {
           A: { sprite: "boss3", stride: 250,
             pool: [["slash1", 26], ["exclusive_combo", 22], ["exclusive_feint", 20], ["slash2", 10], ["dash_rush", 8], ["thrust_peril", 7], ["sweep_peril", 7]],
-            poolP2: [["slash1", 18], ["exclusive_combo", 16], ["exclusive_feint", 16], ["slash2", 8], ["dash_rush", 8], ["thrust_peril", 8], ["sweep_peril", 8], ["sword_cleave", 18]],
             far: ["dash_rush"], farP2: [] },
           B: { sprite: "boss3b", stride: 200, alias: { thrust_peril: "heavy_thrust" },
             pool: [["heavy_slam", 30], ["heavy_slash", 22], ["heavy_zone", 18], ["heavy_thrust", 15], ["heavy_sweep", 15]],
-            poolP2: [["heavy_slam", 26], ["heavy_slash", 20], ["heavy_zone", 20], ["heavy_thrust", 17], ["heavy_sweep", 17]],
+            poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 18], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
             far: [], farP2: ["heavy_zone"] }
         };
       })();
@@ -3737,6 +3738,7 @@
             spawnFloatingText(Boss.x, Boss.y - 150, `一劍青雲 -${execDmg}`, "#ef4444", 1.5);
             if (!wasPhase2) {
               bossPhaseCinematic();
+              onBossPhase2();
               spawnFloatingText(Boss.x, Boss.y - 180, "【一劍青雲・極】三絕斬魄！二階段破入！", "#fde047", 1.3);
               setTelemetry(`★【一劍青雲・極】重創敵將氣血 -${execDmg} 破入二階段！`);
               document.getElementById("boss-realm-badge").textContent = "二階段・狂暴質變";
@@ -3805,6 +3807,7 @@
             spawnFloatingText(Boss.x, Boss.y - 145, `一劍青雲 -${execDmg}`, "#ef4444", 1.4);
             if (!wasPhase2) {
               bossPhaseCinematic();
+              onBossPhase2();
               spawnFloatingText(Boss.x, Boss.y - 175, "【二階段暴怒突破】解鎖全新連環殺招！", "#ef4444", 1.2);
               setTelemetry(`★ 破勢忍殺 -${execDmg}！Boss 煞氣魔化爆發，解鎖【二階段專屬殺招】！`);
               document.getElementById("boss-realm-badge").textContent = "二階段・狂暴質變";
@@ -4099,6 +4102,14 @@
         for (const e of pp) { roll -= e[1]; if (roll <= 0) { pk = e[0]; break; } }
         return pk;
       }
+      /* 進二階段：依 stage.stanceByPhase 換姿態（第 3 關：一階段雙劍、二階段玄鐵重劍） */
+      function onBossPhase2() {
+        const stage = Stages[Boss.stageId];
+        if (stage && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) {
+          Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
+          spawnFloatingText(Boss.x, Boss.y - 135, Boss.stance === "B" ? "〔拔出玄鐵重劍〕" : "〔青雲雙劍〕", "#a5b4fc", 1.2);
+        }
+      }
       function triggerBossMove(moveKey, queue = []) {
         if (Boss.state === "staggered" || Boss.state === "frozen") return;
         const stage = Stages[Boss.stageId];
@@ -4344,6 +4355,10 @@
             Boss.stateTimer = move.active * phaseMod * volSpeedMod;
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
+            if (move.swordRain) {
+              for (let k = -2; k <= 2; k++) emitDust(Boss.grabZoneX + k * move.range * 0.3, Config.groundY, k < 0 ? -1 : 1, 2, 0.8);
+              triggerShake(Boss.facing, 0, 16, 0.3); Sound.play("peril", 0.7, 1.4);
+            }
             if (move.isSwitch) {
               Boss.stance = Boss.stance === "A" ? "B" : "A";
               Boss.hitRegistered = true; Boss.flashFrames = 3;
@@ -4544,7 +4559,7 @@
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
         if (stage.mirror) { mirrorAI(dt, dist); return; }
-        if (stage.stances && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
+        if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;
         }
         const stn = stanceOf(stage);
@@ -5106,7 +5121,12 @@
           else if (Game.mode === "enter") { targetX = Player.x - 420; minCam = -1280; }
           const clampedX = Math.max(minCam, Math.min(Config.worldWidth - Config.baseWidth, targetX));
           cam.x += (clampedX - cam.x) * Math.min(1, dt * 8.5);
-          const zTarget = cam.targetZoom + (introOn ? 0.2 : 0) + 0.14 * uw;
+          let zTarget = cam.targetZoom + (introOn ? 0.2 : 0) + 0.14 * uw;
+          if (Game.mode === "hub" && canvas.width > canvas.height) {
+            /* v0.7.5 營地填滿畫面：寬螢幕時放大到營地圖剛好撐滿左右，不露出黑邊與戰場；並在進入營地的第一幀直接到位 */
+            zTarget = Math.max(zTarget, (canvas.width * Config.baseHeight) / (canvas.height * Config.baseWidth));
+            if (!cam._hubSnap) { cam._hubSnap = true; cam.x = -1280; cam.zoom = zTarget; }
+          } else if (Game.mode !== "hub") cam._hubSnap = false;
           cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * 7.5);
         }
 
@@ -5765,7 +5785,37 @@
         return `rgba(56, 189, 248, ${alpha})`;
       }
 
+      /* v0.7.5 劍雨：move.swordRain = 劍數；前搖由高處下落，出手時插進紅圈，收招淡出 */
+      function drawSwordRain() {
+        const stage = Stages[Boss.stageId]; const m = stage.moves[Boss.moveType];
+        if (!m || !m.swordRain || Boss.perilType !== "grab") return;
+        let fall, alpha = 1;
+        if (Boss.state === "windup") { const p = 1 - Boss.stateTimer / (Boss.stateDur || 1); fall = Math.min(1, Math.max(0, (p - 0.25) / 0.75)); fall = fall * fall; alpha = Math.min(1, 0.25 + p * 1.2); }
+        else if (Boss.state === "active") fall = 1;
+        else if (Boss.state === "recover") { fall = 1; alpha = Math.max(0, Boss.stateTimer / (m.recover * 0.5 || 0.4)); if (alpha > 1) alpha = 1; }
+        else return;
+        const r = m.range * 0.75, n = m.swordRain;
+        ctx.save();
+        for (let i = 0; i < n; i++) {
+          const f = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
+          const x = Boss.grabZoneX + f * r * 0.92;
+          const depth = 8 + 10 * (1 - Math.abs(f));
+          const hover = 420 * (1 - fall);
+          const tipY = Config.groundY + 6 - 10 * Math.abs(f) - hover - (i % 2) * 14;
+          const L = 118 + (i % 3) * 14;
+          ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, tipY);
+          ctx.rotate(((i % 2) ? 1 : -1) * 0.05 * (1 - fall) + f * 0.06);
+          ctx.shadowColor = "#7dd3fc"; ctx.shadowBlur = 12;
+          const g = ctx.createLinearGradient(0, -L, 0, 0); g.addColorStop(0, "#e0f2fe"); g.addColorStop(1, "#7aa8d8");
+          ctx.fillStyle = g; ctx.strokeStyle = "#3b5b86"; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-5, -L + 14); ctx.lineTo(-5, -L); ctx.lineTo(5, -L); ctx.lineTo(5, -L + 14); ctx.closePath(); ctx.fill(); ctx.stroke();
+          ctx.shadowBlur = 0; ctx.fillStyle = "#6b4a2b"; ctx.fillRect(-13, -L - 4, 26, 6); ctx.fillRect(-3, -L - 30, 6, 26);
+          ctx.restore();
+        }
+        ctx.restore();
+      }
       function drawTelegraphs() {
+        drawSwordRain();
         if (Boss.state !== "windup" && Boss.state !== "active") return;
         const stage = Stages[Boss.stageId];
         const m = stage.moves[Boss.moveType];
@@ -6870,7 +6920,7 @@
         Boss.aerialTimer = 0;
         Boss.aerialShotTimer = 0;
         Boss.groundedTimer = 0;
-        Boss.stance = "A"; Boss.stanceCount = 0;
+        Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0;
         Config.bossPhase = 1;
 
         Player.x = 960;
