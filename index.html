@@ -2067,7 +2067,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.3";
+      const ASSET_VER = "0.8.4";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3801,6 +3801,7 @@
         Player.facing = Boss.x >= Player.x ? 1 : -1;
 
         const isJiVersion = Progress.unlockedStages >= 5;
+        executionFx(isJiVersion);
         let baseRatio = getExecutionDmgRatio(Boss.stageId);
         let execRatio = isJiVersion ? baseRatio * 1.15 : baseRatio;
         let execDmg = Math.round(Boss.maxHp * execRatio);
@@ -3833,6 +3834,7 @@
             { x1: startX - Player.facing * 140, y1: Config.groundY + 20, x2: targetX + Player.facing * 190, y2: Config.groundY - 170, alpha: 1.0, color: "#fde047", width: 9 },
             { x1: startX - Player.facing * 240, y1: Config.groundY - 70, x2: targetX + Player.facing * 260, y2: Config.groundY - 70, alpha: 1.0, color: "#ffffff", width: 12 }
           ];
+          if (fxReady("exec")) Game.executionLines = [];
 
           // 第一段定格與震屏
           Sound.play("execution", 0.95, 1.15);
@@ -3880,6 +3882,7 @@
             Boss.hp = 0;
             Boss.deathblows = 0;
             bossKillCinematic();
+            executionKillFx();
             Boss.state = "recover";
             Boss.stateTimer = 2.2;
             spawnFloatingText(Boss.x, Boss.y - 155, `一劍青雲 -${execDmg}`, "#ef4444", 1.5);
@@ -3915,6 +3918,7 @@
             x2: targetX + Player.facing * 100, y2: Config.groundY - 72,
             alpha: 1.0, color: "#38bdf8", width: 7
           }];
+          if (fxReady("exec")) Game.executionLines = [];
 
           Sound.play("execution", 1.0, 1.0);
           triggerHitstop(9);
@@ -3949,6 +3953,7 @@
             Boss.hp = 0;
             Boss.deathblows = 0;
             bossKillCinematic();
+            executionKillFx();
             Boss.state = "recover";
             Boss.stateTimer = 2.0;
             spawnFloatingText(Boss.x, Boss.y - 145, `一劍青雲 -${execDmg}`, "#ef4444", 1.4);
@@ -5573,6 +5578,13 @@
           ctx.save();
           const a = Math.min(1, Game.executionBannerTimer * 1.5);
           ctx.globalAlpha = a;
+          const inkS = fxSheet("ink");
+          if (inkS.ok) {
+            ctx.font = `900 64px var(--font-serif)`;
+            const tw = ctx.measureText("【 破 勢 處 決 ・ 一 劍 青 雲 】").width;
+            const iw = Math.min(w * 0.98, tw * 1.45), ih = iw * 0.34;
+            ctx.drawImage(inkS.img, 0, 768, 512, 256, w * 0.5 - iw / 2, h * 0.24 - ih / 2, iw, ih);
+          } else {
           ctx.fillStyle = "rgba(11, 18, 32, 0.85)";
           ctx.fillRect(0, h * 0.24 - 38, w, 76);
           ctx.strokeStyle = "rgba(245, 158, 11, 0.75)";
@@ -5583,8 +5595,9 @@
           ctx.moveTo(0, h * 0.24 + 38);
           ctx.lineTo(w, h * 0.24 + 38);
           ctx.stroke();
+          }
 
-          ctx.font = `900 36px var(--font-serif)`;
+          ctx.font = inkS.ok ? `900 64px var(--font-serif)` : `900 36px var(--font-serif)`;
           ctx.textAlign = "center";
           ctx.fillStyle = "#fef08a";
           ctx.shadowColor = "#f59e0b";
@@ -7144,6 +7157,7 @@
         }
       }
       function initAmbient() {
+        ["slash", "air", "spark", "boss1", "boss2", "ult", "mark", "scene", "exec", "exec2", "ink"].forEach(fxSheet); /* 預載，避免第一次出招沒有特效 */
         Game.leaves = []; Game.mist = [];
         if (Boss.stageId !== 1) return;
         const cx = Game.camera ? Game.camera.x : 0;
@@ -7182,6 +7196,26 @@
           spawnFx("scene", 2, x + (Math.random() - 0.5) * 40, Config.groundY - 14, { w: 46 + Math.random() * 34, col: Math.floor(Math.random() * 4), dur: 1.0, add: false,
             vx: (Math.random() - 0.5) * 560, vy: -(300 + Math.random() * 260), grav: 1600, spin: (Math.random() - 0.5) * 9 });
         }
+      }
+      /* v0.8.4 處決特效：普通版一斬＋地面光環；極版三段斬（斜／反斜／橫貫）＋裂空＋碎光＋光環；擊殺再加光點與魂光上升 */
+      function executionFx(ji) {
+        ["exec", "exec2", "ink"].forEach(fxSheet);
+        const f = Player.facing, cy = () => Boss.y - 150;
+        const strike = (row, w, h, dur) => spawnFx("exec", row, Boss.x, cy(), { w, h, dur, facing: f });
+        const ring = (w) => spawnFx("exec2", 3, Boss.x, Config.groundY + w * 0.06, { w, dur: 0.6 });
+        if (!ji) { strike(0, 560, 560, 0.3); ring(520); return; }
+        strike(0, 620, 620, 0.32);
+        setTimeout(() => strike(1, 620, 620, 0.32), 140);
+        setTimeout(() => {
+          strike(2, 1100, 620, 0.42);
+          spawnFx("exec2", 0, Boss.x, Boss.y - 170, { w: 560, h: 640, dur: 0.65 });
+          spawnFx("exec2", 1, Boss.x, cy(), { w: 560, dur: 0.65 });
+          ring(760);
+        }, 280);
+      }
+      function executionKillFx() {
+        spawnFx("exec", 3, Boss.x, Boss.y - 150, { w: 560, dur: 1.5 });
+        setTimeout(() => spawnFx("exec2", 2, Boss.x, Config.groundY - 10, { anchor: "b", w: 460, dur: 2.8, loop: true, fps: 5, follow: () => ({ x: Boss.x, y: Config.groundY - 10 }) }), 500);
       }
       function swordImpactFx(sw) {
         if (sw && sw.kind === "halberd") spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 });
