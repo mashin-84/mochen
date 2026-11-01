@@ -2699,6 +2699,7 @@
       Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
       /* 第 1 關一階段權重池：專屬連段與第二斬也會出現 */
       Stages[1].p1Pool = [["slash1", 30], ["exclusive_combo", 20], ["slash2", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
+      Stages[1].farMovesP2 = ["halberd_throw", "charge_rush"]; /* 二階段拉開距離時擲戈／衝鋒 */
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
