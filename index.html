@@ -2067,7 +2067,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.7";
+      const ASSET_VER = "0.8.8";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2949,7 +2949,7 @@
       } catch (e) {}
 
       const Game = {
-        hitstopFrames: 0,
+        hitstopT: 0,
         flashWhiteOverlay: 0,
         darkVignetteAlpha: 0,
         executionBannerTimer: 0,
@@ -2966,7 +2966,9 @@
           shakeTime: 0,
           shakeDuration: 0,
           shakeAmp: 0,
-          shakeFreq: 46
+          shakeFreq: 46,
+          trauma: 0,
+          shakeClock: 0
         },
 
         particles: [],
@@ -3027,6 +3029,7 @@
         parryStartMs: 0,
         riposteTimer: 0,
         invulnTimer: 0,
+        hurtInv: 0,
         flashFrames: 0,
         atkCd: 0,
         canDoubleJump: true,
@@ -3133,17 +3136,24 @@
         } catch (e) { }
       }
 
-      function triggerHitstop(frames) {
-        Game.hitstopFrames = Math.max(Game.hitstopFrames, Math.round(frames));
+      /* v0.8.8 定格改毫秒制：只凍結 Boss 與主角，粒子、鏡頭、輸入緩衝照跑；上限 120ms */
+      function triggerHitstopMs(ms) {
+        Game.hitstopT = Math.max(Game.hitstopT || 0, Math.min(120, ms) / 1000);
       }
+      function triggerHitstop(frames) { triggerHitstopMs(frames * 1000 / 60); }
+      function hitstopByDmg(dmg) { return Math.max(50, Math.min(100, 40 + dmg * 0.5)); }
 
-      function triggerShake(dx, dy, amp, dur = 0.24) {
-        const len = Math.hypot(dx, dy) || 1;
-        Game.camera.shakeX = dx / len;
-        Game.camera.shakeY = dy / len;
-        Game.camera.shakeAmp = amp * Config.shakeMultiplier;
-        Game.camera.shakeDuration = dur;
-        Game.camera.shakeTime = 0;
+      /* v0.8.8 Trauma 震屏：offset = 最大偏移 × trauma² × 平滑噪聲；每次受擊加 0.3～0.6，每秒衰減 1 */
+      function _nh(n) { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); }
+      function noise1(x) {
+        const i = Math.floor(x), f = x - i;
+        const u = f * f * f * (f * (f * 6 - 15) + 10);
+        const a = (_nh(i) * 2 - 1) * f, b = (_nh(i + 1) * 2 - 1) * (f - 1);
+        return (a + (b - a) * u) * 2;
+      }
+      function addTrauma(v) { const c = Game.camera; c.trauma = Math.min(1, (c.trauma || 0) + v); }
+      function triggerShake(dx, dy, amp, dur) {
+        addTrauma(Math.max(0.25, Math.min(0.65, 0.3 + (amp - 11) * 0.013)));
       }
 
       function emitDust(x, y, dir, n, power) {
@@ -3501,7 +3511,7 @@
         Boss.flashFrames = 2;
         Boss.vx = Player.facing * 70;
         Sound.play("hit", 0.9, dive ? 0.8 : 1.05);
-        triggerHitstop(Config.slashHitstopFrames + (dive ? 2 : 0));
+        triggerHitstopMs(hitstopByDmg(dmg) + (dive ? 15 : 0));
         triggerShake(Player.facing, dive ? 0.6 : -0.15, dive ? 20 : 11, dive ? 0.24 : 0.16);
         spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - (dive ? Boss.h * 0.85 : 62), "hit", Player.facing);
         bossHitFx(dive ? "heavy" : "hit");
@@ -3749,7 +3759,7 @@
         Progress.mikiriCount++;
 
         Sound.play("mikiri", 0.95, 1.0);
-        triggerHitstop(Config.parryHitstopFrames + 1);
+        triggerHitstopMs(100);
         triggerShake(Boss.facing, 0.35, 24, 0.32);
         spawnSparks((Player.x + Boss.x) * 0.5, Config.groundY - 45, "mikiri", -Boss.facing);
 
@@ -3774,7 +3784,7 @@
           Boss.vx = 0;
           Progress.mikiriCount++;
           Sound.play("mikiri", 0.95, 1.15);
-          triggerHitstop(Config.parryHitstopFrames);
+          triggerHitstopMs(90);
           triggerShake(0, 1, 22, 0.28);
           spawnSparks(Boss.x, Boss.y - Boss.h, "mikiri", 0);
           damageBossPosture(34, "凌空踩頭破危！架勢 +34%");
@@ -4072,7 +4082,7 @@
           }
           if (Player.invulnTimer > 0) {
             Sound.play("slash", 0.7, 1.6);
-            triggerHitstop(4);
+            triggerHitstopMs(60);
             Player.riposteTimer = 1.2;
             // 成功【極限側閃】退還 10 點劍勢體力
             Player.stamina = Math.min(Player.maxStamina, Player.stamina + 10);
@@ -4113,7 +4123,7 @@
             Player.vx = dir * 290;
             Player.flashFrames = 1;
             Sound.play("block", 0.85, 1.0);
-            triggerHitstop(3);
+            triggerHitstopMs(50);
             triggerShake(dir, 0.15, 12, 0.2);
             Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.03);
             hapticBuzz(22);
@@ -4151,7 +4161,7 @@
         Progress.parryCount++;
 
         Sound.play("parry", 0.95, 0.96 + Math.random() * 0.08);
-        triggerHitstop(Config.parryHitstopFrames + 4);
+        triggerHitstopMs(Config.parryHitstopFrames * 1000 / 60 * 0.85);
         triggerShake(dir, -0.2, 32, 0.34);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.10);
         hapticBuzz([25, 30, 45]);
@@ -4172,6 +4182,7 @@
         spawnFloatingText(Player.x, Player.y - 100, `${tag} -${dmg}`, "#f87171", 0.8);
       }
       function takeDamage(dmg, dir, tag) {
+        if (Player.hurtInv > 0 && !Game.defeated) return; /* v0.8.8 受擊無敵 0.7 秒 */
         Boss.landedHit = true;
         Progress.hitCount = (Progress.hitCount || 0) + 1;
         Progress.damageTaken += dmg;
@@ -4182,7 +4193,7 @@
           Player.invulnTimer = Progress.equippedSeals.includes("bumie") ? 3.5 : 2.0;
           Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Player.x + dir * 230));
           Sound.play("assist", 1.0, 1.1);
-          triggerHitstop(6);
+          triggerHitstopMs(80);
           spawnSparks(Player.x, Player.y - 50, "parry", dir);
           spawnFloatingText(Player.x, Player.y - 130, "【太初替身】致命傷免死觸發！", "#60a5fa", 1.3);
           setTelemetry("✦ 【太初替身】於致命瞬間自動救主！墨塵遁入流光無敵時隙！");
@@ -4191,6 +4202,7 @@
         }
 
         Player.hp = Math.max(0, Player.hp - dmg);
+        Player.hurtInv = 0.7;
         Player.state = "hitstun";
         Player.stateTimer = 0.28;
         Player.vx = dir * 370;
@@ -4200,7 +4212,7 @@
         Sound.play("hit", 0.9, 0.85);
         Sound.play("hit", 0.7, 0.55);
         hapticBuzz(heavyHit ? [60, 30, 90] : 70);
-        triggerHitstop(heavyHit ? 9 : 6);
+        triggerHitstopMs(heavyHit ? 100 : 70);
         triggerShake(dir, 0.3, heavyHit ? 34 : 24, heavyHit ? 0.36 : 0.28);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + (heavyHit ? 0.06 : 0.035));
         hurtFlash(heavyHit ? 0.8 : 0.5);
@@ -4875,6 +4887,26 @@
 
       }
 
+      function updateHitParticles(dt) {
+        for (let i = Game.hitFx.length - 1; i >= 0; i--) {
+          const fx = Game.hitFx[i];
+          fx.life -= dt;
+          if (fx.type === "spark") {
+            fx.x += fx.vx * dt;
+            fx.y += fx.vy * dt;
+            fx.vy += 520 * dt;
+            fx.vx *= Math.pow(0.12, dt);
+          } else if (fx.type === "dust") {
+            fx.x += fx.vx * dt;
+            fx.y += fx.vy * dt;
+            fx.vx *= Math.pow(0.06, dt);
+            fx.vy *= Math.pow(0.06, dt);
+          }
+          if (fx.life <= 0) Game.hitFx.splice(i, 1);
+        }
+        updateFx(dt);
+      }
+
       function updatePhysics(dt) {
         // Scarf and atmospheric leaves always animate
         if (Player.scarfNodes.length > 0) {
@@ -4916,9 +4948,10 @@
 
         executeBuffered();
 
-        if (Game.hitstopFrames > 0) {
-          Game.hitstopFrames--;
+        if (Game.hitstopT > 0) {
+          Game.hitstopT = Math.max(0, Game.hitstopT - dt);
           updateCamera(dt, true);
+          updateHitParticles(dt);
           return;
         }
 
@@ -4938,25 +4971,10 @@
           if (Game.comboTimer <= 0) Game.comboCount = 0;
         }
         if (Boss.hitReactT > 0) Boss.hitReactT = Math.max(0, Boss.hitReactT - dt);
-        for (let i = Game.hitFx.length - 1; i >= 0; i--) {
-          const fx = Game.hitFx[i];
-          fx.life -= dt;
-          if (fx.type === "spark") {
-            fx.x += fx.vx * dt;
-            fx.y += fx.vy * dt;
-            fx.vy += 520 * dt;
-            fx.vx *= Math.pow(0.12, dt);
-          } else if (fx.type === "dust") {
-            fx.x += fx.vx * dt;
-            fx.y += fx.vy * dt;
-            fx.vx *= Math.pow(0.06, dt);
-            fx.vy *= Math.pow(0.06, dt);
-          }
-          if (fx.life <= 0) Game.hitFx.splice(i, 1);
-        }
-        updateFx(dt);
+        updateHitParticles(dt);
 
         if (Player.invulnTimer > 0) Player.invulnTimer = Math.max(0, Player.invulnTimer - dt);
+        if (Player.hurtInv > 0) Player.hurtInv = Math.max(0, Player.hurtInv - dt);
         if (Player.comboWindow > 0) Player.comboWindow = Math.max(0, Player.comboWindow - dt);
         if (Player.riposteTimer > 0) Player.riposteTimer = Math.max(0, Player.riposteTimer - dt);
         if (Player.parryCooldown > 0) Player.parryCooldown = Math.max(0, Player.parryCooldown - dt);
@@ -5041,7 +5059,7 @@
 
                   damageBossPosture(10, null); // 普通重斬架勢，不得有破防加成！
                   Sound.play("hit", 0.9, 0.88);
-                  triggerHitstop(Config.slashHitstopFrames + 1);
+                  triggerHitstopMs(hitstopByDmg(dmg));
                   triggerShake(Player.facing, -0.15, 14, 0.18);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
                   bossHitFx("heavy");
@@ -5069,7 +5087,7 @@
                 Boss.vx = Player.facing * 75;
 
                 Sound.play("hit", 0.85, 0.95 + Player.comboStep * 0.06);
-                triggerHitstop(Config.slashHitstopFrames);
+                triggerHitstopMs(hitstopByDmg(dmg));
                 triggerShake(Player.facing, -0.15, 11, 0.16);
                 spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
 
@@ -5252,7 +5270,7 @@
                 sw.dir = -sw.dir;
                 Progress.parryCount++;
                 Sound.play("parry", 1.0, 1.25);
-                triggerHitstop(Config.parryHitstopFrames);
+                triggerHitstopMs(70);
                 triggerShake(Player.facing, -0.2, 14, 0.2);
                 spawnSparks(sw.x, sw.y, "parry", Player.facing);
                 
@@ -5411,9 +5429,8 @@
           cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * 7.5);
         }
 
-        if (cam.shakeTime < cam.shakeDuration) {
-          cam.shakeTime += dt;
-        }
+        cam.shakeClock += dt;
+        if (cam.trauma > 0) cam.trauma = Math.max(0, cam.trauma - dt);
       }
 
       /* =========================================================================
@@ -5451,15 +5468,17 @@
         let shakeOffX = 0;
         let shakeOffY = 0;
         const cam = Game.camera;
-        if (cam.shakeTime < cam.shakeDuration && cam.shakeDuration > 0) {
-          const p = cam.shakeTime / cam.shakeDuration;
-          const decay = Math.pow(1 - p, 2);
-          const wave = Math.cos(cam.shakeTime * cam.shakeFreq);
-          shakeOffX = cam.shakeX * cam.shakeAmp * wave * decay;
-          shakeOffY = cam.shakeY * cam.shakeAmp * wave * decay;
+        let shakeRoll = 0;
+        if (cam.trauma > 0) {
+          const sh = cam.trauma * cam.trauma * Config.shakeMultiplier;
+          const tt = cam.shakeClock * 28;
+          shakeOffX = 60 * sh * noise1(tt + 11.3);
+          shakeOffY = 60 * sh * noise1(tt + 47.7);
+          shakeRoll = 0.035 * sh * noise1(tt + 91.1);
         }
 
         ctx.translate(Config.baseWidth * 0.5, Config.baseHeight * 0.5);
+        if (shakeRoll) ctx.rotate(shakeRoll);
         ctx.scale(cam.zoom, cam.zoom);
         ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 + shakeOffY);
 
@@ -6940,6 +6959,7 @@
 
       function drawPlayer() {
         ctx.save();
+        if (Player.hurtInv > 0 && Math.floor(performance.now() / 50) % 2 === 0) ctx.globalAlpha = 0.4; /* 受擊無敵閃爍 10Hz */
         const px = Player.x - Player.w * 0.5;
         const py = Player.y - Player.h;
 
