@@ -2067,7 +2067,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.2";
+      const ASSET_VER = "0.8.3";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2972,6 +2972,9 @@
         particles: [],
         shockwaves: [],
         slashArcs: [],
+        fxList: [],
+        leaves: [],
+        mist: [],
         hitFx: [],
         comboCount: 0,
         comboTimer: 0,
@@ -3178,6 +3181,7 @@
         Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: baseAng, len: slashLen, life: heavy ? 0.16 : 0.11, maxLife: heavy ? 0.16 : 0.11, w: heavy ? 7 : 4.5, color });
         if (heavy) Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: -baseAng, len: slashLen * 0.85, life: 0.16, maxLife: 0.16, w: 5.5, color });
 
+        if (fxReady("spark")) spawnFx("spark", guard ? 1 : 0, hx, hy, { w: heavy ? 250 : guard ? 160 : 180, dur: heavy ? 0.28 : 0.22, facing: dir, alpha: 0.85 });
         const n = heavy ? 12 : guard ? 6 : 8;
         for (let i = 0; i < n; i++) {
           const sp = (heavy ? 520 : 400) * (0.5 + Math.random() * 0.7);
@@ -3352,8 +3356,10 @@
           startAngle: -1.05,
           endAngle: 1.15,
           life: 0.22, maxLife: 0.22,
-          color: arcColor
+          color: arcColor,
+          art: fxReady("slash")
         });
+        if (fxReady("slash")) spawnFx("slash", 3, Player.x + Player.facing * 90, Player.y - 105, { w: 470, dur: 0.32, facing: Player.facing });
 
         spawnFloatingText(Player.x, Player.y - 120, "【青雲蓄力重斬】破勢貫注！", "#fde047", 1.3);
         setTelemetry("✦ 釋放【青雲蓄力重斬】！命中霸體前搖可強制破防中斷！");
@@ -3424,8 +3430,10 @@
           endAngle: Player.comboStep === 2 ? -0.95 : 1.05,
           life: 0.17, maxLife: 0.17,
           color: arcColor,
-          isRiposte
+          isRiposte,
+          art: fxReady(isRiposte ? "air" : "slash")
         });
+        playerSlashFx(isRiposte);
       }
 
       /* v0.8.1 空中攻擊：凌空斬（空中一次）／下劈（下落中在 Boss 上方）。落地前不會被 atkCd 卡住 */
@@ -3455,6 +3463,7 @@
           Player.vy = 980;
           Game.afterimages.push({ x: Player.x, y: Player.y, w: Player.w, h: Player.h, alpha: 0.5, color: "#fde047" });
           spawnFloatingText(Player.x, Player.y - 120, "【凌空下劈】", "#fde047", 1.1);
+          if (fxReady("air")) spawnFx("air", 1, Player.x, Config.groundY + 8, { anchor: "b", w: 400, dur: 0.5 });
           hintOnce("dive", "下落時在敵人頭頂按攻擊＝下劈，架勢傷害更高（每次騰空限一次）");
         } else {
           Player.vx = Player.facing * 200;
@@ -3462,8 +3471,9 @@
           Game.slashArcs.push({
             x: Player.x + Player.facing * 18, y: Player.y - 48, facing: Player.facing,
             radius: Math.round(110 * CHAR_K), startAngle: -1.1, endAngle: 0.9,
-            life: 0.17, maxLife: 0.17, color: isRiposte ? "#fde047" : "#7dd3fc", isRiposte
+            life: 0.17, maxLife: 0.17, color: isRiposte ? "#fde047" : "#7dd3fc", isRiposte, art: fxReady("air")
           });
+          if (fxReady("air")) spawnFx("air", isRiposte ? 3 : 0, Player.x + Player.facing * 60, Player.y - 100, { w: 340, dur: 0.24, facing: Player.facing });
           hintOnce("airslash", "空中按攻擊＝凌空斬（每次騰空限一次）");
         }
       }
@@ -4017,6 +4027,7 @@
           Boss.isPerilous = false;
           Boss.vx = -Boss.facing * 160;
           Sound.play("mikiri", 1.0, 0.85);
+          if (fxReady("spark")) spawnFx("spark", 3, Boss.x, Boss.y - 120, { w: 440, dur: 0.55 });
           triggerHitstop(7);
           triggerShake(Player.facing, 0.2, 24, 0.35);
           spawnFloatingText(Boss.x, Boss.y - 145, "【架勢打空破防】貼身按 [青雲斬 J] 處決！", "#ef4444", 1.35);
@@ -4131,6 +4142,7 @@
         hapticBuzz([25, 30, 45]);
         spawnSparks(cx, cy, "parry", dir);
         spawnSparks(cx, cy, "mikiri", dir);
+        if (fxReady("air")) spawnFx("air", 2, cx, cy, { w: 320, dur: 0.42 });
 
         damageBossPosture(postureGain, `完美招架！架勢 +${postureGain}%`);
         spawnFloatingText(Player.x, Player.y - 112, `【青雲完美彈反】${el}ms!`, "#fde047", 1.25);
@@ -4293,6 +4305,7 @@
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         Boss.moveType = moveKey;
         Boss.landedHit = false;
+        if (m.isRage && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 3, Boss.x, Boss.y + 12, { anchor: "b", w: 380, dur: m.windup + m.active + 0.5, loop: true, fps: 10, follow: () => ({ x: Boss.x, y: Boss.y + 12 }) });
         if (m.isRage) { spawnFloatingText(Boss.x, Boss.y - 150, "〔怒氣爆發〕", "#f87171", 1.3); Sound.play("peril", 0.8, 0.8); Boss.flashFrames = 4; }
         if (stage.stances && !m.isSwitch) Boss.stanceCount++;
         if (m.isSwitch) hintOnce("stance", "【換姿】莫無咎拔劍換姿時有破綻，趁機攻擊！");
@@ -4536,6 +4549,7 @@
             Boss.stateTimer = move.active * phaseMod * volSpeedMod;
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
+            if (move.isCharge && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 2, Boss.x, Boss.y - 120, { w: 440, dur: Math.max(0.4, move.active), loop: true, fps: 11, facing: Boss.facing, follow: () => ({ x: Boss.x - Boss.facing * 90, y: Boss.y - 120 }) });
             if (move.swordRain) {
               for (let k = -2; k <= 2; k++) emitDust(Boss.grabZoneX + k * move.range * 0.3, Config.groundY, k < 0 ? -1 : 1, 2, 0.8);
               triggerShake(Boss.facing, 0, 16, 0.3); Sound.play("peril", 0.7, 1.4);
@@ -4581,7 +4595,22 @@
                 const bType = Stages[Boss.stageId].bodyType || "human";
                 const anim = move.anim || "slash";
                 const aType = bType === "beast" ? "claw" : bType === "eye" ? "beam" : anim;
+                const bArt = Boss.stageId === 1 && fxReady("boss1");
+                if (bArt) {
+                  const bf = Boss.facing, rg = move.range;
+                  if (Boss.perilType === "thrust") {
+                    const bw = rg + 160;
+                    spawnFx("boss1", 1, Boss.x + bf * 10, Boss.y - 140, { anchor: "l", w: bw, h: bw * 0.55, dur: Math.max(0.3, move.active * 1.3), facing: bf });
+                  } else if (Boss.perilType === "sweep") {
+                    const bw = rg * 2.7;
+                    spawnFx("boss1", 2, Boss.x + bf * rg * 0.25, Config.groundY - bw * 0.2, { w: bw, dur: 0.42, facing: bf });
+                  } else {
+                    const bw = rg * 2.3;
+                    spawnFx("boss1", 0, Boss.x + bf * rg * 0.35, Boss.y - 150, { w: bw, dur: 0.26, facing: bf });
+                  }
+                }
                 Game.slashArcs.push({
+                  art: bArt,
                   x: Boss.x + Boss.facing * 26,
                   y: Boss.y - (Boss.perilType === "sweep" ? 22 : 64),
                   facing: Boss.facing,
@@ -4680,7 +4709,14 @@
                 else { sAngle = 1.5; eAngle = 0.5; }
               }
 
+              const cArt = Boss.stageId === 1 && fxReady("boss1");
+              if (cArt) {
+                const cw = move.range * 2.1;
+                spawnFx("boss1", Boss.perilType === "thrust" ? 1 : 0, Boss.x + Boss.facing * move.range * 0.35, Boss.y - 150,
+                  { w: cw, dur: 0.22, facing: Boss.facing, rot: Boss.comboHitsLeft % 2 === 0 ? 0.45 : -0.35, anchor: Boss.perilType === "thrust" ? "l" : "c" });
+              }
               Game.slashArcs.push({
+                art: cArt,
                 x: Boss.x + Boss.facing * 26,
                 y: Boss.y - 64,
                 facing: Boss.facing,
@@ -4731,6 +4767,7 @@
               /* 躍擊落地：砸地塵土＋震動；落點範圍內且在地面才命中（跳起可躲，空中按跳躍可踩頭） */
               Boss.x = Boss.leapLandX; Boss.y = Config.groundY;
               for (let k = -1; k <= 1; k++) emitDust(Boss.x + k * 70, Config.groundY, k || 1, 3, 1.0);
+              if (Boss.stageId === 1 && fxReady("boss1")) { const lw = move.range * 2.8; spawnFx("boss1", 3, Boss.x, Config.groundY - lw * 0.26, { w: lw, dur: 0.5 }); landingFx(Boss.x, 1.7, 5); }
               triggerShake(Boss.facing, 0, 20, 0.25); Sound.play("peril", 0.6, 1.3);
               if (!Boss.hitRegistered && Player.state !== "execution" && Math.abs(Player.x - Boss.x) <= move.range && Player.y >= Config.groundY - 70) {
                 Boss.hitRegistered = true;
@@ -4902,6 +4939,7 @@
           }
           if (fx.life <= 0) Game.hitFx.splice(i, 1);
         }
+        updateFx(dt);
 
         if (Player.invulnTimer > 0) Player.invulnTimer = Math.max(0, Player.invulnTimer - dt);
         if (Player.comboWindow > 0) Player.comboWindow = Math.max(0, Player.comboWindow - dt);
@@ -4974,6 +5012,7 @@
                   triggerShake(Player.facing, -0.25, 26, 0.3);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 65, "parry", Player.facing);
                   spawnFloatingText(Boss.x, Boss.y - 125, "【蓄力破霸體！】打斷霸體！(架勢+30%)", "#fde047", 1.35);
+                  if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 110, { w: 320, dur: 0.4 });
                   setTelemetry("✦ 蓄力重擊命中霸體前搖！強制打斷敵酋蓄力並施加 30% 架勢！");
                 } else {
                   // 對無霸體招式：則只當普通重斬，不得有破防加成
@@ -5111,6 +5150,7 @@
           if (Player.state === "attack" && Player.isDive) {
             Player.stateTimer = Math.min(Player.stateTimer, 0.2);
             emitDust(Player.x, Config.groundY, 1, 5, 1.4); emitDust(Player.x, Config.groundY, -1, 5, 1.4);
+            if (Boss.stageId === 1) landingFx(Player.x, 1.0, 3);
             triggerShake(0, 1, 10, 0.18);
           }
           Player.hasVaulted = false; if (Player.state === "jump") Player.state = "idle";
@@ -5224,6 +5264,7 @@
                 }
               } else if (Player.invulnTimer <= 0) {
                 takeDamage(sw.damage, sw.dir, "飛劍擊中！");
+                swordImpactFx(sw);
                 Game.flyingSwords.splice(i, 1);
                 continue;
               }
@@ -5238,12 +5279,14 @@
               triggerHitstop(4);
               spawnSparks(sw.x, sw.y, "hit", -sw.dir);
               spawnFloatingText(Boss.x, Boss.y - 100, "-110", "#fde047", 1.2);
+              swordImpactFx(sw);
               Game.flyingSwords.splice(i, 1);
               continue;
             }
           }
 
           if (sw.life <= 0 || sw.x < 50 || sw.x > Config.worldWidth - 50) {
+            swordImpactFx(sw);
             Game.flyingSwords.splice(i, 1);
           }
         }
@@ -5465,12 +5508,15 @@
           ctx.fillRect(img.x - img.w * 0.5, img.y - img.h, img.w, img.h);
         }
 
+        drawMist();
         drawFlyingSwords();
         drawBossEntity();
         drawPlayer();
         drawArcs();
         drawSparks();
         drawHitFx();
+        drawFx();
+        drawLeaves();
 
         if (Game.executionLines && Game.executionLines.length > 0) {
           for (const l of Game.executionLines) {
@@ -6062,6 +6108,8 @@
           ctx.strokeStyle = `rgba(248, 113, 113, ${0.5 + p * 0.45})`;
           ctx.lineWidth = 2;
           ctx.strokeRect(Boss.x - m.range, Config.groundY - 26, m.range * 2, 26);
+        } else if (m.ultimate && Boss.stageId === 1 && fxReady("ult")) {
+          drawUltArt(m, p);
         } else if (Boss.perilType === "grab" || Boss.perilType === "leap") {
           const r = m.range * (Boss.perilType === "leap" ? 1.0 : 0.75);
           ctx.fillStyle = `rgba(220, 38, 38, ${0.18 + p * 0.35})`;
@@ -6088,6 +6136,13 @@
         hintOnce(key, txt);
         const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
         const cx = Boss.x, cy = Boss.y - Boss.h - 30;
+        if (fxReady("mark")) {
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.drawImage(fxSheet("mark").img, Math.min(3, Math.floor(p * 4)) * 256, (key === "tg_red" ? 1 : key === "tg_blue" ? 2 : 0) * 256, 256, 256, cx - 65, cy - 65, 130, 130);
+          ctx.restore();
+          return;
+        }
         ctx.save();
         ctx.strokeStyle = col; ctx.fillStyle = col;
         ctx.globalAlpha = 0.9;
@@ -6112,6 +6167,7 @@
                 ctx.fillStyle = hc;
                 ctx.beginPath(); ctx.moveTo(44, -9); ctx.lineTo(70, 0); ctx.lineTo(44, 9); ctx.closePath(); ctx.fill(); /* 戈尖 */
                 ctx.fillRect(30, -12, 8, 24); /* 橫刃 */
+                if (fxReady("boss2")) { ctx.globalCompositeOperation = "lighter"; ctx.drawImage(fxSheet("boss2").img, (Math.floor(performance.now() / 70) % 4) * 256, 0, 256, 256, -202, -160, 320, 320); ctx.globalCompositeOperation = "source-over"; }
               } else {
               ctx.fillStyle = sw.reflected ? "#fde047" : "#38bdf8";
               ctx.shadowColor = sw.reflected ? "#fde047" : "#38bdf8";
@@ -7013,8 +7069,158 @@
         ctx.restore();
       }
 
+      /* ===== v0.8.3 美術特效（assets/fx/*.webp，每張 4×4 格、每格 256px）：發光類用「疊加發光」播放（黑底自動透明） ===== */
+      const FXS = {};
+      function fxSheet(k) {
+        if (FXS[k]) return FXS[k];
+        const o = { img: new Image(), ok: false };
+        o.img.onload = () => { o.ok = true; };
+        o.img.src = "assets/fx/" + k + ".webp";
+        FXS[k] = o;
+        return o;
+      }
+      function fxReady(k) { return fxSheet(k).ok; }
+      function spawnFx(sheet, row, x, y, o) {
+        o = o || {};
+        fxSheet(sheet);
+        Game.fxList.push({
+          sheet, row, x, y, w: o.w || 240, h: o.h || o.w || 240, dur: o.dur || 0.3, age: 0,
+          facing: o.facing || 1, anchor: o.anchor || "c", rot: o.rot || 0, alpha: o.alpha == null ? 1 : o.alpha,
+          loop: !!o.loop, fps: o.fps || 12, follow: o.follow || null, add: o.add !== false,
+          vx: o.vx || 0, vy: o.vy || 0, grav: o.grav || 0, grow: o.grow || 0,
+          col: o.col == null ? -1 : o.col, spin: o.spin || 0
+        });
+        if (Game.fxList.length > 60) Game.fxList.shift();
+      }
+      function updateFx(dt) {
+        const L = Game.fxList;
+        for (let i = L.length - 1; i >= 0; i--) {
+          const f = L[i];
+          f.age += dt;
+          if (f.follow) { const q = f.follow(); if (q) { f.x = q.x; f.y = q.y; } }
+          if (f.grav) {
+            f.vy += f.grav * dt;
+            if (f.y > Config.groundY - 6 && f.vy > 0) { f.y = Config.groundY - 6; f.vy = 0; f.vx *= 0.15; f.spin = 0; }
+          }
+          f.x += f.vx * dt; f.y += f.vy * dt; f.rot += f.spin * dt;
+          if (f.age >= f.dur) L.splice(i, 1);
+        }
+        for (const lf of Game.leaves) {
+          lf.t += dt;
+          lf.x += (lf.vx + Math.sin(lf.t * 1.6 + lf.ph) * 26) * dt;
+          lf.y += lf.vy * dt;
+          lf.rot += lf.spin * dt;
+          const cx = Game.camera.x;
+          if (lf.y > Config.groundY + 6 || lf.x < cx - 120 || lf.x > cx + Config.baseWidth + 120) {
+            lf.x = cx + Math.random() * (Config.baseWidth + 200) - 60; lf.y = -30 - Math.random() * 200;
+          }
+        }
+        for (const m of Game.mist) {
+          m.x += m.vx * dt;
+          const cx = Game.camera.x;
+          if (m.x > cx + Config.baseWidth + 420) m.x = cx - 420;
+          if (m.x < cx - 520) m.x = cx + Config.baseWidth + 300;
+        }
+      }
+      function drawFx() {
+        for (const f of Game.fxList) {
+          const sh = fxSheet(f.sheet);
+          if (!sh.ok) continue;
+          const t = f.age / f.dur;
+          const col = f.col >= 0 ? f.col : (f.loop ? Math.floor(f.age * f.fps) % 4 : Math.min(3, Math.floor(t * 4)));
+          const a = f.alpha * (t > 0.78 ? (1 - t) / 0.22 : 1);
+          ctx.save();
+          ctx.globalCompositeOperation = f.add ? "lighter" : "source-over";
+          ctx.globalAlpha = Math.max(0, Math.min(1, a));
+          ctx.translate(f.x, f.y);
+          if (f.rot) ctx.rotate(f.rot);
+          ctx.scale(f.facing, 1);
+          const k = 1 + f.grow * t, w = f.w * k, h = f.h * k;
+          let dx = -w / 2, dy = -h / 2;
+          if (f.anchor === "l") dx = 0;
+          if (f.anchor === "b") dy = -h;
+          ctx.drawImage(sh.img, col * 256, f.row * 256, 256, 256, dx, dy, w, h);
+          ctx.restore();
+        }
+      }
+      function initAmbient() {
+        Game.leaves = []; Game.mist = [];
+        if (Boss.stageId !== 1) return;
+        const cx = Game.camera ? Game.camera.x : 0;
+        for (let i = 0; i < 9; i++) {
+          Game.leaves.push({ x: cx + Math.random() * Config.baseWidth, y: Math.random() * Config.groundY, vx: -30 - Math.random() * 40, vy: 28 + Math.random() * 34,
+            rot: Math.random() * 6, spin: (Math.random() - 0.5) * 3, ph: Math.random() * 6, t: 0, col: i % 4, size: 24 + Math.random() * 14 });
+        }
+        for (let i = 0; i < 3; i++) Game.mist.push({ x: cx + i * 520 - 200, vx: 10 + i * 5, col: i, a: 0.12 + i * 0.02 });
+      }
+      function drawMist() {
+        const sh = fxSheet("scene");
+        if (!sh.ok) return;
+        for (const m of Game.mist) {
+          ctx.save();
+          ctx.globalAlpha = m.a;
+          ctx.drawImage(sh.img, m.col * 256, 256, 256, 256, m.x - 320, Config.groundY - 190, 640, 320);
+          ctx.restore();
+        }
+      }
+      function drawLeaves() {
+        const sh = fxSheet("scene");
+        if (!sh.ok) return;
+        for (const lf of Game.leaves) {
+          ctx.save();
+          ctx.globalAlpha = 0.85;
+          ctx.translate(lf.x, lf.y); ctx.rotate(lf.rot);
+          ctx.drawImage(sh.img, lf.col * 256, 0, 256, 256, -lf.size, -lf.size, lf.size * 2, lf.size * 2);
+          ctx.restore();
+        }
+      }
+      /* 落地塵浪＋碎石（第 1 關：躍擊落地、下劈落地） */
+      function landingFx(x, power, rocks) {
+        if (!fxReady("scene")) return;
+        spawnFx("scene", 3, x, Config.groundY + 4, { anchor: "b", w: 170 * power, col: Math.floor(Math.random() * 4), dur: 0.7, grow: 0.45, add: false, alpha: 0.9, vy: -6 });
+        for (let i = 0; i < rocks; i++) {
+          spawnFx("scene", 2, x + (Math.random() - 0.5) * 40, Config.groundY - 14, { w: 46 + Math.random() * 34, col: Math.floor(Math.random() * 4), dur: 1.0, add: false,
+            vx: (Math.random() - 0.5) * 560, vy: -(300 + Math.random() * 260), grav: 1600, spin: (Math.random() - 0.5) * 9 });
+        }
+      }
+      function swordImpactFx(sw) {
+        if (sw && sw.kind === "halberd") spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 });
+      }
+      function drawUltArt(m, p) {
+        const sh = fxSheet("ult");
+        const r = m.range * 0.75, W = r * 2.7, gx = Boss.grabZoneX, gy = Config.groundY;
+        const now = performance.now() / 1000, windup = Boss.state === "windup";
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        const f0 = windup ? Math.min(3, Math.floor(p * 4)) : Math.floor(now * 8) % 4;
+        ctx.drawImage(sh.img, f0 * 256, windup ? 0 : 256, 256, 256, gx - W / 2, gy - W / 2, W, W);
+        if (!windup || p > 0.45) {
+          ctx.globalAlpha = windup ? Math.min(1, (p - 0.45) * 2.2) : 1;
+          ctx.drawImage(sh.img, (Math.floor(now * 9) % 4) * 256, 512, 256, 256, gx - W / 2, gy - W * 0.78, W, W);
+        }
+        if (!windup) {
+          const q = 1 - Boss.stateTimer / (Boss.stateDur || 1);
+          const S2 = W * 1.15;
+          ctx.globalAlpha = 1;
+          ctx.drawImage(sh.img, Math.min(3, Math.floor(q * 4)) * 256, 768, 256, 256, gx - S2 / 2, gy - S2 + 6, S2, S2);
+        }
+        ctx.restore();
+      }
+      /* 主角普攻刀光 */
+      function playerSlashFx(isRiposte) {
+        const f = Player.facing, st = Player.comboStep;
+        if (isRiposte) {
+          if (fxReady("air")) spawnFx("air", 3, Player.x + f * 80, Player.y - 105, { w: 380, dur: 0.3, facing: f });
+          return;
+        }
+        if (!fxReady("slash")) return;
+        const size = st === 3 ? 390 : 320;
+        spawnFx("slash", st === 2 ? 1 : 0, Player.x + f * size * 0.16, Player.y - 105, { w: size, dur: st === 3 ? 0.26 : 0.2, facing: f });
+      }
+
       function drawArcs() {
         for (const arc of Game.slashArcs) {
+          if (arc.art) continue;
           const t = arc.life / arc.maxLife;
           ctx.save();
           ctx.translate(arc.x, arc.y);
@@ -7212,6 +7418,8 @@
         Game.shockwaves = [];
         Game.slashArcs = [];
         Game.hitFx = [];
+        Game.fxList = [];
+        initAmbient();
         Game.comboCount = 0;
         Game.comboTimer = 0;
         Game.bossDeath = null;
