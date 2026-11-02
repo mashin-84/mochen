@@ -2072,7 +2072,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.12";
+      const ASSET_VER = "0.8.13";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -5731,9 +5731,13 @@
         const w = h * (A.img.naturalWidth / A.img.naturalHeight);
         const f = Math.max(0, (w - Config.baseWidth) / (Config.worldWidth - Config.baseWidth));
         const cx = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, camX));
-        ctx.drawImage(A.img, cx * (1 - f), 0, w, h);
+        const il = cx * (1 - f);
+        ctx.drawImage(A.img, il, 0, w, h);
+        /* v0.8.13 寬螢幕／切場景鏡頭拉遠時，畫面會超出背景左右邊界露出黑底：左右各接一張鏡像背景補滿 */
+        ctx.save(); ctx.translate(il, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
+        ctx.save(); ctx.translate(il + 2 * w, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
         ctx.fillStyle = `rgba(8, 14, 38, ${stBg.bgDim === undefined ? 0.4 : stBg.bgDim})`;
-        ctx.fillRect(cx - 400, 0, Config.baseWidth + 800, h + 200);
+        ctx.fillRect(cx - 1400, 0, Config.baseWidth + 2800, h + 200);
         return true;
       }
 
