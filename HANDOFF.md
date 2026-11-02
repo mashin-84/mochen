@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.17）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.18）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -240,6 +240,12 @@
 - 背景音樂：使用者決定第 1 關配曲改為「重新生成」（配合 Boss 招式與形象），效果不好再回頭從 Cultivation 倉庫找；新曲放 `assets/music/` 後只要改 `STAGE_BGM`。
 
 **v0.8.17 第 1 關新配樂**：使用者用 AI 依 Boss 形象生成「赤刃之閾」（原檔 threshold_of_the_crimson_blade.mp3，3:02、-11.7 LUFS，比舊曲大聲約 3.5dB），裁到 3:00 並做 0.8 秒淡出，存 `assets/music/chisha.webm`（opus 80k）；`STAGE_BGM = {1:"chisha"}`。結尾淡出後直接循環回開頭（開頭本來就是滿音量進場，沒做交叉淡化）。舊曲 weiju 等仍留在 assets/music/。之後每位 Boss 可照同樣方式依招式與形象生成專屬曲。
+
+**v0.8.18 Boss 登場動畫（第 1 關先試，`Stages[1].introCine = true`）**
+- 程式在「營地走進戰場」的 `beginBattleIntro` 觸發 `startBossCine()`（要 Boss 動作圖與主角圖載入完才播，否則退回舊流程）；敗北重打（`loadStage(...skipPre)`）不播。時間軸常數 `CINE = {A:3.4, FALL:3.95, LAND:4.6, END:5.7}`。
+- A 段（`drawCineA`，剪影，座標基準 1280×720）：血月、遠山、崖頂；Boss 用 `silImg()` 把動作圖染成剪影（idle → 07_windup 蓄力 → 08_windup_thrust 躍起飛出畫面頂端）＋主角剪影仰望；結尾白閃。B 段：用真實戰場，`drawCineMark` 落點紅圈，Boss 以 `Boss._cineImg`（09_slash 下墜、10_slash_rec 落地蹲）由天而降；落地 `cineLand()`：震動 0.95、揚塵、`landingFx`、第 1 關 `boss1` 特效列 3、`execution` 與 `s_hit` 音效、名字卡；之後 `introT=0.7` 接戰前劇情。
+- 進行中 `body.cine-mode` 隱藏 HUD 與虛擬按鍵，上下黑邊（`drawCineBars`）；右上「跳過」→ 先暫停並跳確認（繼續看／跳過），Esc 也可。`updatePhysics` 遇 `Game.cine` 走 `updateCine` 後直接 return。
+- 之後精緻化的想法（待使用者決定要不要生圖）：崖頂背景插圖、Boss 躍起／下墜／落地專用姿勢格、落地衝擊與拖尾特效、書法名字卡。目前這些都是用現有動作格與程式繪製頂替。
 
 **待做**
 1. 第 1 關實測後調數字（凌空斬／下劈傷害、評級門檻）；通用化後套到第 2、3 關。
