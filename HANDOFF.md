@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.13）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.14）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -228,6 +228,10 @@
 - **v0.8.12 再修正（取代下一條）**：一般處決只跳「一劍青雲」（`exec_t2`）；終結處決（打贏）只跳「處決」（`exec_t1`），不再跳一劍青雲。以 `Game.executionBannerKill` 切換（終結處決分支設 true 並重置橫幅計時，橫幅起點設 false）；`showWinTitle`／`drawWinTitle` 已停用。
 - **v0.8.11 修正**：處決時畫面中央只出現「處決」；「一劍青雲」（`exec_t2`）改成擊敗敵人（終結處決）後約 1.5 秒淡入、停約 2.4 秒（`showWinTitle`／`drawWinTitle`，以真實時間計）。
 - 預警：拿掉 Boss 身上的小字（突刺［前閃看破］等）；收縮圈與十字星改以身體中心為圓心（`Boss.y - Boss.h*0.5`），收縮圈半徑 120→30、十字星約 2 倍、預警符圖 200px（`drawThreatMarker`）。
+
+**v0.8.14**
+- 修正沒有背景音樂：營地載入（`loadStage` hub）會 `Music.fadeOut()`，走進戰場（`beginBattleIntro`）原本沒叫 `Music.play`，只有敗北重打才會播；現在 `beginBattleIntro` 依 `STAGE_BGM` 播放。
+- 落地擠壓：`Game._squashAmt/_squashT`（重落 0.2、輕落 0.08，0.15 秒平方緩回，以腳底為軸，橫向 +0.6 倍），只作用於主角 `drawPlayer`；Boss 未做。
 
 **待做**
 1. 第 1 關實測後調數字（凌空斬／下劈傷害、評級門檻）；通用化後套到第 2、3 關。

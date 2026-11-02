@@ -2072,7 +2072,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.13";
+      const ASSET_VER = "0.8.14";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -5267,10 +5267,13 @@
               emitDust(Player.x, Config.groundY, -1, 4, 1.3);
               triggerShake(0, 1, 6, 0.14);
               hapticBuzz(14);
+              Game._squashAmt = 0.2; Game._squashT = 0.15; /* v0.8.14 落地擠壓：重落 */
             } else {
               emitDust(Player.x, Config.groundY, Player.facing, 3, 0.8);
+              Game._squashAmt = 0.08; Game._squashT = 0.15; /* 輕落 */
             }
           }
+          if (Game._squashT > 0) Game._squashT = Math.max(0, Game._squashT - dt);
           Game._wasAir = !onGroundD;
           if (onGroundD && Player.state === "move") {
             Game._dustAcc += Math.abs(Player.vx) * dt;
@@ -5764,6 +5767,7 @@
 
       function beginBattleIntro() {
         Game.mode = "battle";
+        if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]); /* v0.8.14 修正：走進戰場才開始放配樂 */
         const stage = Stages[Boss.stageId];
         Game.introT = 1.9;
         Game.pendingPre = !!(stage.dialogue && stage.dialogue.pre && stage.dialogue.pre.length);
@@ -7100,7 +7104,12 @@
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
           ctx.translate(Player.x, Player.y);
           const S = MC_SCALE * (MC_FRAME_SCALE[frame] || 1);
-          ctx.scale(Player.facing > 0 ? S : -S, S);
+          let sqY = 1, sqX = 1;
+          if (Game._squashT > 0 && !isAirborne) { /* 以腳底為軸：先壓扁、再緩回（0.15 秒） */
+            const k = Game._squashT / 0.15, a = (Game._squashAmt || 0) * k * k;
+            sqY = 1 - a; sqX = 1 + a * 0.6;
+          }
+          ctx.scale((Player.facing > 0 ? S : -S) * sqX, S * sqY);
           ctx.drawImage(playerImg, -450, -529);
           if (Player.flashFrames > 0) ctx.filter = "none";
           ctx.restore();
