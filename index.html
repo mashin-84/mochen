@@ -2072,7 +2072,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.9";
+      const ASSET_VER = "0.8.10";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3898,7 +3898,7 @@
           Player.flashFrames = 4;
           Game.flashWhiteOverlay = 1.0;
           Game.darkVignetteAlpha = 0.95;
-          Game.executionBannerTimer = 2.0;
+          Game.executionBannerTimer = 2.0; Game.executionBannerDur = 2.0;
           Game.camera.targetZoom = 1.35;
 
           // 三段全屏裂空墨痕斬線
@@ -3985,7 +3985,7 @@
           Player.flashFrames = 3;
           Game.flashWhiteOverlay = 0.95;
           Game.darkVignetteAlpha = 0.85;
-          Game.executionBannerTimer = 1.5;
+          Game.executionBannerTimer = 1.5; Game.executionBannerDur = 1.5;
           Game.camera.targetZoom = 1.26;
           Game.executionLines = [{
             x1: startX - Player.facing * 90, y1: Config.groundY - 58,
@@ -5669,7 +5669,9 @@
           ctx.restore();
         }
 
-        if (Game.executionBannerTimer > 0) {
+        if (Game.executionBannerTimer > 0 && drawExecTitle(w, h)) {
+          /* v0.8.10 新版大字已畫 */
+        } else if (Game.executionBannerTimer > 0) {
           ctx.save();
           const a = Math.min(1, Game.executionBannerTimer * 1.5);
           ctx.globalAlpha = a;
@@ -6243,11 +6245,11 @@
         else if (m.armor) { col = "#60a5fa"; key = "tg_blue"; txt = "藍圈：霸體，普攻打不斷；可招架或閃開"; }
         hintOnce(key, txt);
         const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
-        const cx = Boss.x, cy = Boss.y - Boss.h - 30;
+        const cx = Boss.x, cy = Boss.y - Boss.h * 0.5;
         if (fxReady("mark")) {
           ctx.save();
           ctx.globalCompositeOperation = "lighter";
-          ctx.drawImage(fxSheet("mark").img, Math.min(3, Math.floor(p * 4)) * 256, (key === "tg_red" ? 1 : key === "tg_blue" ? 2 : 0) * 256, 256, 256, cx - 65, cy - 65, 130, 130);
+          ctx.drawImage(fxSheet("mark").img, Math.min(3, Math.floor(p * 4)) * 256, (key === "tg_red" ? 1 : key === "tg_blue" ? 2 : 0) * 256, 256, 256, cx - 100, cy - 100, 200, 200);
           ctx.restore();
           return;
         }
@@ -6911,15 +6913,15 @@
             const isStrong = Config.parryCueLevel === 2;
             const isPeril = Boss.isPerilous;
             const cueColor = isPeril ? "#ef4444" : "#fde047";
-            const cueX = Boss.x + Boss.facing * 45;
-            const cueY = by + 20;
+            const cueX = Boss.x;
+            const cueY = Boss.y - Boss.h * 0.5; /* v0.8.10 以身體中心為圓心 */
 
             ctx.save();
             ctx.translate(cueX, cueY);
             
             if (isStrong) {
                 const progress = 1 - (Boss.nextImpactIn / 0.35);
-                const radius = 70 - (70 - 18) * progress;
+                const radius = 120 - (120 - 30) * progress;
                 ctx.strokeStyle = cueColor;
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
@@ -6934,10 +6936,10 @@
                 ctx.shadowBlur = 10;
                 ctx.scale(starScale, starScale);
                 ctx.beginPath();
-                ctx.moveTo(0, -25); ctx.lineTo(3, -3);
-                ctx.lineTo(25, 0); ctx.lineTo(3, 3);
-                ctx.lineTo(0, 25); ctx.lineTo(-3, 3);
-                ctx.lineTo(-25, 0); ctx.lineTo(-3, -3);
+                ctx.moveTo(0, -46); ctx.lineTo(5, -5);
+                ctx.lineTo(46, 0); ctx.lineTo(5, 5);
+                ctx.lineTo(0, 46); ctx.lineTo(-5, 5);
+                ctx.lineTo(-46, 0); ctx.lineTo(-5, -5);
                 ctx.closePath();
                 ctx.fill();
             }
@@ -6957,10 +6959,6 @@
           ctx.shadowBlur = 18;
           ctx.fillText("危", 0, 0);
 
-          ctx.font = "700 12px var(--font-serif)";
-          ctx.fillStyle = "#fef08a";
-          const sub = Boss.perilType === "thrust" ? "突刺 [前閃看破]" : Boss.perilType === "sweep" ? "橫掃 [跳躍踩頭]" : "法陣 [側閃脫離]";
-          ctx.fillText(sub, 0, 18);
           ctx.restore();
         }
 
@@ -7216,6 +7214,29 @@
         return o;
       }
       function fxReady(k) { return fxSheet(k).ok; }
+      /* v0.8.10 處決大字（生圖書法）：畫面正中央，「處決」砸出、「一劍青雲」隨後淡入，最後 0.4 秒整體淡出；圖未載入回傳 false 改畫舊橫幅 */
+      function drawExecTitle(w, h) {
+        const T1 = fxSheet("exec_t1"), T2 = fxSheet("exec_t2");
+        if (!T1.ok || !T2.ok) return false;
+        const dur = Game.executionBannerDur || 2.0, rem = Game.executionBannerTimer, t = dur - rem;
+        const fo = Math.min(1, rem / 0.4);
+        const w1 = Math.min(w * 0.36, h * 0.7), h1 = w1 * T1.img.height / T1.img.width;
+        const cx = w * 0.5, cy = h * 0.36;
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        const a1 = Math.min(1, t / 0.1) * fo;
+        const sc = 1 + 0.45 * Math.max(0, 1 - t / 0.16) + 0.04 * (t / dur);
+        ctx.globalAlpha = a1;
+        ctx.drawImage(T1.img, cx - w1 * sc / 2, cy - h1 * sc / 2, w1 * sc, h1 * sc);
+        const a2 = Math.max(0, Math.min(1, (t - 0.45) / 0.3)) * fo;
+        if (a2 > 0) {
+          const w2 = w1 * 0.62, h2 = w2 * T2.img.height / T2.img.width;
+          ctx.globalAlpha = a2;
+          ctx.drawImage(T2.img, cx - w2 / 2, cy + h1 * 0.5 + h2 * 0.35 + (1 - a2) * -14, w2, h2);
+        }
+        ctx.restore();
+        return true;
+      }
       function spawnFx(sheet, row, x, y, o) {
         o = o || {};
         fxSheet(sheet);
@@ -7281,7 +7302,7 @@
         }
       }
       function initAmbient() {
-        ["slash", "air", "spark", "boss1", "boss2", "ult", "mark", "scene", "exec", "exec2", "ink"].forEach(fxSheet); /* 預載，避免第一次出招沒有特效 */
+        ["slash", "air", "spark", "boss1", "boss2", "ult", "mark", "scene", "exec", "exec2", "ink", "exec_t1", "exec_t2"].forEach(fxSheet); /* 預載，避免第一次出招沒有特效 */
         Game.leaves = []; Game.mist = [];
         if (Boss.stageId !== 1) return;
         const cx = Game.camera ? Game.camera.x : 0;
@@ -7323,7 +7344,7 @@
       }
       /* v0.8.4 處決特效：普通版一斬＋地面光環；極版三段斬（斜／反斜／橫貫）＋裂空＋碎光＋光環；擊殺再加光點與魂光上升 */
       function executionFx(ji) {
-        ["exec", "exec2", "ink"].forEach(fxSheet);
+        ["exec", "exec2", "ink", "exec_t1", "exec_t2"].forEach(fxSheet);
         const f = Player.facing, cy = () => Boss.y - 150;
         const strike = (row, w, h, dur) => spawnFx("exec", row, Boss.x, cy(), { w, h, dur, facing: f });
         const ring = (w) => spawnFx("exec2", 3, Boss.x, Config.groundY + w * 0.06, { w, dur: 0.6 });
