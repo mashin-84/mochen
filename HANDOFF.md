@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.19）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.20）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -251,6 +251,11 @@
 - `assets/bg/intro1.webp`（崖頂血月背景，原 2576×1438；程式以該座標系 cover 鋪滿，`drawCineA` 內 ledgeY=745、Boss x=1950、主角 x=620、地面 y=1210）；`assets/boss1/20_jump／21_fall／22_land／23_rise.webp`（Boss 躍起／下墜／落地蹲／起身，用新工具 `tools/poses.py 姿勢表.jpg 輸出資料夾 0.52` 切：2×2 洋紅底、縮放比以站姿頭盔羽飾到靴底高度 460 對齊）；`assets/fx/land.webp`（4×4：0 落地衝擊環、1 塵雲、2 風壓環（躍起時用）、3 下墜拖尾）；`assets/boss1/name.webp`（書法「赤煞神衛統領」，疊加發光，由 `bossNameCard()`／`drawNameCard()` 在落地時顯示約 2 秒，圖沒載入退回 DOM 橫幅）。
 - 資料欄位：`Stages[n].introCine / introBg / introName / spriteExtras`（`getBossSprite(key, extras)` 載入額外姿勢格）。新 Boss 只要補這四個欄位與素材即可啟用。生圖提示詞做法：姿勢表 2×2（附單格站姿參考）、背景（血月、崖頂平台在 52% 高、左下主角地面在 84% 高）、特效黑底 4×4、書法名字卡（要寫明繁體）。
 - 時間軸 `CINE = {A:3.4, FALL:3.95, LAND:4.6, END:6.0}`；落地後 22_land 0.55 秒 → 23_rise 0.5 秒 → 待機。
+
+**v0.8.20 登場動畫 A 段改用影片（高製作路線，第 1 關試點）**
+- 場景一致性：崖頂背景 `assets/bg/intro1.webp` 重生成，和戰場同一世界（蒼白滿月、青灰石柱、雲海、松樹）；平台位置（原圖 2576×1438）：Boss 崖頂 y=688、x≈1800；主角左下平台 y≈1240、x≈600。戰場 `Stages[1].bgDim` 0.4→0.28，讓戰場亮度更接近崖頂影片（若戰場太亮、預警符看不清，改回 0.4）。
+- 影片：`assets/boss1/intro.mp4`（H.264）與 `intro.webm`（VP9），1280×720、5 秒、無聲（Gemini 原片 10 秒，後半是空崖頂已剪掉；原片有音軌但不用，音樂與音效由遊戲出，躍起時程式放低音 slash）。`getCineVideo(base)` 依 `canPlayType` 選格式，藏在頁面外的 `<video>`，`drawCineA` 用 `drawImage(video)` 以 cover 鋪滿（垂直焦點 0.54，和背景圖一致）；A 段計時以影片 `currentTime` 為準；跳過確認時影片暫停。影片沒載好（`readyState<3`）自動退回引擎剪影版（舊流程保留）。`CINE.A/FALL/LAND/END` 依影片或引擎版在 `startBossCine` 設定（影片版 A=5.0）。
+- 影片首幀由 Claude 合成：新背景＋Boss 與主角剪影（Boss 站 x=1800,y=706、主角 x=600,y=1240，縮放 0.9／0.55），生成提示詞要求剪影不變形、鏡頭緩推、2.5 秒蓄力、3.8 秒躍起離開畫面頂端。之後各 Boss 照同樣流程：生背景（附戰場圖當參考）→ Claude 合成首幀／尾幀 → 使用者生影片 → Claude 轉檔接入（`Stages[n].introVideo = "assets/boss{n}/intro"`）。
 
 **待做**
 1. 第 1 關實測後調數字（凌空斬／下劈傷害、評級門檻）；通用化後套到第 2、3 關。

@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.19";
+      const ASSET_VER = "0.8.20";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2762,7 +2762,7 @@
         Stages[nid] = st;
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
-      Stages[1].bg = "arena1";
+      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28; /* v0.8.20 戰場調亮一點，銜接明亮的崖頂影片 */
       Stages[2].bg = "arena2"; Stages[2].bgDim = 0.25;
       Stages[2].sprite = "boss2";
       /* 招式可用 frames 指定各階段使用的姿勢（windup/active/recover → 動作表檔名） */
@@ -2814,7 +2814,7 @@
         };
       })();
       Stages[1].introCine = true; /* v0.8.18 登場動畫 */
-      Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise"];
+      Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise"];
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
@@ -5798,6 +5798,7 @@
       function cineAsk(on) {
         if (!Game.cine) return;
         Game.cine.ask = on;
+        if (on && Game.cine.vid) { try { Game.cine.vid.pause(); } catch (e) { } }
         elCine.querySelector("#cine-ask").style.display = on ? "flex" : "none";
       }
       elCine.querySelector("#cine-skip").addEventListener("pointerdown", (e) => { e.stopPropagation(); e.preventDefault(); cineAsk(true); });
@@ -5818,7 +5819,12 @@
         if (!(SP && SP.ready === 16 && MC_READY === 16 && MC_IMGS["01_idle1"])) return false;
         if (!getCineImg("bg", "assets/bg/" + stage.introBg + ".webp").ok) return false;
         for (const k of (stage.spriteExtras || [])) { const im = SP.imgs[k]; if (!(im && im.complete && im.naturalWidth)) return false; }
-        Game.cine = { t: 0, ask: false, landed: false };
+        let vid = null;
+        if (stage.introVideo) { const v = getCineVideo(stage.introVideo); if (v.readyState >= 3 && !v.error) vid = v; }
+        const va = vid ? 5.0 : 3.4; /* 影片版 A 段 5 秒（影片本身 5 秒），引擎剪影版 3.4 秒 */
+        CINE.A = va; CINE.FALL = va + 0.55; CINE.LAND = va + 1.2; CINE.END = va + 2.6;
+        Game.cine = { t: 0, ask: false, landed: false, vid, sfx: false };
+        if (vid) { try { vid.currentTime = 0; const pr = vid.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
         Boss.facing = -1; Boss.y = -900; Boss._cineImg = null;
         Game.introT = 0;
         document.body.classList.add("cine-mode");
@@ -5830,6 +5836,7 @@
       function endBossCine(skipped) {
         if (!Game.cine) return;
         const landed = Game.cine.landed;
+        if (Game.cine.vid) { try { Game.cine.vid.pause(); } catch (e) { } }
         Game.cine = null;
         Boss._cineImg = null; Boss.y = Config.groundY; Boss.vy = 0;
         document.body.classList.remove("cine-mode");
@@ -5857,6 +5864,11 @@
         const c = Game.cine;
         if (c.ask) return;
         c.t += dt;
+        if (c.vid && c.t < CINE.A) {
+          if (c.vid.paused && !c.vid.ended) { try { const pr = c.vid.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
+          else if (c.vid.currentTime > 0.05) c.t = c.vid.currentTime; /* 以影片時間為準，畫面與影片同步 */
+          if (!c.sfx && c.t >= 3.8) { c.sfx = true; Sound.play("slash", 0.6, 0.5); }
+        } else if (c.vid && !c.vid.paused) { try { c.vid.pause(); } catch (e) { } }
         const t = c.t, gy = Config.groundY;
         if (t < CINE.FALL) { Boss.y = -900; Boss._cineImg = null; }
         else if (t < CINE.LAND) {
@@ -5891,6 +5903,18 @@
         if (!CINE_IMG[kind][path]) { const o = { ok: false, img: new Image() }; o.img.onload = () => { o.ok = true; }; o.img.src = path; CINE_IMG[kind][path] = o; }
         return CINE_IMG[kind][path];
       }
+      const CINE_VID = {};
+      function getCineVideo(base) { /* base 不含副檔名；能播 H.264 用 mp4，否則用 webm */
+        if (CINE_VID[base]) return CINE_VID[base];
+        const v = document.createElement("video");
+        v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.preload = "auto";
+        v.style.cssText = "position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;";
+        const mp4 = v.canPlayType('video/mp4; codecs="avc1.64001f"');
+        v.src = base + (mp4 ? ".mp4" : ".webm") + "?v=" + ASSET_VER;
+        document.body.appendChild(v); v.load();
+        CINE_VID[base] = v;
+        return v;
+      }
       function drawFxCell(sheet, row, col, x, y, w, h, alpha, anchorB) {
         const s = fxSheet(sheet); if (!s.ok) return;
         const cs = s.img.width / 4;
@@ -5905,6 +5929,13 @@
         const SP = getBossSprite(stage.sprite);
         const bgO = getCineImg("bg", "assets/bg/" + stage.introBg + ".webp");
         ctx.fillStyle = "#0b0a16"; ctx.fillRect(0, 0, w, h);
+        if (c.vid && c.vid.readyState >= 2) { /* v0.8.20 影片版：cover 鋪滿，垂直焦點與背景圖一致 */
+          const vs = Math.max(w / 1280, h / 720), vox = (w - 1280 * vs) / 2, voy = Math.max(h - 720 * vs, Math.min(0, h * 0.5 - 0.54 * 720 * vs));
+          ctx.drawImage(c.vid, vox, voy, 1280 * vs, 720 * vs);
+          if (t < 0.5) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 0.5})`; ctx.fillRect(0, 0, w, h); }
+          if (t > CINE.A - 0.3) { ctx.fillStyle = `rgba(255,246,236,${Math.min(1, (t - (CINE.A - 0.3)) / 0.3)})`; ctx.fillRect(0, 0, w, h); }
+          return;
+        }
         const sc = Math.max(w / IW, h / IH);
         const oy = Math.max(h - IH * sc, Math.min(0, h * 0.5 - 0.54 * IH * sc)), ox = (w - IW * sc) / 2;
         ctx.save();
@@ -5912,24 +5943,24 @@
         const z = 1 + 0.1 * Math.min(1, t / CINE.A), cx = IW * 0.66, cy = IH * 0.5;
         ctx.translate(cx, cy); ctx.scale(z, z); ctx.translate(-cx, -cy);
         ctx.drawImage(bgO.img, 0, 0, IW, IH);
-        const ledgeY = 745, bx0 = 1950, groundY = 1210;
+        const ledgeY = 688, bx0 = 1800, groundY = 1228;
         /* 主角（剪影，仰望） */
         const heroImg = silImg(MC_IMGS["01_idle1"], "#080a14");
         if (heroImg) {
-          ctx.save(); ctx.translate(620, groundY + 12); ctx.scale(0.61, 0.61);
+          ctx.save(); ctx.translate(600, groundY + 12); ctx.scale(0.55, 0.55);
           ctx.shadowColor = "rgba(120,160,255,0.35)"; ctx.shadowBlur = 24;
           ctx.drawImage(heroImg, -450, -529); ctx.restore();
         }
         /* Boss（剪影）：站立 → 蓄力 → 躍起 */
-        const bossK = 1.0;
+        const bossK = 0.9;
         const drawBoss = (frame, x, y, rot, sy, alpha) => {
           const im = silImg(SP.imgs[frame], "#05040a"); if (!im) return;
           ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(rot);
           ctx.scale(-bossK, bossK * sy);
-          ctx.shadowColor = "rgba(255,70,50,0.85)"; ctx.shadowBlur = 34;
+          ctx.shadowColor = "rgba(255,70,50,0.8)"; ctx.shadowBlur = 30;
           ctx.drawImage(im, -450, -560); ctx.restore();
         };
-        const sink = 20;
+        const sink = 18;
         if (t < 2.2) {
           drawBoss(Math.floor(t / 0.8) % 2 === 0 ? "01_idle1" : "02_idle2", bx0, ledgeY + sink + Math.sin(t * 2) * 2, 0, 1, 1);
         } else if (t < 2.85) {
@@ -7835,6 +7866,7 @@
         if (stage.introBg) getCineImg("bg", "assets/bg/" + stage.introBg + ".webp");
         if (stage.introName) getCineImg("name", stage.introName);
         if (stage.introCine) fxSheet("land");
+        if (stage.introVideo) getCineVideo(stage.introVideo);
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite));
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");
         if (stage.bg) getBgArt(stage.bg);
