@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.18）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.19）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -246,6 +246,11 @@
 - A 段（`drawCineA`，剪影，座標基準 1280×720）：血月、遠山、崖頂；Boss 用 `silImg()` 把動作圖染成剪影（idle → 07_windup 蓄力 → 08_windup_thrust 躍起飛出畫面頂端）＋主角剪影仰望；結尾白閃。B 段：用真實戰場，`drawCineMark` 落點紅圈，Boss 以 `Boss._cineImg`（09_slash 下墜、10_slash_rec 落地蹲）由天而降；落地 `cineLand()`：震動 0.95、揚塵、`landingFx`、第 1 關 `boss1` 特效列 3、`execution` 與 `s_hit` 音效、名字卡；之後 `introT=0.7` 接戰前劇情。
 - 進行中 `body.cine-mode` 隱藏 HUD 與虛擬按鍵，上下黑邊（`drawCineBars`）；右上「跳過」→ 先暫停並跳確認（繼續看／跳過），Esc 也可。`updatePhysics` 遇 `Game.cine` 走 `updateCine` 後直接 return。
 - 之後精緻化的想法（待使用者決定要不要生圖）：崖頂背景插圖、Boss 躍起／下墜／落地專用姿勢格、落地衝擊與拖尾特效、書法名字卡。目前這些都是用現有動作格與程式繪製頂替。
+
+**v0.8.19 登場動畫換上生圖素材（第 1 關）**
+- `assets/bg/intro1.webp`（崖頂血月背景，原 2576×1438；程式以該座標系 cover 鋪滿，`drawCineA` 內 ledgeY=745、Boss x=1950、主角 x=620、地面 y=1210）；`assets/boss1/20_jump／21_fall／22_land／23_rise.webp`（Boss 躍起／下墜／落地蹲／起身，用新工具 `tools/poses.py 姿勢表.jpg 輸出資料夾 0.52` 切：2×2 洋紅底、縮放比以站姿頭盔羽飾到靴底高度 460 對齊）；`assets/fx/land.webp`（4×4：0 落地衝擊環、1 塵雲、2 風壓環（躍起時用）、3 下墜拖尾）；`assets/boss1/name.webp`（書法「赤煞神衛統領」，疊加發光，由 `bossNameCard()`／`drawNameCard()` 在落地時顯示約 2 秒，圖沒載入退回 DOM 橫幅）。
+- 資料欄位：`Stages[n].introCine / introBg / introName / spriteExtras`（`getBossSprite(key, extras)` 載入額外姿勢格）。新 Boss 只要補這四個欄位與素材即可啟用。生圖提示詞做法：姿勢表 2×2（附單格站姿參考）、背景（血月、崖頂平台在 52% 高、左下主角地面在 84% 高）、特效黑底 4×4、書法名字卡（要寫明繁體）。
+- 時間軸 `CINE = {A:3.4, FALL:3.95, LAND:4.6, END:6.0}`；落地後 22_land 0.55 秒 → 23_rise 0.5 秒 → 待機。
 
 **待做**
 1. 第 1 關實測後調數字（凌空斬／下劈傷害、評級門檻）；通用化後套到第 2、3 關。

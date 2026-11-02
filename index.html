@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.18";
+      const ASSET_VER = "0.8.19";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2814,6 +2814,7 @@
         };
       })();
       Stages[1].introCine = true; /* v0.8.18 登場動畫 */
+      Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise"];
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
@@ -5625,6 +5626,7 @@
         drawMist();
         drawFx(true);
         drawFlyingSwords();
+        drawCineTrail();
         drawBossEntity();
         drawPlayer();
         drawArcs();
@@ -5682,6 +5684,7 @@
           if (ft < 0.35) { ctx.fillStyle = `rgba(255,236,224,${1 - ft / 0.35})`; ctx.fillRect(0, 0, w, h); }
           drawCineBars(w, h);
         }
+        drawNameCard(w, h);
 
         if (Game.flashWhiteOverlay > 0) {
           ctx.save();
@@ -5765,7 +5768,7 @@
        * A 段（剪影）：Boss 站高處俯視主角 → 蓄力躍起 → 白閃轉場
        * B 段（戰場）：地面出現落點紅圈 → Boss 從天而降 → 落地震動、名字卡 → 接戰前劇情
        * ========================================================================= */
-      const CINE = { A: 3.4, FALL: 3.95, LAND: 4.6, END: 5.7 };
+      const CINE = { A: 3.4, FALL: 3.95, LAND: 4.6, END: 6.0 };
       const _silCache = new Map();
       function silImg(img, col) {
         if (!img || !img.naturalWidth) return null;
@@ -5813,6 +5816,8 @@
         if (!stage || !stage.introCine) return false;
         const SP = getBossSprite(stage.sprite);
         if (!(SP && SP.ready === 16 && MC_READY === 16 && MC_IMGS["01_idle1"])) return false;
+        if (!getCineImg("bg", "assets/bg/" + stage.introBg + ".webp").ok) return false;
+        for (const k of (stage.spriteExtras || [])) { const im = SP.imgs[k]; if (!(im && im.complete && im.naturalWidth)) return false; }
         Game.cine = { t: 0, ask: false, landed: false };
         Boss.facing = -1; Boss.y = -900; Boss._cineImg = null;
         Game.introT = 0;
@@ -5830,7 +5835,7 @@
         document.body.classList.remove("cine-mode");
         elHintToast.style.visibility = "";
         elCine.style.display = "none";
-        if (skipped && !landed) { const st = Stages[Boss.stageId]; showBanner(st.name, st.realmBadge, 1500, "#fde68a"); }
+        if (skipped && !landed) bossNameCard(Stages[Boss.stageId]);
         Game.introT = skipped ? 0.5 : 0.7;
         Progress.battleStartTime = performance.now();
       }
@@ -5839,11 +5844,14 @@
         addTrauma(0.95);
         emitDust(Boss.x, gy, 1, 6, 1.6); emitDust(Boss.x, gy, -1, 6, 1.6);
         landingFx(Boss.x, 1.8, 6);
-        if (Boss.stageId === 1 && fxReady("boss1")) { const lw = 420; spawnFx("boss1", 3, Boss.x, gy - lw * 0.26, { w: lw, dur: 0.5 }); }
+        if (fxReady("land")) {
+          spawnFx("land", 0, Boss.x, gy + 22, { w: 620, h: 620, dur: 0.6, anchor: "b", alpha: 0.85 });
+          spawnFx("land", 1, Boss.x, gy + 6, { w: 400, h: 400, dur: 1.0, anchor: "b", alpha: 0.7 });
+        }
         hapticBuzz(35);
         Sound.play("execution", 0.6, 0.55);
         Sound.play("s_hit", 0.7, 0.7);
-        showBanner(st.name, st.realmBadge, 1500, "#fde68a");
+        bossNameCard(st);
       }
       function updateCine(dt) {
         const c = Game.cine;
@@ -5853,17 +5861,17 @@
         if (t < CINE.FALL) { Boss.y = -900; Boss._cineImg = null; }
         else if (t < CINE.LAND) {
           const k = (t - CINE.FALL) / (CINE.LAND - CINE.FALL);
-          Boss.y = -520 + (gy + 520) * k * k; Boss._cineImg = "09_slash";
+          Boss.y = -520 + (gy + 520) * k * k; Boss._cineImg = "21_fall";
         } else {
           if (!c.landed) { c.landed = true; cineLand(); }
-          Boss.y = gy; Boss._cineImg = (t < CINE.LAND + 0.5) ? "10_slash_rec" : null;
+          Boss.y = gy; Boss._cineImg = (t < CINE.LAND + 0.55) ? "22_land" : (t < CINE.LAND + 1.05) ? "23_rise" : null;
         }
         updateHitParticles(dt);
         if (t >= CINE.END) endBossCine(false);
       }
       function drawCineBars(w, h) {
         ctx.fillStyle = "#000";
-        const bh = h * 0.085;
+        const bh = h * 0.07;
         ctx.fillRect(0, 0, w, bh); ctx.fillRect(0, h - bh, w, bh);
       }
       function drawCineMark() {
@@ -5878,84 +5886,107 @@
         ctx.beginPath(); ctx.ellipse(Boss.x, gy + 3, rx, 24 - 6 * k, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.restore();
       }
+      const CINE_IMG = { bg: {}, name: {} };
+      function getCineImg(kind, path) {
+        if (!CINE_IMG[kind][path]) { const o = { ok: false, img: new Image() }; o.img.onload = () => { o.ok = true; }; o.img.src = path; CINE_IMG[kind][path] = o; }
+        return CINE_IMG[kind][path];
+      }
+      function drawFxCell(sheet, row, col, x, y, w, h, alpha, anchorB) {
+        const s = fxSheet(sheet); if (!s.ok) return;
+        const cs = s.img.width / 4;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha == null ? 1 : alpha;
+        ctx.drawImage(s.img, col * cs, row * cs, cs, cs, x - w / 2, anchorB ? y - h : y - h / 2, w, h);
+        ctx.restore();
+      }
+      /* 登場動畫 A 段：以背景插圖（2576×1438）的座標系繪製，cover 方式鋪滿畫面 */
       function drawCineA(w, h) {
-        const c = Game.cine, t = c.t, BW = Config.baseWidth, BH = Config.baseHeight;
+        const c = Game.cine, t = c.t, IW = 2576, IH = 1438;
         const stage = Stages[Boss.stageId];
         const SP = getBossSprite(stage.sprite);
-        const sg = ctx.createLinearGradient(0, 0, 0, h);
-        sg.addColorStop(0, "#0b0a16"); sg.addColorStop(0.5, "#3a1420"); sg.addColorStop(0.78, "#7a2a22"); sg.addColorStop(1, "#120a12");
-        ctx.fillStyle = sg; ctx.fillRect(0, 0, w, h);
-        const sc = Math.min(w / BW, h / BH);
+        const bgO = getCineImg("bg", "assets/bg/" + stage.introBg + ".webp");
+        ctx.fillStyle = "#0b0a16"; ctx.fillRect(0, 0, w, h);
+        const sc = Math.max(w / IW, h / IH);
+        const oy = Math.max(h - IH * sc, Math.min(0, h * 0.5 - 0.54 * IH * sc)), ox = (w - IW * sc) / 2;
         ctx.save();
-        ctx.translate((w - BW * sc) / 2, (h - BH * sc) / 2);
-        ctx.scale(sc, sc);
-        const z = 1 + 0.1 * Math.min(1, t / CINE.A), cx = BW * 0.62, cy = BH * 0.45;
+        ctx.translate(ox, oy); ctx.scale(sc, sc);
+        const z = 1 + 0.1 * Math.min(1, t / CINE.A), cx = IW * 0.66, cy = IH * 0.5;
         ctx.translate(cx, cy); ctx.scale(z, z); ctx.translate(-cx, -cy);
-        /* 血月 */
-        const mg = ctx.createRadialGradient(960, 200, 10, 960, 200, 400);
-        mg.addColorStop(0, "rgba(255,110,80,0.6)"); mg.addColorStop(1, "rgba(255,70,50,0)");
-        ctx.fillStyle = mg; ctx.fillRect(-700, -300, BW + 1400, 800);
-        ctx.fillStyle = "#c93a3a"; ctx.beginPath(); ctx.arc(960, 200, 120, 0, Math.PI * 2); ctx.fill();
-        /* 遠山 */
-        const ridge = (base, amp, seed, col) => {
-          ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-700, BH + 300);
-          for (let x = -700; x <= BW + 700; x += 40) ctx.lineTo(x, base - amp * (0.5 + 0.5 * Math.sin(x * 0.011 + seed)) - amp * 0.4 * Math.sin(x * 0.031 + seed * 2));
-          ctx.lineTo(BW + 700, BH + 300); ctx.closePath(); ctx.fill();
-        };
-        ridge(540, 120, 1, "#2a1220"); ridge(600, 95, 3, "#180c17");
-        /* 崖頂 */
-        const ledgeY = 400, bx0 = 980;
-        ctx.fillStyle = "#07060c"; ctx.beginPath();
-        ctx.moveTo(660, BH + 300); ctx.lineTo(700, 600); ctx.lineTo(740, 520); ctx.lineTo(790, 450); ctx.lineTo(830, ledgeY + 4);
-        ctx.lineTo(880, ledgeY); ctx.lineTo(BW + 700, ledgeY - 4); ctx.lineTo(BW + 700, BH + 300); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = "rgba(255,90,70,0.35)"; ctx.lineWidth = 2; ctx.beginPath();
-        ctx.moveTo(700, 600); ctx.lineTo(740, 520); ctx.lineTo(790, 450); ctx.lineTo(830, ledgeY + 4); ctx.lineTo(880, ledgeY); ctx.lineTo(BW + 700, ledgeY - 4); ctx.stroke();
-        /* 主角腳下的地面 */
-        ctx.fillStyle = "#07060c"; ctx.fillRect(-700, 612, 1500, 400);
-        ctx.strokeStyle = "rgba(255,90,70,0.25)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-700, 612); ctx.lineTo(800, 612); ctx.stroke();
+        ctx.drawImage(bgO.img, 0, 0, IW, IH);
+        const ledgeY = 745, bx0 = 1950, groundY = 1210;
         /* 主角（剪影，仰望） */
         const heroImg = silImg(MC_IMGS["01_idle1"], "#080a14");
         if (heroImg) {
-          ctx.save(); ctx.translate(320, 618); ctx.scale(MC_SCALE * 0.84, MC_SCALE * 0.84);
-          ctx.shadowColor = "rgba(120,160,255,0.35)"; ctx.shadowBlur = 14;
+          ctx.save(); ctx.translate(620, groundY + 12); ctx.scale(0.61, 0.61);
+          ctx.shadowColor = "rgba(120,160,255,0.35)"; ctx.shadowBlur = 24;
           ctx.drawImage(heroImg, -450, -529); ctx.restore();
         }
         /* Boss（剪影）：站立 → 蓄力 → 躍起 */
-        const bossK = 0.7;
+        const bossK = 1.0;
         const drawBoss = (frame, x, y, rot, sy, alpha) => {
           const im = silImg(SP.imgs[frame], "#05040a"); if (!im) return;
           ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(rot);
           ctx.scale(-bossK, bossK * sy);
-          ctx.shadowColor = "rgba(255,70,50,0.85)"; ctx.shadowBlur = 22;
+          ctx.shadowColor = "rgba(255,70,50,0.85)"; ctx.shadowBlur = 34;
           ctx.drawImage(im, -450, -560); ctx.restore();
         };
+        const sink = 20;
         if (t < 2.2) {
-          drawBoss(Math.floor(t / 0.8) % 2 === 0 ? "01_idle1" : "02_idle2", bx0, ledgeY + 12 + Math.sin(t * 2) * 1.5, 0, 1, 1);
+          drawBoss(Math.floor(t / 0.8) % 2 === 0 ? "01_idle1" : "02_idle2", bx0, ledgeY + sink + Math.sin(t * 2) * 2, 0, 1, 1);
         } else if (t < 2.85) {
           const k = (t - 2.2) / 0.65, e = k * k;
-          drawBoss("07_windup", bx0, ledgeY + 12 + 8 * e, 0.06 * e, 1 - 0.05 * e, 1);
+          drawBoss("07_windup", bx0, ledgeY + sink + 12 * e, 0.06 * e, 1 - 0.05 * e, 1);
         } else {
           const u = Math.min(1, (t - 2.85) / 0.55);
-          const pos = (uu) => ({ x: bx0 - 260 * uu, y: ledgeY + 20 - 900 * uu * (0.55 + 0.45 * uu) });
-          for (let i = 3; i >= 1; i--) { const p = pos(Math.max(0, u - i * 0.07)); drawBoss("08_windup_thrust", p.x, p.y, -0.32 * u, 1, 0.18 * (4 - i) / 3); }
-          const p = pos(u); drawBoss("08_windup_thrust", p.x, p.y, -0.32 * u, 1, 1);
+          const pos = (uu) => ({ x: bx0 - 480 * uu, y: ledgeY + 30 - 1900 * uu * (0.55 + 0.45 * uu) });
+          for (let i = 3; i >= 1; i--) { const p = pos(Math.max(0, u - i * 0.07)); drawBoss("20_jump", p.x, p.y, -0.12 * u, 1, 0.18 * (4 - i) / 3); }
+          const p = pos(u); drawBoss("20_jump", p.x, p.y, -0.12 * u, 1, 1);
+          const ra = t - 2.85;
+          if (ra < 0.5) drawFxCell("land", 2, Math.min(3, Math.floor(ra / 0.5 * 4)), bx0 - 30, ledgeY - 10, 700, 700, 0.55);
         }
-        /* 火星與地面薄霧 */
+        /* 火星 */
         ctx.globalCompositeOperation = "lighter";
-        for (let i = 0; i < 34; i++) {
-          const x = (i * 97 + t * (12 + (i % 4) * 7)) % (BW + 200) - 100;
-          const y = BH + 20 - ((i * 53 + t * (28 + (i % 5) * 11)) % (BH + 60));
-          ctx.fillStyle = `rgba(255,${120 + (i % 3) * 30},70,${0.35 + 0.25 * ((i % 4) / 3)})`;
-          ctx.fillRect(x, y, 1.6 + (i % 3) * 0.8, 1.6 + (i % 3) * 0.8);
+        for (let i = 0; i < 40; i++) {
+          const x = (i * 193 + t * (24 + (i % 4) * 14)) % (IW + 400) - 200;
+          const y = IH + 40 - ((i * 107 + t * (56 + (i % 5) * 22)) % (IH + 120));
+          const sz = 3 + (i % 3) * 1.6;
+          ctx.fillStyle = `rgba(255,${120 + (i % 3) * 30},70,${0.3 + 0.25 * ((i % 4) / 3)})`;
+          ctx.fillRect(x, y, sz, sz);
         }
         ctx.globalCompositeOperation = "source-over";
-        const fg = ctx.createLinearGradient(0, 520, 0, BH + 20);
-        fg.addColorStop(0, "rgba(70,22,32,0)"); fg.addColorStop(1, "rgba(70,22,32,0.55)");
-        ctx.fillStyle = fg; ctx.fillRect(-700, 520, BW + 1400, 300);
         ctx.restore();
         /* 淡入與結尾白閃 */
         if (t < 0.8) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 0.8})`; ctx.fillRect(0, 0, w, h); }
         if (t > CINE.A - 0.3) { ctx.fillStyle = `rgba(255,236,224,${Math.min(1, (t - (CINE.A - 0.3)) / 0.3)})`; ctx.fillRect(0, 0, w, h); }
+      }
+      /* Boss 墜落拖尾（世界座標，在 Boss 之前畫） */
+      function drawCineTrail() {
+        const c = Game.cine; if (!c || c.t < CINE.FALL || c.t >= CINE.LAND) return;
+        const k = (c.t - CINE.FALL) / (CINE.LAND - CINE.FALL);
+        drawFxCell("land", 3, Math.min(3, Math.floor(k * 3.3)), Boss.x - 10, Boss.y - 90, 640, 640, 0.9, true);
+      }
+      /* 名字卡（書法圖，疊加發光）；圖沒載入就退回 DOM 橫幅 */
+      function bossNameCard(st) {
+        const o = st.introName ? getCineImg("name", st.introName) : null;
+        if (o && o.ok) Game.nameCard = { t0: performance.now(), dur: 2000, img: o.img, sub: st.realmBadge };
+        else showBanner(st.name, st.realmBadge, 1500, "#fde68a");
+      }
+      function drawNameCard(w, h) {
+        const nc = Game.nameCard; if (!nc) return;
+        const e = performance.now() - nc.t0;
+        if (e > nc.dur) { Game.nameCard = null; return; }
+        const aIn = Math.min(1, e / 200), aOut = Math.min(1, (nc.dur - e) / 600), a = Math.min(aIn, aOut);
+        const pop = 1 + 0.12 * (1 - Math.min(1, e / 260)) * (1 - Math.min(1, e / 260));
+        const iw = Math.min(w * 0.5, h * 1.5) * pop, ih = iw * nc.img.height / nc.img.width, cy = h * 0.25;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a;
+        ctx.drawImage(nc.img, w / 2 - iw / 2, cy - ih / 2, iw, ih);
+        ctx.globalCompositeOperation = "source-over";
+        if (nc.sub) {
+          ctx.globalAlpha = a * Math.min(1, Math.max(0, (e - 250) / 250));
+          ctx.font = `700 ${Math.round(h * 0.038)}px var(--font-serif)`; ctx.textAlign = "center";
+          ctx.fillStyle = "#fde68a"; ctx.shadowColor = "rgba(0,0,0,0.9)"; ctx.shadowBlur = 8;
+          ctx.fillText(String(nc.sub).split("").join(" "), w / 2, cy + ih / 2 + h * 0.03);
+        }
+        ctx.restore();
       }
 
       /* ====================== 營地（Hub）與進場 ====================== */
@@ -6549,9 +6580,13 @@
             SP.walkNorm = k;
             return k;
           }
-          function getBossSprite(key) {
+          function getBossSprite(key, extras) {
             if (!key) return null;
-            if (BossSprites[key]) return BossSprites[key];
+            if (BossSprites[key]) {
+              const sp0 = BossSprites[key];
+              (extras || []).forEach(n => { if (!sp0.imgs[n]) { const im = new Image(); im.src = "assets/" + key + "/" + n + ".webp"; sp0.imgs[n] = im; } });
+              return sp0;
+            }
             const dir = "assets/" + key + "/";
             const sp = { key, imgs: {}, ready: 0, walk: [], walkReady: 0, phase: 0, lastX: null,
               death: { kneel: { ok: false, img: new Image() }, fall: { ok: false, img: new Image() }, lie: { ok: false, img: new Image() } } };
@@ -6573,6 +6608,7 @@
               img.src = dir + "walk_" + String(i).padStart(2, "0") + ".webp";
               sp.walk.push(img);
             }
+            (extras || []).forEach(n => { const im = new Image(); im.src = dir + n + ".webp"; sp.imgs[n] = im; });
             BossSprites[key] = sp;
             return sp;
           }
@@ -7795,7 +7831,10 @@
         Progress.currentStage = stageId;
         Boss.stageId = stageId;
         Boss.artId = stage.artId || stageId;
-        if (stage.sprite) getBossSprite(stage.sprite);
+        if (stage.sprite) getBossSprite(stage.sprite, stage.spriteExtras);
+        if (stage.introBg) getCineImg("bg", "assets/bg/" + stage.introBg + ".webp");
+        if (stage.introName) getCineImg("name", stage.introName);
+        if (stage.introCine) fxSheet("land");
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite));
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");
         if (stage.bg) getBgArt(stage.bg);
