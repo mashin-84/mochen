@@ -2072,7 +2072,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.15";
+      const ASSET_VER = "0.8.16";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2137,61 +2137,61 @@
           this.loadSamples();
           this.buffers.parry = this.bakeBuffer(0.42, (t) => {
             const env = Math.exp(-t * 13);
-            const transient = (Math.random() * 2 - 1) * Math.exp(-t * 90) * 0.75;
-            const f1 = Math.sin(2 * Math.PI * 1396.9 * t);
-            const f2 = Math.sin(2 * Math.PI * 2217.4 * t) * 0.65;
-            const f3 = Math.sin(2 * Math.PI * 3520.0 * t) * 0.45;
-            return transient + (f1 + f2 + f3) * env * 0.52;
+            const transient = (Math.random() * 2 - 1) * Math.exp(-t * 110) * 0.4;
+            const f1 = Math.sin(2 * Math.PI * 880.0 * t);
+            const f2 = Math.sin(2 * Math.PI * 1318.5 * t) * 0.5;
+            const f3 = Math.sin(2 * Math.PI * 1760.0 * t) * 0.2;
+            return transient + (f1 + f2 + f3) * env * 0.5;
           });
 
           this.buffers.block = this.bakeBuffer(0.2, (t) => {
             const env = Math.exp(-t * 26);
-            const noise = (Math.random() * 2 - 1) * Math.exp(-t * 45) * 0.6;
+            const noise = (Math.random() * 2 - 1) * Math.exp(-t * 55) * 0.35;
             const low = Math.sin(2 * Math.PI * (260 - t * 450) * t) * env * 0.65;
             return noise + low;
           });
 
           this.buffers.slash = this.bakeBuffer(0.18, (t) => {
             const env = Math.sin((t / 0.18) * Math.PI) * Math.exp(-t * 12);
-            const noise = (Math.random() * 2 - 1) * 0.35;
-            const whistle = Math.sin(2 * Math.PI * (720 + t * 1600) * t) * 0.25;
+            const noise = (Math.random() * 2 - 1) * 0.2;
+            const whistle = Math.sin(2 * Math.PI * (480 + t * 700) * t) * 0.2;
             return (noise + whistle) * env;
           });
 
           this.buffers.flysword = this.bakeBuffer(0.25, (t) => {
             const env = Math.sin((t / 0.25) * Math.PI) * Math.exp(-t * 6);
-            const highWhistle = Math.sin(2 * Math.PI * (1600 + t * 2400) * t) * 0.4;
-            return (highWhistle + (Math.random() * 2 - 1) * 0.2) * env;
+            const highWhistle = Math.sin(2 * Math.PI * (800 + t * 900) * t) * 0.35;
+            return (highWhistle + (Math.random() * 2 - 1) * 0.12) * env;
           });
 
           this.buffers.hit = this.bakeBuffer(0.22, (t) => {
             const env = Math.exp(-t * 20);
             const kick = Math.sin(2 * Math.PI * (190 - t * 500) * t) * 0.7;
-            const metal = Math.sin(2 * Math.PI * 1180 * t) * Math.exp(-t * 38) * 0.4;
-            const grit = (Math.random() * 2 - 1) * Math.exp(-t * 36) * 0.4;
+            const metal = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 38) * 0.3;
+            const grit = (Math.random() * 2 - 1) * Math.exp(-t * 40) * 0.2;
             return (kick + metal + grit) * env;
           });
 
           this.buffers.peril = this.bakeBuffer(0.52, (t) => {
             const drum = Math.sin(2 * Math.PI * (140 * Math.exp(-t * 5)) * t) * Math.exp(-t * 7) * 0.7;
-            const bell = (Math.sin(2 * Math.PI * 987.7 * t) + Math.sin(2 * Math.PI * 1046.5 * t) * 0.85) * Math.exp(-t * 7) * 0.35;
+            const bell = (Math.sin(2 * Math.PI * 523.3 * t) + Math.sin(2 * Math.PI * 784.0 * t) * 0.6) * Math.exp(-t * 7) * 0.3;
             return drum + bell;
           });
 
           this.buffers.mikiri = this.bakeBuffer(0.48, (t) => {
             const bass = Math.sin(2 * Math.PI * (170 * Math.exp(-t * 6)) * t) * Math.exp(-t * 8) * 0.8;
-            const steel = (Math.sin(2 * Math.PI * 1661.2 * t) + Math.sin(2 * Math.PI * 2489.0 * t) * 0.7) * Math.exp(-t * 8) * 0.45;
+            const steel = (Math.sin(2 * Math.PI * 830.6 * t) + Math.sin(2 * Math.PI * 1244.5 * t) * 0.5) * Math.exp(-t * 8) * 0.35;
             return bass + steel;
           });
 
           this.buffers.execution = this.bakeBuffer(0.85, (t) => {
             const boom = Math.sin(2 * Math.PI * (115 * Math.exp(-t * 3.5)) * t) * Math.exp(-t * 4.2) * 0.85;
-            const cry = (Math.sin(2 * Math.PI * 1864.6 * t) + Math.sin(2 * Math.PI * 2793.8 * t) * 0.7) * Math.exp(-t * 5) * 0.4;
+            const cry = (Math.sin(2 * Math.PI * 932.3 * t) + Math.sin(2 * Math.PI * 1396.9 * t) * 0.5) * Math.exp(-t * 5) * 0.32;
             return boom + cry;
           });
 
           this.buffers.gourd = this.bakeBuffer(0.42, (t) => {
-            const pop = (Math.random() * 2 - 1) * Math.exp(-t * 65) * 0.5;
+            const pop = (Math.random() * 2 - 1) * Math.exp(-t * 65) * 0.3;
             const glug = Math.sin(2 * Math.PI * (340 + Math.sin(t * 35) * 60) * t) * Math.exp(-t * 6) * 0.45;
             return pop + glug;
           });
@@ -2218,7 +2218,11 @@
             const g = this.ctx.createGain();
             g.gain.value = vol;
             s.connect(g);
-            g.connect(this.ctx.destination);
+            if (name.indexOf("s_") !== 0) { /* v0.8.16 程式合成音一律過低通，削掉尖銳高頻；外部取樣（s_*）不處理 */
+              const lp = this.ctx.createBiquadFilter();
+              lp.type = "lowpass"; lp.frequency.value = 2400; lp.Q.value = 0.5;
+              g.connect(lp); lp.connect(this.ctx.destination);
+            } else g.connect(this.ctx.destination);
             s.start(0);
           } catch (e) {}
         }
