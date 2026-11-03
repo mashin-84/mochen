@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.21）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.22）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -260,6 +260,9 @@
 **v0.8.21 腳底貼地與暫停系統**
 - 浮空：角色圖與影子對不上（影子在 groundY+3，圖片腳底約在 groundY-1～-2）→ 新常數 `GROUND_SINK = 5`，主角、Boss 圖片（含心魔鏡像）繪製時 y 整體下移 5px，腳底踩進影子。判定位置不變。
 - 暫停（`pauseGame()`／`resumeGame()`，選單 `#pause-menu`）：分頁隱藏（`visibilitychange`）、視窗失焦（`blur`）或按 P 時觸發；`loop` 在 `Game.paused` 時直接跳過（模擬與畫面完全凍結）、`Music.pauseAll()`、`Sound.ctx.suspend()`、登場影片暫停；`Music` 的自動續播與點擊重試都加了 `Game.paused` 防護。回來時顯示選單：繼續戰鬥／重新挑戰（`loadStage(同關,{skipPre:true})`）／退出戰鬥（`returnToHub`，回營地）；後兩者要連按兩次確認。營地與進場時只顯示「繼續遊戲」。戰鬥計時 `Progress.battleStartTime` 扣掉暫停時間。尚未處理：對話打字機計時器（`DLG.timer`）暫停中仍會跑，之後有需要再補。
+
+**v0.8.22 輪廓投影影子**
+- `drawSpriteShadow(img, x, anchorY, S, facing, height, alphaK)`：把當下動作格的剪影（`shadowImg()` 以 1/3 解析度快取在 `WeakMap`，染成近黑）用 `ctx.transform` 壓扁（高度×0.16）投到地面、朝螢幕下方（地面在 groundY 以下）、順月光方向向左斜拉 0.38；離地越高越淡（`1-lift/420`，下限 0.15）越窄（`1-lift/900`，下限 0.5）。主角與有 sprite 的 Boss 使用（Boss 登場墜落時依高度淡入）；沒有 sprite 的 Boss、鏡像心魔、倒地旋轉備援仍畫舊橢圓（`bossEllipse`／`playerEllipse`）。調整：透明度 0.46、斜拉 0.38、壓扁 0.16 都在函式裡。
 
 **待做**
 1. 第 1 關實測後調數字（凌空斬／下劈傷害、評級門檻）；通用化後套到第 2、3 關。

@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.21";
+      const ASSET_VER = "0.8.22";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -6652,11 +6652,13 @@
         const bx = Boss.x - Boss.w * 0.5;
         const by = Boss.y - Boss.h;
 
-        // Ground shadow
-        ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * (Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1)})`;
-        ctx.beginPath();
-        ctx.ellipse(Boss.x, Config.groundY + 3, Boss.w * 0.65, 9, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // Ground shadow（有 sprite 的 Boss 在下面改畫輪廓投影；沒有的畫橢圓）
+        const bossEllipse = () => {
+          ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * (Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1)})`;
+          ctx.beginPath();
+          ctx.ellipse(Boss.x, Config.groundY + 3, Boss.w * 0.65, 9, 0, 0, Math.PI * 2);
+          ctx.fill();
+        };
 
         // Phase 2 Flaming Aura Particles
         for (const ap of Boss.auraParticles) {
@@ -6675,6 +6677,7 @@
         const stnD = stanceOf(stage);
         const SP = getBossSprite(stnD ? stnD.sprite : stage.sprite);
         const useBossSprite = !!(SP && SP.ready === 16);
+        if (!useBossSprite) bossEllipse();
         
         // C5: 前搖動作後傾 (狼王改為下壓蹲伏，其餘保持旋轉後傾)
         ctx.save();
@@ -6887,6 +6890,12 @@
           }
           if (Boss._cineImg) { imgKey = Boss._cineImg; bossImg = null; isWalkFrame = false; }
           if (!bossImg) bossImg = SP.imgs[imgKey];
+          {
+            let sk = (stage.spriteScale || 0.64) * (stage.size || 1);
+            if (isWalkFrame && bossImg !== SP.imgs[imgKey]) sk *= getWalkNorm(SP);
+            const cineK = Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
+            if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
+          }
 
           ctx.save();
           if (deathAlpha < 1) ctx.globalAlpha = deathAlpha;
@@ -7317,16 +7326,47 @@
         MCR_IMGS.push(img);
       }
 
+      /* v0.8.22 輪廓投影影子：把當下那一格的剪影壓扁貼在地上（跟著姿勢、武器變化），順月光方向微微斜拉；
+         離地越高越淡越窄（跳躍、躍斬、墜落）。快取用 1/3 解析度（柔邊、省記憶體）。回傳 false＝圖還沒載入，呼叫端改畫橢圓。 */
+      const _shMap = new WeakMap();
+      function shadowImg(img) {
+        if (!img || !img.naturalWidth) return null;
+        let c = _shMap.get(img);
+        if (!c) {
+          const w = Math.max(1, Math.round(img.naturalWidth / 3)), h = Math.max(1, Math.round(img.naturalHeight / 3));
+          c = document.createElement("canvas"); c.width = w; c.height = h;
+          const g = c.getContext("2d"); g.drawImage(img, 0, 0, w, h);
+          g.globalCompositeOperation = "source-in"; g.fillStyle = "#050308"; g.fillRect(0, 0, w, h);
+          _shMap.set(img, c);
+        }
+        return c;
+      }
+      function drawSpriteShadow(img, x, anchorY, S, facing, height, alphaK) {
+        const c = shadowImg(img); if (!c) return false;
+        const lift = Math.max(0, height);
+        const a = 0.46 * Math.max(0.15, 1 - lift / 420) * (alphaK == null ? 1 : alphaK);
+        if (a <= 0.01) return true;
+        const sx = Math.max(0.5, 1 - lift / 900);
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.transform((facing > 0 ? 1 : -1) * S * sx, 0, S * 0.38, -S * 0.16, x, Config.groundY + 2); /* d 為負：剪影的「高」往螢幕下方（朝觀眾）投到地面上 */
+        ctx.drawImage(c, -450, -anchorY, img.naturalWidth, img.naturalHeight);
+        ctx.restore();
+        return true;
+      }
       function drawPlayer() {
         ctx.save();
         if (Player.hurtInv > 0 && Math.floor(performance.now() / 50) % 2 === 0) ctx.globalAlpha = 0.4; /* 受擊無敵閃爍 10Hz */
         const px = Player.x - Player.w * 0.5;
         const py = Player.y - Player.h;
 
-        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.beginPath();
-        ctx.ellipse(Player.x, Config.groundY + 3, Player.w * 0.55, 7, 0, 0, Math.PI * 2);
-        ctx.fill();
+        const playerEllipse = () => {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.beginPath();
+          ctx.ellipse(Player.x, Config.groundY + 3, Player.w * 0.55, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+        };
+        if (MC_READY !== 16) playerEllipse();
 
         /* 破勢反擊窗口：腳下金環隨剩餘時間收縮，提示「現在出刀架勢加倍」 */
         if (Player.riposteTimer > 0 && Player.state !== "hitstun") {
@@ -7387,6 +7427,7 @@
             playerImg = MC_IMGS[frame];
           }
 
+          if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, Config.groundY - Player.y)) playerEllipse();
           ctx.save();
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
           ctx.translate(Player.x, Player.y + GROUND_SINK);
