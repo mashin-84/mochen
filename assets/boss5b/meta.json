@@ -1,0 +1,1 @@
+{"canvas": [900, 600], "anchorX": 450, "baselineY": 560, "facing": "right", "frames": ["idle1", "idle2", "walk1", "walk2", "walk3", "walk4", "windup", "windup_thrust", "slash", "slash_rec", "thrust", "thrust_rec", "sweep", "cast", "hurt", "stagger"]}

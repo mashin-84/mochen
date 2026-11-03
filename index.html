@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.23";
+      const ASSET_VER = "0.8.24";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2849,12 +2849,13 @@
         M.b_rage = { name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: FR("14_cast", "09_slash", "10_slash_rec"), windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
         Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S5.moves = M;
-        S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 2.5; /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
+        S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 3.0; /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
         S5.stances = {
           A: { sprite: "boss5", stride: 170, speed: 430, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 0.64, hurtHalf: 40, bodyW: 150, bodyH: 70, rageMove: "s_rage",
             pool: [["s_bite", 14], ["s_bite2", 12], ["s_claw3", 11], ["s_bite+backstep", 10, "mobility"], ["s_pounce+backstep", 9, "mobility"], ["dash_in+s_bite", 10, "chase"], ["s_rush", 8], ["s_tail", 8], ["s_shadow+s_bite", 8, "chase"]],
             far: ["dash_in+s_bite", "s_pounce"], farP2: [] },
-          B: { sprite: "boss5", /* 暫用小狼圖放大頂替，大狼美術到位後改成 "boss5b" 並把 spriteScale 改 1.05 */ stride: 330, speed: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 1.6, hurtHalf: 190, bodyW: 380, bodyH: 190, rageMove: "b_rage",
+          B: { sprite: "boss5b", stride: 330, speed: 250, /* 大狼：站立與走路只用外觀一致（無骨腿）的格子，避免 AI 生圖各格骨腿有無不同而閃爍 */
+            remap: { "01_idle1": "02_idle2" }, walkSeq: ["03_walk1", "04_walk2", "06_walk4", "04_walk2"], spriteScale: 1.05, hurtHalf: 230, bodyW: 520, bodyH: 300, rageMove: "b_rage",
             pool: [["b_swipe", 16], ["b_stomp", 12], ["b_howl", 9, "push"], ["b_bone", 10], ["b_bite", 9], ["b_tail", 9], ["b_leap", 12, "mobility"], ["b_rush", 8, "chase"]],
             far: ["b_rush", "b_leap"], farP2: [] }
         };

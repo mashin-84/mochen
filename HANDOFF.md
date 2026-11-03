@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.23）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.24）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -305,3 +305,8 @@
 - 蛻變：進二階段時若 `stage.transformMove`，`onBossPhase2` 改為觸發該招（`transform`，`isSwitch + isTransform`）：windup 1.4 秒長嘯、`Boss._scaleMul` 由 1 脹到 `transformGrow`（2.5）、持續震動與揚塵；active 起點換成姿態 B、重置倍率、震波、震退玩家。
 - 招式（`Stages[5].moves`）：小狼 `s_bite／s_bite2／s_claw3／s_pounce（躍擊）／s_rush【危】／s_tail【危】／s_shadow（繞背）／backstep／dash_in／s_rage`；大狼 `b_swipe／b_stomp／b_leap【危】／b_howl／b_bone／b_bite【危】／b_tail【危】／b_rush／b_rage`。池與遠距招在 `stances.A/B`。已本機模擬：兩階段招式都會輪替、蛻變流程正常；手感與數值待實測。
 - 大狼美術設定（使用者指定）：被魔氣侵蝕的不死族感，部分身體變成白骨，身上有搖曳的魔焰（生圖時火焰要畫成不透明卡通形狀，洋紅底去背才不會有殘邊；之後可用特效圖疊加動態魔焰）。
+
+**v0.8.24 大狼美術接入**
+- `assets/boss5b/`（大狼 16 格；原表有黑色格線邊框 → 新工具 `tools/sheetpad.py 動作表.jpg 輸出資料夾 目標高度 [內縮]`，每格內縮 12px 去格線再走 sheet.py 的流程；目標高度 420，`spriteScale 1.05`、`hurtHalf 230`、`bodyW 520`、`bodyH 300`、`transformGrow 3.0`）。
+- AI 生圖各格的骨腿／骨尾有無不一致（01、05、09、13、14、15 有骨腿，其餘是毛腿）→ 站立與走路會閃爍，所以大狼姿態設 `remap {"01_idle1":"02_idle2"}`、`walkSeq ["03_walk1","04_walk2","06_walk4","04_walk2"]`（只用毛腿格）；攻擊格不受影響。
+- 待補：大狼倒地 3 格（17_kneel／18_fall／19_lie，用 `fall3.py`）、小狼被打到二階段不需倒地；魔焰特效圖（疊加發光的動態火焰，讓背上火焰真的搖擺）；第 5 關登場動畫（背景＋影片）、書法名字卡「九幽魔狼」。
