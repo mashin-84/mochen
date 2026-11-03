@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.26";
+      const ASSET_VER = "0.8.27";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -4454,6 +4454,51 @@
         Boss._leapPity = pk.indexOf("leap_slam") >= 0 ? 0 : (Boss._leapPity || 0) + 1;
         return pk;
       }
+      /* v0.8.27 衝擊波震飛：主角被震得往後飛（無敵、無法操作），落地滑行（劍在地上拖出火花），再用劍插進地面穩住自己，最後拔劍起身。
+         動作格 17_slide／18_plant／19_rise 為選用美術（assets/mc/），沒有時用 16_hurt／13_parry／01_idle1 頂替 */
+      function blastPlayer(dir) {
+        if (Player.blast) return;
+        Player.blast = { t: 0, phase: "fly", dir, spark: 0 };
+        Player.state = "hitstun"; Player.stateTimer = 99; Player.hurtInv = 3.0;
+        Player.isChargingAttack = false;
+        Player.facing = -dir;
+        Player.vx = dir * 1250; Player.vy = -470;
+        Player.flashFrames = 3;
+        hapticBuzz([80, 40, 120]); Sound.play("hit", 0.9, 0.6); Sound.play("s_hurt", 0.8, 0.8);
+        spawnSparks(Player.x, Player.y - 50, "hit", dir);
+      }
+      function updateBlast(dt) {
+        const B = Player.blast; if (!B) return;
+        B.t += dt;
+        const onG = Player.y >= Config.groundY - 2;
+        const gy = Config.groundY;
+        if (B.phase === "fly") {
+          if (!onG) { Player.vx *= Math.pow(0.72, dt); B.air = true; }
+          else {
+            if (B.air) { B.air = false; B.slideT = 0; emitDust(Player.x, gy, -B.dir, 6, 1.5); triggerShake(B.dir, 0, 14, 0.2); }
+            B.slideT = (B.slideT || 0) + dt;
+            Player.vx *= Math.pow(0.2, dt);
+            B.spark -= dt;
+            if (B.spark <= 0) { B.spark = 0.045; spawnSparks(Player.x - B.dir * 20, gy - 4, "block", -B.dir); emitDust(Player.x, gy, -B.dir, 1, 0.9); }
+            if ((B.slideT > 0.2 && Math.abs(Player.vx) < 520) || B.slideT > 0.7) { /* 劍插地 */
+              B.phase = "plant"; B.pt = 0; Player.vx *= 0.5;
+              spawnSparks(Player.x - Player.facing * 40, gy - 6, "parry", -B.dir);
+              emitDust(Player.x, gy, -B.dir, 6, 1.6); addTrauma(0.5); hapticBuzz(30);
+              Sound.play("block", 0.8, 0.6); Sound.play("slash", 0.5, 0.5);
+              spawnFloatingText(Player.x, Player.y - 120, "〔以劍駐地〕", "#a5b4fc", 1.1);
+              if (fxReady("land")) spawnFx("land", 0, Player.x - Player.facing * 40, gy + 14, { w: 330, h: 330, dur: 0.45, anchor: "b", alpha: 0.6 });
+            }
+          }
+        } else if (B.phase === "plant") {
+          B.pt += dt; Player.vx *= Math.pow(0.0004, dt);
+          if (B.pt > 0.85) { B.phase = "rise"; B.rt = 0; }
+        } else {
+          B.rt += dt; Player.vx *= Math.pow(0.001, dt);
+          if (B.rt > 0.3) {
+            Player.blast = null; Player.state = "idle"; Player.stateTimer = 0; Player.facing = Boss.x >= Player.x ? 1 : -1;
+          }
+        }
+      }
       /* v0.8.25 招式特效（資料驅動）：move.fxAct＝出招起點、move.fxHit＝連擊每一下、move.fxLand＝躍擊落地；
          欄位 {sheet,row,ox(沿面向偏移),oy,w,h,dur,anchor,alpha} */
       function spawnMoveFx(f) {
@@ -4744,7 +4789,7 @@
                 emitDust(Boss.x, Config.groundY, 1, 8, 1.8); emitDust(Boss.x, Config.groundY, -1, 8, 1.8);
                 if (fxReady("land")) spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 900, h: 900, dur: 0.7, anchor: "b", alpha: 0.9 });
                 Sound.play("execution", 0.7, 0.55);
-                Player.vx = (Player.x >= Boss.x ? 1 : -1) * 700;
+                blastPlayer(Player.x >= Boss.x ? 1 : -1); /* 震飛主角，劍插地穩住 */
                 if (Boss.stageId === 5 && fxReady("wolf")) { /* 大狼背上的魔焰：疊加發光、循環搖擺，跟著 Boss */
                   [[-130, 6.5], [0, 8], [120, 7]].forEach(([o, fps]) => spawnFx("wolf", 2, Boss.x, Boss.y - 235, { anchor: "b", w: 220, h: 220, alpha: 0.55, dur: 9999, loop: true, fps, follow: () => (Boss.hp > 0 ? { x: Boss.x + Boss.facing * o, y: Boss.y - 235 } : { x: -9999, y: -9999 }) }));
                 }
@@ -5317,6 +5362,8 @@
           Player.state = "move";
         }
 
+        if (Player.blast) updateBlast(dt);
+
         // Horizontal Movement
         if (Player.state === "idle" || Player.state === "move" || Player.state === "jump") {
           let dir = 0;
@@ -5332,7 +5379,7 @@
             Player.vx *= Math.pow(0.001, dt);
             if (Player.y >= Config.groundY - 2) Player.state = "idle";
           }
-        } else if (Player.state !== "dash") {
+        } else if (Player.state !== "dash" && !Player.blast) {
           Player.vx *= Math.pow(0.015, dt);
         }
 
@@ -7402,6 +7449,7 @@
         MC_IMGS[name] = img;
       });
 
+      ['17_slide', '18_plant', '19_rise'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
       const MC_STRIDE = 250;
       let MC_PHASE = 0;
       let MC_LASTX = null;
@@ -7486,6 +7534,10 @@
 
           if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
             frame = "11_thrust";
+          } else if (Player.blast) {
+            const xf = (n, fb) => { const im = MC_IMGS[n]; return im && im.complete && im.naturalWidth ? n : fb; };
+            const ph = Player.blast.phase;
+            frame = ph === "plant" ? xf("18_plant", "13_parry") : ph === "rise" ? xf("19_rise", "01_idle1") : (!isAirborne ? xf("17_slide", "16_hurt") : "16_hurt");
           } else if (Player.state === "hitstun" || Player.state === "staggered" || Player.state === "frozen") {
             frame = "16_hurt";
           } else if (Player.state === "drink") {
@@ -8021,7 +8073,7 @@
         Boss.aerialTimer = 0;
         Boss.aerialShotTimer = 0;
         Boss.groundedTimer = 0;
-        Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0; Boss._scaleMul = 1; applyBossBody(stage);
+        Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0; Boss._scaleMul = 1; applyBossBody(stage); Player.blast = null;
         Boss.rage = 0; Boss.lastHp = stage.maxHp; Boss.landedHit = false; Reader.reset();
         Config.bossPhase = 1;
 
