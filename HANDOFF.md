@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.34）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.35）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -357,7 +357,6 @@
 - 魔焰：`assets/fx/flame.webp`（4×4，每格 256；列 0 藍焰、列 1 紅焰、列 2 紫紅藍大火、列 3 飄散火星；內容已下移讓火底貼近格底）。大狼蛻變後背上改疊 3 團大火＋火星（`Boss.y-185` 為基準，alpha 0.5～0.7）；舊的白藍火（wolf 列 2）不再用。列 0、1 尚未使用（可給小狼或階段轉換）。
 - 待辦：戰前／戰後對白改寫（目前仍是暫代文字）、名牌副標題（`realmBadge`）要不要保留、倒地 17~19 重生、實測手感。
 
-**v0.8.34 第 5 關狼的音效與配樂接口**
-- 程式合成狼聲（`Sound.bakeVoice`：聲源＋共振峰濾波＋後級低通；`bakeWolf`）：`w_*`＝小狼（一般狼）：`w_snarl` 低吼、`w_bark` 吠、`w_snap` 咬合、`w_claw` 爪風、`w_howl` 嚎叫、`w_yelp` 慘叫；`m_*`＝大狼（怪物）：`m_growl` 低吼、`m_roar` 咆哮、`m_bite` 吞咬、`m_swipe` 重爪風壓、`m_stomp` 重踏、`m_howl` 長嚎。這些音沒過 2400Hz 低通。**只在本機看過頻譜（無 NaN、基頻與亮度合理），沒聽過，音色待使用者實測**。想換真實音效：mp3 放 `assets/sfx/<名>.mp3`，名字加進 `Sound.extSfx`。
-- 招式音效欄位 `move.sfx = {w 前搖, a 出招, h 連擊每一下}`；有 `a`／`h` 就取代預設揮劍音（躍擊、衝步、連擊同理）。第 5 關各招對照表在 `S5.moves` 後的 `SFX`。蛻變前搖＝小狼嚎，蛻變完成＝`m_roar`；架勢崩潰：小狼 `w_yelp`／大狼 `m_growl`；通關＝`m_howl`。登場影片音效用 `Stages[5].introSfx = [[秒,音名,音量,音高],…]`，落地 `introLandSfx`。
-- 配樂：`STAGE_BGM[5]` 暫用 `weiju`；新增 `STAGE_BGM_P2`（二階段換曲，蛻變完成時切換，沒列就不換）。專屬曲到位後放 `assets/music/<名>.webm`（opus 80k、約 3 分鐘、裁尾淡出，見 v0.8.17），改這兩張表即可。
+**v0.8.34～v0.8.35 第 5 關狼的音效與配樂**
+- 配樂：使用者用 AI 生成兩首（原檔 the_ghost_wolf_s_vigil.mp3 176.9 秒 -12.1 LUFS、the_weight_of_a_fallen_realm.mp3 179.9 秒 -13.1 LUFS），各加 +0.4／+1.4 dB 並限幅、尾端 0.8 秒淡出、opus 80k → `assets/music/youying.webm`（一階段小狼，`STAGE_BGM[5]`）、`assets/music/langwang.webm`（二階段大狼，`STAGE_BGM_P2[5]`，蛻變完成時切換）。
+- 狼聲：曾做過程式合成版，使用者嫌難聽，已移除，**不要再用程式合成動物聲**。改成外部音效檔機制：`Sound.extSfx` 列出 12 個名字，檔案放 `assets/sfx/<名>.mp3`，載入成功才有聲，沒檔的招式維持原本揮劍音（`sfxA` 要 `Sound.buffers[名]` 存在才取代）。名字：小狼 `w_snarl` 低吼、`w_bark` 吠、`w_snap` 咬合、`w_claw` 爪風、`w_howl` 嚎叫、`w_yelp` 慘叫；大狼 `m_growl` 低吼、`m_roar` 咆哮、`m_bite` 吞咬、`m_swipe` 重爪風壓、`m_stomp` 重踏、`m_howl` 長嚎。招式欄位 `move.sfx = {w 前搖, a 出招, h 連擊每一下}`，第 5 關對照表在 `S5.moves` 後的 `SFX`；蛻變前搖＝w_howl、完成＝m_roar；架勢崩潰：小狼 w_yelp／大狼 m_growl；通關 m_howl；登場影片 `Stages[5].introSfx`（秒、音名、音量、音高）與 `introLandSfx`。使用者找到音效檔後交給 Claude 裁切、正規化、轉 mp3、命名放入。

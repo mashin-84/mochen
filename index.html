@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.34";
+      const ASSET_VER = "0.8.35";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2209,60 +2209,12 @@
           this.bakeWolf();
         },
 
-        /* v0.8.34 狼與巨狼的聲音（程式合成：聲源＋共振峰濾波）。w_*＝一般狼（小狼），m_*＝怪物（大狼）。
-           想換成真實錄音：把 mp3 放進 assets/sfx/<名>.mp3，並把名字加進 Sound.extSfx（載入成功就蓋掉合成音）。 */
-        extSfx: [],
-        bakeVoice(o) {
-          const rate = this.ctx.sampleRate, len = Math.floor(rate * o.dur), buf = this.ctx.createBuffer(1, len, rate), ch = buf.getChannelData(0);
-          const fm = o.formants || [], st = fm.map(() => ({ lp: 0, bp: 0 })), TP = 6.283185307;
-          let ph = 0, ph2 = 0, peak = 0.0001, l1 = 0, l2 = 0;
-          const la = o.lp ? Math.exp(-6.283185307 * o.lp / rate) : 0; /* 後級雙極低通：壓掉過亮的嘶聲 */
-          for (let i = 0; i < len; i++) {
-            const t = i / rate;
-            let src;
-            if (o.src === "noise") src = (Math.random() * 2 - 1) * (o.noise == null ? 1 : o.noise);
-            else {
-              let f = o.f0(t); if (o.vib) f *= 1 + o.vib[1] * Math.min(1, t / 0.4) * Math.sin(TP * o.vib[0] * t);
-              ph += f / rate; ph -= Math.floor(ph); ph2 += f * 0.5 / rate; ph2 -= Math.floor(ph2);
-              src = (2 * ph - 1) + (o.sub || 0) * (2 * ph2 - 1);
-              if (o.rough) src *= 1 - o.rough * (0.5 + 0.5 * Math.sin(TP * (o.rr || 30) * t)); /* 低吼的顫動 */
-              src += (Math.random() * 2 - 1) * (o.noise || 0);
-            }
-            let y = 0;
-            for (let k = 0; k < fm.length; k++) {
-              const fc = typeof fm[k][0] === "function" ? fm[k][0](t) : fm[k][0], q = fm[k][1];
-              const fk = 2 * Math.sin(Math.PI * Math.min(0.2, fc / rate)), z = st[k];
-              z.lp += fk * z.bp; const hp = src - z.lp - z.bp / q; z.bp += fk * hp; y += z.bp * fm[k][2];
-            }
-            if (!fm.length) y = src;
-            y *= o.env(t);
-            if (o.drive) y = Math.tanh(y * o.drive);
-            if (o.thump) y += Math.sin(TP * (o.thump[0] / o.thump[3]) * (1 - Math.exp(-o.thump[3] * t))) * Math.exp(-t * o.thump[1]) * o.thump[2];
-            if (o.lp) { l1 = la * l1 + (1 - la) * y; l2 = la * l2 + (1 - la) * l1; y = l2; }
-            ch[i] = y; if (Math.abs(y) > peak) peak = Math.abs(y);
-          }
-          const g = (o.gain || 0.9) / peak; for (let i = 0; i < len; i++) ch[i] *= g;
-          return buf;
-        },
+        /* v0.8.34 狼與巨狼的聲音：改用真實音效檔（程式合成版太難聽已移除）。
+           檔案放 assets/sfx/<名>.mp3，載入成功才有聲；沒有檔案的招式維持原本的揮劍音。w_*＝小狼，m_*＝大狼（怪物）。 */
+        extSfx: ["w_snarl", "w_bark", "w_snap", "w_claw", "w_howl", "w_yelp", "m_growl", "m_roar", "m_bite", "m_swipe", "m_stomp", "m_howl"],
         bakeWolf() {
-          const E = (a, r, d) => (t) => Math.min(1, t / a) * Math.min(1, Math.max(0, (d - t) / r));
-          const B = this.buffers, V = (o) => this.bakeVoice(o);
-          /* 小狼：一般狼的聲音 */
-          B.w_snarl = V({ lp: 3500, dur: 0.6, f0: (t) => 88 + 7 * Math.sin(t * 11), rough: 0.75, rr: 34, sub: 0.5, noise: 0.3, formants: [[520, 6, 1], [1050, 7, 0.6], [2300, 8, 0.25]], env: E(0.07, 0.2, 0.6), drive: 1.4, gain: 0.85 });
-          B.w_bark = V({ lp: 3800, dur: 0.26, f0: (t) => 430 - 250 * Math.pow(t / 0.26, 0.7), noise: 0.12, formants: [[720, 8, 1], [1350, 9, 0.8], [2500, 10, 0.3]], env: (t) => Math.min(1, t / 0.012) * Math.exp(-t * 9), drive: 1.6, gain: 0.9 });
-          B.w_snap = V({ lp: 5000, dur: 0.18, src: "noise", f0: () => 100, formants: [[2200, 2.5, 1], [900, 3, 0.4]], env: (t) => Math.exp(-t * 38), thump: [190, 32, 0.5, 6], gain: 0.8 });
-          B.w_claw = V({ lp: 5000, dur: 0.24, src: "noise", f0: () => 100, formants: [[(t) => 3300 - 1900 * Math.min(1, t / 0.2), 1.6, 1]], env: (t) => Math.pow(Math.sin(Math.PI * Math.min(1, t / 0.24)), 1.5), gain: 0.6 });
-          B.w_howl = V({ lp: 3000, dur: 2.3, f0: (t) => (t < 0.7 ? 330 + 230 * Math.pow(t / 0.7, 0.8) : 560 - 170 * Math.pow((t - 0.7) / 1.6, 1.3)), vib: [5.3, 0.02], noise: 0.05, formants: [[(t) => 600 + 120 * Math.min(1, t), 10, 1], [1200, 10, 0.5], [2600, 12, 0.15]], env: E(0.3, 0.6, 2.3), gain: 0.75 });
-          B.w_yelp = V({ lp: 4000, dur: 0.34, f0: (t) => 850 - 380 * Math.min(1, t / 0.34), vib: [14, 0.03], noise: 0.08, formants: [[900, 9, 1], [1900, 10, 0.5]], env: (t) => Math.min(1, t / 0.01) * Math.exp(-t * 5), gain: 0.8 });
-          /* 大狼：怪物的低吼與咆哮 */
-          B.m_growl = V({ lp: 1300, dur: 0.85, f0: (t) => 54 + 6 * Math.sin(t * 8), rough: 0.85, rr: 22, sub: 0.7, noise: 0.3, formants: [[300, 5, 1], [700, 6, 0.7], [1500, 7, 0.3]], env: E(0.1, 0.3, 0.85), drive: 2.4, thump: [48, 2.5, 0.35, 0.5], gain: 0.9 });
-          B.m_roar = V({ lp: 2200, dur: 1.6, f0: (t) => (t < 0.35 ? 62 + 55 * t / 0.35 : 117 - 58 * Math.pow((t - 0.35) / 1.25, 1.2)), rough: 0.8, rr: 28, sub: 0.8, noise: 0.35, formants: [[(t) => 380 + 620 * Math.sin(Math.PI * Math.min(1, t / 1.3)), 5, 1], [(t) => 900 + 800 * Math.sin(Math.PI * Math.min(1, t / 1.3)), 6, 0.7], [2000, 7, 0.35]], env: E(0.05, 0.6, 1.6), drive: 3, thump: [55, 3, 0.45, 0.6], gain: 0.95 });
-          B.m_bite = V({ lp: 2200, dur: 0.55, f0: (t) => 95 - 35 * t / 0.55, rough: 0.6, rr: 30, sub: 0.6, noise: 0.5, formants: [[500, 5, 1], [1100, 6, 0.6]], env: (t) => Math.min(1, t / 0.01) * Math.exp(-t * 5), drive: 2.6, thump: [60, 9, 0.7, 2], gain: 0.95 });
-          B.m_swipe = V({ lp: 2500, dur: 0.4, src: "noise", f0: () => 100, formants: [[(t) => 1800 - 1400 * Math.min(1, t / 0.35), 1.4, 1]], env: (t) => Math.sin(Math.PI * Math.min(1, t / 0.4)), thump: [75, 8, 0.5, 1.5], gain: 0.8 });
-          B.m_stomp = V({ lp: 1500, dur: 0.5, src: "noise", f0: () => 100, formants: [[600, 1.5, 1]], env: (t) => Math.exp(-t * 22), drive: 1.5, thump: [95, 7, 1.0, 4], gain: 0.95 });
-          B.m_howl = V({ lp: 1900, dur: 2.8, f0: (t) => (t < 0.9 ? 150 + 140 * Math.pow(t / 0.9, 0.8) : 290 - 90 * Math.pow((t - 0.9) / 1.9, 1.3)), vib: [4.2, 0.025], rough: 0.25, rr: 20, sub: 0.4, noise: 0.15, formants: [[450, 9, 1], [900, 9, 0.6], [1700, 10, 0.25]], env: E(0.4, 0.8, 2.8), drive: 1.0, gain: 0.9 });
           this.extSfx.forEach((k) => {
-            try { fetch(`assets/sfx/${k}.mp3?v=${ASSET_VER}`).then((r) => r.arrayBuffer()).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { B[k] = buf; }).catch(() => { }); } catch (e) { }
+            try { fetch(`assets/sfx/${k}.mp3?v=${ASSET_VER}`).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { this.buffers[k] = buf; }).catch(() => { }); } catch (e) { }
           });
         },
 
@@ -2291,8 +2243,8 @@
       /* =========================================================================
        * v0.8.9 背景音樂（取自一念飛仙倉庫 music/）：淡入淡出、可調音量、隨靜音鍵
        * ========================================================================= */
-      const STAGE_BGM_P2 = {}; /* 二階段換曲：關卡 id → 曲名（沒列就整場同一首） */
-      const STAGE_BGM = { 1: "chisha", 5: "weiju" }; /* 第 5 關暫用「危局」，專屬配樂到位後改這裡 */ /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
+      const STAGE_BGM_P2 = { 5: "langwang" }; /* 二階段換曲：關卡 id → 曲名（沒列就整場同一首） */
+      const STAGE_BGM = { 1: "chisha", 5: "youying" }; /* 第 5 關：一階段「幽影」（小狼）、二階段 STAGE_BGM_P2「狼王」 */ /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
       const Music = {
         tracks: [], vol: 1.0, name: null, /* v0.8.15 預設音量 0.5→1.0（已調過滑桿的人沿用自己的設定） */
         init() {
@@ -4871,7 +4823,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
             spawnMoveFx(move.fxAct);
-            const sfxA = move.sfx && (move.sfx.a || move.sfx.h); /* v0.8.34 出招聲：有指定就取代預設揮劍音 */
+            const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
             if (sfxA) Sound.play(sfxA, 0.9, 1);
             if (move.kick) addTrauma(move.kick);
             if (move.isCharge && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 2, Boss.x, Boss.y - 120, { w: 440, dur: Math.max(0.4, move.active), loop: true, fps: 11, facing: Boss.facing, follow: () => ({ x: Boss.x - Boss.facing * 90, y: Boss.y - 120 }) });
@@ -5035,7 +4987,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               if (Boss.comboHitsLeft === 1 && move.comboLastDelay) Boss.comboHitTimer = move.comboLastDelay; /* 補刀延遲：逼玩家不要連按招架 */
               Boss.hitRegistered = false;
 
-              if (move.sfx && move.sfx.h) Sound.play(move.sfx.h, 0.85, 0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
+              if (move.sfx && move.sfx.h && Sound.buffers[move.sfx.h]) Sound.play(move.sfx.h, 0.85, 0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
               spawnMoveFx(move.fxHit);
               if (move.kickHit) addTrauma(move.kickHit);
               const bType = Stages[Boss.stageId].bodyType || "human";
