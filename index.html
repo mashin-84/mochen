@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.22";
+      const ASSET_VER = "0.8.23";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2816,6 +2816,49 @@
             far: [], farP2: ["heavy_zone"] }
         };
       })();
+      /* ===== v0.8.23 第 5 關 九幽魔狼：一階段小狼（A）→ 仰天長嘯蛻變 → 二階段大狼（B）。美術到位前用程式畫的野獸頂替 =====
+         動作格沿用人形 16 格命名：07 伏身、08 蓄力撲、09 揮爪、10 收招、11 空中撲咬、12 落地、13 甩尾旋掃、14 長嘯、15 hurt、16 stagger */
+      (function () {
+        const S5 = Stages[5];
+        S5.name = "九幽魔狼"; S5.bg = "arena5"; S5.arenaName = "荒原殘陽";
+        S5.realmBadge = "妖王初期・九幽魔煞兇獸";
+        const M = {};
+        const FR = (w, a, r) => ({ windup: w, active: a, recover: r });
+        /* --- 小狼（快、低、打了就跑） --- */
+        M.s_bite = { name: "幽影撕咬", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.26, active: 0.12, recover: 0.22, range: 150, lunge: 520, damage: 120, parryPostureDmg: 16 };
+        M.s_bite2 = { name: "連環撕咬", isCombo: true, comboTotalHits: 2, comboInterval: 0.16, comboDamagePerHit: 85, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.30, active: 0.45, recover: 0.30, range: 155, lunge: 420, damage: 100, parryPostureDmg: 14 };
+        M.s_claw3 = { name: "血爪三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 80, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.38, active: 0.62, recover: 0.34, range: 160, lunge: 420, damage: 110, parryPostureDmg: 14 };
+        M.s_pounce = { name: "疾撲 (閃開，或起跳踩頭)", isLeap: true, leapH: 130, leapMax: 460, frames: { windup: "08_windup_thrust", recover: "12_thrust_rec" }, windup: 0.42, active: 0.36, recover: 0.42, range: 150, lunge: 0, damage: 150, parryPostureDmg: 16 };
+        M.s_rush = { name: "【危】狂暴衝撲 (前閃看破)", isPerilous: true, perilType: "thrust", frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.50, active: 0.20, recover: 0.55, range: 300, lunge: 980, damage: 300 };
+        M.s_tail = { name: "【危】甩尾旋斬 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: "07_windup", active: "13_sweep", recover: "10_slash_rec" }, windup: 0.52, active: 0.22, recover: 0.50, range: 230, lunge: 240, damage: 260 };
+        M.s_shadow = { name: "幽影閃 (繞背)", isTeleport: true, teleportBehind: true, teleportDelay: 0.30, teleportText: "【幽影閃】", teleportColor: "#c084fc", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.50, active: 0.12, recover: 0.34, range: 150, lunge: 300, damage: 130, parryPostureDmg: 14 };
+        M.backstep = { name: "後撤", isMobility: true, frames: { windup: "04_walk2", active: "04_walk2", recover: "01_idle1" }, windup: 0.08, active: 0.24, recover: 0.08, range: 0, lunge: -1000, damage: 0 };
+        M.dash_in = { name: "衝步", isMobility: true, frames: { windup: "03_walk1", active: "03_walk1", recover: "01_idle1" }, windup: 0.10, active: 0.20, recover: 0.05, range: 0, lunge: 1250, damage: 0 };
+        M.s_rage = { name: "嗜血狂亂 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 4, comboInterval: 0.16, comboDamagePerHit: 80, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.50, active: 0.78, recover: 0.55, range: 165, lunge: 460, damage: 120, parryPostureDmg: 18 };
+        /* --- 蛻變（不是攻擊：長嘯 1.4 秒脹大，active 起點換成大狼，震退） --- */
+        M.transform = { name: "九幽狼王・覺醒", isSwitch: true, isTransform: true, armor: true, switchText: { B: "〔九幽狼王・覺醒〕" }, frames: FR("14_cast", "14_cast", "14_cast"), windup: 1.4, active: 0.4, recover: 0.7, range: 0, lunge: 0, damage: 0 };
+        /* --- 大狼（慢、重、大範圍；range 含半個身長） --- */
+        M.b_swipe = { name: "巨爪橫掃", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.62, active: 0.18, recover: 0.55, range: 330, lunge: 220, damage: 210, parryPostureDmg: 28 };
+        M.b_stomp = { name: "地面連錘", isCombo: true, comboTotalHits: 3, comboInterval: 0.30, comboDamagePerHit: 110, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.60, active: 1.0, recover: 0.55, range: 320, lunge: 300, damage: 160, parryPostureDmg: 20 };
+        M.b_leap = { name: "【危】巨狼躍壓 (閃開，或起跳踩頭)", isLeap: true, isPerilous: true, perilType: "leap", leapH: 230, leapMax: 640, frames: { windup: "08_windup_thrust", recover: "12_thrust_rec" }, windup: 0.75, active: 0.60, recover: 0.80, range: 300, lunge: 0, damage: 300, parryPostureDmg: 22 };
+        M.b_howl = { name: "咆哮震波 (霸體・震退)", armor: true, pushback: 900, frames: FR("14_cast", "14_cast", "14_cast"), windup: 0.65, active: 0.15, recover: 0.50, range: 420, lunge: 0, damage: 90, parryPostureDmg: 20 };
+        M.b_bone = { name: "白骨刺陣", isZone: true, zoneType: "bone", zoneWidth: 320, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, frames: FR("14_cast", "14_cast", "14_cast"), windup: 0.55, active: 0.20, recover: 0.50, range: 300, lunge: 0, damage: 120 };
+        M.b_bite = { name: "【危】噬魂吞咬 (極限側閃)", isPerilous: true, perilType: "grab", frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.70, active: 0.16, recover: 0.75, range: 260, lunge: 0, damage: 350 };
+        M.b_tail = { name: "【危】魔尾裂風掃 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: "07_windup", active: "13_sweep", recover: "10_slash_rec" }, windup: 0.60, active: 0.24, recover: 0.62, range: 360, lunge: 260, damage: 300 };
+        M.b_rush = { name: "巨狼衝撞 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 720, frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.70, active: 0.70, recover: 0.90, range: 260, lunge: 720, damage: 260, parryPostureDmg: 24 };
+        M.b_rage = { name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: FR("14_cast", "09_slash", "10_slash_rec"), windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
+        Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
+        S5.moves = M;
+        S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 2.5; /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
+        S5.stances = {
+          A: { sprite: "boss5", stride: 170, speed: 430, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 0.64, hurtHalf: 40, bodyW: 150, bodyH: 70, rageMove: "s_rage",
+            pool: [["s_bite", 14], ["s_bite2", 12], ["s_claw3", 11], ["s_bite+backstep", 10, "mobility"], ["s_pounce+backstep", 9, "mobility"], ["dash_in+s_bite", 10, "chase"], ["s_rush", 8], ["s_tail", 8], ["s_shadow+s_bite", 8, "chase"]],
+            far: ["dash_in+s_bite", "s_pounce"], farP2: [] },
+          B: { sprite: "boss5", /* 暫用小狼圖放大頂替，大狼美術到位後改成 "boss5b" 並把 spriteScale 改 1.05 */ stride: 330, speed: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 1.6, hurtHalf: 190, bodyW: 380, bodyH: 190, rageMove: "b_rage",
+            pool: [["b_swipe", 16], ["b_stomp", 12], ["b_howl", 9, "push"], ["b_bone", 10], ["b_bite", 9], ["b_tail", 9], ["b_leap", 12, "mobility"], ["b_rush", 8, "chase"]],
+            far: ["b_rush", "b_leap"], farP2: [] }
+        };
+      })();
       Stages[1].introCine = true; /* v0.8.18 登場動畫 */
       Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise"];
       Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
@@ -3382,7 +3425,7 @@
           return;
         }
         const dist = Math.abs(Player.x - Boss.x);
-        if (Boss.state === "staggered" && dist <= 195) {
+        if (Boss.state === "staggered" && dist <= 195 + bossHurt()) {
           performExecution();
           return;
         }
@@ -3456,7 +3499,7 @@
         }
 
         const dist = Math.abs(Player.x - Boss.x);
-        if (Boss.state === "staggered" && dist <= 195) {
+        if (Boss.state === "staggered" && dist <= 195 + bossHurt()) {
           performExecution();
           return;
         }
@@ -3526,7 +3569,7 @@
         Player.staminaRecoverDelay = 0.35;
         Player.facing = Boss.x >= Player.x ? 1 : -1;
         const dxA = Math.abs(Boss.x - Player.x);
-        const dive = Player.vy > -120 && dxA <= 130 * CHAR_K && Player.y < Boss.y - 50;
+        const dive = Player.vy > -120 && dxA <= 130 * CHAR_K + bossHurt() && Player.y < Boss.y - 50;
         const isRiposte = Player.riposteTimer > 0;
         Player.riposteTimer = 0;
         Player.riposteAtk = isRiposte;
@@ -3564,7 +3607,8 @@
         const dx = Boss.x - Player.x;
         const dive = Player.isDive;
         const reach = (dive ? 100 : 135) * CHAR_K;
-        const hitX = dive ? Math.abs(dx) <= reach : (dx * Player.facing >= -30 && Math.abs(dx) <= reach);
+        const hurtH = bossHurt();
+        const hitX = dive ? Math.abs(dx) <= reach + hurtH : (dx * Player.facing >= -30 && Math.abs(dx) <= reach + hurtH);
         const hitY = dive ? (Player.y >= Boss.y - Boss.h * 0.95 && Player.y <= Boss.y + 30) : Math.abs(Player.y - Boss.y) < 170;
         if (!hitX || !hitY) return;
         Player.attackHitRegistered = true;
@@ -4360,6 +4404,14 @@
       /* v0.7.4 雙姿態 Boss（第 3 關）：Stages[n].stances = { A:{sprite,stride,pool,poolP2,far,farP2,alias}, B:{...} }
          每 switchEvery 招（二階段 switchEveryP2）插入「換姿」招式（stance_switch，前搖期間 Boss 有破綻），姿態決定用哪套動作表與招式池 */
       function stanceOf(stage) { return stage.stances ? stage.stances[Boss.stance] : null; }
+      /* v0.8.23 姿態可各自指定 spriteScale／size／hurtHalf（受擊範圍加成）／bodyW／bodyH；Boss._scaleMul＝蛻變脹大中的倍率 */
+      function bossVis(stage) {
+        const st = stanceOf(stage) || {};
+        const scale = st.spriteScale || stage.spriteScale || 0.64, size = st.size || stage.size || 1;
+        return { scale, size, k: scale * size * (Boss._scaleMul || 1), hurt: st.hurtHalf || stage.hurtHalf || 0 };
+      }
+      function applyBossBody(stage) { const st = stanceOf(stage); if (st && st.bodyW) { Boss.w = st.bodyW; Boss.h = st.bodyH || Boss.h; } else { Boss.w = 100; Boss.h = 162; } }
+      function bossHurt() { const stg = Stages[Boss.stageId]; return stg ? bossVis(stg).hurt : 0; }
       function stanceKey(stage, k) { const st = stanceOf(stage); return (st && st.alias && st.alias[k]) || k; }
       function weightedPick(list, moves) {
         const pp = list.filter(e => moves[e[0].split("+")[0]]);
@@ -4371,6 +4423,10 @@
       /* 進二階段：依 stage.stanceByPhase 換姿態（第 3 關：一階段雙劍、二階段玄鐵重劍） */
       function onBossPhase2() {
         const stage = Stages[Boss.stageId];
+        if (stage && stage.transformMove && stage.moves[stage.transformMove] && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) {
+          triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
+          return;
+        }
         if (stage && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) {
           Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
           spawnFloatingText(Boss.x, Boss.y - 135, Boss.stance === "B" ? "〔拔出玄鐵重劍〕" : "〔青雲雙劍〕", "#a5b4fc", 1.2);
@@ -4410,7 +4466,7 @@
         if (m.isRage && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 3, Boss.x, Boss.y + 12, { anchor: "b", w: 380, dur: m.windup + m.active + 0.5, loop: true, fps: 10, follow: () => ({ x: Boss.x, y: Boss.y + 12 }) });
         if (m.isRage) { spawnFloatingText(Boss.x, Boss.y - 150, "〔怒氣爆發〕", "#f87171", 1.3); Sound.play("peril", 0.8, 0.8); Boss.flashFrames = 4; }
         if (stage.stances && !m.isSwitch) Boss.stanceCount++;
-        if (m.isSwitch) hintOnce("stance", "【換姿】莫無咎拔劍換姿時有破綻，趁機攻擊！");
+        if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫無咎拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
         Boss.stateTimer = m.windup * phaseMod;
@@ -4640,6 +4696,12 @@
             }
           }
 
+          if (move.isTransform) { /* 蛻變前搖：長嘯、逐漸脹大、地面震動與黑氣 */
+            const tp = Math.max(0, Math.min(1, 1 - Boss.stateTimer / (Boss.stateDur || 1)));
+            Boss._scaleMul = 1 + ((stage.transformGrow || 2) - 1) * tp * tp;
+            addTrauma(dt * (0.25 + 0.6 * tp));
+            if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
+          }
           Boss.stateTimer -= dt;
           if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
             Boss.grabZoneX += (Player.x - Boss.grabZoneX) * Math.min(1, dt * 6);
@@ -4666,7 +4728,16 @@
               Boss.stance = Boss.stance === "A" ? "B" : "A";
               Boss.hitRegistered = true; Boss.flashFrames = 3;
               Sound.play("block", 0.55, 1.2);
-              spawnFloatingText(Boss.x, Boss.y - 130, Boss.stance === "B" ? "〔換姿・玄鐵重劍〕" : "〔換姿・青雲雙劍〕", "#a5b4fc", 1.1);
+              const swTxt = (move.switchText && move.switchText[Boss.stance]) || (Boss.stance === "B" ? "〔換姿・玄鐵重劍〕" : "〔換姿・青雲雙劍〕");
+              spawnFloatingText(Boss.x, Boss.y - 130, swTxt, move.isTransform ? "#f87171" : "#a5b4fc", 1.2);
+              if (move.isTransform) { /* 蛻變完成：換成大狼、震波、震退玩家 */
+                Boss._scaleMul = 1; applyBossBody(stage);
+                addTrauma(0.9); Boss.flashFrames = 5; triggerHitstopMs(90); hapticBuzz(40);
+                emitDust(Boss.x, Config.groundY, 1, 8, 1.8); emitDust(Boss.x, Config.groundY, -1, 8, 1.8);
+                if (fxReady("land")) spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 900, h: 900, dur: 0.7, anchor: "b", alpha: 0.9 });
+                Sound.play("execution", 0.7, 0.55);
+                Player.vx = (Player.x >= Boss.x ? 1 : -1) * 700;
+              }
             }
 
             // 原語 (1) 彈道：發射多種彈道投射物
@@ -4911,9 +4982,10 @@
         }
         const stn = stanceOf(stage);
 
-        if (dist > 220) {
+        const hurtX = stn ? (stn.hurtHalf || 0) : 0;
+        if (dist > 220 + hurtX) {
           Boss.state = "approach";
-          Boss.vx = Boss.facing * (Config.bossPhase === 2 ? 320 : 260);
+          Boss.vx = Boss.facing * ((stn && stn.speed) || (Config.bossPhase === 2 ? 320 : 260));
           /* v0.7.2 遠距招式：stage.farMoves（兩階段）＋ stage.farMovesP2（僅二階段），約每 0.5 秒一次機會 */
           const farBase = stn ? (stn.far || []) : (stage.farMoves || []);
           const farP2 = stn ? (stn.farP2 || []) : (stage.farMovesP2 || []);
@@ -4935,12 +5007,12 @@
           const ultKey = moveKeys.find(k => stage.moves[k].ultimate);
           if (ultKey && Boss.ultCd <= 0 && Math.random() < 0.6) {
             triggerBossMove(ultKey);
-          } else if (stage.rageMove && stage.moves[stage.rageMove] && Boss.rage >= stage.maxHp * (stage.rageEvery || 0.18)) {
-            Boss.rage = 0; triggerBossMove(stage.rageMove);
+          } else if (((stn && stn.rageMove) || stage.rageMove) && stage.moves[(stn && stn.rageMove) || stage.rageMove] && Boss.rage >= stage.maxHp * (stage.rageEvery || 0.18)) {
+            Boss.rage = 0; triggerBossMove((stn && stn.rageMove) || stage.rageMove);
           } else if (!stn && stage.pool) {
             triggerMacro(pickFromPool(Config.bossPhase === 2 && stage.poolP2 ? stage.poolP2 : stage.pool, stage.moves));
           } else if (stn && stn.pool) {
-            triggerBossMove(weightedPick(Config.bossPhase === 2 && stn.poolP2 ? stn.poolP2 : stn.pool, stage.moves));
+            triggerMacro(pickFromPool(Config.bossPhase === 2 && stn.poolP2 ? stn.poolP2 : stn.pool, stage.moves)); /* v0.8.23 姿態池也支援 + 串接與標籤 */
           } else if (Config.bossPhase === 2) {
             const pool = moveKeys.filter(k => !stage.moves[k].ultimate);
             const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -5090,7 +5162,7 @@
             const baseReach = (Player.isChargedAttack ? 175 : Player.comboStep === 3 ? 165 : 140) * CHAR_K;
             const hasEcho11 = Progress.echoes && Progress.echoes.includes(11);
             const reach = Math.round(baseReach * (hasEcho11 ? 1.08 : 1.0)); // 卷三回響11：攻擊範圍+8%
-            if (inFront && Math.abs(dx) <= reach && Math.abs(Player.y - Boss.y) < 120) {
+            if (inFront && Math.abs(dx) <= reach + bossHurt() && Math.abs(Player.y - Boss.y) < 120) {
               Player.attackHitRegistered = true;
 
               // 隻狼式「打鐵攻防轉換律動」：
@@ -5494,6 +5566,7 @@
         if (!hitstopOnly) {
           const cineOn = !!Game.cine;
           const introOn = Game.introT > 0 || Game.dlgFocus || cineOn;
+          if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
           const uw = Game.ultDim || 0;
           const focusX = cineOn ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
           let targetX = focusX - Config.baseWidth * 0.5;
@@ -6397,22 +6470,22 @@
           gg.addColorStop(0.3, "#74829f");
           gg.addColorStop(1, "#3d4863");
           ctx.fillStyle = gg;
-          ctx.fillRect(0, Config.groundY, Config.worldWidth, Config.baseHeight - Config.groundY + 120);
+          ctx.fillRect(-3000, Config.groundY, Config.worldWidth + 6000, Config.baseHeight - Config.groundY + 120); /* 鏡頭拉遠時兩側也要有地面 */
           const mg2 = ctx.createLinearGradient(0, Config.groundY - 70, 0, Config.groundY);
           mg2.addColorStop(0, "rgba(220,235,255,0)");
           mg2.addColorStop(1, "rgba(220,235,255,0.35)");
           ctx.fillStyle = mg2;
-          ctx.fillRect(0, Config.groundY - 70, Config.worldWidth, 70);
+          ctx.fillRect(-3000, Config.groundY - 70, Config.worldWidth + 6000, 70);
         } else {
           ctx.fillStyle = "#070c14";
-          ctx.fillRect(0, Config.groundY, Config.worldWidth, Config.baseHeight - Config.groundY + 120);
+          ctx.fillRect(-3000, Config.groundY, Config.worldWidth + 6000, Config.baseHeight - Config.groundY + 120); /* 鏡頭拉遠時兩側也要有地面 */
         }
 
         ctx.strokeStyle = artMode ? "rgba(210, 230, 255, 0.5)" : varColor(bg);
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, Config.groundY);
-        ctx.lineTo(Config.worldWidth, Config.groundY);
+        ctx.moveTo(-3000, Config.groundY);
+        ctx.lineTo(Config.worldWidth + 3000, Config.groundY);
         ctx.stroke();
 
         ctx.font = "600 11px var(--font-serif)";
@@ -6891,7 +6964,7 @@
           if (Boss._cineImg) { imgKey = Boss._cineImg; bossImg = null; isWalkFrame = false; }
           if (!bossImg) bossImg = SP.imgs[imgKey];
           {
-            let sk = (stage.spriteScale || 0.64) * (stage.size || 1);
+            let sk = bossVis(stage).k;
             if (isWalkFrame && bossImg !== SP.imgs[imgKey]) sk *= getWalkNorm(SP);
             const cineK = Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
             if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
@@ -6911,7 +6984,7 @@
             ctx.rotate(-Boss.facing * lean * a);
             ctx.scale(1 + 0.04 * a, 1 - 0.04 * a);
           }
-          let bossK = (stage.spriteScale || 0.64) * (stage.size || 1);
+          let bossK = bossVis(stage).k;
           if (isWalkFrame && bossImg !== SP.imgs[imgKey]) bossK *= getWalkNorm(SP); /* 影片抽幀的走路圖人比動作表小，依不透明高度校正 */
           ctx.scale(Boss.facing > 0 ? bossK : -bossK, bossK);
           ctx.drawImage(bossImg, -450, -560);
@@ -7930,7 +8003,7 @@
         Boss.aerialTimer = 0;
         Boss.aerialShotTimer = 0;
         Boss.groundedTimer = 0;
-        Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0;
+        Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0; Boss._scaleMul = 1; applyBossBody(stage);
         Boss.rage = 0; Boss.lastHp = stage.maxHp; Boss.landedHit = false; Reader.reset();
         Config.bossPhase = 1;
 
