@@ -1,4 +1,4 @@
-"""登場／特殊姿勢切圖：python3 poses.py 姿勢表.jpg 輸出資料夾 縮放比 [名稱,...]
+"""登場／特殊姿勢切圖：python3 poses.py 姿勢表.jpg 輸出資料夾 縮放比 [名稱,...] [欄數=2] [列數=2]
 洋紅底 2x2（共 4 格）→ 去背（含去掉殘留的黑色格線）、統一縮放（用同一個縮放比，保持各格人物大小一致），
 腳底（bbox 底）落在 y=560、最低 8% 範圍的水平中心對齊 x=450，輸出 900x600 webp。
 縮放比的找法：用站姿單格量「頭盔羽飾頂到靴底」的高度，除以姿勢表裡接近站姿的那格同樣的高度。
@@ -26,9 +26,11 @@ def cell(img, c, cols=2, rows=2, pad=10):
 if __name__ == '__main__':
     src, outdir, S = sys.argv[1], sys.argv[2], float(sys.argv[3])
     names = sys.argv[4].split(',') if len(sys.argv) > 4 else ['20_jump', '21_fall', '22_land', '23_rise']
+    cols = int(sys.argv[5]) if len(sys.argv) > 5 else 2
+    rows = int(sys.argv[6]) if len(sys.argv) > 6 else 2
     img = Image.open(src); os.makedirs(outdir, exist_ok=True)
     for k, nm in enumerate(names):
-        rgba = cell(img, k); x0, y0, x1, y1 = bbox(rgba); rgba = rgba[y0:y1, x0:x1]
+        rgba = cell(img, k, cols, rows); x0, y0, x1, y1 = bbox(rgba); rgba = rgba[y0:y1, x0:x1]
         h = rgba.shape[0]; lo = rgba[int(h - max(8, h * 0.08)):, :, 3] > 40
         _, fx = np.where(lo); feet_c = (fx.min() + fx.max()) / 2
         im = Image.fromarray(rgba).resize((max(1, int(rgba.shape[1] * S)), max(1, int(h * S))), Image.LANCZOS)
