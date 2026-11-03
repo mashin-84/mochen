@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.32";
+      const ASSET_VER = "0.8.33";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2849,7 +2849,7 @@
         M.b_rage = { kickHit: 0.15, fxHit: { sheet: "wolf", row: 0, ox: 220, oy: -200, w: 700, dur: 0.3 }, name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: { windup: ["14_cast"], active: ["23_swipe_mid", "25_slam_mid", "23_swipe_mid"], recover: ["10_slash_rec"] }, windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
         Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S5.moves = M;
-        S5.dfmK = 0.35; /* 變形強度：使用者要求輕微（原 1.0 太誇張）*/ S5.fxSheets = ["wolf", "land"]; S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 3.0; /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
+        S5.dfmK = 0.35; /* 變形強度：使用者要求輕微（原 1.0 太誇張）*/ S5.fxSheets = ["wolf", "land", "flame"]; S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 3.0; /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
         S5.stances = {
           A: { sprite: "boss5", extras: ["20_bite_crouch", "21_bite_lunge", "22_pounce_coil", "23_pounce_fly", "24_pounce_dive", "25_pounce_land", "26_rush", "27_tail_wind", "28_tail_spin", "29_claw"], stride: 170, speed: 430, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 0.64, hurtHalf: 40, bodyW: 150, bodyH: 70, rageMove: "s_rage",
             pool: [["s_bite", 14], ["s_bite2", 12], ["s_claw3", 11], ["s_bite+backstep", 10, "mobility"], ["s_pounce+backstep", 9, "mobility"], ["dash_in+s_bite", 10, "chase"], ["s_rush", 8], ["s_tail", 8], ["s_shadow+s_bite", 8, "chase"]],
@@ -2862,7 +2862,10 @@
       })();
       Stages[1].introCine = true; /* v0.8.18 登場動畫 */
       Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise"];
-      Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
+      /* v0.8.33 第 5 關登場：影片（剪影小狼＋巨狼影子）→ 揚塵淡出 → 小狼衝進場煞停、名字卡（introDash 模式，需影片） */
+Stages[5].introCine = true; Stages[5].introDash = true; Stages[5].introVideo = "assets/boss5/intro"; Stages[5].introBg = "intro5"; Stages[5].introName = "assets/boss5/name.webp";
+Stages[5].introA = 5.6; Stages[5].introFlash = "214,196,170"; Stages[5].introSfxT = 3.5; Stages[5].spriteExtras = ["26_rush", "25_pounce_land", "20_bite_crouch"];
+Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
       Stages[1].moves.charge_rush = { name: "神衛衝鋒 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 760, windup: 0.70, active: 0.60, recover: 0.85, range: 150, lunge: 760, damage: 230, parryPostureDmg: 24 };
@@ -4829,8 +4832,8 @@
                 if (fxReady("land")) spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 900, h: 900, dur: 0.7, anchor: "b", alpha: 0.9 });
                 Sound.play("execution", 0.7, 0.55);
                 blastPlayer(Player.x >= Boss.x ? 1 : -1); /* 震飛主角，劍插地穩住 */
-                if (Boss.stageId === 5 && fxReady("wolf")) { /* 大狼背上的魔焰：疊加發光、循環搖擺，跟著 Boss */
-                  [[-130, 6.5], [0, 8], [120, 7]].forEach(([o, fps]) => spawnFx("wolf", 2, Boss.x, Boss.y - 235, { anchor: "b", w: 220, h: 220, alpha: 0.55, dur: 9999, loop: true, fps, follow: () => (Boss.hp > 0 ? { x: Boss.x + Boss.facing * o, y: Boss.y - 235 } : { x: -9999, y: -9999 }) }));
+                if (Boss.stageId === 5 && fxReady("flame")) { /* 大狼背上的魔焰（v0.8.33 新圖 flame.webp：第 3 列大火、第 4 列飄散火星）：疊加發光、循環搖擺，跟著 Boss */
+                  [[-140, 6.5, 2, 190, 0.5], [-10, 8, 2, 220, 0.5], [115, 7, 2, 190, 0.5], [0, 5, 3, 300, 0.7]].forEach(([o, fps, row, sz, al]) => spawnFx("flame", row, Boss.x, Boss.y - 185, { anchor: "b", w: sz, h: sz, alpha: al, dur: 9999, loop: true, fps, follow: () => (Boss.hp > 0 ? { x: Boss.x + Boss.facing * o, y: Boss.y - 185 } : { x: -9999, y: -9999 }) }));
                 }
               }
             }
@@ -5797,7 +5800,7 @@
         }
 
         drawTelegraphs();
-        if (Game.cine && !Game.cine.landed) drawCineMark();
+        if (Game.cine && !Game.cine.landed && !Game.cine.dash) drawCineMark();
 
         for (const img of Game.afterimages) {
           ctx.fillStyle = `rgba(56, 189, 248, ${img.alpha * 0.45})`;
@@ -5861,8 +5864,8 @@
         ctx.restore();
 
         if (Game.cine) {
-          const ft = Game.cine.t - CINE.A;
-          if (ft < 0.35) { ctx.fillStyle = `rgba(255,236,224,${1 - ft / 0.35})`; ctx.fillRect(0, 0, w, h); }
+          const ft = Game.cine.t - CINE.A, fd = Game.cine.dash ? 0.8 : 0.35;
+          if (ft < fd) { ctx.fillStyle = `rgba(${Stages[Boss.stageId].introFlash || "255,236,224"},${1 - ft / fd})`; ctx.fillRect(0, 0, w, h); }
           drawCineBars(w, h);
         }
         drawNameCard(w, h);
@@ -5996,15 +5999,17 @@
       function startBossCine() {
         const stage = Stages[Boss.stageId];
         if (!stage || !stage.introCine) return false;
-        const SP = getBossSprite(stage.sprite);
+        const SP = getBossSprite(stage.sprite || (stage.stances && stage.stances[(stage.stanceByPhase && stage.stanceByPhase[1]) || "A"].sprite));
         if (!(SP && SP.ready === 16 && MC_READY === 16 && MC_IMGS["01_idle1"])) return false;
         if (!getCineImg("bg", "assets/bg/" + stage.introBg + ".webp").ok) return false;
         for (const k of (stage.spriteExtras || [])) { const im = SP.imgs[k]; if (!(im && im.complete && im.naturalWidth)) return false; }
         let vid = null;
         if (stage.introVideo) { const v = getCineVideo(stage.introVideo); if (v.readyState >= 3 && !v.error) vid = v; }
-        const va = vid ? 5.0 : 3.4; /* 影片版 A 段 5 秒（影片本身 5 秒），引擎剪影版 3.4 秒 */
-        CINE.A = va; CINE.FALL = va + 0.55; CINE.LAND = va + 1.2; CINE.END = va + 2.6;
-        Game.cine = { t: 0, ask: false, landed: false, vid, sfx: false };
+        if (stage.introDash && !vid) return false; /* 衝進場模式沒有引擎剪影備案，影片沒載好就直接略過動畫 */
+        const va = vid ? (stage.introA || 5.0) : 3.4; /* 影片版 A 段 5 秒（影片本身 5 秒），引擎剪影版 3.4 秒 */
+        if (stage.introDash) { CINE.A = va; CINE.FALL = va; CINE.LAND = va + 0.55; CINE.END = va + 2.6; }
+        else { CINE.A = va; CINE.FALL = va + 0.55; CINE.LAND = va + 1.2; CINE.END = va + 2.6; }
+        Game.cine = { t: 0, ask: false, landed: false, vid, sfx: false, dash: !!stage.introDash, bx: Boss.x };
         if (vid) { try { vid.currentTime = 0; const pr = vid.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
         Boss.facing = -1; Boss.y = -900; Boss._cineImg = null;
         Game.introT = 0;
@@ -6017,6 +6022,7 @@
       function endBossCine(skipped) {
         if (!Game.cine) return;
         const landed = Game.cine.landed;
+        if (Game.cine.dash) Boss.x = Game.cine.bx;
         if (Game.cine.vid) { try { Game.cine.vid.pause(); } catch (e) { } }
         Game.cine = null;
         Boss._cineImg = null; Boss.y = Config.groundY; Boss.vy = 0;
@@ -6031,10 +6037,11 @@
         const st = Stages[Boss.stageId], gy = Config.groundY;
         addTrauma(0.95);
         emitDust(Boss.x, gy, 1, 6, 1.6); emitDust(Boss.x, gy, -1, 6, 1.6);
-        landingFx(Boss.x, 1.8, 6);
+        const lk = Game.cine && Game.cine.dash ? 0.6 : 1;
+        landingFx(Boss.x, 1.8 * lk, 6);
         if (fxReady("land")) {
-          spawnFx("land", 0, Boss.x, gy + 22, { w: 620, h: 620, dur: 0.6, anchor: "b", alpha: 0.85 });
-          spawnFx("land", 1, Boss.x, gy + 6, { w: 400, h: 400, dur: 1.0, anchor: "b", alpha: 0.7 });
+          spawnFx("land", 0, Boss.x, gy + 22, { w: 620 * lk, h: 620 * lk, dur: 0.6, anchor: "b", alpha: 0.85 });
+          spawnFx("land", 1, Boss.x, gy + 6, { w: 400 * lk, h: 400 * lk, dur: 1.0, anchor: "b", alpha: 0.7 });
         }
         hapticBuzz(35);
         Sound.play("execution", 0.6, 0.55);
@@ -6048,9 +6055,24 @@
         if (c.vid && c.t < CINE.A) {
           if (c.vid.paused && !c.vid.ended) { try { const pr = c.vid.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
           else if (c.vid.currentTime > 0.05) c.t = c.vid.currentTime; /* 以影片時間為準，畫面與影片同步 */
-          if (!c.sfx && c.t >= 3.8) { c.sfx = true; Sound.play("slash", 0.6, 0.5); }
+          if (!c.sfx && c.t >= (Stages[Boss.stageId].introSfxT || 3.8)) { c.sfx = true; Sound.play("slash", 0.6, 0.5); }
         } else if (c.vid && !c.vid.paused) { try { c.vid.pause(); } catch (e) { } }
         const t = c.t, gy = Config.groundY;
+        if (c.dash) { /* 衝進場：影片結束（揚塵蓋滿）→ 小狼由右側衝入並煞停 → 低伏低吼 */
+          if (t < CINE.A) { Boss.y = -900; Boss._cineImg = null; }
+          else if (t < CINE.LAND) {
+            const k = (t - CINE.A) / (CINE.LAND - CINE.A), e = 1 - (1 - k) * (1 - k);
+            Boss.y = gy; Boss.x = c.bx + 760 * (1 - e); Boss._cineImg = "26_rush";
+            emitDust(Boss.x, gy, 1, 1, 0.9);
+          } else {
+            Boss.x = c.bx; Boss.y = gy;
+            if (!c.landed) { c.landed = true; cineLand(); }
+            Boss._cineImg = (t < CINE.LAND + 0.4) ? "25_pounce_land" : (t < CINE.LAND + 1.6) ? "20_bite_crouch" : null;
+          }
+          updateHitParticles(dt);
+          if (t >= CINE.END) endBossCine(false);
+          return;
+        }
         if (t < CINE.FALL) { Boss.y = -900; Boss._cineImg = null; }
         else if (t < CINE.LAND) {
           const k = (t - CINE.FALL) / (CINE.LAND - CINE.FALL);
@@ -6110,11 +6132,12 @@
         const SP = getBossSprite(stage.sprite);
         const bgO = getCineImg("bg", "assets/bg/" + stage.introBg + ".webp");
         ctx.fillStyle = "#0b0a16"; ctx.fillRect(0, 0, w, h);
+        if (stage.introDash && !(c.vid && c.vid.readyState >= 2)) return; /* 衝進場模式沒有引擎剪影備案，影片暫時 seek 時先留黑幕 */
         if (c.vid && c.vid.readyState >= 2) { /* v0.8.20 影片版：cover 鋪滿，垂直焦點與背景圖一致 */
           const vs = Math.max(w / 1280, h / 720), vox = (w - 1280 * vs) / 2, voy = Math.max(h - 720 * vs, Math.min(0, h * 0.5 - 0.54 * 720 * vs));
           ctx.drawImage(c.vid, vox, voy, 1280 * vs, 720 * vs);
           if (t < 0.5) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 0.5})`; ctx.fillRect(0, 0, w, h); }
-          if (t > CINE.A - 0.3) { ctx.fillStyle = `rgba(255,246,236,${Math.min(1, (t - (CINE.A - 0.3)) / 0.3)})`; ctx.fillRect(0, 0, w, h); }
+          if (t > CINE.A - 0.3) { ctx.fillStyle = `rgba(${stage.introFlash || "255,246,236"},${Math.min(1, (t - (CINE.A - 0.3)) / 0.3)})`; ctx.fillRect(0, 0, w, h); }
           return;
         }
         const sc = Math.max(w / IW, h / IH);
@@ -6172,7 +6195,7 @@
       }
       /* Boss 墜落拖尾（世界座標，在 Boss 之前畫） */
       function drawCineTrail() {
-        const c = Game.cine; if (!c || c.t < CINE.FALL || c.t >= CINE.LAND) return;
+        const c = Game.cine; if (!c || c.dash || c.t < CINE.FALL || c.t >= CINE.LAND) return;
         const k = (c.t - CINE.FALL) / (CINE.LAND - CINE.FALL);
         drawFxCell("land", 3, Math.min(3, Math.floor(k * 3.3)), Boss.x - 10, Boss.y - 90, 640, 640, 0.9, true);
       }
