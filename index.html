@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.20";
+      const ASSET_VER = "0.8.21";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2240,9 +2240,9 @@
           try { const v = parseFloat(localStorage.getItem("qingyun_bgmvol")); if (!isNaN(v)) this.vol = Math.max(0, Math.min(1, v)); } catch (e) { }
           setInterval(() => this.tick(), 50);
           document.addEventListener("visibilitychange", () => {
-            this.tracks.forEach((t) => { if (document.hidden) t.el.pause(); else if (t.target > 0) this.tryPlay(t); });
+            this.tracks.forEach((t) => { if (document.hidden) t.el.pause(); else if (t.target > 0 && !Game.paused) this.tryPlay(t); });
           });
-          const retry = () => this.tracks.forEach((t) => { if (t.target > 0 && t.el.paused) this.tryPlay(t); });
+          const retry = () => { if (Game.paused) return; this.tracks.forEach((t) => { if (t.target > 0 && t.el.paused) this.tryPlay(t); }); };
           window.addEventListener("pointerdown", retry, true);
           window.addEventListener("keydown", retry, true);
         },
@@ -2257,6 +2257,8 @@
           this.tryPlay(t);
         },
         fadeOut() { this.tracks.forEach((t) => { t.target = 0; }); this.name = null; },
+        pauseAll() { this.tracks.forEach((t) => { try { t.el.pause(); } catch (e) { } }); },
+        resumeAll() { this.tracks.forEach((t) => { if (t.target > 0) this.tryPlay(t); }); },
         setVol(v) { this.vol = Math.max(0, Math.min(1, v)); try { localStorage.setItem("qingyun_bgmvol", String(this.vol)); } catch (e) { } },
         tick() {
           for (let i = this.tracks.length - 1; i >= 0; i--) {
@@ -2273,6 +2275,7 @@
        * 2. 全九難關卡資料庫 (ALL 9 STAGES DATABASE)
        * ========================================================================= */
       const HUB_START_X = -720, HUB_NPC_X = -520, HUB_GATE_X = -150, ARENA_ENTER_X = 900; /* 營地座標（位於戰場左側的負座標區） */
+      const GROUND_SINK = 5; /* v0.8.21 角色圖整體下移，腳底踩進影子，消除浮空感 */
       const CHAR_K = 1.25; /* 人物與判定的整體放大倍率（v0.4.14） */
 
       const LegacyStages = {
@@ -6804,7 +6807,7 @@
           ctx.globalAlpha = a;
           if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
           else ctx.filter = "brightness(0.5) contrast(1.15) drop-shadow(0 0 12px rgba(220,38,38,0.95))";
-          ctx.translate(Boss.x, Boss.y);
+          ctx.translate(Boss.x, Boss.y + GROUND_SINK);
           const hrM = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
           if (hrM > 0) ctx.rotate(-Boss.facing * 0.045 * hrM * hrM);
           const SM = MC_SCALE * (MC_FRAME_SCALE[f] || 1) * (stage.size || 1);
@@ -6891,7 +6894,7 @@
           else if (Boss.state === "frozen") ctx.filter = "hue-rotate(160deg) brightness(1.1)";
           else if (Boss.isPerilous) ctx.filter = "drop-shadow(0 0 10px #ef4444)";
 
-          ctx.translate(Boss.x, Boss.y);
+          ctx.translate(Boss.x, Boss.y + GROUND_SINK);
           if (deathRot) ctx.rotate(-Boss.facing * deathRot);
           if (hrP > 0) {
             const a = hrP * hrP;
@@ -7386,7 +7389,7 @@
 
           ctx.save();
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
-          ctx.translate(Player.x, Player.y);
+          ctx.translate(Player.x, Player.y + GROUND_SINK);
           const S = MC_SCALE * (MC_FRAME_SCALE[frame] || 1);
           let sqY = 1, sqX = 1;
           if (Game._squashT > 0 && !isAirborne) { /* 以腳底為軸：先壓扁、再緩回（0.15 秒） */
@@ -9258,6 +9261,7 @@
       let raf = null;
 
       function loop(now) {
+        if (Game.paused) { lastTime = now; raf = requestAnimationFrame(loop); return; } /* v0.8.21 暫停：畫面與模擬完全停住 */
         const dt = Math.min((now - lastTime) / 1000, 0.05);
         lastTime = now;
         let simDt = dt;
@@ -9270,6 +9274,68 @@
         render();
         raf = requestAnimationFrame(loop);
       }
+
+      /* =========================================================================
+       * v0.8.21 暫停：縮小遊戲、切到別的畫面（分頁隱藏／視窗失焦）時，遊戲與音樂完全暫停；
+       * 回來時顯示選單（繼續／重新挑戰／退出戰鬥回營地）。
+       * ========================================================================= */
+      const elPause = document.createElement("div");
+      elPause.id = "pause-menu";
+      elPause.style.cssText = "position:fixed;inset:0;z-index:400;display:none;background:rgba(3,6,16,.8);align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;";
+      const PB = "display:block;width:100%;margin-top:10px;padding:11px 14px;border-radius:999px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;";
+      elPause.innerHTML =
+        '<div style="width:min(78vw,340px);padding:22px 24px 20px;border:1.5px solid rgba(250,204,21,.55);border-radius:14px;background:rgba(8,12,24,.97);text-align:center;color:#f1f5f9;box-shadow:0 10px 40px rgba(0,0,0,.7);">' +
+        '<div style="font-size:22px;font-weight:900;color:#fde68a;letter-spacing:.4em;margin-bottom:4px;">暫　停</div>' +
+        '<div style="font-size:13px;color:#94a3b8;margin-bottom:8px;">遊戲與音樂已暫停</div>' +
+        '<button id="pause-resume" type="button" style="' + PB + 'border:1px solid rgba(250,204,21,.7);background:#78350f;color:#fef3c7;">繼續戰鬥</button>' +
+        '<button id="pause-retry" type="button" style="' + PB + 'border:1px solid rgba(148,163,184,.5);background:rgba(30,41,59,.9);color:#e2e8f0;">重新挑戰</button>' +
+        '<button id="pause-quit" type="button" style="' + PB + 'border:1px solid rgba(248,113,113,.5);background:rgba(69,10,10,.85);color:#fecaca;">退出戰鬥（回營地）</button>' +
+        '</div>';
+      document.body.appendChild(elPause);
+      const elPRetry = elPause.querySelector("#pause-retry"), elPQuit = elPause.querySelector("#pause-quit"), elPResume = elPause.querySelector("#pause-resume");
+      let pauseConfirm = null, pauseConfirmTimer = 0;
+      function pauseResetConfirm() {
+        pauseConfirm = null; clearTimeout(pauseConfirmTimer);
+        elPRetry.textContent = "重新挑戰"; elPQuit.textContent = "退出戰鬥（回營地）";
+      }
+      function pauseGame() {
+        if (Game.paused) return;
+        Game.paused = true; Game._pauseT0 = performance.now();
+        try { clearAllInputStates(); } catch (e) { }
+        Music.pauseAll();
+        try { if (Sound.ctx && Sound.ctx.state === "running") Sound.ctx.suspend(); } catch (e) { }
+        if (Game.cine && Game.cine.vid) { try { Game.cine.vid.pause(); } catch (e) { } }
+        const inBattle = Game.mode === "battle";
+        elPResume.textContent = inBattle ? "繼續戰鬥" : "繼續遊戲";
+        elPRetry.style.display = inBattle ? "block" : "none"; elPQuit.style.display = inBattle ? "block" : "none";
+        pauseResetConfirm();
+        elPause.style.display = "flex";
+      }
+      function resumeGame() {
+        if (!Game.paused) return;
+        const dur = performance.now() - (Game._pauseT0 || performance.now());
+        Game.paused = false;
+        if (Progress.battleStartTime) Progress.battleStartTime += dur; /* 戰鬥計時不含暫停時間 */
+        elPause.style.display = "none"; pauseResetConfirm();
+        lastTime = performance.now();
+        try { Sound.resume(); } catch (e) { }
+        Music.resumeAll();
+      }
+      function pauseDoubleTap(btn, key, label, action) {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (pauseConfirm === key) { action(); return; }
+          pauseResetConfirm(); pauseConfirm = key; btn.textContent = "再按一次確認" + label;
+          pauseConfirmTimer = setTimeout(pauseResetConfirm, 2500);
+        });
+      }
+      function pauseLeaveBattle() { if (DLG.active) dlgFinish(); if (Game.cine) endBossCine(true); Game.nameCard = null; }
+      elPResume.addEventListener("click", (e) => { e.stopPropagation(); resumeGame(); });
+      pauseDoubleTap(elPRetry, "retry", "重打", () => { const sid = Boss.stageId; resumeGame(); pauseLeaveBattle(); loadStage(sid, { skipPre: true }); });
+      pauseDoubleTap(elPQuit, "quit", "退出", () => { const sid = Boss.stageId; resumeGame(); pauseLeaveBattle(); Game.defeated = false; returnToHub(sid); });
+      document.addEventListener("visibilitychange", () => { if (document.hidden) pauseGame(); });
+      window.addEventListener("blur", () => { pauseGame(); });
+      window.addEventListener("keydown", (e) => { if (e.code === "KeyP" && !e.repeat) { if (Game.paused) resumeGame(); else pauseGame(); } });
 
             // Consolidated System Menu Listeners
       const elSysMenuModal = document.getElementById("system-menu-modal");
