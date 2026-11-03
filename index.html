@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.31";
+      const ASSET_VER = "0.8.32";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2839,11 +2839,11 @@
         M.transform = { name: "九幽狼王・覺醒", isSwitch: true, isTransform: true, armor: true, switchText: { B: "〔九幽狼王・覺醒〕" }, frames: FR("14_cast", "14_cast", "14_cast"), windup: 1.4, active: 0.4, recover: 0.7, range: 0, lunge: 0, damage: 0 };
         /* --- 大狼（慢、重、大範圍；range 含半個身長） --- */
         M.b_swipe = { kick: 0.35, fxAct: { sheet: "wolf", row: 0, ox: 200, oy: -210, w: 640, dur: 0.34 }, name: "巨爪橫掃", frames: { windup: ["07_windup", "22_swipe_rear"], active: ["23_swipe_mid", "09_slash"], recover: ["10_slash_rec"] }, windup: 0.62, active: 0.18, recover: 0.55, range: 330, lunge: 220, damage: 210, parryPostureDmg: 28 };
-        M.b_stomp = { kickHit: 0.3, name: "地面連錘", isCombo: true, comboTotalHits: 3, comboInterval: 0.30, comboDamagePerHit: 110, fxHit: { sheet: "land", row: 0, ox: 260, oy: 22, w: 560, dur: 0.5, anchor: "b", alpha: 0.85 }, frames: { windup: ["24_slam_up"], active: ["25_slam_mid", "20_slam"], recover: ["10_slash_rec"] }, windup: 0.60, active: 1.0, recover: 0.55, range: 320, lunge: 300, damage: 160, parryPostureDmg: 20 };
+        M.b_stomp = { kickHit: 0.3, name: "地面連錘", isCombo: true, comboTotalHits: 3, comboInterval: 0.30, comboDamagePerHit: 110, fxHit: { sheet: "land", row: 0, ox: 260, oy: 22, w: 560, dur: 0.5, anchor: "b", alpha: 0.85 }, frames: { windup: ["24_slam_up"], active: ["25_slam_mid", "24_slam_up", "25_slam_mid"], recover: ["10_slash_rec"] }, windup: 0.60, active: 1.0, recover: 0.55, range: 320, lunge: 300, damage: 160, parryPostureDmg: 20 };
         M.b_leap = { kick: 0.3, name: "【危】巨狼躍壓 (閃開，或起跳踩頭)", isLeap: true, fxLand: true, isPerilous: true, perilType: "leap", leapH: 230, leapMax: 640, frames: { windup: ["08_windup_thrust", "26_leap_crouch"], active: ["27_leap_fly", "28_leap_dive"], recover: ["12_thrust_rec", "10_slash_rec"] }, windup: 0.75, active: 0.60, recover: 0.80, range: 300, lunge: 0, damage: 300, parryPostureDmg: 22 };
         M.b_howl = { kick: 0.25, fxAct: { sheet: "wolf", row: 3, ox: 260, oy: -250, w: 900, dur: 0.7 }, name: "咆哮震波 (霸體・震退)", armor: true, pushback: 900, frames: FR("14_cast", "14_cast", "14_cast"), windup: 0.65, active: 0.15, recover: 0.50, range: 420, lunge: 0, damage: 90, parryPostureDmg: 20 };
         M.b_bone = { name: "白骨刺陣", isZone: true, zoneType: "bone", zoneWidth: 320, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, frames: FR("14_cast", "14_cast", "14_cast"), windup: 0.55, active: 0.20, recover: 0.50, range: 300, lunge: 0, damage: 120 };
-        M.b_bite = { kick: 0.4, name: "【危】噬魂吞咬 (極限側閃)", isPerilous: true, perilType: "grab", fxAct: { sheet: "wolf", row: 1, ox: 300, oy: -190, w: 560, dur: 0.36 }, frames: { windup: ["29_bite_wind"], active: ["30_bite_snap", "21_bite"], recover: ["12_thrust_rec"] }, windup: 0.70, active: 0.16, recover: 0.75, range: 260, lunge: 0, damage: 350 };
+        M.b_bite = { kick: 0.4, name: "【危】噬魂吞咬 (極限側閃)", isPerilous: true, perilType: "grab", fxAct: { sheet: "wolf", row: 1, ox: 300, oy: -190, w: 560, dur: 0.36 }, frames: { windup: ["29_bite_wind"], active: ["30_bite_snap"], recover: ["12_thrust_rec"] }, windup: 0.70, active: 0.16, recover: 0.75, range: 260, lunge: 0, damage: 350 };
         M.b_tail = { kick: 0.25, fxAct: { sheet: "land", row: 2, ox: 0, oy: -60, w: 1100, dur: 0.5, alpha: 0.7 }, name: "【危】魔尾裂風掃 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: ["32_tail_wind"], active: ["33_tail_spin", "13_sweep"], recover: ["10_slash_rec"] }, windup: 0.60, active: 0.24, recover: 0.62, range: 360, lunge: 260, damage: 300 };
         M.b_rush = { kick: 0.25, name: "巨狼衝撞 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 720, frames: { windup: ["26_leap_crouch"], active: ["31_rush"], recover: ["12_thrust_rec"] }, windup: 0.70, active: 0.70, recover: 0.90, range: 260, lunge: 720, damage: 260, parryPostureDmg: 24 };
         M.b_rage = { kickHit: 0.15, fxHit: { sheet: "wolf", row: 0, ox: 220, oy: -200, w: 700, dur: 0.3 }, name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: { windup: ["14_cast"], active: ["23_swipe_mid", "25_slam_mid", "23_swipe_mid"], recover: ["10_slash_rec"] }, windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
@@ -2855,7 +2855,7 @@
             pool: [["s_bite", 14], ["s_bite2", 12], ["s_claw3", 11], ["s_bite+backstep", 10, "mobility"], ["s_pounce+backstep", 9, "mobility"], ["dash_in+s_bite", 10, "chase"], ["s_rush", 8], ["s_tail", 8], ["s_shadow+s_bite", 8, "chase"]],
             far: ["dash_in+s_bite", "s_pounce"], farP2: [] },
           B: { sprite: "boss5b", stride: 330, speed: 250, /* 大狼：站立與走路只用外觀一致（無骨腿）的格子，避免 AI 生圖各格骨腿有無不同而閃爍 */
-            extras: ["20_slam", "21_bite", "22_swipe_rear", "23_swipe_mid", "24_slam_up", "25_slam_mid", "26_leap_crouch", "27_leap_fly", "28_leap_dive", "29_bite_wind", "30_bite_snap", "31_rush", "32_tail_wind", "33_tail_spin"], remap: { "01_idle1": "02_idle2" }, walkSeq: ["03_walk1", "04_walk2", "06_walk4", "04_walk2"], spriteScale: 1.05, hurtHalf: 230, bodyW: 520, bodyH: 300, rageMove: "b_rage",
+            extras: ["22_swipe_rear", "23_swipe_mid", "24_slam_up", "25_slam_mid", "26_leap_crouch", "27_leap_fly", "28_leap_dive", "29_bite_wind", "30_bite_snap", "31_rush", "32_tail_wind", "33_tail_spin"], walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 1.05, hurtHalf: 230, bodyW: 520, bodyH: 300, rageMove: "b_rage",
             pool: [["b_swipe", 16], ["b_stomp", 12], ["b_howl", 9, "push"], ["b_bone", 10], ["b_bite", 9], ["b_tail", 9], ["b_leap", 12, "mobility"], ["b_rush", 8, "chase"]],
             far: ["b_rush", "b_leap"], farP2: [] }
         };
