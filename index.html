@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.28";
+      const ASSET_VER = "0.8.29";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2825,28 +2825,28 @@
         const M = {};
         const FR = (w, a, r) => ({ windup: w, active: a, recover: r });
         /* --- 小狼（快、低、打了就跑） --- */
-        M.s_bite = { name: "幽影撕咬", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.26, active: 0.12, recover: 0.22, range: 150, lunge: 520, damage: 120, parryPostureDmg: 16 };
-        M.s_bite2 = { name: "連環撕咬", isCombo: true, comboTotalHits: 2, comboInterval: 0.16, comboDamagePerHit: 85, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.30, active: 0.45, recover: 0.30, range: 155, lunge: 420, damage: 100, parryPostureDmg: 14 };
-        M.s_claw3 = { fxHit: { sheet: "wolf", row: 0, ox: 110, oy: -90, w: 300, dur: 0.25 }, name: "血爪三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 80, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.38, active: 0.62, recover: 0.34, range: 160, lunge: 420, damage: 110, parryPostureDmg: 14 };
-        M.s_pounce = { name: "疾撲 (閃開，或起跳踩頭)", isLeap: true, leapH: 130, leapMax: 460, frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.42, active: 0.36, recover: 0.42, range: 150, lunge: 0, damage: 150, parryPostureDmg: 16 };
-        M.s_rush = { name: "【危】狂暴衝撲 (前閃看破)", isPerilous: true, perilType: "thrust", frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.50, active: 0.20, recover: 0.55, range: 300, lunge: 980, damage: 300 };
-        M.s_tail = { name: "【危】甩尾旋斬 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: "07_windup", active: "13_sweep", recover: "10_slash_rec" }, windup: 0.52, active: 0.22, recover: 0.50, range: 230, lunge: 240, damage: 260 };
-        M.s_shadow = { name: "幽影閃 (繞背)", isTeleport: true, teleportBehind: true, teleportDelay: 0.30, teleportText: "【幽影閃】", teleportColor: "#c084fc", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.50, active: 0.12, recover: 0.34, range: 150, lunge: 300, damage: 130, parryPostureDmg: 14 };
-        M.backstep = { name: "後撤", isMobility: true, frames: { windup: "04_walk2", active: "04_walk2", recover: "01_idle1" }, windup: 0.08, active: 0.24, recover: 0.08, range: 0, lunge: -1000, damage: 0 };
-        M.dash_in = { name: "衝步", isMobility: true, frames: { windup: "03_walk1", active: "03_walk1", recover: "01_idle1" }, windup: 0.10, active: 0.20, recover: 0.05, range: 0, lunge: 1250, damage: 0 };
-        M.s_rage = { name: "嗜血狂亂 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 4, comboInterval: 0.16, comboDamagePerHit: 80, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.50, active: 0.78, recover: 0.55, range: 165, lunge: 460, damage: 120, parryPostureDmg: 18 };
+        M.s_bite = { fxAct: { sheet: "wolf", row: 1, ox: 120, oy: -85, w: 280, dur: 0.26 }, kick: 0.12, dfm: { w: { sx: 1.18, sy: 0.74, rot: -0.14, ox: -55 }, a: { sx: 1.45, sy: 0.84, rot: 0.14, ox: 120, ghost: 3, gap: 38 }, r: {}, bounce: 1.2 }, name: "幽影撕咬", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.26, active: 0.12, recover: 0.22, range: 150, lunge: 520, damage: 120, parryPostureDmg: 16 };
+        M.s_bite2 = { fxHit: { sheet: "wolf", row: 1, ox: 110, oy: -85, w: 240, dur: 0.22 }, kickHit: 0.08, dfm: { pulse: true, w: { sx: 1.16, sy: 0.76, rot: -0.12, ox: -50 }, a: { sx: 1.4, sy: 0.84, rot: 0.12, ox: 100, ghost: 3, gap: 34 }, r: {} }, name: "連環撕咬", isCombo: true, comboTotalHits: 2, comboInterval: 0.16, comboDamagePerHit: 85, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.30, active: 0.45, recover: 0.30, range: 155, lunge: 420, damage: 100, parryPostureDmg: 14 };
+        M.s_claw3 = { kickHit: 0.08, dfm: { pulse: true, w: { sx: 1.14, sy: 0.78, rot: -0.12, ox: -45 }, a: { sx: 1.38, sy: 0.86, rot: 0.14, ox: 90, ghost: 3, gap: 34 }, r: {} }, fxHit: { sheet: "wolf", row: 0, ox: 110, oy: -90, w: 300, dur: 0.25 }, name: "血爪三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 80, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.38, active: 0.62, recover: 0.34, range: 160, lunge: 420, damage: 110, parryPostureDmg: 14 };
+        M.s_pounce = { fxLand: 0.45, kick: 0.1, dfm: { w: { sx: 1.3, sy: 0.6, rot: -0.2, ox: -50 }, a: { sx: 1.55, sy: 0.8, rot: -0.5, rotEnd: 0.55, ghost: 4, gap: 46 }, r: { sx: 1.0, sy: 1.0 }, bounce: 1.4 }, name: "疾撲 (閃開，或起跳踩頭)", isLeap: true, leapH: 130, leapMax: 460, frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.42, active: 0.36, recover: 0.42, range: 150, lunge: 0, damage: 150, parryPostureDmg: 16 };
+        M.s_rush = { fxAct: { sheet: "wolf", row: 0, ox: 150, oy: -90, w: 440, dur: 0.3 }, kick: 0.22, dfm: { shake: 3, w: { sx: 1.28, sy: 0.64, rot: -0.2, ox: -80 }, a: { sx: 1.65, sy: 0.8, rot: 0.1, ox: 150, ghost: 5, gap: 52 }, r: {}, bounce: 1.3 }, name: "【危】狂暴衝撲 (前閃看破)", isPerilous: true, perilType: "thrust", frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.50, active: 0.20, recover: 0.55, range: 300, lunge: 980, damage: 300 };
+        M.s_tail = { fxAct: { sheet: "land", row: 2, ox: 0, oy: -45, w: 560, dur: 0.45, alpha: 0.6 }, kick: 0.15, dfm: { w: { sx: 1.1, sy: 0.8, rot: 0.14, ox: -20 }, a: { sx: 1.28, sy: 0.9, rot: -0.2, rotEnd: -0.35, ox: 20, ghost: 3, gap: 30 }, r: {} }, name: "【危】甩尾旋斬 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: "07_windup", active: "13_sweep", recover: "10_slash_rec" }, windup: 0.52, active: 0.22, recover: 0.50, range: 230, lunge: 240, damage: 260 };
+        M.s_shadow = { dfm: { w: { sx: 0.9, sy: 1.1 }, a: { sx: 1.4, sy: 0.86, ox: 90, ghost: 4, gap: 44 }, r: {} }, name: "幽影閃 (繞背)", isTeleport: true, teleportBehind: true, teleportDelay: 0.30, teleportText: "【幽影閃】", teleportColor: "#c084fc", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.50, active: 0.12, recover: 0.34, range: 150, lunge: 300, damage: 130, parryPostureDmg: 14 };
+        M.backstep = { name: "後撤", dfm: { a: { sx: 1.3, sy: 0.86, rot: -0.1, ox: -30, ghost: 4, gap: 46 }, r: {} }, isMobility: true, frames: { windup: "04_walk2", active: "04_walk2", recover: "01_idle1" }, windup: 0.08, active: 0.24, recover: 0.08, range: 0, lunge: -1000, damage: 0 };
+        M.dash_in = { name: "衝步", dfm: { a: { sx: 1.4, sy: 0.84, rot: 0.1, ox: 40, ghost: 4, gap: 50 }, r: {} }, isMobility: true, frames: { windup: "03_walk1", active: "03_walk1", recover: "01_idle1" }, windup: 0.10, active: 0.20, recover: 0.05, range: 0, lunge: 1250, damage: 0 };
+        M.s_rage = { kickHit: 0.1, dfm: { pulse: true, shake: 4, w: { sx: 1.2, sy: 0.72, rot: -0.16, ox: -60 }, a: { sx: 1.45, sy: 0.84, rot: 0.14, ox: 100, ghost: 3, gap: 36 }, r: {} }, name: "嗜血狂亂 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 4, comboInterval: 0.16, comboDamagePerHit: 80, frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.50, active: 0.78, recover: 0.55, range: 165, lunge: 460, damage: 120, parryPostureDmg: 18 };
         /* --- 蛻變（不是攻擊：長嘯 1.4 秒脹大，active 起點換成大狼，震退） --- */
         M.transform = { name: "九幽狼王・覺醒", isSwitch: true, isTransform: true, armor: true, switchText: { B: "〔九幽狼王・覺醒〕" }, frames: FR("14_cast", "14_cast", "14_cast"), windup: 1.4, active: 0.4, recover: 0.7, range: 0, lunge: 0, damage: 0 };
         /* --- 大狼（慢、重、大範圍；range 含半個身長） --- */
-        M.b_swipe = { fxAct: { sheet: "wolf", row: 0, ox: 200, oy: -210, w: 640, dur: 0.34 }, name: "巨爪橫掃", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.62, active: 0.18, recover: 0.55, range: 330, lunge: 220, damage: 210, parryPostureDmg: 28 };
-        M.b_stomp = { name: "地面連錘", isCombo: true, comboTotalHits: 3, comboInterval: 0.30, comboDamagePerHit: 110, fxHit: { sheet: "land", row: 0, ox: 260, oy: 22, w: 560, dur: 0.5, anchor: "b", alpha: 0.85 }, frames: FR("07_windup", "20_slam", "10_slash_rec"), windup: 0.60, active: 1.0, recover: 0.55, range: 320, lunge: 300, damage: 160, parryPostureDmg: 20 };
-        M.b_leap = { name: "【危】巨狼躍壓 (閃開，或起跳踩頭)", isLeap: true, fxLand: true, isPerilous: true, perilType: "leap", leapH: 230, leapMax: 640, frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.75, active: 0.60, recover: 0.80, range: 300, lunge: 0, damage: 300, parryPostureDmg: 22 };
-        M.b_howl = { fxAct: { sheet: "wolf", row: 3, ox: 260, oy: -250, w: 900, dur: 0.7 }, name: "咆哮震波 (霸體・震退)", armor: true, pushback: 900, frames: FR("14_cast", "14_cast", "14_cast"), windup: 0.65, active: 0.15, recover: 0.50, range: 420, lunge: 0, damage: 90, parryPostureDmg: 20 };
+        M.b_swipe = { kick: 0.35, dfm: { shake: 4, w: { sx: 1.1, sy: 0.84, rot: -0.2, ox: -80, oy: -6 }, a: { sx: 1.28, sy: 0.96, rot: 0.2, ox: 170, ghost: 3, gap: 56 }, r: {} }, fxAct: { sheet: "wolf", row: 0, ox: 200, oy: -210, w: 640, dur: 0.34 }, name: "巨爪橫掃", frames: FR("07_windup", "09_slash", "10_slash_rec"), windup: 0.62, active: 0.18, recover: 0.55, range: 330, lunge: 220, damage: 210, parryPostureDmg: 28 };
+        M.b_stomp = { kickHit: 0.3, dfm: { pulse: true, shake: 3, w: { sx: 0.92, sy: 1.1, rot: -0.22, ox: -50, oy: -26 }, a: { sx: 1.18, sy: 0.82, rot: 0.26, ox: 90, oy: 12 }, r: {} }, name: "地面連錘", isCombo: true, comboTotalHits: 3, comboInterval: 0.30, comboDamagePerHit: 110, fxHit: { sheet: "land", row: 0, ox: 260, oy: 22, w: 560, dur: 0.5, anchor: "b", alpha: 0.85 }, frames: FR("07_windup", "20_slam", "10_slash_rec"), windup: 0.60, active: 1.0, recover: 0.55, range: 320, lunge: 300, damage: 160, parryPostureDmg: 20 };
+        M.b_leap = { kick: 0.3, dfm: { shake: 4, w: { sx: 1.3, sy: 0.62, rot: -0.18, ox: -60 }, a: { sx: 1.45, sy: 0.84, rot: -0.55, rotEnd: 0.6, ghost: 4, gap: 62 }, r: { sx: 1, sy: 1 }, bounce: 1.6 }, name: "【危】巨狼躍壓 (閃開，或起跳踩頭)", isLeap: true, fxLand: true, isPerilous: true, perilType: "leap", leapH: 230, leapMax: 640, frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.75, active: 0.60, recover: 0.80, range: 300, lunge: 0, damage: 300, parryPostureDmg: 22 };
+        M.b_howl = { kick: 0.25, dfm: { shake: 3, w: { sx: 0.9, sy: 1.16, rot: -0.3, ox: -30, oy: -12 }, a: { sx: 1.06, sy: 1.1, rot: -0.34, oy: -14 }, r: {} }, fxAct: { sheet: "wolf", row: 3, ox: 260, oy: -250, w: 900, dur: 0.7 }, name: "咆哮震波 (霸體・震退)", armor: true, pushback: 900, frames: FR("14_cast", "14_cast", "14_cast"), windup: 0.65, active: 0.15, recover: 0.50, range: 420, lunge: 0, damage: 90, parryPostureDmg: 20 };
         M.b_bone = { name: "白骨刺陣", isZone: true, zoneType: "bone", zoneWidth: 320, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, frames: FR("14_cast", "14_cast", "14_cast"), windup: 0.55, active: 0.20, recover: 0.50, range: 300, lunge: 0, damage: 120 };
-        M.b_bite = { name: "【危】噬魂吞咬 (極限側閃)", isPerilous: true, perilType: "grab", fxAct: { sheet: "wolf", row: 1, ox: 300, oy: -190, w: 560, dur: 0.36 }, frames: { windup: "08_windup_thrust", active: "21_bite", recover: "12_thrust_rec" }, windup: 0.70, active: 0.16, recover: 0.75, range: 260, lunge: 0, damage: 350 };
-        M.b_tail = { fxAct: { sheet: "land", row: 2, ox: 0, oy: -60, w: 1100, dur: 0.5, alpha: 0.7 }, name: "【危】魔尾裂風掃 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: "07_windup", active: "13_sweep", recover: "10_slash_rec" }, windup: 0.60, active: 0.24, recover: 0.62, range: 360, lunge: 260, damage: 300 };
-        M.b_rush = { name: "巨狼衝撞 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 720, frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.70, active: 0.70, recover: 0.90, range: 260, lunge: 720, damage: 260, parryPostureDmg: 24 };
-        M.b_rage = { fxHit: { sheet: "wolf", row: 0, ox: 220, oy: -200, w: 700, dur: 0.3 }, name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: FR("14_cast", "09_slash", "10_slash_rec"), windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
+        M.b_bite = { kick: 0.4, dfm: { shake: 4, w: { sx: 1.25, sy: 0.7, rot: -0.14, ox: -100 }, a: { sx: 1.55, sy: 0.84, rot: 0.16, ox: 190, ghost: 4, gap: 66 }, r: {}, bounce: 1.3 }, name: "【危】噬魂吞咬 (極限側閃)", isPerilous: true, perilType: "grab", fxAct: { sheet: "wolf", row: 1, ox: 300, oy: -190, w: 560, dur: 0.36 }, frames: { windup: "08_windup_thrust", active: "21_bite", recover: "12_thrust_rec" }, windup: 0.70, active: 0.16, recover: 0.75, range: 260, lunge: 0, damage: 350 };
+        M.b_tail = { kick: 0.25, dfm: { w: { sx: 1.08, sy: 0.84, rot: 0.1, ox: -30 }, a: { sx: 1.22, sy: 0.94, rot: -0.16, rotEnd: -0.3, ox: -20, ghost: 3, gap: 50 }, r: {} }, fxAct: { sheet: "land", row: 2, ox: 0, oy: -60, w: 1100, dur: 0.5, alpha: 0.7 }, name: "【危】魔尾裂風掃 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: "07_windup", active: "13_sweep", recover: "10_slash_rec" }, windup: 0.60, active: 0.24, recover: 0.62, range: 360, lunge: 260, damage: 300 };
+        M.b_rush = { kick: 0.25, dfm: { shake: 4, w: { sx: 1.25, sy: 0.7, rot: -0.14, ox: -90 }, a: { sx: 1.5, sy: 0.86, rot: 0.08, ox: 120, ghost: 5, gap: 70 }, r: {} }, name: "巨狼衝撞 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 720, frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.70, active: 0.70, recover: 0.90, range: 260, lunge: 720, damage: 260, parryPostureDmg: 24 };
+        M.b_rage = { kickHit: 0.15, dfm: { pulse: true, shake: 5, w: { sx: 0.95, sy: 1.1, rot: -0.24, oy: -16 }, a: { sx: 1.25, sy: 0.9, rot: 0.2, ox: 140, ghost: 3, gap: 50 }, r: {} }, fxHit: { sheet: "wolf", row: 0, ox: 220, oy: -200, w: 700, dur: 0.3 }, name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: FR("14_cast", "09_slash", "10_slash_rec"), windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
         Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S5.moves = M;
         S5.fxSheets = ["wolf", "land"]; S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 3.0; /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
@@ -4499,6 +4499,42 @@
           }
         }
       }
+      /* v0.8.29 招式誇張變形（動畫的「關鍵格」手法：單格看很變形，連起來很有動態）：
+         move.dfm = { w:{…}, a:{…, rotEnd, ghost, gap}, r:{…}, pulse, shake }，欄位 sx／sy（以腳底為軸的縮放）、rot（弧度，正＝往前傾）、
+         ox（沿面向的位移）、oy（垂直位移）。windup 由中立漸入 w（蓄力壓扁後縮）→ active 快速彈到 a（拉長前衝、帶殘影 ghost 張、間距 gap）→
+         recover 回彈到中立（帶彈性過衝）。只影響繪製，不影響判定。 */
+      function bossDeform(move) {
+        const d = move && move.dfm; if (!d) return null;
+        const st = Boss.state; if (st !== "windup" && st !== "active" && st !== "recover") return null;
+        const N = { sx: 1, sy: 1, rot: 0, ox: 0, oy: 0 };
+        const W = Object.assign({}, N, d.w), A = Object.assign({}, N, d.a);
+        const cl = (v) => Math.max(0, Math.min(1, v));
+        const mix = (P, Q, t) => ({ sx: P.sx + (Q.sx - P.sx) * t, sy: P.sy + (Q.sy - P.sy) * t, rot: P.rot + (Q.rot - P.rot) * t, ox: P.ox + (Q.ox - P.ox) * t, oy: P.oy + (Q.oy - P.oy) * t });
+        let out;
+        if (st === "windup") {
+          const p = cl(1 - Boss.stateTimer / (Boss.stateDur || 1));
+          out = mix(N, W, 1 - Math.pow(1 - p, 2.2));
+          if (d.shake) out.ox += Math.sin(performance.now() * 0.09) * d.shake * p;
+        } else if (st === "active") {
+          const p = cl(1 - Boss.stateTimer / (Boss.stateDur || 1));
+          let t = 1 - Math.pow(1 - cl(p / 0.22), 3);
+          if (d.pulse) { const hits = move.comboTotalHits || 2; t *= 0.4 + 0.6 * Math.abs(Math.sin(p * Math.PI * hits)); }
+          out = mix(W, A, t);
+          if (A.rotEnd != null) out.rot = A.rot + (A.rotEnd - A.rot) * p;
+          out.ghost = A.ghost || 0; out.gap = A.gap || 40;
+        } else {
+          const rd = (move.recover || 0.5) * (Config.bossPhase === 2 ? 0.75 : 1);
+          const p = cl(1 - Boss.stateTimer / Math.max(0.05, rd));
+          const R = Object.assign({}, N, d.r);
+          const e = 1 - Math.pow(1 - p, 2);
+          const A2 = Object.assign({}, A, A.rotEnd != null ? { rot: A.rotEnd } : {});
+          out = mix(A2, R, e);
+          const k = Math.sin(p * Math.PI) * (1 - p) * 1.6 * (d.bounce == null ? 1 : d.bounce); /* 彈性過衝 */
+          out.sx += (R.sx - A.sx) * -k * 0.35; out.sy += (R.sy - A.sy) * -k * 0.35;
+        }
+        out.ghost = out.ghost || 0;
+        return out;
+      }
       /* v0.8.25 招式特效（資料驅動）：move.fxAct＝出招起點、move.fxHit＝連擊每一下、move.fxLand＝躍擊落地；
          欄位 {sheet,row,ox(沿面向偏移),oy,w,h,dur,anchor,alpha} */
       function spawnMoveFx(f) {
@@ -4766,6 +4802,7 @@
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
             spawnMoveFx(move.fxAct);
+            if (move.kick) addTrauma(move.kick);
             if (move.isCharge && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 2, Boss.x, Boss.y - 120, { w: 440, dur: Math.max(0.4, move.active), loop: true, fps: 11, facing: Boss.facing, follow: () => ({ x: Boss.x - Boss.facing * 90, y: Boss.y - 120 }) });
             if (move.swordRain) {
               for (let k = -2; k <= 2; k++) emitDust(Boss.grabZoneX + k * move.range * 0.3, Config.groundY, k < 0 ? -1 : 1, 2, 0.8);
@@ -4927,6 +4964,7 @@
 
               Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
               spawnMoveFx(move.fxHit);
+              if (move.kickHit) addTrauma(move.kickHit);
               const bType = Stages[Boss.stageId].bodyType || "human";
               const anim = move.anim || "slash";
               const aType = bType === "beast" ? "claw" : bType === "eye" ? "beam" : anim;
@@ -4999,9 +5037,10 @@
               for (let k = -1; k <= 1; k++) emitDust(Boss.x + k * 70, Config.groundY, k || 1, 3, 1.0);
               if (Boss.stageId === 1 && fxReady("boss1")) { const lw = move.range * 2.8; spawnFx("boss1", 3, Boss.x, Config.groundY - lw * 0.26, { w: lw, dur: 0.5 }); landingFx(Boss.x, 1.7, 5); }
               if (move.fxLand && fxReady("land")) {
-                spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 760, h: 760, dur: 0.6, anchor: "b", alpha: 0.85 });
-                spawnFx("land", 1, Boss.x, Config.groundY + 6, { w: 480, h: 480, dur: 1.0, anchor: "b", alpha: 0.7 });
-                addTrauma(0.6);
+                const fl = move.fxLand === true ? 1 : move.fxLand;
+                spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 760 * fl, h: 760 * fl, dur: 0.6, anchor: "b", alpha: 0.85 });
+                spawnFx("land", 1, Boss.x, Config.groundY + 6, { w: 480 * fl, h: 480 * fl, dur: 1.0, anchor: "b", alpha: 0.7 });
+                addTrauma(0.6 * fl);
               }
               triggerShake(Boss.facing, 0, 20, 0.25); Sound.play("peril", 0.6, 1.3);
               if (!Boss.hitRegistered && Player.state !== "execution" && Math.abs(Player.x - Boss.x) <= move.range && Player.y >= Config.groundY - 70) {
@@ -7042,6 +7081,8 @@
 
           ctx.translate(Boss.x, Boss.y + GROUND_SINK);
           if (deathRot) ctx.rotate(-Boss.facing * deathRot);
+          const dfm = deathRot ? null : bossDeform(moveData);
+          if (dfm) { ctx.translate(Boss.facing * dfm.ox, dfm.oy); ctx.rotate(Boss.facing * dfm.rot); ctx.scale(dfm.sx, dfm.sy); }
           if (hrP > 0) {
             const a = hrP * hrP;
             const lean = Boss.hitReactKind === "heavy" ? 0.07 : Boss.hitReactKind === "block" ? 0.025 : 0.045;
@@ -7051,6 +7092,14 @@
           let bossK = bossVis(stage).k;
           if (isWalkFrame && bossImg !== SP.imgs[imgKey]) bossK *= getWalkNorm(SP); /* 影片抽幀的走路圖人比動作表小，依不透明高度校正 */
           ctx.scale(Boss.facing > 0 ? bossK : -bossK, bossK);
+          if (dfm && dfm.ghost > 0) { /* 殘影：沿身後依序淡出（不套用外光濾鏡，省效能） */
+            const keepF = ctx.filter, keepA = ctx.globalAlpha; ctx.filter = "none";
+            for (let gi = dfm.ghost; gi >= 1; gi--) {
+              ctx.globalAlpha = keepA * 0.34 * (1 - gi / (dfm.ghost + 1.2));
+              ctx.drawImage(bossImg, -450 - (dfm.gap * gi) / bossK, -560);
+            }
+            ctx.globalAlpha = keepA; ctx.filter = keepF;
+          }
           ctx.drawImage(bossImg, -450, -560);
           
           ctx.filter = "none";

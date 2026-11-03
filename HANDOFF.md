@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.28）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.29）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -329,3 +329,8 @@
 **v0.8.28 主角插劍穩住的專用姿勢接入**
 - `assets/mc/17_slide／18_plant／19_rise.webp`（使用者從兩張生圖各挑一格：滑行取第一張左格、插劍取第二張中格、起身取第二張右格）；新工具 `tools/mcposes.py 圖.jpg 輸出資料夾 縮放比 名稱列表 [元件序]`（單列多姿勢依元件分組，輸出 900×560、腳底 y=529、x=450，縮放比 0.40 對齊站姿高度 477）。
 - 震飛期間不做受擊閃爍（`drawPlayer` 加 `!Player.blast`）；結束時 `hurtInv` 上限 0.6 秒。
+
+**v0.8.29 招式誇張變形（使用者：圖片為了效果變形也可以，像動畫關鍵格——單格看超變形，連起來很有動態）**
+- `bossDeform(move)`（只影響 `drawBossEntity` 的 sprite 繪製，不影響判定）：`move.dfm = {w, a, r, pulse, shake, bounce}`；欄位 `sx／sy`（以腳底為軸的縮放）、`rot`（弧度，正＝往前傾；`a.rotEnd` 讓 active 期間旋轉到終值，用在躍擊的抬頭→俯衝）、`ox／oy`（沿面向位移／垂直位移）、`ghost／gap`（殘影張數與間距）。windup 由中立漸入 `w`（蓄力壓扁後縮、可抖動 `shake`）→ active 在前 22% 彈到 `a`（拉長前衝帶殘影）→ recover 回中立並彈性過衝；`pulse` 讓連擊每一下各脈動一次。
+- 另有 `move.kick`（出招起點的鏡頭震動量）、`move.kickHit`（連擊每下）、`fxLand` 可為倍率數字（小狼撲擊落地用 0.45）。
+- 已套用：小狼 `s_bite／s_bite2／s_claw3／s_pounce／s_rush／s_tail／s_shadow／s_rage／backstep／dash_in`；大狼 `b_swipe／b_stomp／b_leap／b_howl／b_bite／b_tail／b_rush／b_rage`。數值（壓扁程度、拉長倍數、殘影、震動）都在 `Stages[5].moves` 各招的 `dfm`，使用者實測後調。其他關卡的招式可照同樣欄位加 `dfm`。
