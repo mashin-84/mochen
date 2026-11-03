@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.29）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.30）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -334,3 +334,9 @@
 - `bossDeform(move)`（只影響 `drawBossEntity` 的 sprite 繪製，不影響判定）：`move.dfm = {w, a, r, pulse, shake, bounce}`；欄位 `sx／sy`（以腳底為軸的縮放）、`rot`（弧度，正＝往前傾；`a.rotEnd` 讓 active 期間旋轉到終值，用在躍擊的抬頭→俯衝）、`ox／oy`（沿面向位移／垂直位移）、`ghost／gap`（殘影張數與間距）。windup 由中立漸入 `w`（蓄力壓扁後縮、可抖動 `shake`）→ active 在前 22% 彈到 `a`（拉長前衝帶殘影）→ recover 回中立並彈性過衝；`pulse` 讓連擊每一下各脈動一次。
 - 另有 `move.kick`（出招起點的鏡頭震動量）、`move.kickHit`（連擊每下）、`fxLand` 可為倍率數字（小狼撲擊落地用 0.45）。
 - 已套用：小狼 `s_bite／s_bite2／s_claw3／s_pounce／s_rush／s_tail／s_shadow／s_rage／backstep／dash_in`；大狼 `b_swipe／b_stomp／b_leap／b_howl／b_bite／b_tail／b_rush／b_rage`。數值（壓扁程度、拉長倍數、殘影、震動）都在 `Stages[5].moves` 各招的 `dfm`，使用者實測後調。其他關卡的招式可照同樣欄位加 `dfm`。
+
+**v0.8.30 關鍵格序列＋變形降低（使用者：變形可以有但程度低很多，生圖當主要效果）**
+- 新增關鍵格：小狼 `assets/boss5/20_bite_crouch／21_bite_lunge／22_pounce_coil／23_pounce_fly／24_pounce_dive／25_pounce_land／26_rush／27_tail_wind／28_tail_spin／29_claw`（原生圖 13 個姿勢，捨棄 p03 咬合（身體被截斷）、p08、p13）；大狼 `assets/boss5b/22_swipe_rear／23_swipe_mid／24_slam_up／25_slam_mid／26_leap_crouch／27_leap_fly／28_leap_dive／29_bite_wind／30_bite_snap／31_rush／32_tail_wind／33_tail_spin`（全頭骨臉）。兩姿態的 `extras` 已列出。
+- 新工具 `tools/keyposes.py`：`auto` 模式（姿勢散落無格線，依元件由上到下、左到右輸出 p01…）與 `grid 欄 列` 模式（有格線與英文標籤：每格底部 10% 切掉、近黑元件視為標籤／格線濾掉）。縮放比：小狼 0.58、大狼 0.68。
+- 引擎：`frames` 的每個階段可以是陣列，依該階段進度平均切換（例 `windup: ["08_windup_thrust","22_pounce_coil"]`）；`isLeap` 的 07/09 預設切換只在沒有 `frames.active` 時才用。`bossDeform` 加強度倍率 `stage.dfmK`／`move.dfmK`（第 5 關 0.35，只縮放變形量，殘影張數與震動不變）；想更誇張就調高 `S5.dfmK`。
+- 各招的幀序列在 `Stages[5].moves` 的 `frames`；調整動作節奏只要改陣列。
