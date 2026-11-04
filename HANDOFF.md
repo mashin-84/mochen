@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.36）
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.37）
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -362,3 +362,5 @@
 - 狼聲：曾做過程式合成版，使用者嫌難聽，已移除，**不要再用程式合成動物聲**。改成外部音效檔機制：`Sound.extSfx` 列出 12 個名字，檔案放 `assets/sfx/<名>.mp3`，載入成功才有聲，沒檔的招式維持原本揮劍音（`sfxA` 要 `Sound.buffers[名]` 存在才取代）。名字：小狼 `w_snarl` 低吼、`w_bark` 吠、`w_snap` 咬合、`w_claw` 爪風、`w_howl` 嚎叫、`w_yelp` 慘叫；大狼 `m_growl` 低吼、`m_roar` 咆哮、`m_bite` 吞咬、`m_swipe` 重爪風壓、`m_stomp` 重踏、`m_howl` 長嚎。招式欄位 `move.sfx = {w 前搖, a 出招, h 連擊每一下}`，第 5 關對照表在 `S5.moves` 後的 `SFX`；蛻變前搖＝w_howl、完成＝m_roar；架勢崩潰：小狼 w_yelp／大狼 m_growl；通關 m_howl；登場影片 `Stages[5].introSfx`（秒、音名、音量、音高）與 `introLandSfx`。使用者找到音效檔後交給 Claude 裁切、正規化、轉 mp3、命名放入。
 
 **v0.8.36 小狼 6 個音效檔接入**：使用者用 ElevenLabs 生成（英文提示詞見對話），Claude 去頭尾靜音、峰值正規化到 -1.5 dBFS、淡入淡出、轉單聲道 mp3：`assets/sfx/w_snarl／w_bark／w_snap／w_claw／w_howl／w_yelp.mp3`（1.03／0.38／0.22／0.53／1.99／0.43 秒）。大狼 6 個（m_growl／m_roar／m_bite／m_swipe／m_stomp／m_howl）還沒到，目前大狼招式維持原揮劍音。使用者給檔順序固定：小狼＝低吼、吠、咬合、爪風、嚎叫、慘叫；大狼＝低吼、咆哮、吞咬、重爪風壓、重踏、長嚎。
+
+**v0.8.37 大狼 6 個音效檔接入**：同小狼流程（去頭尾靜音、峰值 -1.5 dBFS、轉單聲道 mp3）：`assets/sfx/m_growl／m_roar／m_bite／m_swipe／m_stomp／m_howl.mp3`。12 個狼聲到齊；用法見 v0.8.34～35 的對照（大狼前搖＝m_growl，出招＝m_swipe／m_bite／m_roar，地面連錘每下＝m_stomp，蛻變完成＝m_roar，登場影片巨狼影子嚎叫＝m_howl，通關＝m_howl）。音量與時機待使用者實測，過大或過小改各招 `Sound.play` 的音量參數或重新正規化。
