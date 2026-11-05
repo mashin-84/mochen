@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.68";
+      const ASSET_VER = "0.8.69";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2291,9 +2291,9 @@
       /* =========================================================================
        * v0.8.9 背景音樂（取自一念飛仙倉庫 music/）：淡入淡出、可調音量、隨靜音鍵
        * ========================================================================= */
-      const STAGE_BGM_P2 = { 5: "langwang" }; /* 二階段換曲：關卡 id → 曲名（沒列就整場同一首） */
-      const STAGE_BGM = { 1: "chisha", 2: "lilian", 3: "zhandou", 4: "tianjie", 5: "youying", 6: "weiju", 7: "zhandou", 8: "tianjie", 9: "weiju" }; /* M1：2～4、6～9 關暫用一念飛仙舊曲，之後換專屬曲 */
-      const HUB_BGM = "dongfu"; /* M1：營地暫用「洞府」 */ /* 第 5 關：一階段「幽影」（小狼）、二階段 STAGE_BGM_P2「狼王」 */ /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
+      const STAGE_BGM_P2 = { 2: "b2_p2", 3: "b3_p2", 5: "langwang" }; /* v0.8.69 第 2、3 關二階段專屬曲 */ /* 二階段換曲：關卡 id → 曲名（沒列就整場同一首） */
+      const STAGE_BGM = { 1: "chisha", 2: "b2_p1", 3: "b3_p1", 4: "tianjie", 5: "youying", 6: "weiju", 7: "zhandou", 8: "tianjie", 9: "weiju" }; /* M1：2～4、6～9 關暫用一念飛仙舊曲，之後換專屬曲 */
+      const HUB_BGM = "camp"; /* v0.8.69 營地專屬曲（原暫用「洞府」） */ /* 第 5 關：一階段「幽影」（小狼）、二階段 STAGE_BGM_P2「狼王」 */ /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
       const Music = {
         tracks: [], vol: 1.0, name: null, /* v0.8.15 預設音量 0.5→1.0（已調過滑桿的人沿用自己的設定） */
         init() {
@@ -4624,6 +4624,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       /* 進二階段：依 stage.stanceByPhase 換姿態（第 3 關：一階段雙劍、二階段玄鐵重劍） */
       function onBossPhase2() {
         const stage = Stages[Boss.stageId];
+        if (stage && !stage.transformMove && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
         if (stage && stage.transformMove && stage.moves[stage.transformMove] && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) {
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;

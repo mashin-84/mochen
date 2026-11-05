@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.68（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.69（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -539,7 +539,12 @@
 - `S3.sfx`：zone（戒律陣紋生成，新事件，`bsfx("zone")` 在 `isZone` 生成時）b3_seal、introSwirl b3_spin、introLand b3_cross；開場影片 `introSfx` 換成 b3_*。
 - 待使用者實測音量平衡。
 
-**目前進度與待辦（2026-11-06，v0.8.68）**
+**v0.8.69 第 2、3 關兩階段專屬配樂＋營地配樂（ElevenLabs Music）**
+- `assets/music/b2_p1`（Seven Turns of the Fan）、`b2_p2`（Duel of the Bamboo Blade）、`b3_p1`（Swordsman's Winter Oath）、`b3_p2`（Cold Steel Dirge）、`camp`（Before the Ascent）.webm：去掉結尾淡出、尾段與開頭交叉淡化做成無縫循環（戰鬥 1.5 秒、營地 4 秒），響度統一 -12 LUFS（與舊曲相同），opus 96k。
+- `STAGE_BGM` 2→b2_p1、3→b3_p1；`STAGE_BGM_P2` 加 2→b2_p2、3→b3_p2，`onBossPhase2` 開頭換曲（有 `transformMove` 的第 5 關仍在蛻變時換）；`HUB_BGM = "camp"`。
+- 待使用者實測：循環接縫、與音效的音量比例。
+
+**目前進度與待辦（2026-11-06，v0.8.69）**
 - 使用者實測回報：第 1 關難度還行（不調）；第 2 關分身「有點難，但多打幾次可以突破」＝符合「初見約 3～6 次過關」目標，暫不調（若之後要降：`ILLU.life` 14→10、`counterDmg` 90→70、幻影近戰同步改隔一招一次）。
 - 第 2 關待確認：開場影片在手機是否順、影片音效時間點、名牌在亮背景是否夠清楚；之後補 Boss 專屬音效（給英文搜尋關鍵字，使用者找實錄音檔，Claude 裁切接入）。
 - 第 3 關（莫寒川）：關鍵格、專屬特效、地面帶、前景、名牌、開場影片都已接（v0.8.59～v0.8.64），待使用者手機實測（開場影片、特效亮度、難度）；剩 Boss 專屬音效（給英文搜尋關鍵字）。
