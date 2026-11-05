@@ -2,7 +2,7 @@
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
-        [1, 1, 1, null, 2200], [2, 2, 1, null, 2600], [3, 3, 1, "莫無咎＋玄鐵真君", 3200],
+        [1, 1, 1, null, 2200], [2, 2, 1, null, 2600], [3, 3, 1, "莫寒川＋玄鐵真君", 3200],
         [4, 5, 2, null, 3600], [5, 6, 2, "九幽魔將", 4600], [6, 8, 2, "魅月仙子＋化血老祖", 5000],
         [7, 11, 3, "金甲天將＋玄武神相", 5400], [8, 14, 3, null, 7000], [9, 14, 3, "心魔・墨塵", 5200]
       ];
@@ -80,7 +80,7 @@
       Stages[2].farMoves = ["flyswords"];
       Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
 
-      /* ===== v0.7.4/0.7.5 第 3 關 莫無咎（雙姿態）：一階段 A＝青雲雙劍（快）、進二階段換 B＝玄鐵重劍（慢）===== */
+      /* ===== v0.7.4/0.7.5 第 3 關 莫寒川（雙姿態）：一階段 A＝青雲雙劍（快）、進二階段換 B＝玄鐵重劍（慢）===== */
       Stages[3].sprite = "boss3";
       Stages[3].bg = "arena3"; Stages[3].bgDim = 0.2;
       Stages[3].dialogue.post.forEach(l => { if (l.role === "boss") l.expr = "alt"; });
@@ -89,7 +89,7 @@
         M.slash1.name = "疾風雙劍・瞬影連斬";
         M.exclusive_combo = { name: "雙劍十字斬 (每下招架)", isCombo: true, comboTotalHits: 3, comboInterval: 0.20, comboDamagePerHit: 90, windup: 0.42, active: 0.62, recover: 0.38, range: 170, lunge: 360, damage: 150, parryPostureDmg: 16 };
         M.exclusive_feint.name = "假動作連斬 (等實際揮下)"; M.exclusive_feint.feintPauseAt = 0.45; M.exclusive_feint.feintPauseDur = 0.30;
-        M.slash2.name = "無咎回旋・旋風刃";
+        M.slash2.name = "寒川回旋・旋風刃";
         M.dash_rush = { name: "疾步突進 (瞬步穿過)", isCharge: true, chargeSpeed: 900, pose: "thrust", windup: 0.50, active: 0.45, recover: 0.70, range: 130, lunge: 900, damage: 200, parryPostureDmg: 18 };
         M.grab_peril.name = "【危】叛宗劍陣 (極限側閃)";
         /* 重劍姿態專屬 */

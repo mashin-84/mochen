@@ -40,7 +40,7 @@
           realmBadge: "結丹大圓滿・千幻陣長老", arenaName: "迷蹤陣台 2.5x 空間",
           bgType: "illusion", maxHp: 2500, maxPosture: 110, deathblows: 2,
           unlockText: "【機制解鎖：空中二段瞬身 & 飛劍折射】墨塵領悟踏風劍意，滯空時可發動二段瞬身，完美招架可反彈飛劍！",
-          loreSnippet: "〔命運閉環：顧天風長老長嘆收扇，道出司徒掌門已被天門魔染之真相。墨塵收劍，奔赴第三關叛宗首徒莫無咎駐守之地……〕",
+          loreSnippet: "〔命運閉環：顧天風長老長嘆收扇，道出司徒掌門已被天門魔染之真相。墨塵收劍，奔赴第三關叛宗首徒莫寒川駐守之地……〕",
           moves: {
             slash1: { name: "千幻羽扇・罡風", windup: 0.38, active: 0.13, recover: 0.28, range: 165, lunge: 220, damage: 130, parryPostureDmg: 16 },
             exclusive_teleport: { name: "千幻鏡影瞬殺", isTeleport: true, teleportBehind: true, teleportDelay: 0.22, windup: 0.48, active: 0.16, recover: 0.32, range: 160, lunge: 200, damage: 160 },
@@ -62,28 +62,28 @@
           }
         },
         3: {
-          id: 3, volume: 1, name: "叛宗首徒・莫無咎",
+          id: 3, volume: 1, name: "叛宗首徒・莫寒川",
           chapter: "卷一【問心出山】第三難・同門操戈",
           realmBadge: "通玄後期・青雲雙劍修", arenaName: "洗劍池竹林 2.5x 空間",
           bgType: "bamboo", maxHp: 2700, maxPosture: 115, deathblows: 2,
           unlockText: "【機制解鎖：替身殘影反切】受擊硬直瞬間按瞬步可留下殘影移形換位，免除後續連擊！",
-          loreSnippet: "〔命運閉環：莫無咎雙劍落地，神色慘然。戒律堂巨闕重劍的破空轟鳴已自青雲山道盡頭逼近……〕",
+          loreSnippet: "〔命運閉環：莫寒川雙劍落地，神色慘然。戒律堂巨闕重劍的破空轟鳴已自青雲山道盡頭逼近……〕",
           moves: {
             slash1: { name: "疾風雙劍・瞬影連斬", windup: 0.28, active: 0.12, recover: 0.24, range: 170, lunge: 420, damage: 135, parryPostureDmg: 20 },
             exclusive_combo: { name: "青雲雙劍・狂瀾四疊", isCombo: true, comboTotalHits: 4, comboInterval: 0.18, comboDamagePerHit: 80, windup: 0.42, active: 0.75, recover: 0.38, range: 170, lunge: 360, damage: 150 },
             exclusive_feint: { name: "殘影惑心斬", isFeint: true, feintPauseAt: 0.45, feintPauseDur: 0.25, windup: 0.55, active: 0.15, recover: 0.30, range: 175, lunge: 340, damage: 170 },
-            slash2: { name: "無咎回旋・旋風刃", windup: 0.32, active: 0.14, recover: 0.26, range: 185, lunge: 360, damage: 145, parryPostureDmg: 22 },
-            thrust_peril: { name: "【危】無咎絕命刺 (前閃看破)", windup: 0.58, active: 0.18, recover: 0.60, range: 290, lunge: 940, damage: 310, isPerilous: true, perilType: "thrust" },
+            slash2: { name: "寒川回旋・旋風刃", windup: 0.32, active: 0.14, recover: 0.26, range: 185, lunge: 360, damage: 145, parryPostureDmg: 22 },
+            thrust_peril: { name: "【危】寒川絕命刺 (前閃看破)", windup: 0.58, active: 0.18, recover: 0.60, range: 290, lunge: 940, damage: 310, isPerilous: true, perilType: "thrust" },
             sweep_peril: { name: "【危】雙刃地堂掃 (起跳踩頭)", windup: 0.60, active: 0.20, recover: 0.58, range: 230, lunge: 320, damage: 280, isPerilous: true, perilType: "sweep" },
             grab_peril: { name: "【危】影縛索命訣 (極限側閃)", windup: 0.66, active: 0.16, recover: 0.64, range: 160, lunge: 0, damage: 340, isPerilous: true, perilType: "grab" }
           },
           dialogue: {
             pre: [
-              { speaker: "莫無咎", text: "墨塵師弟……昔日我們在洗劍池並肩論道，今日你卻成了叛宗逆徒。出劍吧！", role: "boss" },
+              { speaker: "莫寒川", text: "墨塵師弟……昔日我們在洗劍池並肩論道，今日你卻成了叛宗逆徒。出劍吧！", role: "boss" },
               { speaker: "墨塵", text: "師兄，你投身司徒衡魔道，究竟是為了長生，還是被心魔吞噬？", role: "mochen" }
             ],
             post: [
-              { speaker: "莫無咎", text: "原來……你的劍意已經超越了掌門……師弟，前方戒律堂首座長老……不會放你出山的……", role: "boss" }
+              { speaker: "莫寒川", text: "原來……你的劍意已經超越了掌門……師弟，前方戒律堂首座長老……不會放你出山的……", role: "boss" }
             ]
           }
         },

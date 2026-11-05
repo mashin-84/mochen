@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.61";
+      const ASSET_VER = "0.8.62";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2360,7 +2360,7 @@
           realmBadge: "結丹大圓滿・千幻陣長老", arenaName: "迷蹤陣台 2.5x 空間",
           bgType: "illusion", maxHp: 2500, maxPosture: 110, deathblows: 2,
           unlockText: "【機制解鎖：空中二段瞬身 & 飛劍折射】墨塵領悟踏風劍意，滯空時可發動二段瞬身，完美招架可反彈飛劍！",
-          loreSnippet: "〔命運閉環：顧天風長老長嘆收扇，道出司徒掌門已被天門魔染之真相。墨塵收劍，奔赴第三關叛宗首徒莫無咎駐守之地……〕",
+          loreSnippet: "〔命運閉環：顧天風長老長嘆收扇，道出司徒掌門已被天門魔染之真相。墨塵收劍，奔赴第三關叛宗首徒莫寒川駐守之地……〕",
           moves: {
             slash1: { name: "千幻羽扇・罡風", windup: 0.38, active: 0.13, recover: 0.28, range: 165, lunge: 220, damage: 130, parryPostureDmg: 16 },
             exclusive_teleport: { name: "千幻鏡影瞬殺", isTeleport: true, teleportBehind: true, teleportDelay: 0.22, windup: 0.48, active: 0.16, recover: 0.32, range: 160, lunge: 200, damage: 160 },
@@ -2382,28 +2382,28 @@
           }
         },
         3: {
-          id: 3, volume: 1, name: "叛宗首徒・莫無咎",
+          id: 3, volume: 1, name: "叛宗首徒・莫寒川",
           chapter: "卷一【問心出山】第三難・同門操戈",
           realmBadge: "通玄後期・青雲雙劍修", arenaName: "洗劍池竹林 2.5x 空間",
           bgType: "bamboo", maxHp: 2700, maxPosture: 115, deathblows: 2,
           unlockText: "【機制解鎖：替身殘影反切】受擊硬直瞬間按瞬步可留下殘影移形換位，免除後續連擊！",
-          loreSnippet: "〔命運閉環：莫無咎雙劍落地，神色慘然。戒律堂巨闕重劍的破空轟鳴已自青雲山道盡頭逼近……〕",
+          loreSnippet: "〔命運閉環：莫寒川雙劍落地，神色慘然。戒律堂巨闕重劍的破空轟鳴已自青雲山道盡頭逼近……〕",
           moves: {
             slash1: { name: "疾風雙劍・瞬影連斬", windup: 0.28, active: 0.12, recover: 0.24, range: 170, lunge: 420, damage: 135, parryPostureDmg: 20 },
             exclusive_combo: { name: "青雲雙劍・狂瀾四疊", isCombo: true, comboTotalHits: 4, comboInterval: 0.18, comboDamagePerHit: 80, windup: 0.42, active: 0.75, recover: 0.38, range: 170, lunge: 360, damage: 150 },
             exclusive_feint: { name: "殘影惑心斬", isFeint: true, feintPauseAt: 0.45, feintPauseDur: 0.25, windup: 0.55, active: 0.15, recover: 0.30, range: 175, lunge: 340, damage: 170 },
-            slash2: { name: "無咎回旋・旋風刃", windup: 0.32, active: 0.14, recover: 0.26, range: 185, lunge: 360, damage: 145, parryPostureDmg: 22 },
-            thrust_peril: { name: "【危】無咎絕命刺 (前閃看破)", windup: 0.58, active: 0.18, recover: 0.60, range: 290, lunge: 940, damage: 310, isPerilous: true, perilType: "thrust" },
+            slash2: { name: "寒川回旋・旋風刃", windup: 0.32, active: 0.14, recover: 0.26, range: 185, lunge: 360, damage: 145, parryPostureDmg: 22 },
+            thrust_peril: { name: "【危】寒川絕命刺 (前閃看破)", windup: 0.58, active: 0.18, recover: 0.60, range: 290, lunge: 940, damage: 310, isPerilous: true, perilType: "thrust" },
             sweep_peril: { name: "【危】雙刃地堂掃 (起跳踩頭)", windup: 0.60, active: 0.20, recover: 0.58, range: 230, lunge: 320, damage: 280, isPerilous: true, perilType: "sweep" },
             grab_peril: { name: "【危】影縛索命訣 (極限側閃)", windup: 0.66, active: 0.16, recover: 0.64, range: 160, lunge: 0, damage: 340, isPerilous: true, perilType: "grab" }
           },
           dialogue: {
             pre: [
-              { speaker: "莫無咎", text: "墨塵師弟……昔日我們在洗劍池並肩論道，今日你卻成了叛宗逆徒。出劍吧！", role: "boss" },
+              { speaker: "莫寒川", text: "墨塵師弟……昔日我們在洗劍池並肩論道，今日你卻成了叛宗逆徒。出劍吧！", role: "boss" },
               { speaker: "墨塵", text: "師兄，你投身司徒衡魔道，究竟是為了長生，還是被心魔吞噬？", role: "mochen" }
             ],
             post: [
-              { speaker: "莫無咎", text: "原來……你的劍意已經超越了掌門……師弟，前方戒律堂首座長老……不會放你出山的……", role: "boss" }
+              { speaker: "莫寒川", text: "原來……你的劍意已經超越了掌門……師弟，前方戒律堂首座長老……不會放你出山的……", role: "boss" }
             ]
           }
         },
@@ -2790,7 +2790,7 @@
          artId = 繪製用的舊關卡編號（Boss 造型、特殊演出都以 artId 判斷），之後每位 Boss 有自己的圖再改成資料驅動 */
       const NINE_MAP = [
         /* [新編號, 舊編號, 卷, 名稱, HP] */
-        [1, 1, 1, null, 2200], [2, 2, 1, null, 2600], [3, 3, 1, "莫無咎＋玄鐵真君", 3200],
+        [1, 1, 1, null, 2200], [2, 2, 1, null, 2600], [3, 3, 1, "莫寒川＋玄鐵真君", 3200],
         [4, 5, 2, null, 3600], [5, 6, 2, "九幽魔將", 4600], [6, 8, 2, "魅月仙子＋化血老祖", 5000],
         [7, 11, 3, "金甲天將＋玄武神相", 5400], [8, 14, 3, null, 7000], [9, 14, 3, "心魔・墨塵", 5200]
       ];
@@ -2868,7 +2868,7 @@
       Stages[2].farMoves = ["flyswords"];
       Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
 
-      /* ===== v0.7.4/0.7.5 第 3 關 莫無咎（雙姿態）：一階段 A＝青雲雙劍（快）、進二階段換 B＝玄鐵重劍（慢）===== */
+      /* ===== v0.7.4/0.7.5 第 3 關 莫寒川（雙姿態）：一階段 A＝青雲雙劍（快）、進二階段換 B＝玄鐵重劍（慢）===== */
       Stages[3].sprite = "boss3";
       Stages[3].bg = "arena3"; Stages[3].bgDim = 0.2;
       Stages[3].dialogue.post.forEach(l => { if (l.role === "boss") l.expr = "alt"; });
@@ -2877,7 +2877,7 @@
         M.slash1.name = "疾風雙劍・瞬影連斬";
         M.exclusive_combo = { name: "雙劍十字斬 (每下招架)", isCombo: true, comboTotalHits: 3, comboInterval: 0.20, comboDamagePerHit: 90, windup: 0.42, active: 0.62, recover: 0.38, range: 170, lunge: 360, damage: 150, parryPostureDmg: 16 };
         M.exclusive_feint.name = "假動作連斬 (等實際揮下)"; M.exclusive_feint.feintPauseAt = 0.45; M.exclusive_feint.feintPauseDur = 0.30;
-        M.slash2.name = "無咎回旋・旋風刃";
+        M.slash2.name = "寒川回旋・旋風刃";
         M.dash_rush = { name: "疾步突進 (瞬步穿過)", isCharge: true, chargeSpeed: 900, pose: "thrust", windup: 0.50, active: 0.45, recover: 0.70, range: 130, lunge: 900, damage: 200, parryPostureDmg: 18 };
         M.grab_peril.name = "【危】叛宗劍陣 (極限側閃)";
         /* 重劍姿態專屬 */
@@ -4725,7 +4725,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (m.isRage && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 3, Boss.x, Boss.y + 12, { anchor: "b", w: 380, dur: m.windup + m.active + 0.5, loop: true, fps: 10, follow: () => ({ x: Boss.x, y: Boss.y + 12 }) });
         if (m.isRage) { spawnFloatingText(Boss.x, Boss.y - 150, "〔怒氣爆發〕", "#f87171", 1.3); Sound.play("peril", 0.8, 0.8); Boss.flashFrames = 4; }
         if (stage.stances && !m.isSwitch) Boss.stanceCount++;
-        if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫無咎拔劍換姿時有破綻，趁機攻擊！");
+        if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫寒川拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
         if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;

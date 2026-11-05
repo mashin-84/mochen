@@ -160,7 +160,7 @@
         if (m.isRage && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 3, Boss.x, Boss.y + 12, { anchor: "b", w: 380, dur: m.windup + m.active + 0.5, loop: true, fps: 10, follow: () => ({ x: Boss.x, y: Boss.y + 12 }) });
         if (m.isRage) { spawnFloatingText(Boss.x, Boss.y - 150, "〔怒氣爆發〕", "#f87171", 1.3); Sound.play("peril", 0.8, 0.8); Boss.flashFrames = 4; }
         if (stage.stances && !m.isSwitch) Boss.stanceCount++;
-        if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫無咎拔劍換姿時有破綻，趁機攻擊！");
+        if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫寒川拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
         if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
