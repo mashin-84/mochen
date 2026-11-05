@@ -12,7 +12,7 @@
         live: {}, variants: {}, ext: {},
         /* M1 通用音效換檔：檔案放 assets/sfx/g_<名>.mp3（變體 g_<名>_2.mp3、g_<名>_3.mp3…），在這裡登記「名: 變體數」才會載入；
            載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
-        genSfx: {},
+        genSfx: { parry: 1, block: 1, slash: 1, flysword: 1, peril: 1, mikiri: 1, execution: 1, gourd: 1, assist: 1, victory: 1 }, /* v0.8.40 接入 10 個（hit 待補） */
 
         init() {
           if (this.ready) return;

@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.39";
+      const ASSET_VER = "0.8.40";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2097,7 +2097,7 @@
         live: {}, variants: {}, ext: {},
         /* M1 通用音效換檔：檔案放 assets/sfx/g_<名>.mp3（變體 g_<名>_2.mp3、g_<名>_3.mp3…），在這裡登記「名: 變體數」才會載入；
            載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
-        genSfx: {},
+        genSfx: { parry: 1, block: 1, slash: 1, flysword: 1, peril: 1, mikiri: 1, execution: 1, gourd: 1, assist: 1, victory: 1 }, /* v0.8.40 接入 10 個（hit 待補） */
 
         init() {
           if (this.ready) return;
