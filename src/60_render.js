@@ -1,0 +1,250 @@
+      /* =========================================================================
+       * 5. 渲染引擎：動態多場景視差背景與角色剪影
+       * ========================================================================= */
+      function render() {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.save();
+        ctx.clearRect(0, 0, w, h);
+        if (Game.cine && Game.cine.t < CINE.A) { drawCineA(w, h); drawCineBars(w, h); ctx.restore(); return; }
+
+        const isPortrait = h > w;
+        let scale = 1.0;
+        let offsetX = 0;
+        let offsetY = 0;
+        const refW = isPortrait ? 960 : Config.baseWidth;
+
+        if (isPortrait) {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const controlReserveH = 190 * dpr;
+          const hudReserveH = 75 * dpr;
+          const availH = Math.max(260 * dpr, h - controlReserveH - hudReserveH);
+          scale = Math.min(w / refW, availH / Config.baseHeight);
+          offsetX = (w - refW * scale) * 0.5;
+          offsetY = hudReserveH + (availH - Config.baseHeight * scale) * 0.5;
+        } else {
+          scale = h / Config.baseHeight;
+          offsetX = (w - refW * scale) * 0.5;
+          offsetY = (h - Config.baseHeight * scale) * 0.5;
+        }
+
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(scale, scale);
+
+        let shakeOffX = 0;
+        let shakeOffY = 0;
+        const cam = Game.camera;
+        let shakeRoll = 0;
+        if (cam.trauma > 0) {
+          const sh = cam.trauma * cam.trauma * Config.shakeMultiplier;
+          const tt = cam.shakeClock * 28;
+          shakeOffX = 60 * sh * noise1(tt + 11.3);
+          shakeOffY = 60 * sh * noise1(tt + 47.7);
+          shakeRoll = 0.035 * sh * noise1(tt + 91.1);
+        }
+
+        ctx.translate(Config.baseWidth * 0.5, Config.baseHeight * 0.5);
+        if (shakeRoll) ctx.rotate(shakeRoll);
+        ctx.scale(cam.zoom, cam.zoom);
+        ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 + shakeOffY);
+
+        drawDynamicBackground(cam.x);
+        if (Game.mode !== "battle") drawHubScene();
+
+        if (Game.ultDim > 0.01) {
+          ctx.save();
+          ctx.fillStyle = `rgba(2, 4, 14, ${0.62 * Game.ultDim})`;
+          ctx.fillRect(-3000, -3000, Config.worldWidth + 6000, 7000);
+          const ug = ctx.createRadialGradient(Boss.x, Boss.y - 110, 20, Boss.x, Boss.y - 110, 420);
+          ug.addColorStop(0, `rgba(255, 70, 50, ${0.34 * Game.ultDim})`);
+          ug.addColorStop(1, "rgba(255, 70, 50, 0)");
+          ctx.globalCompositeOperation = "lighter";
+          ctx.fillStyle = ug;
+          ctx.fillRect(Boss.x - 450, Boss.y - 560, 900, 700);
+          ctx.restore();
+        }
+
+        // Draw Hazard Zones (原語 4)
+        if (Game.hazardZones && Game.hazardZones.length > 0) {
+          for (const hz of Game.hazardZones) {
+            ctx.save();
+            const alpha = Math.max(0, Math.min(1, hz.duration / (hz.maxDur || 1)));
+            const isWarn = hz.warningTimer > 0;
+            if (hz.type === "wind") {
+              ctx.fillStyle = `rgba(56, 189, 248, ${isWarn ? 0.25 : 0.45 * alpha})`;
+              ctx.strokeStyle = "#38bdf8";
+            } else if (hz.type === "fire") {
+              ctx.fillStyle = `rgba(239, 68, 68, ${isWarn ? 0.3 : 0.5 * alpha})`;
+              ctx.strokeStyle = "#f87171";
+            } else if (hz.type === "ice") {
+              ctx.fillStyle = `rgba(125, 211, 252, ${isWarn ? 0.25 : 0.45 * alpha})`;
+              ctx.strokeStyle = "#7dd3fc";
+            } else if (hz.type === "bone") {
+              ctx.fillStyle = `rgba(241, 245, 249, ${isWarn ? 0.3 : 0.5 * alpha})`;
+              ctx.strokeStyle = "#e2e8f0";
+            }
+            ctx.lineWidth = 2.5;
+            ctx.fillRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
+            ctx.strokeRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
+            if (isWarn) {
+              ctx.font = "700 12px var(--font-serif)";
+              ctx.fillStyle = "#fde047";
+              ctx.textAlign = "center";
+              ctx.fillText("⚠️ 煞氣即將爆發！", hz.x, hz.y - hz.h - 8);
+            }
+            ctx.restore();
+          }
+        }
+
+        if (Game.darkVignetteAlpha > 0) {
+          ctx.fillStyle = `rgba(3, 7, 18, ${Game.darkVignetteAlpha * 0.82})`;
+          ctx.fillRect(cam.x - 100, 0, Config.baseWidth + 200, Config.baseHeight);
+        }
+
+        drawTelegraphs();
+        if (Game.cine && !Game.cine.landed && !Game.cine.dash) drawCineMark();
+
+        for (const img of Game.afterimages) {
+          ctx.fillStyle = `rgba(56, 189, 248, ${img.alpha * 0.45})`;
+          ctx.fillRect(img.x - img.w * 0.5, img.y - img.h, img.w, img.h);
+        }
+
+        drawMist();
+        drawFx(true);
+        drawFlyingSwords();
+        drawCineTrail();
+        drawBossEntity();
+        drawPlayer();
+        drawArcs();
+        drawSparks();
+        drawHitFx();
+        drawFx();
+        drawLeaves();
+
+        if (Game.executionLines && Game.executionLines.length > 0) {
+          for (const l of Game.executionLines) {
+            ctx.save();
+            ctx.strokeStyle = l.color || "#ffffff";
+            ctx.globalAlpha = Math.max(0, Math.min(1, l.alpha));
+            ctx.shadowColor = l.color || "#38bdf8";
+            ctx.shadowBlur = 24;
+            ctx.lineWidth = (l.width || 7) * l.alpha;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(l.x1, l.y1);
+            ctx.lineTo(l.x2, l.y2);
+            ctx.stroke();
+            ctx.restore();
+          }
+        } else if (Game.executionLine) {
+          const l = Game.executionLine;
+          ctx.save();
+          ctx.strokeStyle = `rgba(224, 242, 254, ${l.alpha})`;
+          ctx.shadowColor = "#38bdf8";
+          ctx.shadowBlur = 24;
+          ctx.lineWidth = 7 * l.alpha;
+          ctx.beginPath();
+          ctx.moveTo(l.x1, l.y1);
+          ctx.lineTo(l.x2, l.y2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        for (const ft of Game.floatingTexts) {
+          const a = Math.max(0, Math.min(1, ft.life / ft.maxLife));
+          ctx.save();
+          ctx.font = `800 ${Math.round(16 * ft.scale)}px var(--font-serif)`;
+          ctx.textAlign = "center";
+          ctx.fillStyle = ft.color;
+          ctx.globalAlpha = a;
+          ctx.shadowColor = "rgba(0,0,0,0.85)";
+          ctx.shadowBlur = 6;
+          ctx.fillText(ft.text, ft.x, ft.y);
+          ctx.restore();
+        }
+
+        ctx.restore();
+
+        if (Game.cine) {
+          const ft = Game.cine.t - CINE.A, fd = Game.cine.dash ? 0.8 : 0.35;
+          if (ft < fd) { ctx.fillStyle = `rgba(${Stages[Boss.stageId].introFlash || "255,236,224"},${1 - ft / fd})`; ctx.fillRect(0, 0, w, h); }
+          drawCineBars(w, h);
+        }
+        drawNameCard(w, h);
+
+        if (Game.flashWhiteOverlay > 0) {
+          ctx.save();
+          ctx.fillStyle = `rgba(224, 247, 250, ${Game.flashWhiteOverlay * 0.45})`;
+          ctx.fillRect(0, 0, w, h);
+          ctx.restore();
+        }
+
+        if (Game.executionBannerTimer > 0 && drawExecTitle(w, h)) {
+          /* v0.8.10 新版大字已畫 */
+        } else if (Game.executionBannerTimer > 0) {
+          ctx.save();
+          const a = Math.min(1, Game.executionBannerTimer * 1.5);
+          ctx.globalAlpha = a;
+          const inkS = fxSheet("ink");
+          if (inkS.ok) {
+            ctx.font = `900 64px var(--font-serif)`;
+            const tw = ctx.measureText("【 破 勢 處 決 ・ 一 劍 青 雲 】").width;
+            const iw = Math.min(w * 0.98, tw * 1.45), ih = iw * 0.34;
+            ctx.drawImage(inkS.img, 0, 768, 512, 256, w * 0.5 - iw / 2, h * 0.24 - ih / 2, iw, ih);
+          } else {
+          ctx.fillStyle = "rgba(11, 18, 32, 0.85)";
+          ctx.fillRect(0, h * 0.24 - 38, w, 76);
+          ctx.strokeStyle = "rgba(245, 158, 11, 0.75)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(0, h * 0.24 - 38);
+          ctx.lineTo(w, h * 0.24 - 38);
+          ctx.moveTo(0, h * 0.24 + 38);
+          ctx.lineTo(w, h * 0.24 + 38);
+          ctx.stroke();
+          }
+
+          ctx.font = inkS.ok ? `900 64px var(--font-serif)` : `900 36px var(--font-serif)`;
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#fef08a";
+          ctx.shadowColor = "#f59e0b";
+          ctx.shadowBlur = 22;
+          ctx.fillText("【 破 勢 處 決 ・ 一 劍 青 雲 】", w * 0.5, h * 0.24 + 12);
+          ctx.restore();
+        }
+      }
+
+      /* ====================== 背景美術（有圖就用圖，沒圖退回程式繪製） ====================== */
+      const BG_ART = { camp: { ok: false, img: new Image() }, s1: { ok: false, img: new Image() } };
+      BG_ART.camp.img.onload = () => { BG_ART.camp.ok = true; };
+      BG_ART.s1.img.onload = () => { BG_ART.s1.ok = true; };
+      BG_ART.camp.img.src = "assets/bg/camp.webp";
+      BG_ART.s1.img.src = "assets/bg/arena1.webp";
+
+      /* 戰場背景資料化：Stages[n].bg = "arena2" → assets/bg/arena2.webp；Stages[n].bgDim 為暗化（預設 0.4） */
+      function getBgArt(key) {
+        if (!BG_ART[key]) {
+          const a = { ok: false, img: new Image() };
+          a.img.onload = () => { a.ok = true; };
+          a.img.src = "assets/bg/" + key + ".webp";
+          BG_ART[key] = a;
+        }
+        return BG_ART[key];
+      }
+      function drawArenaArt(camX, stageId) {
+        const stBg = Stages[stageId];
+        const A = stBg && stBg.bg ? getBgArt(stBg.bg) : null;
+        if (!A || !A.ok) return false;
+        const h = Config.baseHeight;
+        const w = h * (A.img.naturalWidth / A.img.naturalHeight);
+        const f = Math.max(0, (w - Config.baseWidth) / (Config.worldWidth - Config.baseWidth));
+        const cx = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, camX));
+        const il = cx * (1 - f);
+        ctx.drawImage(A.img, il, 0, w, h);
+        /* v0.8.13 寬螢幕／切場景鏡頭拉遠時，畫面會超出背景左右邊界露出黑底：左右各接一張鏡像背景補滿 */
+        ctx.save(); ctx.translate(il, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
+        ctx.save(); ctx.translate(il + 2 * w, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
+        ctx.fillStyle = `rgba(8, 14, 38, ${stBg.bgDim === undefined ? 0.4 : stBg.bgDim})`;
+        ctx.fillRect(cx - 1400, 0, Config.baseWidth + 2800, h + 200);
+        return true;
+      }

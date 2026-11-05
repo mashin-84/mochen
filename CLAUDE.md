@@ -1,6 +1,6 @@
 # 《一念飛仙外傳-墨塵傳》專案規則（Claude 每次開工先讀）
 
-橫版動作 RPG（Boss Rush，隻狼式彈刀與架勢），單檔 `index.html`（Canvas 2D、Web Audio、無外部依賴）＋ `assets/` 圖片。使用者在手機（Android Chrome，橫向）測試。
+橫版動作 RPG（Boss Rush，隻狼式彈刀與架勢），上線檔是單檔 `index.html`（Canvas 2D、Web Audio、無外部依賴）＋ `assets/` 圖片；**原始碼在 `src/`（v0.8.37 起分檔），`index.html` 由 `tools/build.py` 組出，不要直接改 `index.html`**。使用者在手機（Android Chrome，橫向）測試。
 網址：https://mashin-84.github.io/mochen/（GitHub Pages，main 分支根目錄）。
 詳細版本紀錄與設計決定看 `HANDOFF.md`；劇情來源是 `mashin-84/Cultivation` 的 `source` 分支。
 
@@ -10,12 +10,16 @@
 - 版面類改動先截圖確認再推送。不要整份輸出程式碼。
 - 節省額度：輕量驗證（語法檢查＋針對性測試）；動到存檔結構、關卡流程才做完整流程測試。
 - 對話變長時主動提醒使用者，並自動做完換新對話的準備：更新 `HANDOFF.md`（版本、進度、待辦）、commit＋推送所有未存的改動，最後給一句可直接貼在新對話第一句的提示詞（要求先讀 CLAUDE.md、HANDOFF.md、掛載 mashin-84/mochen 並附 push 權限、說明目前版本與待辦）。
-- 每次改版：遞增版本號（`ASSET_VER` 與 `HANDOFF.md` 標題）→ 跑 `tools/check.js` → commit → `git push origin HEAD:main`；commit 訊息尾端加系統提醒給的 Co-Authored-By 與 Session 行。推送後約 1～2 分鐘網站更新。
+- 每次改版：改 `src/` → 遞增版本號（`src/10_boot.js` 的 `ASSET_VER` 與 `HANDOFF.md` 標題）→ `python3 tools/build.py` → `python3 tools/build.py --check` → 跑 `tools/check.js` → 動到戰鬥／流程時跑 `tools/smoke.js` → commit → `git push origin HEAD:main`；commit 訊息尾端加系統提醒給的 Co-Authored-By 與 Session 行。推送後約 1～2 分鐘網站更新。
 - 本機看不到音效；音效、手感、手機震動要請使用者實測。
 - 新增或更新任何 `assets/` 圖片都要遞增 `ASSET_VER`（圖片網址自動加 `?v=`），否則手機會讀到舊快取。
 
+## 最高原則
+- **夠精緻**：參考各式動作遊戲的手法（空洞騎士、隻狼、九日 Nine Sols、死亡細胞、褻瀆神明、奧日等），但維持本作淡彩、透光、薄霧的風格聖經；學手法不學色調。
+- 路線圖與製作流程見 `HANDOFF.md` 第二十二節（M0～M9、單關七步、完成定義）。
+
 ## 分工
-- 交給 Gemini：全部生圖與影片（動作表、背景、半身像、特效圖）、招式資料與對白草稿、純資料型修補（FIND/REPLACE）。
+- 交給 Gemini：全部生圖與影片（動作表、背景、半身像、特效圖）、招式資料與對白草稿、純資料型修補（FIND/REPLACE）。給 Gemini 改東西時只附 `src/` 裡要改的那一個檔的最新版。
 - 留給 Claude：架構改動、新招式引擎、AI、數值平衡、測試、切圖去背對齊、推送。Gemini 的自我檢查表不可當驗證依據。
 
 ## 生圖提示詞規則
@@ -37,6 +41,8 @@
 - localStorage 鍵：`qingyun_*`
 
 ## 測試與工具
+- 自動對打：`NODE_PATH=$(npm root -g) node tools/smoke.js index.html 20`（九關各 20 秒鍵盤亂數對打；抓頁面錯誤、NaN、卡狀態、招式不輪替；截圖存 /home/claude/smoke/；可加第三個參數指定關卡如 `1,5`）。
+- 原始碼分檔：`src/manifest.txt` 決定組合順序；`00_head`／`01_style.css`／`02_body` 是版面，`10_boot`～`91_main` 是程式（`20_legacy_stages`、`81_legacy_story` 為舊系統，Beta 期清除）。新增檔案要加進 manifest。
 - 測試：Playwright（Chromium 已預裝）。做除錯副本，在 `window.onload = function () {` 前面插入 `window.__B=Boss;window.__P=Player;window.__G=Game;window.__L=loadStage;…` 掛鉤，用 `python3 -m http.server` 從本機載入（要和測試在同一個 Bash 指令內啟動）。測試前先開 `Progress.unlockedStages=9`，並用 `#dlg-skip` 跳過開場對話。
 - 不要用 `pkill -f "http.server …"`（會連自己的 shell 一起殺）；用 `kill %1`。
 - 不要用 `rm -rf` 加萬用字元；用新資料夾代替。

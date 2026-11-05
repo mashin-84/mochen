@@ -1,0 +1,411 @@
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="battle-canvas"></canvas>
+
+    <!-- Orientation Guide -->
+    <div id="landscape-guide">
+      <div class="rotate-device-anim"></div>
+      <div class="guide-title">請橫屏持握手機</div>
+      <div class="guide-desc">
+        《一念飛仙外傳-墨塵傳》為純橫屏硬核動作 RPG。<br>
+        為獲得最佳 2.5x 空間走位與拼刀拆招手感，強烈建議橫向持握！
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; align-items: center; margin-top: 14px;">
+        <button type="button" class="guide-gold-btn" id="btn-enter-landscape">
+          <span>⛶</span>
+          <span>進入全螢幕橫版開戰</span>
+        </button>
+        <button type="button" class="guide-sub-btn" id="btn-bypass-portrait">
+          <span>📱 在直向模式下直接試玩 (直屏自適應)</span>
+        </button>
+      </div>
+      <div id="landscape-tip-text" style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; font-family: var(--font-serif); line-height: 1.5; text-align: center;">
+        〔提示：若手機未旋轉，請開啟手機控制中心「自動旋轉」並橫放手機〕
+      </div>
+    </div>
+
+    <!-- Top Combat HUD -->
+    <div class="hud-header">
+      <div class="hud-main-grid">
+        <!-- Left: Mo Chen Status -->
+        <div class="cultivation-card">
+          <div class="char-line">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="realm-seal-badge realm-player">通玄境・青雲劍主</span>
+              <span class="char-name">墨塵</span><span id="echo-14-badge" style="display: none; color: #fb923c; font-size: 10px; margin-left: 4px; font-weight: 700;">【戰意+10%】</span>
+            </div>
+            <span id="player-state-txt" style="font-family: var(--font-mono); font-size: 10px; color: var(--qingyun-cyan);">IDLE</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-title">氣血</span>
+            <div class="gauge-track">
+              <div id="player-hp-bar" class="gauge-fill gauge-hp-player" style="width: 100%;"></div>
+            </div>
+            <span id="player-hp-txt" style="font-family: var(--font-mono); font-size: 10px; width: 38px; text-align: right; color: #a7f3d0;">1000</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-title">劍勢</span>
+            <div class="gauge-track">
+              <div id="player-stamina-bar" class="gauge-fill gauge-stamina-player" style="width: 100%;"></div>
+            </div>
+            <div class="gourd-pouch" id="gourd-pouch" title="青雲仙釀剩餘次數">
+              <span class="gourd-unit">🍶</span>
+              <span class="gourd-unit">🍶</span>
+              <span class="gourd-unit">🍶</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center: Consolidated Menu Button + Fixed Minimap + Fixed Telemetry -->
+        <div class="hud-mid-col">
+          <button id="btn-open-sys-menu" class="main-menu-btn" type="button">
+            <span>⚙️</span>
+            <span>天機閣・選單</span>
+          </button>
+          <div class="arena-bronze-minimap" title="2.5倍螢幕橫向捲軸戰場縮尺">
+            <div id="minimap-lens" class="minimap-lens"></div>
+            <div id="minimap-pip-p" class="minimap-pip player"></div>
+            <div id="minimap-pip-b" class="minimap-pip boss"></div>
+            <span class="minimap-caption" id="minimap-caption">問心絕巔 2.5x 空間</span>
+          </div>
+          <div class="telemetry-ribbon" id="telemetry-ribbon" title="戰局即時心法指引">
+            〔提示：凝神以對，精準招架〕
+          </div>
+        </div>
+
+        <!-- Right: Boss Status -->
+        <div class="cultivation-card boss" id="boss-card">
+          <div class="char-line">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="realm-seal-badge realm-boss" id="boss-realm-badge">元神初期・司徒衛統領</span>
+              <span class="char-name" id="boss-name" style="color: #fca5a5;">赤煞神衛統領</span>
+              <div class="deathblow-gems" title="剩餘破勢忍殺階段">
+                <div id="gem-1" class="gem-node lit"></div>
+                <div id="gem-2" class="gem-node lit"></div>
+              </div>
+            </div>
+            <span id="boss-state-txt" style="font-family: var(--font-mono); font-size: 10px; color: #fca5a5;">PHASE 1</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-title">真元</span>
+            <div class="gauge-track">
+              <div id="boss-hp-ghost" style="position:absolute;left:0;top:0;height:100%;width:100%;background:rgba(255,255,255,0.88);border-radius:3px;"></div>
+              <div id="boss-hp-bar" class="gauge-fill gauge-hp-boss" style="position:relative;width: 100%;"></div>
+            </div>
+            <span id="boss-hp-txt" style="font-family: var(--font-mono); font-size: 10px; width: 38px; text-align: right; color: #fca5a5;">2200</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-title" style="color: var(--amber-light);">架勢</span>
+            <div class="gauge-posture-track">
+              <div id="boss-posture-bar" class="gauge-posture-fill" style="width: 0%;"></div>
+            </div>
+            <span id="boss-posture-txt" style="font-family: var(--font-mono); font-size: 10px; width: 38px; text-align: right; color: var(--amber-light);">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 天機閣 Drawer (Moves, Taichu, Mind Seals, Parameters) -->
+    <div id="scroll-drawer" class="scroll-drawer">
+      <div class="drawer-top-banner">
+        <div class="drawer-title">
+          <span>📜</span>
+          <span>天機閣・演武玉簡</span>
+        </div>
+        <span style="font-size: 10px; color: var(--amber-gold);">墨塵修道隨筆</span>
+      </div>
+
+      <div class="drawer-tabs">
+        <button type="button" class="drawer-tab-btn active" data-tab="tab-moves">演武試招</button>
+        <button type="button" class="drawer-tab-btn" data-tab="tab-taichu">玄天靈通</button>
+        <button type="button" class="drawer-tab-btn" data-tab="tab-seals">心印參悟</button>
+        <button type="button" class="drawer-tab-btn" data-tab="tab-mind">劍意心法</button>
+      </div>
+
+      <!-- Tab 1: 演武試招 -->
+      <div id="tab-moves" class="tab-content active">
+        <div class="section-label" id="boss-moves-label">當前守關 Boss 招式實測演練</div>
+        <div class="cmd-matrix" id="cmd-matrix-container"></div>
+      </div>
+
+      <!-- Tab 2: 玄天靈通 -->
+      <div id="tab-taichu" class="tab-content">
+        <div class="section-label">師弟妹「太初玄天珠」戰術支援</div>
+        <div class="assist-trio">
+          <button type="button" class="assist-seal-btn selected" data-assist="lingguang">
+            <span class="assist-seal-name">【太初靈光】</span>
+            <span class="assist-seal-sub">強制打斷Boss殺招</span>
+          </button>
+          <button type="button" class="assist-seal-btn" data-assist="tishen">
+            <span class="assist-seal-name">【太初替身】</span>
+            <span class="assist-seal-sub">致命免死＋無敵瞬移</span>
+          </button>
+          <button type="button" class="assist-seal-btn" data-assist="fuzhen">
+            <span class="assist-seal-name">【符陣定身】</span>
+            <span class="assist-seal-sub">定身2秒＋削50%架勢</span>
+          </button>
+        </div>
+        <button type="button" id="btn-refill-all" class="cult-btn" style="text-align: center; color: var(--taichu-blue); border-color: rgba(96, 165, 250, 0.45); margin-top: 4px;">
+          ✦ 充盈太初靈氣與回生仙釀 (回滿次數)
+        </button>
+      </div>
+
+      <!-- Tab 3: 心印參悟 (Mind Seals) -->
+      <div id="tab-seals" class="tab-content">
+        <div class="section-label">心印裝配（純機制取捨，至多啟動兩枚）</div>
+        <div id="mind-seals-container" style="display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+
+      <!-- Tab 4: 劍意心法 (Parameters) -->
+      <div id="tab-mind" class="tab-content">
+        <div class="section-label">拼刀數值與定格反饋調校</div>
+        <div class="slider-tile">
+          <span>完美招架窗口 (Parry)</span>
+          <input type="range" id="range-parry" min="70" max="220" step="10" value="130" />
+          <span id="label-parry" style="font-family: var(--font-mono); width: 44px; text-align: right; color: var(--amber-light);">130ms</span>
+        </div>
+        <div class="slider-tile">
+          <span>彈反定格幀數 (Hitstop)</span>
+          <input type="range" id="range-hitstop" min="2" max="10" step="1" value="6" />
+          <span id="label-hitstop" style="font-family: var(--font-mono); width: 44px; text-align: right; color: var(--amber-light);">6幀</span>
+        </div>
+        <div class="slider-tile">
+          <span>正弦震屏強度 (Shake)</span>
+          <input type="range" id="range-shake" min="0" max="200" step="10" value="100" />
+          <span id="label-shake" style="font-family: var(--font-mono); width: 44px; text-align: right; color: var(--amber-light);">100%</span>
+        </div>
+        <div class="slider-tile">
+          <span>背景音樂音量 (BGM)</span>
+          <input type="range" id="range-bgm" min="0" max="100" step="5" value="50" />
+          <span id="label-bgm" style="font-family: var(--font-mono); width: 44px; text-align: right; color: var(--amber-light);">50%</span>
+        </div>
+      </div>
+    </div>
+
+        <!-- Virtual Controls (Ergonomic: Left = Move & Jump, Right = Combat Actions) -->
+    <div class="virtual-control-layer">
+      <!-- Left Movement Cluster: Enlarged D-Pad with Top Jump Button -->
+      <div class="dpad-cluster">
+        <div class="dpad-row-bottom">
+          <button type="button" class="dpad-talisman dpad-btn-move-large" id="touch-left" aria-label="踏雲左移">
+            <span>◀</span>
+            <span class="sub">A</span>
+          </button>
+          <button type="button" class="dpad-talisman dpad-btn-move-large" id="touch-right" aria-label="踏雲右移">
+            <span>▶</span>
+            <span class="sub">D</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Action Cluster: Jump removed, dedicated to pure combat -->
+      <div class="action-fan-cluster">
+        <!-- 依使用者草圖：下排 瞬步・跳躍・青雲斬(大)；上排 回生酒・招架，玄天珠在青雲斬正上方 -->
+        <button type="button" class="cult-act-bubble btn-gourd-heal" id="touch-gourd" style="right: 174px; bottom: 152px;">
+          <span class="main-label">回生酒</span>
+          <span class="sub-key">H</span>
+        </button>
+        <button type="button" class="cult-act-bubble btn-wind-dash" id="touch-dash" style="right: 206px; bottom: 30px;">
+          <span class="main-label">瞬步</span>
+          <span class="sub-key">L</span>
+        </button>
+        <button type="button" class="cult-act-bubble btn-parry-bagua" id="touch-parry" style="right: 104px; bottom: 104px;">
+          <span class="main-label">招架</span>
+          <span class="sub-key">K</span>
+        </button>
+        <button type="button" class="cult-act-bubble btn-cloud-jump" id="touch-jump" style="right: 134px; bottom: 30px;" aria-label="騰雲跳躍">
+          <span class="main-label">跳躍</span>
+          <span class="sub-key">Space</span>
+        </button>
+        <button type="button" class="cult-act-bubble btn-taichu-orb" id="touch-assist" style="right: 30px; bottom: 134px;">
+          <span class="main-label" id="assist-btn-title">玄天珠</span>
+          <span class="sub-key">U</span>
+        </button>
+        <button type="button" class="cult-act-bubble btn-sword-atk" id="touch-attack" style="right: 8px; bottom: 8px;">
+          <span class="main-label" id="attack-btn-title">青雲斬</span>
+          <span class="sub-key">J / 處決</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 劇情演繹與影片過場 (Story Cutscene & Cinema Modal in 一念飛仙 Style) -->
+    <div id="story-dialog-modal" class="cult-modal-backdrop">
+      <div class="cult-scroll-box" style="width: 760px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-banner-row">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="modal-chapter-tag" id="story-tag">【卷一・問心出山】第一難・試劍問心</span>
+            <span style="font-size: 10.5px; color: #a7f3d0; font-family: var(--font-serif);" id="story-mode-badge">動態水墨影片演繹</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button type="button" id="btn-toggle-cinema-mode" class="cult-header-btn" style="padding: 2px 8px;">🎬 切換影片/畫卷</button>
+            <button type="button" id="btn-dialogue-log" class="cult-header-btn" style="padding: 2px 8px;">📜 回顧</button>
+            <button type="button" id="btn-auto-play" class="cult-header-btn" style="padding: 2px 8px;">▶ 自動</button>
+          </div>
+        </div>
+
+        <!-- 16:9 Cinema Viewport for Dynamic Ink-wash Animatics & Video -->
+        <div class="cinema-viewport" id="cinema-viewport">
+          <canvas id="cinema-canvas"></canvas>
+          <video id="scene-video" playsinline></video>
+          <div class="cinema-controls-bar">
+            <span style="font-size: 9.5px; font-family: var(--font-serif); color: var(--amber-light);" id="cinema-scene-title">天門問心・水墨動態運鏡</span>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <label class="cinema-pill-btn" style="cursor: pointer;" title="載入外部 MP4/WebM 影片進行播放">
+                📁 載入影片
+                <input type="file" id="video-file-input" accept="video/*" style="display: none;" />
+              </label>
+              <button type="button" class="cinema-pill-btn" id="btn-cinema-replay">↺ 重播過場</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 一念飛仙 Authentic Dialogue Frame -->
+        <div class="vn-dialogue-card" id="vn-dialogue-card">
+          <div class="speaker-avatar-frame" id="speaker-avatar-frame">
+            <div id="avatar-visual-holder" style="font-size: 26px;">⚔️</div>
+            <div class="avatar-role-tag" id="avatar-role-tag">墨塵</div>
+          </div>
+          <div class="dialogue-text-body">
+            <div class="dialogue-speaker-name">
+              <span id="speaker-name-label">墨塵</span>
+              <span style="font-size: 10.5px; font-weight: normal; color: #94a3b8;" id="speaker-realm-label">【青雲劍主・通玄初期】</span>
+            </div>
+            <div class="dialogue-content-typewriter" id="dialogue-typewriter-text">
+              ...
+            </div>
+          </div>
+        </div>
+
+        <!-- Dialogue History Drawer -->
+        <div id="dialogue-history-drawer"></div>
+
+        <div class="modal-btn-row" style="margin-top: 6px;">
+          <button type="button" class="btn-outline-action" id="btn-dialogue-skip">跳過劇情 ❯❯</button>
+          <button type="button" class="btn-gold-action" id="btn-dismiss-story">拔劍入局 (進入戰鬥) ⚔️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 戰績結算與關卡突破繪卷 (Stage Clear Modal - Landscape Optimized) -->
+    <div id="settlement-modal" class="cult-modal-backdrop">
+      <div class="cult-scroll-box">
+        <div class="modal-banner-row">
+          <span class="modal-chapter-tag" id="settle-stage-tag">【卷一・第一難】試劍問心大捷</span>
+          <span style="font-size: 11px; color: #a7f3d0; font-family: var(--font-serif);">斬將克敵・打鐵通神</span>
+        </div>
+        <div class="modal-header-title" id="settle-headline" style="color: #fef08a;">赤煞神衛統領 伏誅</div>
+        
+        <div class="settlement-landscape-grid">
+          <!-- Left Column: Combat Metrics -->
+          <div class="settlement-score-box">
+            <div>
+              <div class="score-item-title">戰意評級</div>
+              <div class="score-item-val" id="settle-grade" style="color: #fde047;">甲上・劍神</div>
+            </div>
+            <div>
+              <div class="score-item-title">完美彈刀</div>
+              <div class="score-item-val" id="settle-parry-count">12 次</div>
+            </div>
+            <div>
+              <div class="score-item-title">踏劍看破</div>
+              <div class="score-item-val" id="settle-mikiri-count">3 次</div>
+            </div>
+            <div>
+              <div class="score-item-title">被擊／完美閃避</div>
+              <div class="score-item-val" id="settle-hit-dodge">0 / 0</div>
+            </div>
+            <div>
+              <div class="score-item-title">通關耗時</div>
+              <div class="score-item-val" id="settle-time-val">48 秒</div>
+            </div>
+          </div>
+
+          <!-- Right Column: Rewards, Lore & Actions -->
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div id="settle-unlock-card" style="background: rgba(14, 116, 144, 0.22); border: 1px solid var(--qingyun-cyan); border-radius: 6px; padding: 6px 10px; font-size: 11px; line-height: 1.45;"></div>
+            <div class="dialogue-entry narrator" id="settle-lore-snippet" style="padding: 4px 8px; font-size: 10px; line-height: 1.35; margin: 0;"></div>
+            <div class="modal-btn-row" style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border-bronze); padding-top: 6px; margin-top: 2px;">
+              <button type="button" class="btn-outline-action" id="btn-replay-stage" style="padding: 5px 12px; font-size: 11.5px;">↺ 重整此戰</button>
+              <button type="button" class="btn-gold-action" id="btn-next-stage" style="padding: 6px 18px; font-size: 12.5px; box-shadow: 0 0 14px rgba(245, 158, 11, 0.5);">啟程・挑戰下一難 ➔</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 九難絕顛全卷選關浮層 (All 9 Stages Modal) -->
+    <div id="chapter-list-modal" class="cult-modal-backdrop">
+      <div class="cult-scroll-box" style="max-height: 85vh; overflow-y: auto;">
+        <div class="modal-banner-row">
+          <span class="modal-chapter-tag">《一念飛仙外傳-墨塵傳》・九難絕顛全卷</span>
+          <button type="button" id="btn-close-chapter-list" class="cult-header-btn">關閉 ✕</button>
+        </div>
+        <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6; font-family: var(--font-serif);">
+          墨塵仗劍問心出山，歷經人間劫難，終登天門絕巔。點擊已解鎖關卡可隨時切換挑戰或重玩！
+        </div>
+        <div id="chapters-list-container" style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;"></div>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- 天機閣・宗門令選單 (Consolidated System Menu Modal) -->
+    <div id="system-menu-modal" class="cult-modal-backdrop">
+      <div class="cult-scroll-box" style="width: 540px; max-width: 90vw; padding: 18px 22px;">
+        <div class="modal-banner-row">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="modal-chapter-tag">【天機令】宗門諸事總覽</span>
+          </div>
+          <button type="button" id="btn-close-sys-menu" class="cult-header-btn">關閉 ✕</button>
+        </div>
+
+        <div class="menu-options-grid">
+          <button type="button" id="btn-story" class="menu-tile-btn">
+            <span>📜</span>
+            <span>劇情過場演繹</span>
+          </button>
+          <button type="button" id="btn-chapter-list" class="menu-tile-btn">
+            <span>⛩️</span>
+            <span>九難全卷選關</span>
+          </button>
+          <button type="button" id="btn-drawer-toggle" class="menu-tile-btn">
+            <span>⚔️</span>
+            <span>天機演武與心印</span>
+          </button>
+          <button type="button" id="btn-parry-cue" class="menu-tile-btn">
+            <span>✨</span>
+            <span id="menu-parry-cue-txt">格擋提示：強</span>
+          </button>
+          <button type="button" id="btn-battle-log" class="menu-tile-btn">
+            <span>📋</span>
+            <span>戰報紀錄</span>
+          </button>
+          <button type="button" id="btn-hint-reset" class="menu-tile-btn">
+            <span>💡</span>
+            <span>重看教學提示</span>
+          </button>
+          <button type="button" id="btn-haptic" class="menu-tile-btn">
+            <span>📳</span>
+            <span id="menu-haptic-txt">震動回饋：強</span>
+          </button>
+          <button type="button" id="btn-testall" class="menu-tile-btn">
+            <span>🧪</span>
+            <span id="menu-testall-txt">測試全解鎖：關</span>
+          </button>
+          <button type="button" id="btn-audio-toggle" class="menu-tile-btn">
+            <span>🔊</span>
+            <span id="menu-audio-txt">音效：開啟中</span>
+          </button>
+          <button type="button" id="btn-force-landscape-toggle" class="menu-tile-btn"><span>🔄</span><span>強制橫屏鎖定</span></button>
+          <button type="button" id="btn-fullscreen" class="menu-tile-btn">
+            <span>⛶</span>
+            <span>全螢幕橫向模式</span>
+          </button>
+          <button type="button" id="btn-restart" class="menu-tile-btn" style="border-color: rgba(239, 68, 68, 0.5); color: #fecaca;">
+            <span>↺</span>
+            <span>重整當前戰局</span>
+          </button>
+        </div>
+      </div>
+    </div>
