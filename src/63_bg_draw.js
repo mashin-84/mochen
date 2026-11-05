@@ -67,7 +67,10 @@
           ctx.fill();
         }
 
-        if (artMode) {
+        const ownGround = artMode && arenaHasGround(Boss.stageId);
+        if (ownGround) {
+          drawArenaLayers(camX, Boss.stageId, "ground"); /* M2 該關專屬地面（分層場景） */
+        } else if (artMode) {
           const gg = ctx.createLinearGradient(0, Config.groundY, 0, Config.baseHeight + 120);
           gg.addColorStop(0, "#9aa7bf");
           gg.addColorStop(0.3, "#74829f");
@@ -84,12 +87,14 @@
           ctx.fillRect(-3000, Config.groundY, Config.worldWidth + 6000, Config.baseHeight - Config.groundY + 120); /* 鏡頭拉遠時兩側也要有地面 */
         }
 
+        if (!ownGround) {
         ctx.strokeStyle = artMode ? "rgba(210, 230, 255, 0.5)" : varColor(bg);
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(-3000, Config.groundY);
         ctx.lineTo(Config.worldWidth + 3000, Config.groundY);
         ctx.stroke();
+        }
 
         ctx.font = "600 11px var(--font-serif)";
         ctx.textAlign = "center";

@@ -24,7 +24,12 @@
         Stages[nid] = st;
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
-      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28; /* v0.8.20 戰場調亮一點，銜接明亮的崖頂影片 */
+      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28;
+      /* M2 分層場景：崖頂地面帶（取代共用地面帶，表面中線對齊 groundY）＋前景松石剪影 */
+      Stages[1].layers = [
+        { img: "arena1_ground", ground: true, par: 1, y: 475, h: 330, dim: 0.12 },
+        { img: "arena1_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.15 }
+      ]; /* v0.8.20 戰場調亮一點，銜接明亮的崖頂影片 */
       Stages[2].bg = "arena2"; Stages[2].bgDim = 0.25;
       Stages[2].sprite = "boss2";
       /* 招式可用 frames 指定各階段使用的姿勢（windup/active/recover → 動作表檔名） */

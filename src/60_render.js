@@ -120,7 +120,7 @@
         drawHitFx();
         drawFx();
         drawLeaves();
-        if (Game.mode === "battle") drawArenaLayers(Game.camera.x, Boss.stageId, true); /* M2 前景剪影層 */
+        if (Game.mode === "battle") drawArenaLayers(Game.camera.x, Boss.stageId, "fg"); /* M2 前景剪影層 */
 
         if (Game.executionLines && Game.executionLines.length > 0) {
           for (const l of Game.executionLines) {
@@ -245,7 +245,7 @@
         /* v0.8.13 寬螢幕／切場景鏡頭拉遠時，畫面會超出背景左右邊界露出黑底：左右各接一張鏡像背景補滿 */
         ctx.save(); ctx.translate(il, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
         ctx.save(); ctx.translate(il + 2 * w, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
-        drawArenaLayers(camX, stageId, false); /* M2 分層場景：中景、地面等背景層（暗化前畫，一起被暗化） */
+        drawArenaLayers(camX, stageId, "bg"); /* M2 分層場景：中景、地面等背景層（暗化前畫，一起被暗化） */
         ctx.fillStyle = `rgba(8, 14, 38, ${stBg.bgDim === undefined ? 0.4 : stBg.bgDim})`;
         ctx.fillRect(cx - 1400, 0, Config.baseWidth + 2800, h + 200);
         return true;
@@ -255,10 +255,11 @@
          img → assets/bg/<名>.webp（透明 webp，橫向可無縫接）；par 視差（0＝不動的天空、1＝跟地面同速、>1＝前景比角色快）；
          y／h 圖在世界座標的上緣與高度（寬依原圖比例）；fg:true 畫在角色前面（前景剪影，建議 alpha 0.85～1、只放畫面下緣）；
          dim 該層再加暗（前景常用 0.15～0.3 拉開景深）。沒有 layers 的關卡畫面不變。 */
-      function drawArenaLayers(camX, stageId, fg) {
+      function arenaHasGround(stageId) { const st = Stages[stageId]; return !!(st && st.layers && st.layers.some((L) => L.ground && getBgArt(L.img).ok)); }
+      function drawArenaLayers(camX, stageId, pass) { /* pass：bg 背景層／ground 地面層（取代共用地面帶）／fg 前景層 */
         const st = Stages[stageId]; if (!st || !st.layers) return;
         for (const L of st.layers) {
-          if (!!L.fg !== fg) continue;
+          if ((L.fg ? "fg" : L.ground ? "ground" : "bg") !== pass) continue;
           const A = getBgArt(L.img); if (!A.ok) continue;
           const h = L.h || Config.baseHeight, w = h * (A.img.naturalWidth / A.img.naturalHeight);
           const par = L.par == null ? 1 : L.par, y = L.y || 0;

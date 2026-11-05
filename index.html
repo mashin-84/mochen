@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.43";
+      const ASSET_VER = "0.8.44";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2808,7 +2808,12 @@
         Stages[nid] = st;
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
-      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28; /* v0.8.20 戰場調亮一點，銜接明亮的崖頂影片 */
+      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28;
+      /* M2 分層場景：崖頂地面帶（取代共用地面帶，表面中線對齊 groundY）＋前景松石剪影 */
+      Stages[1].layers = [
+        { img: "arena1_ground", ground: true, par: 1, y: 475, h: 330, dim: 0.12 },
+        { img: "arena1_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.15 }
+      ]; /* v0.8.20 戰場調亮一點，銜接明亮的崖頂影片 */
       Stages[2].bg = "arena2"; Stages[2].bgDim = 0.25;
       Stages[2].sprite = "boss2";
       /* 招式可用 frames 指定各階段使用的姿勢（windup/active/recover → 動作表檔名） */
@@ -5890,7 +5895,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         drawHitFx();
         drawFx();
         drawLeaves();
-        if (Game.mode === "battle") drawArenaLayers(Game.camera.x, Boss.stageId, true); /* M2 前景剪影層 */
+        if (Game.mode === "battle") drawArenaLayers(Game.camera.x, Boss.stageId, "fg"); /* M2 前景剪影層 */
 
         if (Game.executionLines && Game.executionLines.length > 0) {
           for (const l of Game.executionLines) {
@@ -6015,7 +6020,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         /* v0.8.13 寬螢幕／切場景鏡頭拉遠時，畫面會超出背景左右邊界露出黑底：左右各接一張鏡像背景補滿 */
         ctx.save(); ctx.translate(il, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
         ctx.save(); ctx.translate(il + 2 * w, 0); ctx.scale(-1, 1); ctx.drawImage(A.img, 0, 0, w, h); ctx.restore();
-        drawArenaLayers(camX, stageId, false); /* M2 分層場景：中景、地面等背景層（暗化前畫，一起被暗化） */
+        drawArenaLayers(camX, stageId, "bg"); /* M2 分層場景：中景、地面等背景層（暗化前畫，一起被暗化） */
         ctx.fillStyle = `rgba(8, 14, 38, ${stBg.bgDim === undefined ? 0.4 : stBg.bgDim})`;
         ctx.fillRect(cx - 1400, 0, Config.baseWidth + 2800, h + 200);
         return true;
@@ -6025,10 +6030,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
          img → assets/bg/<名>.webp（透明 webp，橫向可無縫接）；par 視差（0＝不動的天空、1＝跟地面同速、>1＝前景比角色快）；
          y／h 圖在世界座標的上緣與高度（寬依原圖比例）；fg:true 畫在角色前面（前景剪影，建議 alpha 0.85～1、只放畫面下緣）；
          dim 該層再加暗（前景常用 0.15～0.3 拉開景深）。沒有 layers 的關卡畫面不變。 */
-      function drawArenaLayers(camX, stageId, fg) {
+      function arenaHasGround(stageId) { const st = Stages[stageId]; return !!(st && st.layers && st.layers.some((L) => L.ground && getBgArt(L.img).ok)); }
+      function drawArenaLayers(camX, stageId, pass) { /* pass：bg 背景層／ground 地面層（取代共用地面帶）／fg 前景層 */
         const st = Stages[stageId]; if (!st || !st.layers) return;
         for (const L of st.layers) {
-          if (!!L.fg !== fg) continue;
+          if ((L.fg ? "fg" : L.ground ? "ground" : "bg") !== pass) continue;
           const A = getBgArt(L.img); if (!A.ok) continue;
           const h = L.h || Config.baseHeight, w = h * (A.img.naturalWidth / A.img.naturalHeight);
           const par = L.par == null ? 1 : L.par, y = L.y || 0;
@@ -6691,7 +6697,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ctx.fill();
         }
 
-        if (artMode) {
+        const ownGround = artMode && arenaHasGround(Boss.stageId);
+        if (ownGround) {
+          drawArenaLayers(camX, Boss.stageId, "ground"); /* M2 該關專屬地面（分層場景） */
+        } else if (artMode) {
           const gg = ctx.createLinearGradient(0, Config.groundY, 0, Config.baseHeight + 120);
           gg.addColorStop(0, "#9aa7bf");
           gg.addColorStop(0.3, "#74829f");
@@ -6708,12 +6717,14 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ctx.fillRect(-3000, Config.groundY, Config.worldWidth + 6000, Config.baseHeight - Config.groundY + 120); /* 鏡頭拉遠時兩側也要有地面 */
         }
 
+        if (!ownGround) {
         ctx.strokeStyle = artMode ? "rgba(210, 230, 255, 0.5)" : varColor(bg);
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(-3000, Config.groundY);
         ctx.lineTo(Config.worldWidth + 3000, Config.groundY);
         ctx.stroke();
+        }
 
         ctx.font = "600 11px var(--font-serif)";
         ctx.textAlign = "center";
