@@ -140,6 +140,7 @@
         S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx";
         S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
         S3.zoneArt = { fire: ["boss3bfx", 2] }; /* 戒律鎮壓地面區域用陣紋循環 */
+        S3.layers = [{ img: "arena3_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.06 }]; /* v0.8.61 竹林石台地面帶（前景待重生） */
         const A0 = { sheet: "boss3fx", row: 0, ox: 140, oy: -150, w: 380, dur: 0.3 };
         M.slash1.fxAct = A0;
         M.exclusive_feint.fxAct = A0;
