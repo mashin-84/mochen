@@ -115,6 +115,7 @@
         drawCineTrail();
         drawBossEntity();
         drawPlayer();
+        drawHubFront();
         drawArcs();
         drawSparks();
         drawHitFx();

@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.48";
+      const ASSET_VER = "0.8.49";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -5898,6 +5898,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         drawCineTrail();
         drawBossEntity();
         drawPlayer();
+        drawHubFront();
         drawArcs();
         drawSparks();
         drawHitFx();
@@ -6409,6 +6410,15 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         dlgStart(lines, null);
       }
 
+      const HUB_GATE_S = 0.33, HUB_GATE_L = -470; /* 山門縮放與左緣（前柱中心約在 x=-170，HUB_GATE_X=-150 越過即進場） */
+      function drawHubFront() { /* 山門前柱：畫在主角前面，讓主角像是從牌坊底下穿過 */
+        if (Game.mode === "battle") return;
+        const F = getBgArt("hub_gate_front"); if (!F.ok) return;
+        const gy = Config.groundY;
+        ctx.save(); ctx.beginPath(); ctx.rect(-1280, -400, 1280, 1400); ctx.clip();
+        ctx.drawImage(F.img, HUB_GATE_L, gy - 1259 * HUB_GATE_S, 1476 * HUB_GATE_S, 1315 * HUB_GATE_S);
+        ctx.restore();
+      }
       function drawHubScene() {
         const t = performance.now() / 1000;
         const gy = Config.groundY;
@@ -6488,140 +6498,80 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         tent(-380, 0.8);
         }
 
-        // 營火
+        // 營火（v0.8.49 生圖：石圈木柴底座＋發光火焰序列 assets/fx/campfire.webp，列 0～1 火焰 8 格、列 2 火星、列 3 煙）
         const fx = -900;
         const fl = 0.3 + 0.06 * Math.sin(t * 9) + 0.03 * Math.sin(t * 23);
-        const fg = ctx.createRadialGradient(fx, gy - 30, 10, fx, gy - 30, 300);
+        const fg = ctx.createRadialGradient(fx, gy - 40, 10, fx, gy - 40, 320);
         fg.addColorStop(0, `rgba(255,150,60,${fl})`);
         fg.addColorStop(1, "rgba(255,150,60,0)");
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
         ctx.fillStyle = fg;
-        ctx.fillRect(fx - 300, gy - 330, 600, 360);
+        ctx.fillRect(fx - 320, gy - 360, 640, 400);
         ctx.restore();
-        ctx.fillStyle = "#3b2a1f";
-        ctx.save();
-        ctx.translate(fx, gy - 6);
-        ctx.rotate(0.35);
-        ctx.fillRect(-34, -5, 68, 10);
-        ctx.rotate(-0.7);
-        ctx.fillRect(-34, -5, 68, 10);
-        ctx.restore();
-        for (let k = -1; k <= 1; k++) {
-          const bx = fx + k * 15;
-          const h = 56 + 22 * Math.sin(t * 8 + k * 2) + (k === 0 ? 18 : 0);
-          const sw = 5 * Math.sin(t * 6 + k);
-          const fgr = ctx.createLinearGradient(0, gy - 10, 0, gy - 10 - h);
-          fgr.addColorStop(0, "#f97316");
-          fgr.addColorStop(0.6, "#fbbf24");
-          fgr.addColorStop(1, "rgba(254,240,138,0.85)");
-          ctx.fillStyle = fgr;
-          ctx.beginPath();
-          ctx.moveTo(bx - 13, gy - 10);
-          ctx.quadraticCurveTo(bx - 11, gy - 10 - h * 0.6, bx + sw, gy - 10 - h);
-          ctx.quadraticCurveTo(bx + 11, gy - 10 - h * 0.6, bx + 13, gy - 10);
-          ctx.closePath();
-          ctx.fill();
-        }
-        for (let i = 0; i < 10; i++) {
-          const p = (t * 0.55 + i * 0.37) % 1;
-          ctx.fillStyle = `rgba(255,200,110,${1 - p})`;
-          ctx.beginPath();
-          ctx.arc(fx + Math.sin(i * 7 + t) * 22 * p, gy - 30 - p * 150, 2, 0, Math.PI * 2);
-          ctx.fill();
+        const FB = getBgArt("hub_fire_base"), FS = fxSheet("campfire");
+        if (FB.ok) ctx.drawImage(FB.img, fx - 78, gy - 58, 156, 76);
+        if (FS.ok) {
+          const cell = FS.img.naturalWidth / 4, f = Math.floor(t * 12) % 8;
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          ctx.globalAlpha = 0.5; ctx.drawImage(FS.img, (Math.floor(t * 3) % 4) * cell, 3 * cell, cell, cell, fx - 70, gy - 300, 140, 140); /* 煙 */
+          ctx.globalAlpha = 1; ctx.drawImage(FS.img, (f % 4) * cell, (f < 4 ? 0 : 1) * cell, cell, cell, fx - 62, gy - 128, 124, 124); /* 火焰（格內火底約在 81% 高） */
+          ctx.globalAlpha = 0.9; ctx.drawImage(FS.img, (Math.floor(t * 6) % 4) * cell, 2 * cell, cell, cell, fx - 60, gy - 200, 120, 120); /* 火星 */
+          ctx.restore();
         }
 
-        // 師妹（暫代造型）
+        // 師妹（v0.8.49 生圖全身：1／2 站立呼吸循環、3 說話、4 招牌動作；圖面向右，營地裡面向左＝鏡像）
         {
           const nx = HUB_NPC_X;
-          ctx.fillStyle = "#c7d2fe";
-          ctx.beginPath();
-          ctx.moveTo(nx - 22, gy);
-          ctx.lineTo(nx - 13, gy - 76);
-          ctx.lineTo(nx + 13, gy - 76);
-          ctx.lineTo(nx + 22, gy);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = "#6366f1";
-          ctx.fillRect(nx - 14, gy - 52, 28, 6);
-          ctx.fillStyle = "#f5d9c4";
-          ctx.beginPath();
-          ctx.arc(nx, gy - 90, 13, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#1f1b2e";
-          ctx.beginPath();
-          ctx.arc(nx, gy - 94, 14, Math.PI, Math.PI * 2);
-          ctx.fill();
-          ctx.fillRect(nx - 14, gy - 94, 6, 26);
-          const oy = gy - 108 + Math.sin(t * 2) * 5;
-          const og = ctx.createRadialGradient(nx + 38, oy, 2, nx + 38, oy, 18);
+          const talking = DLG.active && Game.mode === "hub";
+          const cyc = t % 8;
+          const pose = talking ? 3 : cyc > 6.4 ? 4 : (Math.floor(t / 0.9) % 2) + 1;
+          const SI = getBgArt("hub_shimei_" + pose);
+          if (SI.ok) {
+            const k = 0.346, w = 400 * k, h = 700 * k;
+            ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.28)"; ctx.beginPath(); ctx.ellipse(nx, gy + 2, 44, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            ctx.save(); ctx.translate(nx, gy - 695 * k + h / 2 + 2); ctx.scale(-1, 1); ctx.drawImage(SI.img, -w / 2, -h / 2, w, h); ctx.restore();
+          }
+          const oy = gy - 205 + Math.sin(t * 2) * 6;
+          const og = ctx.createRadialGradient(nx + 46, oy, 2, nx + 46, oy, 18);
           og.addColorStop(0, "rgba(219,234,254,1)");
           og.addColorStop(1, "rgba(96,165,250,0)");
           ctx.fillStyle = og;
           ctx.beginPath();
-          ctx.arc(nx + 38, oy, 18, 0, Math.PI * 2);
+          ctx.arc(nx + 46, oy, 18, 0, Math.PI * 2);
           ctx.fill();
-          ctx.font = "700 15px 'Noto Serif TC', serif";
-          ctx.textAlign = "center";
-          ctx.fillStyle = "#c7d2fe";
-          ctx.fillText("師妹", nx, gy - 120);
-          if (Game.hubNpcNear) {
-            ctx.fillStyle = "rgba(10,15,26,0.88)";
-            ctx.fillRect(nx - 52, gy - 160, 104, 24);
-            ctx.strokeStyle = "rgba(250,204,21,0.7)";
-            ctx.strokeRect(nx - 52, gy - 160, 104, 24);
-            ctx.fillStyle = "#fde68a";
-            ctx.font = "700 13px 'Noto Serif TC', serif";
-            ctx.fillText("攻擊鍵・交談", nx, gy - 143);
+          if (Game.hubNpcNear && !talking) {
+            ctx.font = "700 15px 'Noto Serif TC', serif";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "rgba(226,232,255,0.9)";
+            ctx.fillText("師妹", nx, gy - 252);
           }
         }
 
-        // 山門
+        // 山門（v0.8.49 生圖：斜側面牌坊，前柱另畫在角色前面＝drawHubFront；門洞有結界光幕，走近才散開）
         {
-          const gx = HUB_GATE_X;
-          const st = Stages[Game.hubStage];
-          const pg = ctx.createLinearGradient(0, gy - 250, 0, gy);
-          pg.addColorStop(0, "rgba(255,90,60,0)");
-          pg.addColorStop(1, `rgba(255,90,60,${0.4 + 0.08 * Math.sin(t * 3)})`);
-          if (Game.gateClosed) {
-            ctx.fillStyle = "#1b0f0f";
-            ctx.fillRect(gx - 76, gy - 250, 152, 250);
-            ctx.fillStyle = "#d4a64a";
-            for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) ctx.fillRect(gx - 60 + c * 36, gy - 220 + r * 52, 6, 6);
-          } else {
-            ctx.fillStyle = "#0a0608";
-            ctx.fillRect(gx - 76, gy - 250, 152, 250);
-            ctx.fillStyle = pg;
-            ctx.fillRect(gx - 76, gy - 250, 152, 250);
+          const G = getBgArt("hub_gate");
+          if (G.ok) ctx.drawImage(G.img, HUB_GATE_L, gy - 1259 * HUB_GATE_S, 1476 * HUB_GATE_S, 1315 * HUB_GATE_S);
+          const cx0 = HUB_GATE_L + 409 * HUB_GATE_S, cx1 = HUB_GATE_L + 911 * HUB_GATE_S;
+          const dist = cx0 - Player.x;
+          const open = Math.max(0, Math.min(1, 1 - (dist - 40) / 260));
+          if (open > 0.85 && !Game._gateChimed) { Game._gateChimed = true; Sound.play("assist", 0.6, 1.25); }
+          if (open < 0.3) Game._gateChimed = false;
+          const a = (1 - open) * (0.5 + 0.08 * Math.sin(t * 2.2));
+          if (a > 0.01) {
+            ctx.save(); ctx.globalCompositeOperation = "lighter";
+            const top = gy - 205, wd = cx1 - cx0;
+            const cg = ctx.createLinearGradient(cx0, 0, cx1, 0);
+            cg.addColorStop(0, "rgba(160,230,220,0)"); cg.addColorStop(0.5, `rgba(170,235,225,${a * 0.55})`); cg.addColorStop(1, "rgba(160,230,220,0)");
+            ctx.fillStyle = cg; ctx.fillRect(cx0, top, wd, gy - top);
+            for (let i = 0; i < 7; i++) { /* 光幕上緩慢流動的細光絲 */
+              const xx = cx0 + wd * ((i * 0.137 + t * 0.05) % 1), ph = (t * 0.6 + i * 0.31) % 1;
+              ctx.fillStyle = `rgba(220,255,245,${a * 0.6 * Math.sin(ph * Math.PI)})`;
+              ctx.fillRect(xx, top + (gy - top) * (1 - ph) * 0.8, 2, 40);
+            }
+            ctx.restore();
           }
-          for (const px of [gx - 98, gx + 76]) {
-            ctx.fillStyle = "#7a1b1b";
-            ctx.fillRect(px, gy - 262, 22, 262);
-            ctx.fillStyle = "#b3382c";
-            ctx.fillRect(px + 3, gy - 262, 5, 262);
-            ctx.fillStyle = "#2a2f3a";
-            ctx.fillRect(px - 6, gy - 14, 34, 14);
-          }
-          ctx.fillStyle = "#8b2323";
-          ctx.fillRect(gx - 116, gy - 288, 232, 26);
-          ctx.fillStyle = "#3a1414";
-          ctx.beginPath();
-          ctx.moveTo(gx - 140, gy - 288);
-          ctx.lineTo(gx + 140, gy - 288);
-          ctx.lineTo(gx + 112, gy - 322);
-          ctx.lineTo(gx - 112, gy - 322);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = "#d4a64a";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-          ctx.textAlign = "center"; /* v0.8.48 山門上的字（第 N 難、Boss 名、境界）拿掉，畫面減法 */
-          if (!Game.gateClosed && Player.x > gx - 560) {
-            const ap = 0.55 + 0.45 * Math.sin(t * 5);
-            ctx.fillStyle = `rgba(253,230,138,${ap})`;
-            ctx.font = "900 20px 'Noto Serif TC', serif";
-            ctx.fillText("向右進入 ▶", gx - 190, gy - 30);
-          }
+          /* 地上「向右進入」提示拿掉（上方教學橫幅已有，畫面減法） */
         }
         ctx.restore();
       }
