@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.42（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.43（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -420,3 +420,8 @@
 - `FEEL = {hit, heavy, block, parry}`：每項 `stop` 定格毫秒（-1＝依 `Config.parryHitstopFrames`）、`shake` 震屏（舊 amp 刻度）、`buzz` 手機震動、`flash`／`flashP` Boss／主角閃白（60Hz 幀）；`feel(name, dir)` 一次觸發。`FEEL_K = {stop, shake, buzz}` 全域倍率。
 - 已搬：普攻命中／重擊／被格擋（`bossHitFx`）、完美招架（`doPerfectDeflect`）。數字與 v0.8.41 相同，手感不變。其餘事件（受擊、危招閃避、處決、落地）之後逐步搬。
 - 閃白改以秒計（`flashFrames -= dt*60`），120Hz 手機閃白長度與 60Hz 相同。
+
+**v0.8.43 M2 分層場景引擎（`src/60_render.js` 的 `drawArenaLayers`）**
+- `Stages[n].layers = [{img, par, y, h, fg, alpha, dim}]`：`img`＝`assets/bg/<名>.webp`（透明 webp、橫向重複鋪滿）；`par` 視差（0 天空不動、1 與地面同速、>1 前景比角色快）；`y`／`h` 世界座標上緣與高度；`fg:true` 畫在角色前（`drawLeaves` 之後）；`dim` 該層加暗（brightness）。背景層畫在 `bgDim` 暗化之前。
+- 目前沒有任何關卡設 layers，畫面不變；已用暫代圖測過前景層可正常鋪滿、加暗、無錯誤。
+- 待素材：第 1 關「崖頂地面帶」與「前景剪影」（提示詞已給使用者），到位後地面帶取代各關共用淺色地面。
