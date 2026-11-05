@@ -6568,17 +6568,22 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         // 山門（v0.8.49 生圖：斜側面牌坊，前柱另畫在角色前面＝drawHubFront；門洞有結界光幕，走近才散開）
         {
           const G = getBgArt("hub_gate");
-          if (G.ok) { /* 山門影子：四根柱子各自從自己的柱腳底往遠離營火的一側沿地面平躺（柱腳前後深度不同，各用各的地面高度） */
-            const S = HUB_GATE_S, oy = gy - 1259 * S;
-            for (const [cx, by, bw, h] of [[296 - 111, 1218 - 41, 117, 1060], [519 - 111, 1255 - 41, 140, 1070], [1368 - 111, 1292 - 41, 160, 900], [1021 - 111, 1345 - 41, 172, 1080]]) {
-              const x0 = HUB_GATE_L + cx * S, y0 = oy + by * S, L = hubLight(x0), H = h * S;
-              const tx = x0 - (-L.skew) * H, ty = y0 + L.len * H; /* 與 hubShadow 同一投影：圖往上 → 影子往遠離火 */
-              const w0 = bw * S * 0.5, t0 = bw * S * 0.2, t1 = t0 * 0.5; /* 影帶厚度＝柱腳在地面上的深度 */
-              const sx0 = x0 + Math.sign(tx - x0) * w0 * 0.6;
-              const g2 = ctx.createLinearGradient(sx0, y0, tx, ty);
-              g2.addColorStop(0, `rgba(5,3,8,${L.a * 0.9})`); g2.addColorStop(0.55, `rgba(5,3,8,${L.a * 0.4})`); g2.addColorStop(1, "rgba(5,3,8,0)");
-              ctx.save(); ctx.fillStyle = g2; ctx.beginPath();
-              ctx.moveTo(sx0, y0 - t0); ctx.lineTo(tx, ty - t1); ctx.lineTo(tx, ty + t1); ctx.lineTo(sx0, y0 + t0 * 0.6); ctx.closePath(); ctx.fill(); ctx.restore();
+          if (G.ok) { /* 山門影子：把四根柱子（含柱腳）各自切成剪影，以「自己柱腳的最底一列」為軸往遠離營火的一側沿地面平躺 → 影子一定貼著柱腳 */
+            if (!Game._gateSh) {
+              Game._gateSh = [[63, 122, 588], [167, 240, 609], [411, 498, 655], [584, 673, 624]].map(([x0, x1, yb]) => {
+                const y0 = 330, c = document.createElement("canvas"); c.width = x1 - x0; c.height = yb - y0 + 1;
+                const g = c.getContext("2d"); g.drawImage(G.img, x0, y0, c.width, c.height, 0, 0, c.width, c.height);
+                g.globalCompositeOperation = "source-in"; g.fillStyle = "#050308"; g.fillRect(0, 0, c.width, c.height);
+                return { c, x0, x1, yb };
+              });
+            }
+            const k = HUB_GATE_S * 2;
+            for (const P of Game._gateSh) {
+              const xm = (P.x0 + P.x1) / 2, wx = HUB_GATE_L + xm * k, wy = gy - (1259 / 2 - P.yb) * k, L = hubLight(wx);
+              ctx.save(); ctx.globalAlpha = L.a;
+              ctx.transform(k, 0, -k * L.skew * 0.75, k * 0.32 * hubFlick(), wx, wy); /* 山門在營火後方（較深）：影子往右後方（畫面右上）落在草地上 */
+              ctx.drawImage(P.c, -(xm - P.x0), -(P.c.height - 1));
+              ctx.restore();
             }
           }
           if (G.ok) ctx.drawImage(G.img, HUB_GATE_L, gy - 1259 * HUB_GATE_S, 1476 * HUB_GATE_S, 1315 * HUB_GATE_S);
