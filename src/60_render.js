@@ -98,7 +98,7 @@
 
         if (Game.darkVignetteAlpha > 0) {
           ctx.fillStyle = `rgba(3, 7, 18, ${Game.darkVignetteAlpha * 0.82})`;
-          ctx.fillRect(cam.x - 100, 0, Config.baseWidth + 200, Config.baseHeight);
+          ctx.fillRect(-3000, -3000, Config.worldWidth + 6000, 7000); /* v0.8.47 修正：寬螢幕手機與鏡頭拉遠時，處決暗場要蓋滿整個畫面 */
         }
 
         drawTelegraphs();

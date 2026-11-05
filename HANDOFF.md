@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.46（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.47（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -440,3 +440,6 @@
 - 使用者生兩張 4×3 姿勢表，主要用第二張（無地面線），橫掃起手 `30_swp_wind` 取第一張（武器在身後較好認）。切圖縮放 1.0、900×600、腳底 y=560、雙腳中心 x=450（`/tmp` 腳本 cutb.py：去背→分列→每列 3 組；細長地面線元件自動排除）。
 - `assets/boss1/24_chop_wind／25_chop_hit／26_chop_rec`（破軍 `slash1`）、`27_thr_wind／28_thr_hit／29_thr_rec`（【危】貫日長槍刺 `thrust_peril`）、`30_swp_wind／31_swp_hit／32_swp_rec`（【危】八荒斷岳掃 `sweep_peril`）、`33_leap_crouch／34_leap_air／35_leap_land`（【危】神衛躍斬 `leap_slam`）；各招 `frames {windup, active, recover}`，`Stages[1].spriteExtras` 已加。
 - 待做：第 2、3 關 Boss 同樣補 3～4 招（數值實測時一起）；新 Boss（4、6、7、8）美術規格一開始就含招式關鍵格。
+
+**v0.8.47 修正處決暗場只蓋中間一塊**：`render` 的 `darkVignetteAlpha` 原本只畫 `cam.x-100` 起 1480×720 的世界座標矩形，寬螢幕手機（比 16:9 寬）與鏡頭拉遠時兩側露出未變暗的畫面，看起來像一塊半透明黑底；改成蓋滿（同 `ultDim`）。
+**使用者決定**：處決書法「一劍青雲」的「剑」字不改（從 M2 待辦移除）。
