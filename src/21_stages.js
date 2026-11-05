@@ -61,6 +61,17 @@
         if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
         M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
         S2.fxSheets = ["air", "slash", "spark"];
+        /* v0.8.56 五招三拍關鍵格（生圖 3×5，縮放 1.06、腳底 y=560、x=450）＋分層場景（迷蹤陣台地面帶＋前景石欄松枝） */
+        M.slash1.frames = { windup: "20_fan_wind", active: "21_fan_hit", recover: "22_fan_rec" };
+        M.thrust_peril.frames = { windup: "23_thr_wind", active: "24_thr_hit", recover: "25_thr_rec" };
+        M.sweep_peril.frames = { windup: "26_swp_wind", active: "27_swp_hit", recover: "28_swp_rec" };
+        [M.flyswords, M.sky_swords].forEach(m => { if (m) m.frames = { windup: "29_cast_wind", active: "30_cast_hit", recover: "31_cast_rec" }; });
+        [M.exclusive_teleport, M.teleport_combo].forEach(m => { if (m) m.frames = { windup: "32_tp_wind", active: "33_tp_hit", recover: "34_tp_rec" }; });
+        S2.spriteExtras = ["20_fan_wind", "21_fan_hit", "22_fan_rec", "23_thr_wind", "24_thr_hit", "25_thr_rec", "26_swp_wind", "27_swp_hit", "28_swp_rec", "29_cast_wind", "30_cast_hit", "31_cast_rec", "32_tp_wind", "33_tp_hit", "34_tp_rec"];
+        S2.layers = [
+          { img: "arena2_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.08 },
+          { img: "arena2_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.15 }
+        ];
       }
       Stages[2].farMoves = ["flyswords"];
       Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
