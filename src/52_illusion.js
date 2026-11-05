@@ -91,7 +91,7 @@
             setTimeout(() => {
               if (il.dead || Boss.hp <= 0) return;
               const dir = Player.x >= il.x ? 1 : -1;
-              Game.flyingSwords.push({ x: il.x + dir * 30, y: Boss.y - 55 + (i - 0.5) * 22, vx: dir * ((move.bulletSpeed || 750) * 0.9), vy: 0, dir, damage: Math.round((move.damage || 90) * ILLU.dmgK), reflected: false, life: 2.5, color: "#a5f3fc", trajectory: "linear", kind: null });
+              Game.flyingSwords.push({ x: il.x + dir * 30, y: move.bulletY ? Boss.y + move.bulletY[(i * 2) % move.bulletY.length] : Boss.y - 55 + (i - 0.5) * 22, vx: dir * ((move.bulletSpeed || 750) * 0.9), vy: 0, dir, damage: Math.round((move.damage || 90) * ILLU.dmgK), reflected: false, life: 2.5, color: "#a5f3fc", trajectory: "linear", kind: null });
             }, 120 + i * 220);
           }
         }

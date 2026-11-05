@@ -251,7 +251,20 @@
       }
 
           function drawFlyingSwords() {
+            const fsa = Stages[Boss.stageId] && Stages[Boss.stageId].flySwordArt; /* v0.8.65 飛劍改畫生圖：{sheet, row, frames, fps, w, tip} */
+            const fsImg = fsa && fxReady(fsa.sheet) ? fxSheet(fsa.sheet).img : null;
             for (const sw of Game.flyingSwords) {
+              if (fsImg && !sw.kind) {
+                const fr = fsa.frames || [1, 2], f = fr[Math.floor(performance.now() / 1000 * (fsa.fps || 12)) % fr.length], w = fsa.w || 150;
+                ctx.save();
+                ctx.translate(sw.x, sw.y);
+                ctx.rotate(Math.atan2(sw.vy, sw.vx));
+                ctx.globalCompositeOperation = "lighter";
+                if (sw.reflected) ctx.filter = "sepia(1) saturate(3) hue-rotate(-12deg) brightness(1.15)"; /* 折射後轉金色 */
+                ctx.drawImage(fsImg, f * 256, (fsa.row || 0) * 256, 256, 256, -w * (fsa.tip || 0.95), -w / 2, w, w);
+                ctx.restore();
+                continue;
+              }
               ctx.save();
               ctx.translate(sw.x, sw.y);
               if (sw.dir < 0) ctx.scale(-1, 1);

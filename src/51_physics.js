@@ -98,7 +98,8 @@
         if (Player.state === "attack" || Player.state === "parry" || Player.state === "dash" || Player.state === "drink" || Player.state === "hitstun" || Player.state === "execution") {
           Player.stateTimer -= dt;
 
-          if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02) {
+          if (Boss.hp <= 0) { /* v0.8.65 Boss 已倒下：出刀不再判定（原本會把血量夾回 1） */
+          } else if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02) {
             airAttackHit();
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && illusionTryHit(false)) {
             Player.attackHitRegistered = true; /* v0.8.55 打到幻影 */
@@ -359,13 +360,14 @@
             sw.vy += 800 * dt;
             if (sw.y >= Config.groundY) sw.life = 0;
           }
+          if (sw.trajectory === "vertical" && sw.y >= Config.groundY - 10) sw.life = 0; /* v0.8.65 垂落飛劍插到地面就碎（原本會穿進地下） */
           sw.x += sw.vx * dt;
           sw.y += sw.vy * dt;
           sw.life -= dt;
 
           if (!sw.reflected) {
             const d = Math.abs(sw.x - Player.x);
-            if (d < 42 && Math.abs(sw.y - (Player.y - 45)) < 45) {
+            if (d < 42 && sw.y > Player.y - Player.h * 2.05 && sw.y < Player.y + 6) { /* v0.8.65 判定改為圖上整個身體（約腳底上 230；原 -90～0 只到大腿，飛劍拉高後胸口也要能中） */
               if (Player.state === "parry") {
                 sw.reflected = true;
                 sw.vx = -sw.dir * 950;
@@ -406,7 +408,7 @@
             }
           } else {
             const d = Math.abs(sw.x - Boss.x);
-            if (d < 45 && Math.abs(sw.y - (Boss.y - 50)) < 55) {
+            if (Boss.hp > 0 && d < 45 && sw.y > Boss.y - Boss.h * 1.6 && sw.y < Boss.y + 6) { /* Boss 已倒下就不再被折射飛劍打回 1 血 */ /* v0.8.65 折射回去也照圖上身高判定（原 -105～5） */
               Boss.hp = Math.max(1, Boss.hp - 110);
               Boss.flashFrames = 3;
               damageBossPosture(14, "折射命中！架勢 +14%");

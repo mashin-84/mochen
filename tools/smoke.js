@@ -44,7 +44,7 @@ const server = http.createServer((req, res) => {
   const keys = ['KeyA', 'KeyD', 'KeyJ', 'KeyK', 'KeyL', 'Space'];
   for (const sid of stages) {
     const e0 = errs.length;
-    await page.evaluate((sid) => { __PR.unlockedStages = 9; __L(sid); }, sid);
+    await page.evaluate((sid) => { const sm = document.getElementById('settlement-modal'); if (sm) sm.classList.remove('open'); __G.cutsceneActive = false; __PR.unlockedStages = 9; __L(sid); }, sid);
     const stat = { moves: new Set(), nan: 0, bossStuck: 0, playerStuck: 0, modes: new Set(), minHp: Infinity, lastBoss: '', bossSince: 0, lastP: '', pSince: 0 };
     const t0 = Date.now();
     let held = null;
@@ -53,15 +53,16 @@ const server = http.createServer((req, res) => {
         const sk = document.querySelector('#dlg-skip');
         if (sk && sk.offsetParent) sk.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         if (__G.cine) __G.cine.t = 999;
-        return { mode: __G.mode, bs: __B.state, mv: __B.moveType, bx: __B.x, by: __B.y, hp: __B.hp, px: __P.x, py: __P.y, php: __P.hp, ps: __P.state, dlg: __DLG.active };
+        return { won: /\bopen\b/.test((document.getElementById('settlement-modal') || {}).className || ''), aer: !!((__S[__B.stageId].moves || {})[__B.moveType] || {}).isAerial, mode: __G.mode, bs: __B.state, mv: __B.moveType, bx: __B.x, by: __B.y, hp: __B.hp, px: __P.x, py: __P.y, php: __P.hp, ps: __P.state, dlg: __DLG.active };
       });
       const now = Date.now();
+      if (s.won) { stat.won = true; break; } /* v0.8.65 打贏（結算畫面已開）就結束本關；原本會把結算時主角不動誤報成「主角卡住」 */
       stat.modes.add(s.mode);
       if ([s.bx, s.by, s.hp, s.px, s.py, s.php].some(v => typeof v === 'number' && Number.isNaN(v))) stat.nan++;
       if (s.mode === 'battle' && !s.dlg) {
         if (s.mv) stat.moves.add(s.mv);
         if (typeof s.hp === 'number') stat.minHp = Math.min(stat.minHp, s.hp);
-        if (s.bs !== stat.lastBoss) { stat.lastBoss = s.bs; stat.bossSince = now; } else if (now - stat.bossSince > 9000 && s.bs !== 'idle' && s.bs !== 'chase') stat.bossStuck++;
+        if (s.bs !== stat.lastBoss) { stat.lastBoss = s.bs; stat.bossSince = now; } else if (now - stat.bossSince > (s.aer ? 13000 : 9000) && s.bs !== 'idle' && s.bs !== 'chase') stat.bossStuck++;
         const pBusy = s.ps && s.ps !== 'idle' && s.ps !== 'move';
         if (s.ps !== stat.lastP) { stat.lastP = s.ps; stat.pSince = now; } else if (pBusy && now - stat.pSince > 6000) stat.playerStuck++;
       }
@@ -82,7 +83,7 @@ const server = http.createServer((req, res) => {
     if (!stat.modes.has('battle')) probs.push('沒有進入戰鬥');
     else if (stat.moves.size < 2) probs.push(`招式只出現 ${stat.moves.size} 種`);
     if (probs.length) failed++;
-    console.log(`${probs.length ? 'FAIL' : 'ok  '} 第 ${sid} 關｜招式 ${stat.moves.size} 種｜Boss 最低血量 ${stat.minHp === Infinity ? '-' : Math.round(stat.minHp)}${probs.length ? '｜' + probs.join('；') : ''}`);
+    console.log(`${probs.length ? 'FAIL' : 'ok  '} 第 ${sid} 關${stat.won ? '（擊敗）' : ''}｜招式 ${stat.moves.size} 種｜Boss 最低血量 ${stat.minHp === Infinity ? '-' : Math.round(stat.minHp)}${probs.length ? '｜' + probs.join('；') : ''}`);
   }
   await b.close(); server.close();
   console.log(failed ? `SMOKE FAIL ${failed} 關` : `SMOKE OK ${stages.length} 關，截圖在 ${outDir}/`);

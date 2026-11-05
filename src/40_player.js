@@ -23,13 +23,16 @@
         else if (act === "gourd") doDrinkGourd();
       }
 
+      /* v0.8.65 戰鬥中的過場（對白、擊敗後演出、結算、敗北）物理已暫停，按鍵不再改主角狀態（原本會卡在跳躍／攻擊姿勢浮在空中） */
+      function inputLocked() { return Game.mode === "battle" && Game.cutsceneActive; }
+
       function startAttackCharge() {
         Sound.resume();
         if (Game.mode === "hub") {
           if (Game.hubNpcNear) hubTalk();
           return;
         }
-        if (Game.mode === "enter") return;
+        if (Game.mode === "enter" || inputLocked()) return;
         if (Player.state === "execution" || Player.state === "hitstun") {
           bufferAction("attack");
           return;
@@ -270,6 +273,7 @@
 
       function doParry() {
         Sound.resume();
+        if (inputLocked()) return;
         Mirror.noteParry(); Reader.note("parry");
         if (Player.state === "execution") return;
         if (Player.state === "hitstun") {
@@ -297,6 +301,7 @@
 
       function doDash() {
         Sound.resume();
+        if (inputLocked()) return;
         Mirror.noteDash(); Reader.note("dash");
         if (Player.state === "execution") return;
 
@@ -395,6 +400,7 @@
 
       function doJump() {
         Sound.resume();
+        if (inputLocked()) return;
         if (Player.state === "execution" || Player.state === "hitstun") {
           bufferAction("jump");
           return;
@@ -428,6 +434,7 @@
 
       function doDrinkGourd() {
         Sound.resume();
+        if (inputLocked()) return;
         if (Player.state === "execution" || Player.state === "hitstun") return;
         if (Player.gourds <= 0) {
           spawnFloatingText(Player.x, Player.y - 110, "青雲仙釀已空！", "#94a3b8", 1.0);
@@ -709,6 +716,7 @@
 
       function activateAssist() {
         Sound.resume();
+        if (inputLocked()) return;
         if (!Player.assistAvailable) {
           spawnFloatingText(Player.x, Player.y - 105, "太初玄天珠靈氣枯竭", "#94a3b8", 0.95);
           return;
@@ -975,7 +983,7 @@
             if (Boss.hp <= 0) return;
             const dir = Boss.facing;
             let sx = Boss.x + dir * 30;
-            let sy = Boss.y - 55 + (i - 1) * 22;
+            let sy = (m && m.bulletY) ? Boss.y + m.bulletY[i % m.bulletY.length] : Boss.y - 55 + (i - 1) * 22; /* v0.8.65 bulletY：每把飛劍相對腳底的高度 */
             let svx = dir * speed;
             let svy = 0;
 

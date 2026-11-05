@@ -61,6 +61,8 @@
         if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
         M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
         S2.fxSheets = ["boss2fx", "spark"]; S2.arcArt = "boss2fx"; /* v0.8.57 專屬特效圖（4×4 黑底：0 扇刃、1 指劍突刺、2 八卦旋風、3 鏡碎）；有圖就不畫程式橘色刀弧 */
+        S2.flySwordArt = { sheet: "boss2fx", row: 1, frames: [1, 2], fps: 12, w: 150, tip: 0.95 }; /* v0.8.65 飛劍暫借本關列 1 指劍突刺光（等專屬飛劍圖） */
+        M.flyswords.bulletY = [-200, -165, -130]; /* v0.8.65 三把飛劍拉高到肩～腰（主角圖約高 240；原 -77／-55／-33＝膝到大腿） */
         S2.introBg = "intro2"; S2.introName = "assets/boss2/name.webp";
         /* v0.8.58 開場影片（Gemini 原片 10 秒，剪到鏡片旋風蓋滿畫面的 7.0 秒）：剪影顧天風揮扇分身 → 全數碎成鏡片 → 旋風撲向鏡頭；之後戰場淡入、鏡片在原位聚合現身（introAppear＝用哪張特效圖） */
         S2.introCine = true; S2.introVideo = "assets/boss2/intro"; S2.introDash = true; S2.introAppear = "boss2fx"; S2.introA = 7.0; S2.introFlash = "200,236,222";
