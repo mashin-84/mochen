@@ -126,7 +126,7 @@
                 const ox = (i / Math.max(1, AP.rain - 1) - 0.5) * 420, dl = (i % 2 ? 0.12 : 0) + Math.abs(ox) / 2400;
                 setTimeout(() => spawnFx(st2.introAppear, 3, c.bx + ox, gy - 70 - (i % 2) * 14, { w: 190, dur: 0.75, facing: ox < 0 ? -1 : 1 }), dl * 1000);
               }
-              Sound.play("assist", 0.7, 0.8);
+              if (!bsfx("introSwirl")) Sound.play("assist", 0.7, 0.8);
             }
             if (AP.sparks && t >= CINE.A && Math.random() < dt * 30) spawnSparks(c.bx + (Math.random() - 0.5) * 260, gy - 40 - Math.random() * 200, AP.sparks, Math.random() < 0.5 ? -1 : 1);
           } else {
@@ -135,7 +135,7 @@
               c.landed = true; Boss.flashFrames = 5;
               if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, AP.land[0], c.bx, gy + AP.land[2], { w: AP.land[1], h: AP.land[3] || AP.land[1], dur: 0.5 });
               addTrauma(0.35); hapticBuzz(25);
-              Sound.play("mikiri", 0.8, 1.2); Sound.play("parry", 0.5, 1.6);
+              if (!bsfx("introLand")) { Sound.play("mikiri", 0.8, 1.2); Sound.play("parry", 0.5, 1.6); }
               bossNameCard(st2);
             }
             Boss._cineImg = (t < CINE.LAND + 0.45) ? AP.frames[0] : (t < CINE.LAND + 1.2) ? AP.frames[1] : null;

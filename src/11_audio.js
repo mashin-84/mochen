@@ -12,6 +12,8 @@
         live: {}, variants: {}, ext: {},
         /* M1 通用音效換檔：檔案放 assets/sfx/g_<名>.mp3（變體 g_<名>_2.mp3、g_<名>_3.mp3…），在這裡登記「名: 變體數」才會載入；
            載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
+        /* v0.8.67 Boss 專屬音效（ElevenLabs 生成）：assets/sfx/<名>.mp3（變體 <名>_2.mp3），「名: 變體數」；各關在 Stages[n].sfx 指定事件用哪個（見 bsfx） */
+        bossSfx: { b2_fan: 2, b2_thrust: 2, b2_vortex: 1, b2_sword_cast: 2, b2_sword_fly: 2, b2_sword_rain: 2, b2_vanish: 2, b2_appear: 2, b2_split: 2, b2_shatter: 2, b2_shard_hit: 1 },
         genSfx: { parry: 1, block: 1, slash: 1, flysword: 1, peril: 1, mikiri: 1, execution: 1, gourd: 1, assist: 1, victory: 1, hit: 1 }, /* v0.8.41 通用 11 個全部接入 */
 
         init() {
@@ -142,13 +144,14 @@
            檔案放 assets/sfx/<名>.mp3，載入成功才有聲；沒有檔案的招式維持原本的揮劍音。w_*＝小狼，m_*＝大狼（怪物）。 */
         extSfx: ["w_snarl", "w_bark", "w_snap", "w_claw", "w_howl", "w_yelp", "m_growl", "m_roar", "m_bite", "m_swipe", "m_stomp", "m_howl"],
         loadGeneric() {
-          Object.keys(this.genSfx).forEach((k) => {
-            const n = this.genSfx[k] || 1;
+          const sets = [[this.genSfx, "g_"], [this.bossSfx, ""]];
+          sets.forEach(([dict, pre]) => Object.keys(dict).forEach((k) => {
+            const n = dict[k] || 1;
             for (let i = 1; i <= n; i++) {
-              const f = i === 1 ? `g_${k}` : `g_${k}_${i}`;
+              const f = i === 1 ? `${pre}${k}` : `${pre}${k}_${i}`;
               try { fetch(`assets/sfx/${f}.mp3?v=${ASSET_VER}`).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { (this.variants[k] = this.variants[k] || []).push(buf); this.buffers[k] = this.variants[k][0]; this.ext[k] = true; }).catch(() => { }); } catch (e) { }
             }
-          });
+          }));
         },
         bakeWolf() {
           this.extSfx.forEach((k) => {
@@ -185,6 +188,15 @@
         }
       };
 
+
+      /* v0.8.67 關卡事件音效：Stages[目前關].sfx[事件] = [檔名, 音量, 音高]；有設定且已載入就播並回傳 true，否則回傳 false（呼叫端播原本的通用音效）。
+         事件：tpOut 瞬移消失、tpIn 瞬移現身、split 分身、ilBreak 幻影碎裂、ilShard 鏡片反噬、swordFly 每把飛劍、swordRain 垂落飛劍、introSwirl／introLand 登場聚合與現形 */
+      function bsfx(key) {
+        const st = typeof Stages !== "undefined" && Stages[Boss.stageId], e = st && st.sfx && st.sfx[key];
+        if (!e || !Sound.buffers[e[0]]) return false;
+        Sound.play(e[0], e[1] == null ? 0.9 : e[1], e[2] || 1);
+        return true;
+      }
 
       /* =========================================================================
        * v0.8.9 背景音樂（取自一念飛仙倉庫 music/）：淡入淡出、可調音量、隨靜音鍵

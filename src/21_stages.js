@@ -66,7 +66,10 @@
         S2.introBg = "intro2"; S2.introName = "assets/boss2/name.webp";
         /* v0.8.58 開場影片（Gemini 原片 10 秒，剪到鏡片旋風蓋滿畫面的 7.0 秒）：剪影顧天風揮扇分身 → 全數碎成鏡片 → 旋風撲向鏡頭；之後戰場淡入、鏡片在原位聚合現身（introAppear＝用哪張特效圖） */
         S2.introCine = true; S2.introVideo = "assets/boss2/intro"; S2.introDash = true; S2.introAppear = "boss2fx"; S2.introA = 7.0; S2.introFlash = "200,236,222";
-        S2.introSfx = [[2.2, "slash", 0.4, 1.4], [3.2, "assist", 0.6, 1.0], [4.6, "parry", 0.6, 1.5], [5.0, "mikiri", 0.8, 1.1], [5.8, "flysword", 0.6, 0.8]];
+        S2.introSfx = [[2.2, "b2_fan", 0.6, 1], [3.2, "b2_split", 0.75, 1], [4.6, "b2_shatter", 0.7, 1], [5.8, "b2_vortex", 0.7, 1]]; /* v0.8.67 改用專屬音效 */
+        /* v0.8.67 Boss 專屬音效（ElevenLabs）：招式 sfx {w 前搖, a 出招}；其他事件見 bsfx */
+        S2.sfx = { tpOut: ["b2_vanish", 0.85], tpIn: ["b2_appear", 0.9], split: ["b2_split", 0.9], ilBreak: ["b2_shatter", 0.8], ilShard: ["b2_shard_hit", 0.85], swordFly: ["b2_sword_fly", 0.55], swordRain: ["b2_sword_rain", 0.85], introSwirl: ["b2_vortex", 0.8], introLand: ["b2_shatter", 0.85] };
+        [["slash1", { a: "b2_fan" }], ["thrust_peril", { a: "b2_thrust" }], ["sweep_peril", { a: "b2_vortex" }], ["flyswords", { w: "b2_sword_cast" }], ["sky_swords", { w: "b2_sword_cast" }]].forEach(([k, s]) => { if (M[k]) M[k].sfx = s; });
         /* v0.8.56 五招三拍關鍵格（生圖 3×5，縮放 1.06、腳底 y=560、x=450）＋分層場景（迷蹤陣台地面帶＋前景石欄松枝） */
         M.slash1.frames = { windup: "20_fan_wind", active: "21_fan_hit", recover: "22_fan_rec" };
         M.thrust_peril.frames = { windup: "23_thr_wind", active: "24_thr_hit", recover: "25_thr_rec" };

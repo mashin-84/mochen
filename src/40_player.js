@@ -977,7 +977,8 @@
         const traj = (m && m.bulletTrajectory) || "linear";
         const bColor = (m && m.bulletColor) || "#38bdf8";
 
-        Sound.play("flysword", 0.8, 1.1);
+        const rainSfx = traj === "vertical" && bsfx("swordRain"); /* v0.8.67 垂落飛劍整串一個音；直線飛劍每把各一個 */
+        if (!rainSfx && !(traj !== "vertical" && Stages[Boss.stageId].sfx && Stages[Boss.stageId].sfx.swordFly)) Sound.play("flysword", 0.8, 1.1);
         for (let i = 0; i < count; i++) {
           setTimeout(() => {
             if (Boss.hp <= 0) return;
@@ -1012,7 +1013,7 @@
               trajectory: traj,
               kind: (m && m.bulletKind) || null
             });
-            Sound.play("flysword", 0.7, 0.95 + i * 0.1);
+            if (!rainSfx && !(traj !== "vertical" && bsfx("swordFly"))) Sound.play("flysword", 0.7, 0.95 + i * 0.1);
           }, i * 200);
         }
       }

@@ -395,13 +395,14 @@
               if (move.tpFx) { /* v0.8.55 瞬移：原地鏡碎（v0.8.57 改用第 2 關專屬特效 boss2fx 列 3） */
                 if (fxReady("boss2fx")) spawnFx("boss2fx", 3, Boss.x, Boss.y - 110, { w: 340, dur: 0.42 });
                 else if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 85, { w: 300, dur: 0.38 });
+                bsfx("tpOut");
               }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
               Boss.flashFrames = 3;
               if (move.tpFx) { if (fxReady("boss2fx")) spawnFx("boss2fx", 2, Boss.x, Config.groundY - 20, { w: 360, h: 360, dur: 0.4 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
-              Sound.play("assist", 0.85, 1.45);
+              if (!bsfx("tpIn")) Sound.play("assist", 0.85, 1.45);
               spawnFloatingText(Boss.x, Boss.y - 120, move.teleportText || "【虛空瞬襲】！", move.teleportColor || "#c084fc", 1.2);
             }
           }

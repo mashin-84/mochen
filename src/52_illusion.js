@@ -21,7 +21,7 @@
           emitDust(x, Config.groundY, 1, 2, 0.9); emitDust(x, Config.groundY, -1, 2, 0.9);
         });
         Game.flashWhiteOverlay = Math.max(Game.flashWhiteOverlay || 0, 0.35);
-        Sound.play("mikiri", 0.8, 1.3); Sound.play("assist", 0.7, 0.8);
+        if (!bsfx("split")) { Sound.play("mikiri", 0.8, 1.3); Sound.play("assist", 0.7, 0.8); }
         addTrauma(0.25);
         hintOnce("illusion", "【千幻分身】三個裡只有真身有影子；打到幻影會被鏡片反噬");
       }
@@ -31,7 +31,7 @@
         spawnSparks(il.x, Boss.y - 80, "parry", Player.x >= il.x ? -1 : 1);
         if (fxReady("boss2fx")) spawnFx("boss2fx", 3, il.x, Boss.y - 110, { w: 360, dur: 0.45 });
         else if (fxReady("spark")) spawnFx("spark", 0, il.x, Boss.y - 85, { w: 320, dur: 0.4 });
-        Sound.play("parry", 0.7, 1.7); Sound.play("block", 0.5, 1.5);
+        if (!bsfx("ilBreak")) { Sound.play("parry", 0.7, 1.7); Sound.play("block", 0.5, 1.5); }
         if (counter) {
           Game.illuCounters.push({ x: il.x, t: ILLU.counterDelay });
           spawnFloatingText(il.x, Boss.y - 150, "〔幻影・鏡碎〕", "#a5f3fc", 1.0);
@@ -107,7 +107,7 @@
           if (fxReady("boss2fx")) spawnFx("boss2fx", 2, c.x, Config.groundY - 30, { w: 480, h: 480, dur: 0.45 });
           else if (fxReady("spark")) spawnFx("spark", 2, c.x, Config.groundY - 70, { w: 420, dur: 0.4 });
           for (let k = 0; k < 3; k++) spawnSparks(c.x + (k - 1) * 50, Config.groundY - 60 - k * 20, "mikiri", k - 1 || 1);
-          Sound.play("mikiri", 0.6, 1.6);
+          if (!bsfx("ilShard")) Sound.play("mikiri", 0.6, 1.6);
           if (Math.abs(Player.x - c.x) <= ILLU.counterR && Player.y >= Config.groundY - 140 && Player.state !== "execution" && Boss.hp > 0) {
             const sx = Boss.x, sf = Boss.facing, sv = Boss.vx, sp = Boss.isPerilous;
             Boss.x = c.x; Boss.facing = Player.x >= c.x ? 1 : -1; Boss.isPerilous = false;
