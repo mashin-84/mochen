@@ -248,6 +248,25 @@
         }
       }
 
+      /* M2 回饋表 FEEL：每種事件的定格（毫秒）、震屏（舊 amp 刻度）、震動（毫秒或節奏陣列）、閃白（60Hz 幀）集中在這裡調。
+         數字照搬 v0.8.37（手感不變）；FEEL_K 是全域倍率，一鍵整體加重／減輕。之後的事件逐步搬進來。 */
+      const FEEL_K = { stop: 1, shake: 1, buzz: 1 };
+      const FEEL = {
+        hit:   { stop: 0,   shake: 0,  buzz: 18,           flash: 4 },
+        heavy: { stop: 133, shake: 18, buzz: [30, 20, 35], flash: 5 },
+        block: { stop: 0,   shake: 0,  buzz: 10,           flash: 2 },
+        parry: { stop: -1,  shake: 32, buzz: [25, 30, 45], flash: 2, flashP: 2 } /* stop -1＝用 Config.parryHitstopFrames×0.85 */
+      };
+      function feel(name, dir) {
+        const f = FEEL[name]; if (!f) return;
+        const st = f.stop < 0 ? Config.parryHitstopFrames * 1000 / 60 * 0.85 : f.stop;
+        if (st > 0) triggerHitstopMs(st * FEEL_K.stop);
+        if (f.shake > 0) triggerShake(dir || 0, -0.2, 11 + (f.shake - 11) * FEEL_K.shake, 0.3);
+        if (f.buzz) hapticBuzz(Array.isArray(f.buzz) ? f.buzz.map((x) => x * FEEL_K.buzz) : f.buzz * FEEL_K.buzz);
+        if (f.flash) Boss.flashFrames = Math.max(Boss.flashFrames, f.flash);
+        if (f.flashP) Player.flashFrames = Math.max(Player.flashFrames, f.flashP);
+      }
+
       /* v0.4.11 普攻打擊感：kind = "hit"(受擊) | "heavy"(重擊/第三段) | "block"(敵將格擋) */
       function bossHitFx(kind) {
         const dir = Player.facing;
@@ -257,7 +276,7 @@
         Boss.hitReactKind = kind;
         Boss.hitReactDur = heavy ? 0.2 : guard ? 0.1 : 0.14;
         Boss.hitReactT = Boss.hitReactDur;
-        Boss.flashFrames = Math.max(Boss.flashFrames, heavy ? 5 : guard ? 2 : 4);
+        feel(heavy ? "heavy" : guard ? "block" : "hit", dir); /* 定格、震屏、震動、閃白 → 回饋表 FEEL */
 
         const hx = Boss.x - dir * 22;
         const hy = Boss.y - (Stages[Boss.stageId].sprite ? 150 : 88);
@@ -287,13 +306,10 @@
         }
 
         if (heavy) {
-          triggerHitstop(8);
-          triggerShake(dir, -0.15, 18, 0.22);
           Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.03);
           Boss.vx = dir * 130;
           Sound.play("slash", 0.55, 0.6);
         }
-        hapticBuzz(heavy ? [30, 20, 35] : guard ? 10 : 18);
         if (!guard) Sound.play("block", 0.3, 0.55 + 0.08 * step);
         Sound.play("hit", guard ? 0.3 : 0.55, 0.78 + 0.1 * step + (guard ? 0 : Math.min(0.45, Game.comboCount * 0.035)));
       }

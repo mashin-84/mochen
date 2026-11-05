@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.41（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.42（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -415,3 +415,8 @@
 **v0.8.40 通用音效 10 個接入**（ElevenLabs 生成）：去頭尾靜音、峰值 -1.5 dBFS、單聲道 mp3 → `assets/sfx/g_parry／block／slash／flysword／peril（裁 1.3 秒）／mikiri／execution／gourd（裁 2.2 秒）／assist（裁 2.0 秒）／victory.mp3`，`Sound.genSfx` 已登記（各 1 個變體）。**hit（命中）還沒到**，仍是合成音。音量與長度待使用者實測。
 
 **v0.8.41 命中音效接入**：`assets/sfx/g_hit.mp3`，`genSfx` 加 hit；11 個通用合成音全部換成生成檔。
+
+**v0.8.42 M2 回饋表 FEEL（`src/30_state.js`）**
+- `FEEL = {hit, heavy, block, parry}`：每項 `stop` 定格毫秒（-1＝依 `Config.parryHitstopFrames`）、`shake` 震屏（舊 amp 刻度）、`buzz` 手機震動、`flash`／`flashP` Boss／主角閃白（60Hz 幀）；`feel(name, dir)` 一次觸發。`FEEL_K = {stop, shake, buzz}` 全域倍率。
+- 已搬：普攻命中／重擊／被格擋（`bossHitFx`）、完美招架（`doPerfectDeflect`）。數字與 v0.8.41 相同，手感不變。其餘事件（受擊、危招閃避、處決、落地）之後逐步搬。
+- 閃白改以秒計（`flashFrames -= dt*60`），120Hz 手機閃白長度與 60Hz 相同。

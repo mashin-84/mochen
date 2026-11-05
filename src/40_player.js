@@ -873,8 +873,7 @@
 
       function doPerfectDeflect(cx, cy, dir, el, postureGain) {
         Player.parryCooldown = 0;
-        Player.flashFrames = 2;
-        Boss.flashFrames = 2;
+        feel("parry", dir); /* 定格、震屏、震動、雙方閃白 → 回饋表 FEEL */
         // 完美招架不耗體力，且即刻恢復 20 劍勢體力！
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 20);
         Player.vx = dir * 140;
@@ -890,10 +889,7 @@
         Progress.parryCount++;
 
         Sound.play("parry", 0.95, 0.96 + Math.random() * 0.08);
-        triggerHitstopMs(Config.parryHitstopFrames * 1000 / 60 * 0.85);
-        triggerShake(dir, -0.2, 32, 0.34);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.10);
-        hapticBuzz([25, 30, 45]);
         spawnSparks(cx, cy, "parry", dir);
         spawnSparks(cx, cy, "mikiri", dir);
         if (fxReady("air")) spawnFx("air", 2, cx, cy, { w: 320, dur: 0.42 });

@@ -47,8 +47,8 @@
           return;
         }
 
-        if (Player.flashFrames > 0) Player.flashFrames--;
-        if (Boss.flashFrames > 0) Boss.flashFrames--;
+        if (Player.flashFrames > 0) Player.flashFrames = Math.max(0, Player.flashFrames - dt * 60); /* M2 閃白改以秒計：120Hz 手機不再只閃一半 */
+        if (Boss.flashFrames > 0) Boss.flashFrames = Math.max(0, Boss.flashFrames - dt * 60);
         if (Player.atkCd > 0) Player.atkCd = Math.max(0, Player.atkCd - dt);
         if (Boss.ultCd > 0) Boss.ultCd -= dt;
         {
