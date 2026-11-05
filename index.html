@@ -2073,7 +2073,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.37";
+      const ASSET_VER = "0.8.38";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2091,12 +2091,26 @@
         muted: false,
         buffers: {},
         ready: false,
+        master: null,
+        /* M1：同音同時上限、音高隨機微調（±4%，旋律類不抖）、檔案變體 */
+        maxVoices: 4, pitchJitter: 0.04, noJitter: { victory: 1 },
+        live: {}, variants: {}, ext: {},
+        /* M1 通用音效換檔：檔案放 assets/sfx/g_<名>.mp3（變體 g_<名>_2.mp3、g_<名>_3.mp3…），在這裡登記「名: 變體數」才會載入；
+           載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
+        genSfx: {},
 
         init() {
           if (this.ready) return;
           const AC = window.AudioContext || window.webkitAudioContext;
           if (!AC) return;
           this.ctx = new AC();
+          /* M1 音效匯流排：所有音效 → 總音量 → 限幅器 → 喇叭（多個音效疊在一起不爆音） */
+          try {
+            this.master = this.ctx.createGain(); this.master.gain.value = 0.9;
+            const c = this.ctx.createDynamicsCompressor();
+            c.threshold.value = -10; c.knee.value = 6; c.ratio.value = 12; c.attack.value = 0.003; c.release.value = 0.15;
+            this.master.connect(c); c.connect(this.ctx.destination);
+          } catch (e) { this.master = null; }
           this.ready = true;
           this.bake();
         },
@@ -2135,7 +2149,7 @@
         },
 
         bake() {
-          this.loadSamples();
+          this.loadSamples(); this.loadGeneric();
           this.buffers.parry = this.bakeBuffer(0.42, (t) => {
             const env = Math.exp(-t * 13);
             const transient = (Math.random() * 2 - 1) * Math.exp(-t * 110) * 0.4;
@@ -2212,6 +2226,15 @@
         /* v0.8.34 狼與巨狼的聲音：改用真實音效檔（程式合成版太難聽已移除）。
            檔案放 assets/sfx/<名>.mp3，載入成功才有聲；沒有檔案的招式維持原本的揮劍音。w_*＝小狼，m_*＝大狼（怪物）。 */
         extSfx: ["w_snarl", "w_bark", "w_snap", "w_claw", "w_howl", "w_yelp", "m_growl", "m_roar", "m_bite", "m_swipe", "m_stomp", "m_howl"],
+        loadGeneric() {
+          Object.keys(this.genSfx).forEach((k) => {
+            const n = this.genSfx[k] || 1;
+            for (let i = 1; i <= n; i++) {
+              const f = i === 1 ? `g_${k}` : `g_${k}_${i}`;
+              try { fetch(`assets/sfx/${f}.mp3?v=${ASSET_VER}`).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { (this.variants[k] = this.variants[k] || []).push(buf); this.buffers[k] = this.variants[k][0]; this.ext[k] = true; }).catch(() => { }); } catch (e) { }
+            }
+          });
+        },
         bakeWolf() {
           this.extSfx.forEach((k) => {
             try { fetch(`assets/sfx/${k}.mp3?v=${ASSET_VER}`).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { this.buffers[k] = buf; }).catch(() => { }); } catch (e) { }
@@ -2223,17 +2246,25 @@
           this.resume();
           if (!this.ctx || !this.buffers[name]) return;
           try {
+            const now = this.ctx.currentTime;
+            const live = (this.live[name] || []).filter((e) => e > now);
+            if (live.length >= this.maxVoices) { this.live[name] = live; return; } /* 同音同時上限：狂按不疊爆 */
+            const vs = this.variants[name];
+            const buf = vs && vs.length > 1 ? vs[Math.floor(Math.random() * vs.length)] : this.buffers[name];
+            const rate = Math.max(0.1, pitch * (this.noJitter[name] ? 1 : 1 + (Math.random() * 2 - 1) * this.pitchJitter));
+            live.push(now + buf.duration / rate); this.live[name] = live;
+            const out = this.master || this.ctx.destination;
             const s = this.ctx.createBufferSource();
-            s.buffer = this.buffers[name];
-            s.playbackRate.value = pitch;
+            s.buffer = buf;
+            s.playbackRate.value = rate;
             const g = this.ctx.createGain();
             g.gain.value = vol;
             s.connect(g);
-            if (name.indexOf("s_") !== 0 && name.indexOf("w_") !== 0 && name.indexOf("m_") !== 0) { /* v0.8.16 程式合成音一律過低通，削掉尖銳高頻；外部取樣（s_*）不處理 */
+            if (!this.ext[name] && name.indexOf("s_") !== 0 && name.indexOf("w_") !== 0 && name.indexOf("m_") !== 0) { /* v0.8.16 程式合成音一律過低通，削掉尖銳高頻；外部取樣不處理 */
               const lp = this.ctx.createBiquadFilter();
               lp.type = "lowpass"; lp.frequency.value = 2400; lp.Q.value = 0.5;
-              g.connect(lp); lp.connect(this.ctx.destination);
-            } else g.connect(this.ctx.destination);
+              g.connect(lp); lp.connect(out);
+            } else g.connect(out);
             s.start(0);
           } catch (e) {}
         }
@@ -2244,7 +2275,8 @@
        * v0.8.9 背景音樂（取自一念飛仙倉庫 music/）：淡入淡出、可調音量、隨靜音鍵
        * ========================================================================= */
       const STAGE_BGM_P2 = { 5: "langwang" }; /* 二階段換曲：關卡 id → 曲名（沒列就整場同一首） */
-      const STAGE_BGM = { 1: "chisha", 5: "youying" }; /* 第 5 關：一階段「幽影」（小狼）、二階段 STAGE_BGM_P2「狼王」 */ /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
+      const STAGE_BGM = { 1: "chisha", 2: "lilian", 3: "zhandou", 4: "tianjie", 5: "youying", 6: "weiju", 7: "zhandou", 8: "tianjie", 9: "weiju" }; /* M1：2～4、6～9 關暫用一念飛仙舊曲，之後換專屬曲 */
+      const HUB_BGM = "dongfu"; /* M1：營地暫用「洞府」 */ /* 第 5 關：一階段「幽影」（小狼）、二階段 STAGE_BGM_P2「狼王」 */ /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
       const Music = {
         tracks: [], vol: 1.0, name: null, /* v0.8.15 預設音量 0.5→1.0（已調過滑桿的人沿用自己的設定） */
         init() {
@@ -8147,7 +8179,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       function loadStage(stageId, opts) {
         const stage = Stages[stageId];
         if (!stage) return;
-        if (opts && opts.hub) Music.fadeOut();
+        if (opts && opts.hub) { if (HUB_BGM) Music.play(HUB_BGM); else Music.fadeOut(); }
         else if (STAGE_BGM[stageId]) Music.play(STAGE_BGM[stageId]);
         else Music.fadeOut();
 

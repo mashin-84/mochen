@@ -4,7 +4,7 @@
       function loadStage(stageId, opts) {
         const stage = Stages[stageId];
         if (!stage) return;
-        if (opts && opts.hub) Music.fadeOut();
+        if (opts && opts.hub) { if (HUB_BGM) Music.play(HUB_BGM); else Music.fadeOut(); }
         else if (STAGE_BGM[stageId]) Music.play(STAGE_BGM[stageId]);
         else Music.fadeOut();
 

@@ -397,3 +397,11 @@
 - `src/`：25 個檔（`manifest.txt` 決定順序）；`python3 tools/build.py` 組出 `index.html`，`--check` 檢查是否一致。**之後只改 `src/`**。
 - `tools/smoke.js`：九關各 20 秒鍵盤亂數對打（首跑結果：九關皆 ok，招式 3～8 種輪替）。
 - 下一步：M1 聲音——Claude 先給 11 個通用音效的英文生成提示詞（不合成），使用者生成後交給 Claude 處理接入。
+
+**v0.8.38 M1 聲音（第一批：系統面，不需素材）**
+- 音效匯流排：`Sound.master`（總音量 0.9）→ 限幅器（threshold -10、ratio 12）→ 喇叭；所有 `Sound.play` 走這條，多音疊加不爆音。
+- `Sound.play`：同名音效同時最多 `maxVoices`=4 個（狂按不疊爆）；音高隨機 ±`pitchJitter`=4%（`noJitter` 列表內不抖，目前 victory）；有變體時隨機挑一個。
+- 通用音效換檔機制：檔案放 `assets/sfx/g_<名>.mp3`（變體 `g_<名>_2.mp3`…），在 `Sound.genSfx` 登記 `{名: 變體數}` 才載入；載入成功蓋掉合成音且不過低通。11 個名字：parry block slash flysword hit peril mikiri execution gourd assist victory。目前 `genSfx` 為空（檔案未到）。
+- 暫代配樂：`STAGE_BGM` 2 lilian、3 zhandou、4 tianjie、6 weiju、7 zhandou、8 tianjie、9 weiju；營地 `HUB_BGM = "dongfu"`（`loadStage` 進營地播放）。之後每關換專屬曲只改這張表。
+- 驗證：check.js 0 錯誤；smoke 九關 ok；無頭測試確認匯流排存在、同音上限生效、營地／第 4 關曲名正確。
+- 下一步：使用者依提示詞生成 11 個通用音效（每個 2～3 個變體）→ Claude 裁切、正規化 -1.5 dBFS、命名、登記 `genSfx`；之後進 M2。
