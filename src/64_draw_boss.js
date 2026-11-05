@@ -788,7 +788,9 @@
         const sx = Math.max(0.5, 1 - lift / 900);
         ctx.save();
         ctx.globalAlpha = a;
-        ctx.transform((facing > 0 ? 1 : -1) * S * sx, 0, S * 0.38, -S * 0.16, x, Config.groundY + 2); /* d 為負：剪影的「高」往螢幕下方（朝觀眾）投到地面上 */
+        const L = Game.mode !== "battle" ? hubLight(x) : null; /* 營地：影子隨營火方向與火光晃動 */
+        if (L) ctx.globalAlpha = a * L.a / 0.46;
+        ctx.transform((facing > 0 ? 1 : -1) * S * sx, 0, S * (L ? L.skew : 0.38), -S * (L ? L.len : 0.16), x, Config.groundY + 2); /* d 為負：剪影的「高」往螢幕下方（朝觀眾）投到地面上 */
         ctx.drawImage(c, -450, -anchorY, img.naturalWidth, img.naturalHeight);
         ctx.restore();
         return true;

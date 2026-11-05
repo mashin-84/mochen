@@ -71,6 +71,22 @@
       }
 
       const HUB_GATE_S = 0.33, HUB_GATE_L = -470; /* 山門縮放與左緣（前柱中心約在 x=-170，HUB_GATE_X=-150 越過即進場） */
+      /* v0.8.50 營地光源＝營火：影子方向背向火、越近越深越長，跟火光一起晃 */
+      const HUB_FIRE_X = -900;
+      function hubFlick() { const t = performance.now() / 1000; return 1 + 0.09 * Math.sin(t * 9) + 0.05 * Math.sin(t * 23 + 1.3) + 0.03 * Math.sin(t * 41); }
+      function hubLight(x) {
+        const d = x - HUB_FIRE_X, ad = Math.abs(d), f = hubFlick();
+        const near = Math.max(0, 1 - ad / 1100);
+        return { skew: Math.max(-1.5, Math.min(1.5, d / 320)) * f, len: (0.14 + 0.1 * near) * f, a: (0.28 + 0.34 * near) * (0.9 + 0.1 * f) };
+      }
+      function hubShadow(img, wx, ax, ay, S) { /* img 的 (ax, ay) 點站在地面 wx；S 為負＝左右鏡像 */
+        const c = shadowImg(img); if (!c) return;
+        const L = hubLight(wx);
+        ctx.save(); ctx.globalAlpha = L.a;
+        ctx.transform(S, 0, Math.abs(S) * L.skew, -Math.abs(S) * L.len, wx, Config.groundY + 2);
+        ctx.drawImage(c, -ax, -ay, img.naturalWidth, img.naturalHeight);
+        ctx.restore();
+      }
       function drawHubFront() { /* 山門前柱：畫在主角前面，讓主角像是從牌坊底下穿過 */
         if (Game.mode === "battle") return;
         const F = getBgArt("hub_gate_front"); if (!F.ok) return;
@@ -170,6 +186,7 @@
         ctx.fillRect(fx - 320, gy - 360, 640, 400);
         ctx.restore();
         const FB = getBgArt("hub_fire_base"), FS = fxSheet("campfire");
+        { const f2 = hubFlick(); ctx.save(); ctx.fillStyle = `rgba(10,6,4,${0.35 * (2 - f2)})`; ctx.beginPath(); ctx.ellipse(fx, gy + 6, 86 * (0.97 + 0.03 * f2), 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); } /* 營火接地陰影 */
         if (FB.ok) ctx.drawImage(FB.img, fx - 78, gy - 58, 156, 76);
         if (FS.ok) {
           const cell = FS.img.naturalWidth / 4, f = Math.floor(t * 12) % 8;
@@ -189,7 +206,7 @@
           const SI = getBgArt("hub_shimei_" + pose);
           if (SI.ok) {
             const k = 0.346, w = 400 * k, h = 700 * k;
-            ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.28)"; ctx.beginPath(); ctx.ellipse(nx, gy + 2, 44, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            hubShadow(SI.img, nx, 200, 695, -k); /* 師妹影子（隨營火） */
             ctx.save(); ctx.translate(nx, gy - 695 * k + h / 2 + 2); ctx.scale(-1, 1); ctx.drawImage(SI.img, -w / 2, -h / 2, w, h); ctx.restore();
           }
           const oy = gy - 205 + Math.sin(t * 2) * 6;
@@ -211,6 +228,10 @@
         // 山門（v0.8.49 生圖：斜側面牌坊，前柱另畫在角色前面＝drawHubFront；門洞有結界光幕，走近才散開）
         {
           const G = getBgArt("hub_gate");
+          if (G.ok) { /* 山門影子：以四根柱腳中點為地面基準 */
+            const gw = 1476 * HUB_GATE_S;
+            hubShadow(G.img, HUB_GATE_L + gw * 0.5, G.img.naturalWidth * 0.5, 1259 / 2, HUB_GATE_S * 2);
+          }
           if (G.ok) ctx.drawImage(G.img, HUB_GATE_L, gy - 1259 * HUB_GATE_S, 1476 * HUB_GATE_S, 1315 * HUB_GATE_S);
           const cx0 = HUB_GATE_L + 409 * HUB_GATE_S, cx1 = HUB_GATE_L + 911 * HUB_GATE_S;
           const dist = cx0 - Player.x;
