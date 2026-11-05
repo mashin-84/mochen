@@ -377,14 +377,15 @@
             const windupProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
             if (windupProgress >= (move.teleportDelay || 0.35)) {
               Boss.teleportExecuted = true;
-              if (move.tpFx && fxReady("spark")) { /* v0.8.55 瞬移：原地碎散＋落點聚合（第 2 關） */
-                spawnFx("spark", 2, Boss.x, Boss.y - 85, { w: 300, dur: 0.38 });
+              if (move.tpFx) { /* v0.8.55 瞬移：原地鏡碎（v0.8.57 改用第 2 關專屬特效 boss2fx 列 3） */
+                if (fxReady("boss2fx")) spawnFx("boss2fx", 3, Boss.x, Boss.y - 110, { w: 340, dur: 0.42 });
+                else if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 85, { w: 300, dur: 0.38 });
               }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
               Boss.flashFrames = 3;
-              if (move.tpFx && fxReady("spark")) { spawnFx("spark", 0, Boss.x, Boss.y - 85, { w: 260, dur: 0.32 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
+              if (move.tpFx) { if (fxReady("boss2fx")) spawnFx("boss2fx", 2, Boss.x, Config.groundY - 20, { w: 360, h: 360, dur: 0.4 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
               Sound.play("assist", 0.85, 1.45);
               spawnFloatingText(Boss.x, Boss.y - 120, move.teleportText || "【虛空瞬襲】！", move.teleportColor || "#c084fc", 1.2);
             }
@@ -407,7 +408,7 @@
             Boss.stateTimer = move.active * phaseMod * volSpeedMod;
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
-            spawnMoveFx(move.fxAct);
+            spawnMoveFx(move.fxAct); illusionMoveFx(move.fxAct); /* 幻影也出同樣的特效，否則特效會洩漏真身 */
             if (move.isSplit) illusionSplit();
             if (move.isRanged) illusionShoot(move);
             const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
@@ -488,7 +489,7 @@
                   }
                 }
                 Game.slashArcs.push({
-                  art: bArt,
+                  art: bArt || !!(Stages[Boss.stageId].arcArt && fxReady(Stages[Boss.stageId].arcArt)), /* v0.8.57 有專屬特效圖的關卡不畫程式刀弧 */
                   x: Boss.x + Boss.facing * 26,
                   y: Boss.y - (Boss.perilType === "sweep" ? 22 : 64),
                   facing: Boss.facing,
@@ -596,7 +597,7 @@
                   { w: cw, dur: 0.22, facing: Boss.facing, rot: Boss.comboHitsLeft % 2 === 0 ? 0.45 : -0.35, anchor: Boss.perilType === "thrust" ? "l" : "c" });
               }
               Game.slashArcs.push({
-                art: cArt,
+                art: cArt || !!(Stages[Boss.stageId].arcArt && fxReady(Stages[Boss.stageId].arcArt)),
                 x: Boss.x + Boss.facing * 26,
                 y: Boss.y - 64,
                 facing: Boss.facing,

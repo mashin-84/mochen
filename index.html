@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.56";
+      const ASSET_VER = "0.8.57";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2839,16 +2839,17 @@
         S2.poolP2 = [["slash1", 22], ["flyswords", 12, "ranged"], ["exclusive_zone", 9], ["thrust_peril", 13], ["sweep_peril", 11], ["grab_peril", 7], ["exclusive_teleport", 11, "chase"], ["teleport_combo", 11, "chase"], ["sky_swords", 8, "ranged"], ["mirror_split", 9]];
         S2.dfmK = 0.5; /* 變形強度（第 5 關 0.35，顧天風動作較飄逸稍大） */
         M.slash1.dfm = { w: { sx: 0.96, sy: 1.03, rot: -0.07, ox: -16 }, a: { sx: 1.06, sy: 0.97, rot: 0.06, ox: 24, ghost: 2, gap: 34 }, r: {} };
-        M.slash1.fxAct = { sheet: "air", row: 0, ox: 120, oy: -115, w: 320, dur: 0.28 };
+        M.slash1.fxAct = { sheet: "boss2fx", row: 0, ox: 120, oy: -125, w: 360, dur: 0.3 };
         M.thrust_peril.dfm = { w: { sx: 0.93, sy: 1.05, rot: -0.09, ox: -26 }, a: { sx: 1.12, sy: 0.93, rot: 0.06, ox: 32, ghost: 4, gap: 55 }, r: {} };
-        M.thrust_peril.fxAct = { sheet: "slash", row: 2, ox: 170, oy: -125, w: 460, dur: 0.3 };
+        M.thrust_peril.fxAct = { sheet: "boss2fx", row: 1, ox: 200, oy: -150, w: 520, dur: 0.32 };
         M.sweep_peril.dfm = { w: { sx: 1.04, sy: 0.95, rot: -0.05, oy: 6 }, a: { sx: 1.05, sy: 0.96, rot: 0.04, ox: 14, ghost: 2, gap: 30 }, r: {} };
-        M.sweep_peril.fxAct = { sheet: "air", row: 0, ox: 40, oy: -50, w: 560, dur: 0.34 };
+        M.sweep_peril.fxAct = { sheet: "boss2fx", row: 2, ox: 50, oy: -40, w: 620, dur: 0.4 };
         M.flyswords.dfm = { w: { sx: 0.97, sy: 1.03, rot: -0.06, ox: -10 }, a: { sx: 1.03, sy: 0.98, rot: 0.03, ox: 8 }, r: {} };
         [M.exclusive_teleport, M.teleport_combo].forEach(m => { if (m) { m.tpFx = true; m.dfm = { w: { sx: 0.95, sy: 1.04, rot: -0.05 }, a: { sx: 1.06, sy: 0.96, rot: 0.05, ox: 20, ghost: 3, gap: 40 }, r: {} }; } });
         if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
         M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
-        S2.fxSheets = ["air", "slash", "spark"];
+        S2.fxSheets = ["boss2fx", "spark"]; S2.arcArt = "boss2fx"; /* v0.8.57 專屬特效圖（4×4 黑底：0 扇刃、1 指劍突刺、2 八卦旋風、3 鏡碎）；有圖就不畫程式橘色刀弧 */
+        S2.introBg = "intro2"; S2.introName = "assets/boss2/name.webp"; /* 開場影片待做（首幀已合成） */
         /* v0.8.56 五招三拍關鍵格（生圖 3×5，縮放 1.06、腳底 y=560、x=450）＋分層場景（迷蹤陣台地面帶＋前景石欄松枝） */
         M.slash1.frames = { windup: "20_fan_wind", active: "21_fan_hit", recover: "22_fan_rec" };
         M.thrust_peril.frames = { windup: "23_thr_wind", active: "24_thr_hit", recover: "25_thr_rec" };
@@ -4896,14 +4897,15 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             const windupProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
             if (windupProgress >= (move.teleportDelay || 0.35)) {
               Boss.teleportExecuted = true;
-              if (move.tpFx && fxReady("spark")) { /* v0.8.55 瞬移：原地碎散＋落點聚合（第 2 關） */
-                spawnFx("spark", 2, Boss.x, Boss.y - 85, { w: 300, dur: 0.38 });
+              if (move.tpFx) { /* v0.8.55 瞬移：原地鏡碎（v0.8.57 改用第 2 關專屬特效 boss2fx 列 3） */
+                if (fxReady("boss2fx")) spawnFx("boss2fx", 3, Boss.x, Boss.y - 110, { w: 340, dur: 0.42 });
+                else if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 85, { w: 300, dur: 0.38 });
               }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
               Boss.flashFrames = 3;
-              if (move.tpFx && fxReady("spark")) { spawnFx("spark", 0, Boss.x, Boss.y - 85, { w: 260, dur: 0.32 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
+              if (move.tpFx) { if (fxReady("boss2fx")) spawnFx("boss2fx", 2, Boss.x, Config.groundY - 20, { w: 360, h: 360, dur: 0.4 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
               Sound.play("assist", 0.85, 1.45);
               spawnFloatingText(Boss.x, Boss.y - 120, move.teleportText || "【虛空瞬襲】！", move.teleportColor || "#c084fc", 1.2);
             }
@@ -4926,7 +4928,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             Boss.stateTimer = move.active * phaseMod * volSpeedMod;
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
-            spawnMoveFx(move.fxAct);
+            spawnMoveFx(move.fxAct); illusionMoveFx(move.fxAct); /* 幻影也出同樣的特效，否則特效會洩漏真身 */
             if (move.isSplit) illusionSplit();
             if (move.isRanged) illusionShoot(move);
             const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
@@ -5007,7 +5009,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                   }
                 }
                 Game.slashArcs.push({
-                  art: bArt,
+                  art: bArt || !!(Stages[Boss.stageId].arcArt && fxReady(Stages[Boss.stageId].arcArt)), /* v0.8.57 有專屬特效圖的關卡不畫程式刀弧 */
                   x: Boss.x + Boss.facing * 26,
                   y: Boss.y - (Boss.perilType === "sweep" ? 22 : 64),
                   facing: Boss.facing,
@@ -5115,7 +5117,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                   { w: cw, dur: 0.22, facing: Boss.facing, rot: Boss.comboHitsLeft % 2 === 0 ? 0.45 : -0.35, anchor: Boss.perilType === "thrust" ? "l" : "c" });
               }
               Game.slashArcs.push({
-                art: cArt,
+                art: cArt || !!(Stages[Boss.stageId].arcArt && fxReady(Stages[Boss.stageId].arcArt)),
                 x: Boss.x + Boss.facing * 26,
                 y: Boss.y - 64,
                 facing: Boss.facing,
@@ -5846,7 +5848,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Game.illuBossHp = Boss.hp;
         spawnSparks(old, Boss.y - 70, "mikiri", 1);
         slots.forEach((x) => {
-          if (fxReady("spark")) spawnFx("spark", 2, x, Config.groundY - 80, { w: 300, dur: 0.45 });
+          if (fxReady("boss2fx")) spawnFx("boss2fx", 3, x, Config.groundY - 120, { w: 360, dur: 0.5 }); /* 鏡子碎開、分身現形 */
+          else if (fxReady("spark")) spawnFx("spark", 2, x, Config.groundY - 80, { w: 300, dur: 0.45 });
           emitDust(x, Config.groundY, 1, 2, 0.9); emitDust(x, Config.groundY, -1, 2, 0.9);
         });
         Game.flashWhiteOverlay = Math.max(Game.flashWhiteOverlay || 0, 0.35);
@@ -5858,7 +5861,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (il.dead) return;
         il.dead = true;
         spawnSparks(il.x, Boss.y - 80, "parry", Player.x >= il.x ? -1 : 1);
-        if (fxReady("spark")) spawnFx("spark", 0, il.x, Boss.y - 85, { w: 320, dur: 0.4 });
+        if (fxReady("boss2fx")) spawnFx("boss2fx", 3, il.x, Boss.y - 110, { w: 360, dur: 0.45 });
+        else if (fxReady("spark")) spawnFx("spark", 0, il.x, Boss.y - 85, { w: 320, dur: 0.4 });
         Sound.play("parry", 0.7, 1.7); Sound.play("block", 0.5, 1.5);
         if (counter) {
           Game.illuCounters.push({ x: il.x, t: ILLU.counterDelay });
@@ -5932,7 +5936,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           const c = Game.illuCounters[i]; c.t -= dt;
           if (c.t > 0) continue;
           Game.illuCounters.splice(i, 1);
-          if (fxReady("spark")) spawnFx("spark", 2, c.x, Config.groundY - 70, { w: 420, dur: 0.4 });
+          if (fxReady("boss2fx")) spawnFx("boss2fx", 2, c.x, Config.groundY - 30, { w: 480, h: 480, dur: 0.45 });
+          else if (fxReady("spark")) spawnFx("spark", 2, c.x, Config.groundY - 70, { w: 420, dur: 0.4 });
           for (let k = 0; k < 3; k++) spawnSparks(c.x + (k - 1) * 50, Config.groundY - 60 - k * 20, "mikiri", k - 1 || 1);
           Sound.play("mikiri", 0.6, 1.6);
           if (Math.abs(Player.x - c.x) <= ILLU.counterR && Player.y >= Config.groundY - 140 && Player.state !== "execution" && Boss.hp > 0) {
@@ -5967,6 +5972,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           il.x = Math.max(110, Math.min(Config.worldWidth - 110, il.x));
         }
         Game.illusions = Game.illusions.filter(il => !(il.dead && il.alpha <= 0));
+      }
+      function illusionMoveFx(f) {
+        if (!f || !illusionsAlive() || !fxReady(f.sheet)) return;
+        for (const il of Game.illusions) if (!il.dead) spawnFx(f.sheet, f.row, il.x + il.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: il.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha });
       }
       function illusionFaceAll() { if (Game.illusions) for (const il of Game.illusions) if (!il.dead) il.facing = Player.x >= il.x ? 1 : -1; }
       /* 繪製：借用 drawBossEntity，暫時把 Boss 搬到幻影位置；Boss._ilDraw 時不畫影子、氣場、提示圈與危字 */

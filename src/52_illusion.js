@@ -16,7 +16,8 @@
         Game.illuBossHp = Boss.hp;
         spawnSparks(old, Boss.y - 70, "mikiri", 1);
         slots.forEach((x) => {
-          if (fxReady("spark")) spawnFx("spark", 2, x, Config.groundY - 80, { w: 300, dur: 0.45 });
+          if (fxReady("boss2fx")) spawnFx("boss2fx", 3, x, Config.groundY - 120, { w: 360, dur: 0.5 }); /* 鏡子碎開、分身現形 */
+          else if (fxReady("spark")) spawnFx("spark", 2, x, Config.groundY - 80, { w: 300, dur: 0.45 });
           emitDust(x, Config.groundY, 1, 2, 0.9); emitDust(x, Config.groundY, -1, 2, 0.9);
         });
         Game.flashWhiteOverlay = Math.max(Game.flashWhiteOverlay || 0, 0.35);
@@ -28,7 +29,8 @@
         if (il.dead) return;
         il.dead = true;
         spawnSparks(il.x, Boss.y - 80, "parry", Player.x >= il.x ? -1 : 1);
-        if (fxReady("spark")) spawnFx("spark", 0, il.x, Boss.y - 85, { w: 320, dur: 0.4 });
+        if (fxReady("boss2fx")) spawnFx("boss2fx", 3, il.x, Boss.y - 110, { w: 360, dur: 0.45 });
+        else if (fxReady("spark")) spawnFx("spark", 0, il.x, Boss.y - 85, { w: 320, dur: 0.4 });
         Sound.play("parry", 0.7, 1.7); Sound.play("block", 0.5, 1.5);
         if (counter) {
           Game.illuCounters.push({ x: il.x, t: ILLU.counterDelay });
@@ -102,7 +104,8 @@
           const c = Game.illuCounters[i]; c.t -= dt;
           if (c.t > 0) continue;
           Game.illuCounters.splice(i, 1);
-          if (fxReady("spark")) spawnFx("spark", 2, c.x, Config.groundY - 70, { w: 420, dur: 0.4 });
+          if (fxReady("boss2fx")) spawnFx("boss2fx", 2, c.x, Config.groundY - 30, { w: 480, h: 480, dur: 0.45 });
+          else if (fxReady("spark")) spawnFx("spark", 2, c.x, Config.groundY - 70, { w: 420, dur: 0.4 });
           for (let k = 0; k < 3; k++) spawnSparks(c.x + (k - 1) * 50, Config.groundY - 60 - k * 20, "mikiri", k - 1 || 1);
           Sound.play("mikiri", 0.6, 1.6);
           if (Math.abs(Player.x - c.x) <= ILLU.counterR && Player.y >= Config.groundY - 140 && Player.state !== "execution" && Boss.hp > 0) {
@@ -137,6 +140,10 @@
           il.x = Math.max(110, Math.min(Config.worldWidth - 110, il.x));
         }
         Game.illusions = Game.illusions.filter(il => !(il.dead && il.alpha <= 0));
+      }
+      function illusionMoveFx(f) {
+        if (!f || !illusionsAlive() || !fxReady(f.sheet)) return;
+        for (const il of Game.illusions) if (!il.dead) spawnFx(f.sheet, f.row, il.x + il.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: il.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha });
       }
       function illusionFaceAll() { if (Game.illusions) for (const il of Game.illusions) if (!il.dead) il.facing = Player.x >= il.x ? 1 : -1; }
       /* 繪製：借用 drawBossEntity，暫時把 Boss 搬到幻影位置；Boss._ilDraw 時不畫影子、氣場、提示圈與危字 */
