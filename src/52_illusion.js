@@ -142,6 +142,7 @@
         Game.illusions = Game.illusions.filter(il => !(il.dead && il.alpha <= 0));
       }
       function illusionMoveFx(f) {
+        if (Array.isArray(f)) { f.forEach(illusionMoveFx); return; }
         if (!f || !illusionsAlive() || !fxReady(f.sheet)) return;
         for (const il of Game.illusions) if (!il.dead) spawnFx(f.sheet, f.row, il.x + il.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: il.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha });
       }

@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.58";
+      const ASSET_VER = "0.8.59";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2902,6 +2902,47 @@
             poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 18], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
             far: [], farP2: ["heavy_zone"] }
         };
+        /* v0.8.59 三拍關鍵格（A 雙劍表 3×5 → assets/boss3/20～34；B 重劍表 3×5 → assets/boss3b/20～31、35～37 拔劍）＋專屬特效
+           boss3fx（A，淡紫銀光）：0 雙月牙刀弧、1 旋風環、2 突刺光、3 劍雨飛劍；boss3bfx（B，硃紅金）：0 重劍弧、1 落地震波、2 戒律陣紋（循環）、3 拔劍爆氣 */
+        const F = (w, a, r) => ({ windup: w, active: a, recover: r });
+        const S3 = Stages[3];
+        M.slash1.frames = F("20_hs_wind", "21_hs_hit", "22_hs_rec");
+        M.exclusive_combo.frames = F("23_x_wind", ["25_x_hit", "21_hs_hit", "25_x_hit"], "22_hs_rec");
+        M.exclusive_feint.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
+        M.slash2.frames = F("26_spin_wind", "27_spin_hit", "28_spin_rec");
+        M.dash_rush.frames = F("29_dash_wind", "30_dash_hit", "31_dash_rec");
+        M.thrust_peril.frames = F("29_dash_wind", "30_dash_hit", "31_dash_rec");
+        M.sweep_peril.frames = F("32_low_wind", "33_low_hit", "34_low_rec");
+        M.grab_peril.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
+        M.heavy_slam.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
+        M.heavy_slash.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
+        M.sword_cleave.frames = F("20_slam_wind", ["21_slam_hit", "30_sweep_hit"], "31_sweep_rec");
+        M.heavy_zone.frames = F("23_plunge_jump", "24_plunge_hit", "25_plunge_rec");
+        M.heavy_thrust.frames = F("26_charge_wind", "27_charge_hit", "28_charge_rec");
+        M.heavy_sweep.frames = F("29_sweep_wind", "30_sweep_hit", "31_sweep_rec");
+        M.stance_switch.frames = F("35_draw_a", "36_draw_b", "37_draw_c"); /* 前搖仍是 A 姿態（35 兩邊資料夾都有），active 起點換成 B */
+        M.stance_switch.windup = 0.75; M.stance_switch.burst = { sheet: "boss3bfx", row: 3, ox: 0, oy: 10, w: 560, dur: 0.6, anchor: "b" };
+        S3.phaseSwitchMove = "stance_switch"; /* 進二階段真的播一次拔重劍（被打斷時直接換姿） */
+        S3.stances.A.extras = ["20_hs_wind", "21_hs_hit", "22_hs_rec", "23_x_wind", "24_x_hold", "25_x_hit", "26_spin_wind", "27_spin_hit", "28_spin_rec", "29_dash_wind", "30_dash_hit", "31_dash_rec", "32_low_wind", "33_low_hit", "34_low_rec", "35_draw_a"];
+        S3.stances.B.extras = ["20_slam_wind", "21_slam_hit", "22_slam_rec", "23_plunge_jump", "24_plunge_hit", "25_plunge_rec", "26_charge_wind", "27_charge_hit", "28_charge_rec", "29_sweep_wind", "30_sweep_hit", "31_sweep_rec", "35_draw_a", "36_draw_b", "37_draw_c"];
+        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx";
+        S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
+        S3.zoneArt = { fire: ["boss3bfx", 2] }; /* 戒律鎮壓地面區域用陣紋循環 */
+        const A0 = { sheet: "boss3fx", row: 0, ox: 140, oy: -150, w: 380, dur: 0.3 };
+        M.slash1.fxAct = A0;
+        M.exclusive_feint.fxAct = A0;
+        M.exclusive_combo.fxHit = { sheet: "boss3fx", row: 0, ox: 130, oy: -140, w: 360, dur: 0.24, rot: 0.55 };
+        M.slash2.fxAct = { sheet: "boss3fx", row: 1, ox: 0, oy: -120, w: 560, h: 330, dur: 0.4 };
+        M.dash_rush.fxAct = { sheet: "boss3fx", row: 2, ox: 160, oy: -150, w: 620, h: 260, dur: 0.34 };
+        M.thrust_peril.fxAct = { sheet: "boss3fx", row: 2, ox: 220, oy: -150, w: 640, h: 260, dur: 0.32 };
+        M.sweep_peril.fxAct = { sheet: "boss3fx", row: 0, ox: 120, oy: -45, w: 600, h: 260, dur: 0.48 };
+        const B0 = { sheet: "boss3bfx", row: 0, ox: 150, oy: -170, w: 440, dur: 0.32, alpha: 0.85 }, B1 = { sheet: "boss3bfx", row: 1, ox: 230, oy: 18, w: 400, dur: 0.5, anchor: "b", alpha: 0.85 };
+        M.heavy_slam.fxAct = [B0, B1];
+        M.heavy_slash.fxAct = [B0, Object.assign({}, B1, { w: 360, alpha: 0.8 })];
+        M.sword_cleave.fxHit = [B0, B1];
+        M.heavy_zone.fxAct = [{ sheet: "boss3bfx", row: 1, ox: 60, oy: 18, w: 520, dur: 0.55, anchor: "b" }];
+        M.heavy_thrust.fxAct = [{ sheet: "boss3bfx", row: 1, ox: 90, oy: 18, w: 380, dur: 0.45, anchor: "b", alpha: 0.85 }];
+        M.heavy_sweep.fxAct = { sheet: "boss3bfx", row: 0, ox: 130, oy: -70, w: 720, h: 330, dur: 0.5 };
       })();
       /* ===== v0.8.23 第 5 關 九幽魔狼：一階段小狼（A）→ 仰天長嘯蛻變 → 二階段大狼（B）。美術到位前用程式畫的野獸頂替 =====
          動作格沿用人形 16 格命名：07 伏身、08 蓄力撲、09 揮爪、10 收招、11 空中撲咬、12 落地、13 甩尾旋掃、14 長嘯、15 hurt、16 stagger */
@@ -4547,6 +4588,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;
         }
+        if (stage && stage.phaseSwitchMove && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) { /* v0.8.59 第 3 關：真的播一次拔重劍；被打斷（破勢等）就直接換 */
+          triggerBossMove(stage.phaseSwitchMove);
+          if (Boss.moveType === stage.phaseSwitchMove && Boss.state === "windup") return;
+        }
         if (stage && stage.splitMove) Boss._splitPending = true; /* v0.8.55 第 2 關：二階段一開始先分身 */
         if (stage && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) {
           Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
@@ -4660,8 +4705,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       /* v0.8.25 招式特效（資料驅動）：move.fxAct＝出招起點、move.fxHit＝連擊每一下、move.fxLand＝躍擊落地；
          欄位 {sheet,row,ox(沿面向偏移),oy,w,h,dur,anchor,alpha} */
       function spawnMoveFx(f) {
+        if (Array.isArray(f)) { f.forEach(spawnMoveFx); return; } /* v0.8.59 一次可出多個特效（刀弧＋落地震波） */
         if (!f || !fxReady(f.sheet)) return;
-        spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha });
+        spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha, rot: (f.rot || 0) * Boss.facing });
       }
       function triggerMacro(k) { const parts = k.split("+"); triggerBossMove(parts[0], parts.slice(1)); }
       function triggerBossMove(moveKey, queue = []) {
@@ -4952,6 +4998,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               Boss.stance = Boss.stance === "A" ? "B" : "A";
               Boss.hitRegistered = true; Boss.flashFrames = 3;
               Sound.play("block", 0.55, 1.2);
+              if (move.burst) { spawnMoveFx(move.burst); addTrauma(0.45); triggerHitstopMs(60); emitDust(Boss.x, Config.groundY, 1, 5, 1.3); emitDust(Boss.x, Config.groundY, -1, 5, 1.3); }
               const swTxt = (move.switchText && move.switchText[Boss.stance]) || (Boss.stance === "B" ? "〔換姿・玄鐵重劍〕" : "〔換姿・青雲雙劍〕");
               spawnFloatingText(Boss.x, Boss.y - 130, swTxt, move.isTransform ? "#f87171" : "#a5b4fc", 1.2);
               if (move.isTransform) { /* 蛻變完成：換成大狼、震波、震退玩家 */
@@ -5216,6 +5263,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
         if (stage.mirror) { mirrorAI(dt, dist); return; }
+        if (stage.phaseSwitchMove && Config.bossPhase === 2 && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2] && Boss.aiCooldown <= 0) { triggerBossMove(stage.phaseSwitchMove); return; } /* 拔劍被打斷時，下一個出招機會補播 */
         if (Boss._splitPending && Boss.aiCooldown <= 0 && stage.splitMove) { Boss._splitPending = false; triggerBossMove(stage.splitMove); return; }
         if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;
@@ -5977,6 +6025,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Game.illusions = Game.illusions.filter(il => !(il.dead && il.alpha <= 0));
       }
       function illusionMoveFx(f) {
+        if (Array.isArray(f)) { f.forEach(illusionMoveFx); return; }
         if (!f || !illusionsAlive() || !fxReady(f.sheet)) return;
         for (const il of Game.illusions) if (!il.dead) spawnFx(f.sheet, f.row, il.x + il.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: il.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha });
       }
@@ -6079,8 +6128,16 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               ctx.strokeStyle = "#e2e8f0";
             }
             ctx.lineWidth = 2.5;
+            const zA = Stages[Boss.stageId] && Stages[Boss.stageId].zoneArt && Stages[Boss.stageId].zoneArt[hz.type];
+            if (zA && fxReady(zA[0])) { /* v0.8.59 生圖地面陣紋（4 格循環、疊加發光）；預警時淡、爆發後亮 */
+              const sh = fxSheet(zA[0]), col = Math.floor(performance.now() / 110) % 4, zw = hz.w * 1.25, zh = zw * 0.5;
+              ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = isWarn ? 0.45 + 0.25 * Math.sin(performance.now() / 60) : Math.min(1, alpha * 1.4);
+              ctx.drawImage(sh.img, col * 256, zA[1] * 256, 256, 256, hz.x - zw / 2, hz.y - zh * 0.56, zw, zh);
+              ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+            } else {
             ctx.fillRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
             ctx.strokeRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
+            }
             if (isWarn) {
               ctx.font = "700 12px var(--font-serif)";
               ctx.fillStyle = "#fde047";
@@ -7027,6 +7084,21 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         else if (Boss.state === "recover") { fall = 1; alpha = Math.max(0, Boss.stateTimer / (m.recover * 0.5 || 0.4)); if (alpha > 1) alpha = 1; }
         else return;
         const r = m.range * 0.75, n = m.swordRain;
+        const artK = stage.swordRainArt, art = artK && fxReady(artK) ? fxSheet(artK) : null;
+        if (art) { /* v0.8.59 生圖劍雨：boss3fx 列 3（0 落下、1 插地、2～3 消散）；圖中劍尖約在格子 (0.66, 0.82) */
+          const col = Boss.state === "windup" ? 0 : Boss.state === "active" ? 1 : (alpha > 0.5 ? 2 : 3);
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          for (let i = 0; i < n; i++) {
+            const f = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
+            const x = Boss.grabZoneX + f * r * 0.92, hover = 420 * (1 - fall);
+            const tipY = Config.groundY + 4 - 8 * Math.abs(f) - hover - (i % 2) * 12;
+            const S = 190 + (i % 3) * 18, mir = i % 2 ? -1 : 1;
+            ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, alpha * (Boss.state === "recover" ? 1.6 : 1))); ctx.translate(x, tipY); ctx.scale(mir, 1);
+            ctx.drawImage(art.img, col * 256, 3 * 256, 256, 256, -S * 0.66, -S * 0.82, S, S);
+            ctx.restore();
+          }
+          ctx.restore(); return;
+        }
         ctx.save();
         for (let i = 0; i < n; i++) {
           const f = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;

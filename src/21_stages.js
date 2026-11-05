@@ -114,6 +114,47 @@
             poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 18], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
             far: [], farP2: ["heavy_zone"] }
         };
+        /* v0.8.59 三拍關鍵格（A 雙劍表 3×5 → assets/boss3/20～34；B 重劍表 3×5 → assets/boss3b/20～31、35～37 拔劍）＋專屬特效
+           boss3fx（A，淡紫銀光）：0 雙月牙刀弧、1 旋風環、2 突刺光、3 劍雨飛劍；boss3bfx（B，硃紅金）：0 重劍弧、1 落地震波、2 戒律陣紋（循環）、3 拔劍爆氣 */
+        const F = (w, a, r) => ({ windup: w, active: a, recover: r });
+        const S3 = Stages[3];
+        M.slash1.frames = F("20_hs_wind", "21_hs_hit", "22_hs_rec");
+        M.exclusive_combo.frames = F("23_x_wind", ["25_x_hit", "21_hs_hit", "25_x_hit"], "22_hs_rec");
+        M.exclusive_feint.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
+        M.slash2.frames = F("26_spin_wind", "27_spin_hit", "28_spin_rec");
+        M.dash_rush.frames = F("29_dash_wind", "30_dash_hit", "31_dash_rec");
+        M.thrust_peril.frames = F("29_dash_wind", "30_dash_hit", "31_dash_rec");
+        M.sweep_peril.frames = F("32_low_wind", "33_low_hit", "34_low_rec");
+        M.grab_peril.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
+        M.heavy_slam.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
+        M.heavy_slash.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
+        M.sword_cleave.frames = F("20_slam_wind", ["21_slam_hit", "30_sweep_hit"], "31_sweep_rec");
+        M.heavy_zone.frames = F("23_plunge_jump", "24_plunge_hit", "25_plunge_rec");
+        M.heavy_thrust.frames = F("26_charge_wind", "27_charge_hit", "28_charge_rec");
+        M.heavy_sweep.frames = F("29_sweep_wind", "30_sweep_hit", "31_sweep_rec");
+        M.stance_switch.frames = F("35_draw_a", "36_draw_b", "37_draw_c"); /* 前搖仍是 A 姿態（35 兩邊資料夾都有），active 起點換成 B */
+        M.stance_switch.windup = 0.75; M.stance_switch.burst = { sheet: "boss3bfx", row: 3, ox: 0, oy: 10, w: 560, dur: 0.6, anchor: "b" };
+        S3.phaseSwitchMove = "stance_switch"; /* 進二階段真的播一次拔重劍（被打斷時直接換姿） */
+        S3.stances.A.extras = ["20_hs_wind", "21_hs_hit", "22_hs_rec", "23_x_wind", "24_x_hold", "25_x_hit", "26_spin_wind", "27_spin_hit", "28_spin_rec", "29_dash_wind", "30_dash_hit", "31_dash_rec", "32_low_wind", "33_low_hit", "34_low_rec", "35_draw_a"];
+        S3.stances.B.extras = ["20_slam_wind", "21_slam_hit", "22_slam_rec", "23_plunge_jump", "24_plunge_hit", "25_plunge_rec", "26_charge_wind", "27_charge_hit", "28_charge_rec", "29_sweep_wind", "30_sweep_hit", "31_sweep_rec", "35_draw_a", "36_draw_b", "37_draw_c"];
+        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx";
+        S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
+        S3.zoneArt = { fire: ["boss3bfx", 2] }; /* 戒律鎮壓地面區域用陣紋循環 */
+        const A0 = { sheet: "boss3fx", row: 0, ox: 140, oy: -150, w: 380, dur: 0.3 };
+        M.slash1.fxAct = A0;
+        M.exclusive_feint.fxAct = A0;
+        M.exclusive_combo.fxHit = { sheet: "boss3fx", row: 0, ox: 130, oy: -140, w: 360, dur: 0.24, rot: 0.55 };
+        M.slash2.fxAct = { sheet: "boss3fx", row: 1, ox: 0, oy: -120, w: 560, h: 330, dur: 0.4 };
+        M.dash_rush.fxAct = { sheet: "boss3fx", row: 2, ox: 160, oy: -150, w: 620, h: 260, dur: 0.34 };
+        M.thrust_peril.fxAct = { sheet: "boss3fx", row: 2, ox: 220, oy: -150, w: 640, h: 260, dur: 0.32 };
+        M.sweep_peril.fxAct = { sheet: "boss3fx", row: 0, ox: 120, oy: -45, w: 600, h: 260, dur: 0.48 };
+        const B0 = { sheet: "boss3bfx", row: 0, ox: 150, oy: -170, w: 440, dur: 0.32, alpha: 0.85 }, B1 = { sheet: "boss3bfx", row: 1, ox: 230, oy: 18, w: 400, dur: 0.5, anchor: "b", alpha: 0.85 };
+        M.heavy_slam.fxAct = [B0, B1];
+        M.heavy_slash.fxAct = [B0, Object.assign({}, B1, { w: 360, alpha: 0.8 })];
+        M.sword_cleave.fxHit = [B0, B1];
+        M.heavy_zone.fxAct = [{ sheet: "boss3bfx", row: 1, ox: 60, oy: 18, w: 520, dur: 0.55, anchor: "b" }];
+        M.heavy_thrust.fxAct = [{ sheet: "boss3bfx", row: 1, ox: 90, oy: 18, w: 380, dur: 0.45, anchor: "b", alpha: 0.85 }];
+        M.heavy_sweep.fxAct = { sheet: "boss3bfx", row: 0, ox: 130, oy: -70, w: 720, h: 330, dur: 0.5 };
       })();
       /* ===== v0.8.23 第 5 關 九幽魔狼：一階段小狼（A）→ 仰天長嘯蛻變 → 二階段大狼（B）。美術到位前用程式畫的野獸頂替 =====
          動作格沿用人形 16 格命名：07 伏身、08 蓄力撲、09 揮爪、10 收招、11 空中撲咬、12 落地、13 甩尾旋掃、14 長嘯、15 hurt、16 stagger */

@@ -146,6 +146,21 @@
         else if (Boss.state === "recover") { fall = 1; alpha = Math.max(0, Boss.stateTimer / (m.recover * 0.5 || 0.4)); if (alpha > 1) alpha = 1; }
         else return;
         const r = m.range * 0.75, n = m.swordRain;
+        const artK = stage.swordRainArt, art = artK && fxReady(artK) ? fxSheet(artK) : null;
+        if (art) { /* v0.8.59 生圖劍雨：boss3fx 列 3（0 落下、1 插地、2～3 消散）；圖中劍尖約在格子 (0.66, 0.82) */
+          const col = Boss.state === "windup" ? 0 : Boss.state === "active" ? 1 : (alpha > 0.5 ? 2 : 3);
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          for (let i = 0; i < n; i++) {
+            const f = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;
+            const x = Boss.grabZoneX + f * r * 0.92, hover = 420 * (1 - fall);
+            const tipY = Config.groundY + 4 - 8 * Math.abs(f) - hover - (i % 2) * 12;
+            const S = 190 + (i % 3) * 18, mir = i % 2 ? -1 : 1;
+            ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, alpha * (Boss.state === "recover" ? 1.6 : 1))); ctx.translate(x, tipY); ctx.scale(mir, 1);
+            ctx.drawImage(art.img, col * 256, 3 * 256, 256, 256, -S * 0.66, -S * 0.82, S, S);
+            ctx.restore();
+          }
+          ctx.restore(); return;
+        }
         ctx.save();
         for (let i = 0; i < n; i++) {
           const f = n === 1 ? 0 : (i / (n - 1)) * 2 - 1;

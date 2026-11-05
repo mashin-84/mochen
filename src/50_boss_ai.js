@@ -24,6 +24,10 @@
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;
         }
+        if (stage && stage.phaseSwitchMove && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) { /* v0.8.59 第 3 關：真的播一次拔重劍；被打斷（破勢等）就直接換 */
+          triggerBossMove(stage.phaseSwitchMove);
+          if (Boss.moveType === stage.phaseSwitchMove && Boss.state === "windup") return;
+        }
         if (stage && stage.splitMove) Boss._splitPending = true; /* v0.8.55 第 2 關：二階段一開始先分身 */
         if (stage && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) {
           Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
@@ -137,8 +141,9 @@
       /* v0.8.25 招式特效（資料驅動）：move.fxAct＝出招起點、move.fxHit＝連擊每一下、move.fxLand＝躍擊落地；
          欄位 {sheet,row,ox(沿面向偏移),oy,w,h,dur,anchor,alpha} */
       function spawnMoveFx(f) {
+        if (Array.isArray(f)) { f.forEach(spawnMoveFx); return; } /* v0.8.59 一次可出多個特效（刀弧＋落地震波） */
         if (!f || !fxReady(f.sheet)) return;
-        spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha });
+        spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha, rot: (f.rot || 0) * Boss.facing });
       }
       function triggerMacro(k) { const parts = k.split("+"); triggerBossMove(parts[0], parts.slice(1)); }
       function triggerBossMove(moveKey, queue = []) {
@@ -429,6 +434,7 @@
               Boss.stance = Boss.stance === "A" ? "B" : "A";
               Boss.hitRegistered = true; Boss.flashFrames = 3;
               Sound.play("block", 0.55, 1.2);
+              if (move.burst) { spawnMoveFx(move.burst); addTrauma(0.45); triggerHitstopMs(60); emitDust(Boss.x, Config.groundY, 1, 5, 1.3); emitDust(Boss.x, Config.groundY, -1, 5, 1.3); }
               const swTxt = (move.switchText && move.switchText[Boss.stance]) || (Boss.stance === "B" ? "〔換姿・玄鐵重劍〕" : "〔換姿・青雲雙劍〕");
               spawnFloatingText(Boss.x, Boss.y - 130, swTxt, move.isTransform ? "#f87171" : "#a5b4fc", 1.2);
               if (move.isTransform) { /* 蛻變完成：換成大狼、震波、震退玩家 */
@@ -693,6 +699,7 @@
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
         if (stage.mirror) { mirrorAI(dt, dist); return; }
+        if (stage.phaseSwitchMove && Config.bossPhase === 2 && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2] && Boss.aiCooldown <= 0) { triggerBossMove(stage.phaseSwitchMove); return; } /* 拔劍被打斷時，下一個出招機會補播 */
         if (Boss._splitPending && Boss.aiCooldown <= 0 && stage.splitMove) { Boss._splitPending = false; triggerBossMove(stage.splitMove); return; }
         if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;

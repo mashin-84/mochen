@@ -84,8 +84,16 @@
               ctx.strokeStyle = "#e2e8f0";
             }
             ctx.lineWidth = 2.5;
+            const zA = Stages[Boss.stageId] && Stages[Boss.stageId].zoneArt && Stages[Boss.stageId].zoneArt[hz.type];
+            if (zA && fxReady(zA[0])) { /* v0.8.59 生圖地面陣紋（4 格循環、疊加發光）；預警時淡、爆發後亮 */
+              const sh = fxSheet(zA[0]), col = Math.floor(performance.now() / 110) % 4, zw = hz.w * 1.25, zh = zw * 0.5;
+              ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = isWarn ? 0.45 + 0.25 * Math.sin(performance.now() / 60) : Math.min(1, alpha * 1.4);
+              ctx.drawImage(sh.img, col * 256, zA[1] * 256, 256, 256, hz.x - zw / 2, hz.y - zh * 0.56, zw, zh);
+              ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+            } else {
             ctx.fillRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
             ctx.strokeRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
+            }
             if (isWarn) {
               ctx.font = "700 12px var(--font-serif)";
               ctx.fillStyle = "#fde047";
