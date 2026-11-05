@@ -87,6 +87,44 @@
         ctx.drawImage(c, -ax, -ay, img.naturalWidth, img.naturalHeight);
         ctx.restore();
       }
+      const GATE_SH = { hf: 0.35, vf: 0.30, a: 1.6 }; /* 山門影子：水平拉長（乘營火方向 skew）／垂直壓扁，數字越大影子越長 */
+      function buildGateShadow(img, gy) {
+        const k = HUB_GATE_S * 2, W = img.naturalWidth, H = img.naturalHeight;
+        const feet = [[63, 122, 588], [167, 240, 609], [411, 498, 655], [584, 673, 624]]; /* 四柱 x 範圍與柱腳底列（圖檔座標） */
+        const footY = (px) => {
+          if (px <= feet[0][1]) return feet[0][2];
+          for (let i = 0; i < feet.length; i++) {
+            if (px >= feet[i][0] && px <= feet[i][1]) return feet[i][2];
+            const n = feet[i + 1];
+            if (n && px > feet[i][1] && px < n[0]) return feet[i][2] + (n[2] - feet[i][2]) * (px - feet[i][1]) / (n[0] - feet[i][1]);
+          }
+          return feet[feet.length - 1][2];
+        };
+        const sil = document.createElement("canvas"); sil.width = W; sil.height = H;
+        const sg = sil.getContext("2d"); sg.drawImage(img, 0, 0); sg.globalCompositeOperation = "source-in"; sg.fillStyle = "#050308"; sg.fillRect(0, 0, W, H);
+        const ox = HUB_GATE_L - 40, oy = gy - 420, cw = Math.ceil(W * k + 1.8 * GATE_SH.hf * H * k + 80), ch = 460;
+        const c = document.createElement("canvas"); c.width = cw; c.height = ch;
+        const g = c.getContext("2d");
+        const raw = document.createElement("canvas"); raw.width = cw; raw.height = ch;
+        const rg = raw.getContext("2d");
+        const step = 2;
+        for (let px = 0; px < W; px += step) {
+          const yb = footY(px + step / 2), wx = HUB_GATE_L + px * k, wy = gy - (1259 / 2 - yb) * k;
+          const L = hubLight(wx), sk = L.skew / hubFlick();
+          rg.save();
+          rg.setTransform(k, 0, -k * sk * GATE_SH.hf, k * GATE_SH.vf, wx - ox, wy - oy);
+          rg.drawImage(sil, px, 0, step + 0.6, yb + 1, 0, -yb, step + 0.6, yb + 1);
+          rg.restore();
+        }
+        /* 深淺：靠近營火的一側較深（同 hubLight 的 a），遠端淡出 */
+        rg.globalCompositeOperation = "destination-in";
+        const aL = Math.min(0.85, hubLight(HUB_GATE_L).a * GATE_SH.a), aR = Math.min(0.85, hubLight(HUB_GATE_L + W * k).a * GATE_SH.a);
+        const gr = rg.createLinearGradient(0, 0, cw, 0);
+        gr.addColorStop(0, `rgba(0,0,0,${aL})`); gr.addColorStop(W * k / cw, `rgba(0,0,0,${aR})`); gr.addColorStop(1, `rgba(0,0,0,${aR * 0.55})`);
+        rg.fillStyle = gr; rg.fillRect(0, 0, cw, ch);
+        g.filter = "blur(1.5px)"; g.drawImage(raw, 0, 0);
+        return { c, ox, oy, x0f: HUB_GATE_L + W * k * 0.5 };
+      }
       function drawHubFront() { /* 山門前柱：畫在主角前面，讓主角像是從牌坊底下穿過 */
         if (Game.mode === "battle") return;
         const F = getBgArt("hub_gate_front"); if (!F.ok) return;
@@ -228,23 +266,13 @@
         // 山門（v0.8.49 生圖：斜側面牌坊，前柱另畫在角色前面＝drawHubFront；門洞有結界光幕，走近才散開）
         {
           const G = getBgArt("hub_gate");
-          if (G.ok) { /* 山門影子：把四根柱子（含柱腳）各自切成剪影，以「自己柱腳的最底一列」為軸往遠離營火的一側沿地面平躺 → 影子一定貼著柱腳 */
-            if (!Game._gateSh) {
-              Game._gateSh = [[63, 122, 588], [167, 240, 609], [411, 498, 655], [584, 673, 624]].map(([x0, x1, yb]) => {
-                const y0 = 330, c = document.createElement("canvas"); c.width = x1 - x0; c.height = yb - y0 + 1;
-                const g = c.getContext("2d"); g.drawImage(G.img, x0, y0, c.width, c.height, 0, 0, c.width, c.height);
-                g.globalCompositeOperation = "source-in"; g.fillStyle = "#050308"; g.fillRect(0, 0, c.width, c.height);
-                return { c, x0, x1, yb };
-              });
-            }
-            const k = HUB_GATE_S * 2;
-            for (const P of Game._gateSh) {
-              const xm = (P.x0 + P.x1) / 2, wx = HUB_GATE_L + xm * k, wy = gy - (1259 / 2 - P.yb) * k, L = hubLight(wx);
-              ctx.save(); ctx.globalAlpha = L.a;
-              ctx.transform(k, 0, -k * L.skew * 0.75, k * 0.32 * hubFlick(), wx, wy); /* 山門在營火後方（較深）：影子往右後方（畫面右上）落在草地上 */
-              ctx.drawImage(P.c, -(xm - P.x0), -(P.c.height - 1));
-              ctx.restore();
-            }
+          if (G.ok) { /* v0.8.53 山門影子：整座牌坊（柱＋橫樑＋屋頂）剪影，逐欄以「該欄的柱腳」為軸往遠離營火的一側平躺；柱間的欄位柱腳線性內插 → 影子連續且貼著柱腳。算一次存快取（含柔邊），每幀只做 ±1% 起伏 */
+            if (!Game._gateSh) Game._gateSh = buildGateShadow(G.img, gy);
+            const C = Game._gateSh, f = hubFlick();
+            ctx.save();
+            ctx.translate(C.x0f, gy); ctx.scale(f, f); ctx.translate(-C.x0f, -gy);
+            ctx.drawImage(C.c, C.ox, C.oy);
+            ctx.restore();
           }
           if (G.ok) ctx.drawImage(G.img, HUB_GATE_L, gy - 1259 * HUB_GATE_S, 1476 * HUB_GATE_S, 1315 * HUB_GATE_S);
           const cx0 = HUB_GATE_L + 409 * HUB_GATE_S, cx1 = HUB_GATE_L + 911 * HUB_GATE_S;
