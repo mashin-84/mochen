@@ -128,7 +128,7 @@
         };
       })();
       Stages[1].introCine = true; /* v0.8.18 登場動畫 */
-      Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise"];
+      Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise", "24_chop_wind", "25_chop_hit", "26_chop_rec", "27_thr_wind", "28_thr_hit", "29_thr_rec", "30_swp_wind", "31_swp_hit", "32_swp_rec", "33_leap_crouch", "34_leap_air", "35_leap_land"];
       /* v0.8.33 第 5 關登場：影片（剪影小狼＋巨狼影子）→ 揚塵淡出 → 小狼衝進場煞停、名字卡（introDash 模式，需影片） */
 Stages[5].introCine = true; Stages[5].introDash = true; Stages[5].introVideo = "assets/boss5/intro"; Stages[5].introBg = "intro5"; Stages[5].introName = "assets/boss5/name.webp";
 Stages[5].introA = 5.6; Stages[5].introFlash = "214,196,170"; Stages[5].introSfx = [[1.9, "w_snarl", 0.45, 1.1], [2.9, "m_howl", 0.95, 1], [4.0, "w_bark", 0.85, 1.1], [4.4, "w_claw", 0.7, 1]]; Stages[5].introLandSfx = "w_snarl"; Stages[5].spriteExtras = ["26_rush", "25_pounce_land", "20_bite_crouch"];
@@ -140,7 +140,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       (function () {
         const M = Stages[1].moves;
         M.charge_rush.chainOnHit = true; /* 衝鋒命中才接追擊 */
-        M.leap_slam = { name: "【危】神衛躍斬 (閃開，或起跳踩頭)", isLeap: true, isPerilous: true, perilType: "leap", leapH: 250, frames: { windup: "08_windup_thrust", recover: "10_slash_rec" }, windup: 0.72, active: 0.55, recover: 0.78, range: 190, lunge: 0, damage: 280, parryPostureDmg: 22 };
+        /* M2 統領四招三拍關鍵格（v0.8.46 生圖）：起手要一眼認出是哪一招 */
+        M.slash1.frames = { windup: "24_chop_wind", active: "25_chop_hit", recover: "26_chop_rec" };
+        M.thrust_peril.frames = { windup: "27_thr_wind", active: "28_thr_hit", recover: "29_thr_rec" };
+        M.sweep_peril.frames = { windup: "30_swp_wind", active: "31_swp_hit", recover: "32_swp_rec" };
+        M.leap_slam = { name: "【危】神衛躍斬 (閃開，或起跳踩頭)", isLeap: true, isPerilous: true, perilType: "leap", leapH: 250, frames: { windup: "33_leap_crouch", active: "34_leap_air", recover: "35_leap_land" }, windup: 0.72, active: 0.55, recover: 0.78, range: 190, lunge: 0, damage: 280, parryPostureDmg: 22 };
         M.backstep = { name: "神衛後撤", isMobility: true, frames: { windup: "04_walk2", active: "04_walk2", recover: "01_idle1" }, windup: 0.10, active: 0.28, recover: 0.10, range: 0, lunge: -900, damage: 0 };
         M.dash_in = { name: "神衛衝步", isMobility: true, frames: { windup: "03_walk1", active: "03_walk1", recover: "01_idle1" }, windup: 0.12, active: 0.22, recover: 0.06, range: 0, lunge: 1100, damage: 0 };
         M.combo_delay = { name: "神衛斷雲連戟・遲刃 (最後一刀慢半拍)", isCombo: true, pose: "thrust", comboTotalHits: 3, comboInterval: 0.22, comboLastDelay: 0.36, comboDamagePerHit: 110, windup: 0.44, active: 1.15, recover: 0.45, range: 185, lunge: 380, damage: 130, parryPostureDmg: 16 };
