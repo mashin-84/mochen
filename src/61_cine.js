@@ -114,26 +114,31 @@
         const t = c.t, gy = Config.groundY;
         if (c.dash && Stages[Boss.stageId].introAppear) { /* v0.8.58 鏡片聚合現身（第 2 關）：影片結束（鏡片蓋滿）→ 戰場淡入、鏡片旋風在原位聚合 → 顧天風現形＋名牌 */
           const st2 = Stages[Boss.stageId];
+          const AP = Object.assign({ swirl: [2, 560, -20], land: [3, 420, -130], frames: ["33_tp_hit", "34_tp_rec"], rain: 0, sparks: "mikiri" }, st2.introAppearCfg || {}); /* v0.8.64 每關可設：聚合特效列／大小／高度、現身爆光、現身動作格、落劍數 */
           Boss.x = c.bx;
           if (Boss.flashFrames > 0) Boss.flashFrames = Math.max(0, Boss.flashFrames - dt * 60); /* 動畫期間物理不跑，閃白要自己倒數 */
           if (t < CINE.LAND) {
             Boss.y = -900; Boss._cineImg = null;
             if (t >= CINE.A && !c.swirl) {
               c.swirl = true;
-              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, 2, c.bx, gy - 20, { w: 560, h: 560, dur: CINE.LAND - CINE.A + 0.15 });
+              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, AP.swirl[0], c.bx, gy + AP.swirl[2], { w: AP.swirl[1], h: AP.swirl[3] || AP.swirl[1], dur: CINE.LAND - CINE.A + 0.15 });
+              if (AP.rain && fxReady(st2.introAppear)) for (let i = 0; i < AP.rain; i++) { /* 飛劍從天而降插在現身處四周 */
+                const ox = (i / Math.max(1, AP.rain - 1) - 0.5) * 420, dl = (i % 2 ? 0.12 : 0) + Math.abs(ox) / 2400;
+                setTimeout(() => spawnFx(st2.introAppear, 3, c.bx + ox, gy - 70 - (i % 2) * 14, { w: 190, dur: 0.75, facing: ox < 0 ? -1 : 1 }), dl * 1000);
+              }
               Sound.play("assist", 0.7, 0.8);
             }
-            if (t >= CINE.A && Math.random() < dt * 30) spawnSparks(c.bx + (Math.random() - 0.5) * 260, gy - 40 - Math.random() * 200, "mikiri", Math.random() < 0.5 ? -1 : 1);
+            if (AP.sparks && t >= CINE.A && Math.random() < dt * 30) spawnSparks(c.bx + (Math.random() - 0.5) * 260, gy - 40 - Math.random() * 200, AP.sparks, Math.random() < 0.5 ? -1 : 1);
           } else {
             Boss.y = gy;
             if (!c.landed) {
               c.landed = true; Boss.flashFrames = 5;
-              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, 3, c.bx, gy - 130, { w: 420, dur: 0.5 });
+              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, AP.land[0], c.bx, gy + AP.land[2], { w: AP.land[1], h: AP.land[3] || AP.land[1], dur: 0.5 });
               addTrauma(0.35); hapticBuzz(25);
               Sound.play("mikiri", 0.8, 1.2); Sound.play("parry", 0.5, 1.6);
               bossNameCard(st2);
             }
-            Boss._cineImg = (t < CINE.LAND + 0.45) ? "33_tp_hit" : (t < CINE.LAND + 1.2) ? "34_tp_rec" : null;
+            Boss._cineImg = (t < CINE.LAND + 0.45) ? AP.frames[0] : (t < CINE.LAND + 1.2) ? AP.frames[1] : null;
           }
           updateHitParticles(dt);
           if (t >= CINE.END) endBossCine(false);

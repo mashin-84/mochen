@@ -145,6 +145,10 @@
           { img: "arena3_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.18 } /* v0.8.63 前景竹叢剪影 */
         ];
         S3.introName = "assets/boss3/name.webp"; /* v0.8.63 書法名牌「莫寒川」 */
+        /* v0.8.64 開場影片（Gemini 原片 10 秒剪到光蓋滿的 7.6 秒）：剪影莫寒川舉雙劍 → 池中升起飛劍 → 萬劍撲向鏡頭；之後戰場淡入、飛劍落在原位、旋風環收束現身 */
+        S3.introBg = "intro3"; S3.introCine = true; S3.introVideo = "assets/boss3/intro"; S3.introDash = true; S3.introAppear = "boss3fx"; S3.introA = 7.6; S3.introFlash = "226,220,246";
+        S3.introAppearCfg = { swirl: [1, 560, -110, 330], land: [0, 420, -150], frames: ["25_x_hit", "22_hs_rec"], rain: 7, sparks: null };
+        S3.introSfx = [[1.0, "slash", 0.35, 1.3], [2.4, "assist", 0.5, 0.9], [3.2, "flysword", 0.5, 0.8], [4.6, "slash", 0.55, 1.1], [6.0, "flysword", 0.7, 1.0], [6.8, "mikiri", 0.8, 1.0]];
         const A0 = { sheet: "boss3fx", row: 0, ox: 140, oy: -150, w: 380, dur: 0.3 };
         M.slash1.fxAct = A0;
         M.exclusive_feint.fxAct = A0;
