@@ -70,20 +70,20 @@
         dlgStart(lines, null);
       }
 
-      const HUB_GATE_S = 0.33, HUB_GATE_L = -470; /* 山門縮放與左緣（前柱中心約在 x=-170，HUB_GATE_X=-150 越過即進場） */
+      const HUB_GATE_S = 0.42, HUB_GATE_L = -613; /* v0.8.50 山門放大（橫樑高於主角頭頂）；前柱中心約 x=-230，HUB_GATE_X=-150 越過即進場 */
       /* v0.8.50 營地光源＝營火：影子方向背向火、越近越深越長，跟火光一起晃 */
       const HUB_FIRE_X = -900;
       function hubFlick() { const t = performance.now() / 1000; return 1 + 0.09 * Math.sin(t * 9) + 0.05 * Math.sin(t * 23 + 1.3) + 0.03 * Math.sin(t * 41); }
       function hubLight(x) {
         const d = x - HUB_FIRE_X, ad = Math.abs(d), f = hubFlick();
         const near = Math.max(0, 1 - ad / 1100);
-        return { skew: Math.max(-1.5, Math.min(1.5, d / 320)) * f, len: (0.14 + 0.1 * near) * f, a: (0.28 + 0.34 * near) * (0.9 + 0.1 * f) };
+        return { skew: Math.max(-1.8, Math.min(1.8, d / 260)) * f, len: (0.05 + 0.05 * near) * f, /* 火與人在同一深度：影子沿地面往遠離火的一側平躺 */ a: (0.28 + 0.34 * near) * (0.9 + 0.1 * f) };
       }
-      function hubShadow(img, wx, ax, ay, S) { /* img 的 (ax, ay) 點站在地面 wx；S 為負＝左右鏡像 */
+      function hubShadow(img, wx, ax, ay, S, gyOff) { /* img 的 (ax, ay) 點站在地面 wx（地面高度可用 gyOff 往上調）；S 為負＝左右鏡像 */
         const c = shadowImg(img); if (!c) return;
         const L = hubLight(wx);
         ctx.save(); ctx.globalAlpha = L.a;
-        ctx.transform(S, 0, Math.abs(S) * L.skew, -Math.abs(S) * L.len, wx, Config.groundY + 2);
+        ctx.transform(S, 0, -Math.abs(S) * L.skew, -Math.abs(S) * L.len, wx, Config.groundY + 2 - (gyOff || 0)); /* 圖往上＝影子往遠離火的方向 */
         ctx.drawImage(c, -ax, -ay, img.naturalWidth, img.naturalHeight);
         ctx.restore();
       }
@@ -175,7 +175,7 @@
         }
 
         // 營火（v0.8.49 生圖：石圈木柴底座＋發光火焰序列 assets/fx/campfire.webp，列 0～1 火焰 8 格、列 2 火星、列 3 煙）
-        const fx = -900;
+        const fx = HUB_FIRE_X;
         const fl = 0.3 + 0.06 * Math.sin(t * 9) + 0.03 * Math.sin(t * 23);
         const fg = ctx.createRadialGradient(fx, gy - 40, 10, fx, gy - 40, 320);
         fg.addColorStop(0, `rgba(255,150,60,${fl})`);
@@ -228,9 +228,18 @@
         // 山門（v0.8.49 生圖：斜側面牌坊，前柱另畫在角色前面＝drawHubFront；門洞有結界光幕，走近才散開）
         {
           const G = getBgArt("hub_gate");
-          if (G.ok) { /* 山門影子：以四根柱腳中點為地面基準 */
-            const gw = 1476 * HUB_GATE_S;
-            hubShadow(G.img, HUB_GATE_L + gw * 0.5, G.img.naturalWidth * 0.5, 1259 / 2, HUB_GATE_S * 2);
+          if (G.ok) { /* 山門影子：四根柱子各自從自己的柱腳底往遠離營火的一側沿地面平躺（柱腳前後深度不同，各用各的地面高度） */
+            const S = HUB_GATE_S, oy = gy - 1259 * S;
+            for (const [cx, by, bw, h] of [[296 - 111, 1218 - 41, 117, 1060], [519 - 111, 1255 - 41, 140, 1070], [1368 - 111, 1292 - 41, 160, 900], [1021 - 111, 1345 - 41, 172, 1080]]) {
+              const x0 = HUB_GATE_L + cx * S, y0 = oy + by * S, L = hubLight(x0), H = h * S;
+              const tx = x0 - (-L.skew) * H, ty = y0 + L.len * H; /* 與 hubShadow 同一投影：圖往上 → 影子往遠離火 */
+              const w0 = bw * S * 0.5, t0 = bw * S * 0.2, t1 = t0 * 0.5; /* 影帶厚度＝柱腳在地面上的深度 */
+              const sx0 = x0 + Math.sign(tx - x0) * w0 * 0.6;
+              const g2 = ctx.createLinearGradient(sx0, y0, tx, ty);
+              g2.addColorStop(0, `rgba(5,3,8,${L.a * 0.9})`); g2.addColorStop(0.55, `rgba(5,3,8,${L.a * 0.4})`); g2.addColorStop(1, "rgba(5,3,8,0)");
+              ctx.save(); ctx.fillStyle = g2; ctx.beginPath();
+              ctx.moveTo(sx0, y0 - t0); ctx.lineTo(tx, ty - t1); ctx.lineTo(tx, ty + t1); ctx.lineTo(sx0, y0 + t0 * 0.6); ctx.closePath(); ctx.fill(); ctx.restore();
+            }
           }
           if (G.ok) ctx.drawImage(G.img, HUB_GATE_L, gy - 1259 * HUB_GATE_S, 1476 * HUB_GATE_S, 1315 * HUB_GATE_S);
           const cx0 = HUB_GATE_L + 409 * HUB_GATE_S, cx1 = HUB_GATE_L + 911 * HUB_GATE_S;
@@ -241,7 +250,7 @@
           const a = (1 - open) * (0.5 + 0.08 * Math.sin(t * 2.2));
           if (a > 0.01) {
             ctx.save(); ctx.globalCompositeOperation = "lighter";
-            const top = gy - 205, wd = cx1 - cx0;
+            const top = gy - (1259 - 625) * HUB_GATE_S, wd = cx1 - cx0;
             const cg = ctx.createLinearGradient(cx0, 0, cx1, 0);
             cg.addColorStop(0, "rgba(160,230,220,0)"); cg.addColorStop(0.5, `rgba(170,235,225,${a * 0.55})`); cg.addColorStop(1, "rgba(160,230,220,0)");
             ctx.fillStyle = cg; ctx.fillRect(cx0, top, wd, gy - top);
