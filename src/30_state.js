@@ -333,8 +333,16 @@
         }
       }
 
+      /* M2 浮字規則（空洞騎士式減法）：傷害數字預設關閉（localStorage qingyun_dmgnum="1" 才顯示）；
+         處決時畫面中央已有書法大字，「一劍青雲」系列浮字一律不再疊；同一位置 0.25 秒內不重複堆字 */
+      const FT_RULE = { dmg: (() => { try { return localStorage.getItem("qingyun_dmgnum") === "1"; } catch (e) { return false; } })() };
       function spawnFloatingText(x, y, text, color = "#fef08a", scale = 1.0) {
-        Game.floatingTexts.push({
+        text = String(text);
+        if (/一劍青雲/.test(text)) return;
+        if (!FT_RULE.dmg) { text = text.replace(/\s*[-+]\s*\d+(\.\d+)?%?/g, "").replace(/^\s*\d+\s*$/, "").trim(); if (!text) return; }
+        const nowT = performance.now();
+        if (Game.floatingTexts.some((f) => f.text === text && Math.abs(f.x - x) < 60 && nowT - (f.t0 || 0) < 250)) return;
+        Game.floatingTexts.push({ t0: nowT,
           x, y, vy: -65, text, color, scale, life: 0.95, maxLife: 0.95
         });
       }
