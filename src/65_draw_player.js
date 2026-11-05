@@ -40,6 +40,7 @@
 
           if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
             frame = "11_thrust";
+            { const im = MC_IMGS["27_t_b"]; if (im && im.complete && im.naturalWidth) frame = "27_t_b"; } /* M2 新突刺格 */
           } else if (Player.blast) {
             const xf = (n, fb) => { const im = MC_IMGS[n]; return im && im.complete && im.naturalWidth ? n : fb; };
             const ph = Player.blast.phase;
@@ -56,6 +57,13 @@
             frame = "08_fall";
           } else if (Player.state === "attack") {
             frame = Player.comboStep % 2 !== 0 ? "09_slash1" : "10_slash2";
+            /* M2 三拍關鍵格：判定在出手瞬間，所以預備只閃 0.05 秒當起手，出刀格撐到 45%，之後收招；空中用出刀格 */
+            const seq = MC_ATK[Player.comboStep] || MC_ATK[1];
+            const ok = (n) => { const im = MC_IMGS[n]; return im && im.complete && im.naturalWidth; };
+            if (seq.every(ok)) {
+              const dur = Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
+              frame = isAirborne ? seq[1] : el < 0.05 ? seq[0] : el < dur * 0.45 ? seq[1] : seq[2];
+            }
           } else if (Player.isChargingAttack) {
             frame = "12_charge";
           } else if (isAirborne) {
