@@ -469,6 +469,7 @@
             }
             // 原語 (4) 區域封鎖：召喚地表持續傷害區域
             if (move.isZone) {
+              bsfx("zone");
               const zX = (move.zoneTargetPlayer || (move.zoneTargetP2 && Config.bossPhase === 2)) ? Player.x : Boss.x + Boss.facing * (move.range * 0.5);
               Game.hazardZones.push({
                 x: zX,

@@ -13,7 +13,8 @@
         /* M1 通用音效換檔：檔案放 assets/sfx/g_<名>.mp3（變體 g_<名>_2.mp3、g_<名>_3.mp3…），在這裡登記「名: 變體數」才會載入；
            載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
         /* v0.8.67 Boss 專屬音效（ElevenLabs 生成）：assets/sfx/<名>.mp3（變體 <名>_2.mp3），「名: 變體數」；各關在 Stages[n].sfx 指定事件用哪個（見 bsfx） */
-        bossSfx: { b2_fan: 2, b2_thrust: 2, b2_vortex: 1, b2_sword_cast: 2, b2_sword_fly: 2, b2_sword_rain: 2, b2_vanish: 2, b2_appear: 2, b2_split: 2, b2_shatter: 2, b2_shard_hit: 1 },
+        bossSfx: { b2_fan: 2, b2_thrust: 2, b2_vortex: 1, b2_sword_cast: 2, b2_sword_fly: 2, b2_sword_rain: 2, b2_vanish: 2, b2_appear: 2, b2_split: 2, b2_shatter: 2, b2_shard_hit: 1,
+          b3_twin: 1, b3_cross: 2, b3_spin: 2, b3_dash: 2, b3_low: 2, b3_rain: 1, b3_draw: 1, b3_heavy: 1, b3_plunge: 1, b3_seal: 1, b3_charge: 1, b3_sweep: 1 },
         genSfx: { parry: 1, block: 1, slash: 1, flysword: 1, peril: 1, mikiri: 1, execution: 1, gourd: 1, assist: 1, victory: 1, hit: 1 }, /* v0.8.41 通用 11 個全部接入 */
 
         init() {
@@ -190,7 +191,7 @@
 
 
       /* v0.8.67 關卡事件音效：Stages[目前關].sfx[事件] = [檔名, 音量, 音高]；有設定且已載入就播並回傳 true，否則回傳 false（呼叫端播原本的通用音效）。
-         事件：tpOut 瞬移消失、tpIn 瞬移現身、split 分身、ilBreak 幻影碎裂、ilShard 鏡片反噬、swordFly 每把飛劍、swordRain 垂落飛劍、introSwirl／introLand 登場聚合與現形 */
+         事件：tpOut 瞬移消失、tpIn 瞬移現身、split 分身、ilBreak 幻影碎裂、ilShard 鏡片反噬、swordFly 每把飛劍、swordRain 垂落飛劍、introSwirl／introLand 登場聚合與現形、zone 地面區域生成 */
       function bsfx(key) {
         const st = typeof Stages !== "undefined" && Stages[Boss.stageId], e = st && st.sfx && st.sfx[key];
         if (!e || !Sound.buffers[e[0]]) return false;

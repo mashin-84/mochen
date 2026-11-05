@@ -153,7 +153,11 @@
         /* v0.8.64 開場影片（Gemini 原片 10 秒剪到光蓋滿的 7.6 秒）：剪影莫寒川舉雙劍 → 池中升起飛劍 → 萬劍撲向鏡頭；之後戰場淡入、飛劍落在原位、旋風環收束現身 */
         S3.introBg = "intro3"; S3.introCine = true; S3.introVideo = "assets/boss3/intro"; S3.introDash = true; S3.introAppear = "boss3fx"; S3.introA = 7.6; S3.introFlash = "226,220,246";
         S3.introAppearCfg = { swirl: [1, 560, -110, 330], land: [0, 420, -150], frames: ["25_x_hit", "22_hs_rec"], rain: 7, sparks: null };
-        S3.introSfx = [[1.0, "slash", 0.35, 1.3], [2.4, "assist", 0.5, 0.9], [3.2, "flysword", 0.5, 0.8], [4.6, "slash", 0.55, 1.1], [6.0, "flysword", 0.7, 1.0], [6.8, "mikiri", 0.8, 1.0]];
+        S3.introSfx = [[1.0, "b3_twin", 0.5, 1], [3.0, "b3_rain", 0.6, 0.9], [4.6, "b3_cross", 0.55, 1], [5.8, "b3_rain", 0.8, 1]]; /* v0.8.68 改用專屬音效 */
+        /* v0.8.68 Boss 專屬音效（ElevenLabs b3_*）：招式 sfx {w 前搖, a 出招, h 連擊每下}；zone＝戒律陣紋生成時的低鳴 */
+        S3.sfx = { zone: ["b3_seal", 0.75], introSwirl: ["b3_spin", 0.8], introLand: ["b3_cross", 0.85] };
+        [["slash1", { a: "b3_twin" }], ["exclusive_combo", { h: "b3_cross" }], ["exclusive_feint", { a: "b3_cross" }], ["slash2", { a: "b3_spin" }], ["dash_rush", { a: "b3_dash" }], ["thrust_peril", { a: "b3_dash" }], ["sweep_peril", { a: "b3_low" }], ["grab_peril", { a: "b3_rain" }],
+         ["heavy_slam", { a: "b3_heavy" }], ["heavy_slash", { a: "b3_heavy" }], ["sword_cleave", { h: "b3_heavy" }], ["heavy_zone", { a: "b3_plunge" }], ["heavy_thrust", { a: "b3_charge" }], ["heavy_sweep", { a: "b3_sweep" }], ["stance_switch", { a: "b3_draw" }]].forEach(([k, s]) => { if (M[k]) M[k].sfx = s; });
         const A0 = { sheet: "boss3fx", row: 0, ox: 140, oy: -150, w: 380, dur: 0.3 };
         M.slash1.fxAct = A0;
         M.exclusive_feint.fxAct = A0;
