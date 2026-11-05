@@ -112,6 +112,8 @@
         Game.dlgFocus = false;
         Game.hubNpcNear = false;
         document.body.classList.toggle("hub-mode", Game.mode === "hub");
+        document.body.classList.remove("hub-near"); Game._hubNearShown = false;
+        { const at = document.getElementById("attack-btn-title"); if (at) at.textContent = Game.mode === "hub" ? "交談" : "青雲斬"; }
         if (Game.mode === "hub") {
           Game.introT = 0;
           Game.pendingPre = false;

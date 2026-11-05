@@ -264,7 +264,7 @@
 
         const canExec = Boss.state === "staggered" && Math.abs(Player.x - Boss.x) <= 195;
         elTouchAttack.classList.toggle("execution-ready", canExec);
-        elAttackBtnTitle.textContent = canExec ? "一劍青雲" : "青雲斬";
+        elAttackBtnTitle.textContent = Game.mode === "hub" ? "交談" : canExec ? "一劍青雲" : "青雲斬";
 
         const vLeft = (Game.camera.x / Config.worldWidth) * 100;
         const vWidth = (Config.baseWidth / Config.worldWidth) * 100;

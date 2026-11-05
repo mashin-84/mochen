@@ -1643,5 +1643,9 @@
     }
 
     body.hub-mode .cultivation-card.boss { visibility: hidden !important; }
+    /* v0.8.48 營地減法：只留左右移動；走近師妹才出現「交談」鍵（山門與營地景不再被戰鬥按鈕遮住） */
+    body.hub-mode #touch-gourd, body.hub-mode #touch-dash, body.hub-mode #touch-parry, body.hub-mode #touch-assist, body.hub-mode #touch-jump { display: none !important; }
+    body.hub-mode:not(.hub-near) #touch-attack { display: none !important; }
+    body.hub-mode #touch-attack .sub-key { display: none; }
     body.cine-mode .hud-header, body.cine-mode .virtual-control-layer { visibility: hidden !important; }
 </style>

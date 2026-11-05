@@ -1654,6 +1654,10 @@
     }
 
     body.hub-mode .cultivation-card.boss { visibility: hidden !important; }
+    /* v0.8.48 營地減法：只留左右移動；走近師妹才出現「交談」鍵（山門與營地景不再被戰鬥按鈕遮住） */
+    body.hub-mode #touch-gourd, body.hub-mode #touch-dash, body.hub-mode #touch-parry, body.hub-mode #touch-assist, body.hub-mode #touch-jump { display: none !important; }
+    body.hub-mode:not(.hub-near) #touch-attack { display: none !important; }
+    body.hub-mode #touch-attack .sub-key { display: none; }
     body.cine-mode .hud-header, body.cine-mode .virtual-control-layer { visibility: hidden !important; }
 </style>
 </head>
@@ -2073,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.47";
+      const ASSET_VER = "0.8.48";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -6337,8 +6341,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       function hubTick(dt) {
         if (Game.mode === "hub") {
           Game.hubNpcNear = Math.abs(Player.x - HUB_NPC_X) < 130 && Player.y >= Config.groundY - 4;
+          if (Game._hubNearShown !== Game.hubNpcNear) { Game._hubNearShown = Game.hubNpcNear; document.body.classList.toggle("hub-near", Game.hubNpcNear); } /* v0.8.48 走近師妹才出現「交談」鍵 */
           if (Player.x >= HUB_GATE_X) {
-            Game.mode = "enter";
+            Game.mode = "enter"; document.body.classList.remove("hub-mode", "hub-near"); /* v0.8.48 出山門就恢復戰鬥按鈕 */
             document.body.classList.remove("hub-mode");
             hapticBuzz(25);
             Sound.play("slash", 0.4, 0.7);
@@ -8356,6 +8361,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Game.dlgFocus = false;
         Game.hubNpcNear = false;
         document.body.classList.toggle("hub-mode", Game.mode === "hub");
+        document.body.classList.remove("hub-near"); Game._hubNearShown = false;
+        { const at = document.getElementById("attack-btn-title"); if (at) at.textContent = Game.mode === "hub" ? "交談" : "青雲斬"; }
         if (Game.mode === "hub") {
           Game.introT = 0;
           Game.pendingPre = false;
@@ -9345,7 +9352,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
         const canExec = Boss.state === "staggered" && Math.abs(Player.x - Boss.x) <= 195;
         elTouchAttack.classList.toggle("execution-ready", canExec);
-        elAttackBtnTitle.textContent = canExec ? "一劍青雲" : "青雲斬";
+        elAttackBtnTitle.textContent = Game.mode === "hub" ? "交談" : canExec ? "一劍青雲" : "青雲斬";
 
         const vLeft = (Game.camera.x / Config.worldWidth) * 100;
         const vWidth = (Config.baseWidth / Config.worldWidth) * 100;

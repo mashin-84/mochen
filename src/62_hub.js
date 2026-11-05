@@ -2,8 +2,9 @@
       function hubTick(dt) {
         if (Game.mode === "hub") {
           Game.hubNpcNear = Math.abs(Player.x - HUB_NPC_X) < 130 && Player.y >= Config.groundY - 4;
+          if (Game._hubNearShown !== Game.hubNpcNear) { Game._hubNearShown = Game.hubNpcNear; document.body.classList.toggle("hub-near", Game.hubNpcNear); } /* v0.8.48 走近師妹才出現「交談」鍵 */
           if (Player.x >= HUB_GATE_X) {
-            Game.mode = "enter";
+            Game.mode = "enter"; document.body.classList.remove("hub-mode", "hub-near"); /* v0.8.48 出山門就恢復戰鬥按鈕 */
             document.body.classList.remove("hub-mode");
             hapticBuzz(25);
             Sound.play("slash", 0.4, 0.7);
