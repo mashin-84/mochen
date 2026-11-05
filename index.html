@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.57";
+      const ASSET_VER = "0.8.58";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2849,7 +2849,10 @@
         if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
         M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
         S2.fxSheets = ["boss2fx", "spark"]; S2.arcArt = "boss2fx"; /* v0.8.57 專屬特效圖（4×4 黑底：0 扇刃、1 指劍突刺、2 八卦旋風、3 鏡碎）；有圖就不畫程式橘色刀弧 */
-        S2.introBg = "intro2"; S2.introName = "assets/boss2/name.webp"; /* 開場影片待做（首幀已合成） */
+        S2.introBg = "intro2"; S2.introName = "assets/boss2/name.webp";
+        /* v0.8.58 開場影片（Gemini 原片 10 秒，剪到鏡片旋風蓋滿畫面的 7.0 秒）：剪影顧天風揮扇分身 → 全數碎成鏡片 → 旋風撲向鏡頭；之後戰場淡入、鏡片在原位聚合現身（introAppear＝用哪張特效圖） */
+        S2.introCine = true; S2.introVideo = "assets/boss2/intro"; S2.introDash = true; S2.introAppear = "boss2fx"; S2.introA = 7.0; S2.introFlash = "200,236,222";
+        S2.introSfx = [[2.2, "slash", 0.4, 1.4], [3.2, "assist", 0.6, 1.0], [4.6, "parry", 0.6, 1.5], [5.0, "mikiri", 0.8, 1.1], [5.8, "flysword", 0.6, 0.8]];
         /* v0.8.56 五招三拍關鍵格（生圖 3×5，縮放 1.06、腳底 y=560、x=450）＋分層場景（迷蹤陣台地面帶＋前景石欄松枝） */
         M.slash1.frames = { windup: "20_fan_wind", active: "21_fan_hit", recover: "22_fan_rec" };
         M.thrust_peril.frames = { windup: "23_thr_wind", active: "24_thr_hit", recover: "25_thr_rec" };
@@ -6328,7 +6331,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (stage.introVideo) { const v = getCineVideo(stage.introVideo); if (v.readyState >= 3 && !v.error) vid = v; }
         if (stage.introDash && !vid) return false; /* 衝進場模式沒有引擎剪影備案，影片沒載好就直接略過動畫 */
         const va = vid ? (stage.introA || 5.0) : 3.4; /* 影片版 A 段 5 秒（影片本身 5 秒），引擎剪影版 3.4 秒 */
-        if (stage.introDash) { CINE.A = va; CINE.FALL = va; CINE.LAND = va + 0.55; CINE.END = va + 2.6; }
+        if (stage.introDash) { CINE.A = va; CINE.FALL = va; CINE.LAND = va + (stage.introAppear ? 0.75 : 0.55); CINE.END = va + 2.6; }
         else { CINE.A = va; CINE.FALL = va + 0.55; CINE.LAND = va + 1.2; CINE.END = va + 2.6; }
         Game.cine = { t: 0, ask: false, landed: false, vid, sfx: false, dash: !!stage.introDash, bx: Boss.x };
         if (vid) { try { vid.currentTime = 0; const pr = vid.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
@@ -6382,6 +6385,33 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           else if (!c.sfx && c.t >= (st0.introSfxT || 3.8)) { c.sfx = true; Sound.play("slash", 0.6, 0.5); }
         } else if (c.vid && !c.vid.paused) { try { c.vid.pause(); } catch (e) { } }
         const t = c.t, gy = Config.groundY;
+        if (c.dash && Stages[Boss.stageId].introAppear) { /* v0.8.58 鏡片聚合現身（第 2 關）：影片結束（鏡片蓋滿）→ 戰場淡入、鏡片旋風在原位聚合 → 顧天風現形＋名牌 */
+          const st2 = Stages[Boss.stageId];
+          Boss.x = c.bx;
+          if (Boss.flashFrames > 0) Boss.flashFrames = Math.max(0, Boss.flashFrames - dt * 60); /* 動畫期間物理不跑，閃白要自己倒數 */
+          if (t < CINE.LAND) {
+            Boss.y = -900; Boss._cineImg = null;
+            if (t >= CINE.A && !c.swirl) {
+              c.swirl = true;
+              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, 2, c.bx, gy - 20, { w: 560, h: 560, dur: CINE.LAND - CINE.A + 0.15 });
+              Sound.play("assist", 0.7, 0.8);
+            }
+            if (t >= CINE.A && Math.random() < dt * 30) spawnSparks(c.bx + (Math.random() - 0.5) * 260, gy - 40 - Math.random() * 200, "mikiri", Math.random() < 0.5 ? -1 : 1);
+          } else {
+            Boss.y = gy;
+            if (!c.landed) {
+              c.landed = true; Boss.flashFrames = 5;
+              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, 3, c.bx, gy - 130, { w: 420, dur: 0.5 });
+              addTrauma(0.35); hapticBuzz(25);
+              Sound.play("mikiri", 0.8, 1.2); Sound.play("parry", 0.5, 1.6);
+              bossNameCard(st2);
+            }
+            Boss._cineImg = (t < CINE.LAND + 0.45) ? "33_tp_hit" : (t < CINE.LAND + 1.2) ? "34_tp_rec" : null;
+          }
+          updateHitParticles(dt);
+          if (t >= CINE.END) endBossCine(false);
+          return;
+        }
         if (c.dash) { /* 衝進場：影片結束（揚塵蓋滿）→ 小狼由右側衝入並煞停 → 低伏低吼 */
           if (t < CINE.A) { Boss.y = -900; Boss._cineImg = null; }
           else if (t < CINE.LAND) {

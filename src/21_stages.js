@@ -61,7 +61,10 @@
         if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
         M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
         S2.fxSheets = ["boss2fx", "spark"]; S2.arcArt = "boss2fx"; /* v0.8.57 專屬特效圖（4×4 黑底：0 扇刃、1 指劍突刺、2 八卦旋風、3 鏡碎）；有圖就不畫程式橘色刀弧 */
-        S2.introBg = "intro2"; S2.introName = "assets/boss2/name.webp"; /* 開場影片待做（首幀已合成） */
+        S2.introBg = "intro2"; S2.introName = "assets/boss2/name.webp";
+        /* v0.8.58 開場影片（Gemini 原片 10 秒，剪到鏡片旋風蓋滿畫面的 7.0 秒）：剪影顧天風揮扇分身 → 全數碎成鏡片 → 旋風撲向鏡頭；之後戰場淡入、鏡片在原位聚合現身（introAppear＝用哪張特效圖） */
+        S2.introCine = true; S2.introVideo = "assets/boss2/intro"; S2.introDash = true; S2.introAppear = "boss2fx"; S2.introA = 7.0; S2.introFlash = "200,236,222";
+        S2.introSfx = [[2.2, "slash", 0.4, 1.4], [3.2, "assist", 0.6, 1.0], [4.6, "parry", 0.6, 1.5], [5.0, "mikiri", 0.8, 1.1], [5.8, "flysword", 0.6, 0.8]];
         /* v0.8.56 五招三拍關鍵格（生圖 3×5，縮放 1.06、腳底 y=560、x=450）＋分層場景（迷蹤陣台地面帶＋前景石欄松枝） */
         M.slash1.frames = { windup: "20_fan_wind", active: "21_fan_hit", recover: "22_fan_rec" };
         M.thrust_peril.frames = { windup: "23_thr_wind", active: "24_thr_hit", recover: "25_thr_rec" };

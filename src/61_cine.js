@@ -58,7 +58,7 @@
         if (stage.introVideo) { const v = getCineVideo(stage.introVideo); if (v.readyState >= 3 && !v.error) vid = v; }
         if (stage.introDash && !vid) return false; /* 衝進場模式沒有引擎剪影備案，影片沒載好就直接略過動畫 */
         const va = vid ? (stage.introA || 5.0) : 3.4; /* 影片版 A 段 5 秒（影片本身 5 秒），引擎剪影版 3.4 秒 */
-        if (stage.introDash) { CINE.A = va; CINE.FALL = va; CINE.LAND = va + 0.55; CINE.END = va + 2.6; }
+        if (stage.introDash) { CINE.A = va; CINE.FALL = va; CINE.LAND = va + (stage.introAppear ? 0.75 : 0.55); CINE.END = va + 2.6; }
         else { CINE.A = va; CINE.FALL = va + 0.55; CINE.LAND = va + 1.2; CINE.END = va + 2.6; }
         Game.cine = { t: 0, ask: false, landed: false, vid, sfx: false, dash: !!stage.introDash, bx: Boss.x };
         if (vid) { try { vid.currentTime = 0; const pr = vid.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
@@ -112,6 +112,33 @@
           else if (!c.sfx && c.t >= (st0.introSfxT || 3.8)) { c.sfx = true; Sound.play("slash", 0.6, 0.5); }
         } else if (c.vid && !c.vid.paused) { try { c.vid.pause(); } catch (e) { } }
         const t = c.t, gy = Config.groundY;
+        if (c.dash && Stages[Boss.stageId].introAppear) { /* v0.8.58 鏡片聚合現身（第 2 關）：影片結束（鏡片蓋滿）→ 戰場淡入、鏡片旋風在原位聚合 → 顧天風現形＋名牌 */
+          const st2 = Stages[Boss.stageId];
+          Boss.x = c.bx;
+          if (Boss.flashFrames > 0) Boss.flashFrames = Math.max(0, Boss.flashFrames - dt * 60); /* 動畫期間物理不跑，閃白要自己倒數 */
+          if (t < CINE.LAND) {
+            Boss.y = -900; Boss._cineImg = null;
+            if (t >= CINE.A && !c.swirl) {
+              c.swirl = true;
+              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, 2, c.bx, gy - 20, { w: 560, h: 560, dur: CINE.LAND - CINE.A + 0.15 });
+              Sound.play("assist", 0.7, 0.8);
+            }
+            if (t >= CINE.A && Math.random() < dt * 30) spawnSparks(c.bx + (Math.random() - 0.5) * 260, gy - 40 - Math.random() * 200, "mikiri", Math.random() < 0.5 ? -1 : 1);
+          } else {
+            Boss.y = gy;
+            if (!c.landed) {
+              c.landed = true; Boss.flashFrames = 5;
+              if (fxReady(st2.introAppear)) spawnFx(st2.introAppear, 3, c.bx, gy - 130, { w: 420, dur: 0.5 });
+              addTrauma(0.35); hapticBuzz(25);
+              Sound.play("mikiri", 0.8, 1.2); Sound.play("parry", 0.5, 1.6);
+              bossNameCard(st2);
+            }
+            Boss._cineImg = (t < CINE.LAND + 0.45) ? "33_tp_hit" : (t < CINE.LAND + 1.2) ? "34_tp_rec" : null;
+          }
+          updateHitParticles(dt);
+          if (t >= CINE.END) endBossCine(false);
+          return;
+        }
         if (c.dash) { /* 衝進場：影片結束（揚塵蓋滿）→ 小狼由右側衝入並煞停 → 低伏低吼 */
           if (t < CINE.A) { Boss.y = -900; Boss._cineImg = null; }
           else if (t < CINE.LAND) {
