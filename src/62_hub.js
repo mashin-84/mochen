@@ -73,7 +73,7 @@
       const HUB_GATE_S = 0.42, HUB_GATE_L = -613; /* v0.8.50 山門放大（橫樑高於主角頭頂）；前柱中心約 x=-230，HUB_GATE_X=-150 越過即進場 */
       /* v0.8.50 營地光源＝營火：影子方向背向火、越近越深越長，跟火光一起晃 */
       const HUB_FIRE_X = -900;
-      function hubFlick() { const t = performance.now() / 1000; return 1 + 0.09 * Math.sin(t * 9) + 0.05 * Math.sin(t * 23 + 1.3) + 0.03 * Math.sin(t * 41); }
+      function hubFlick() { const t = performance.now() / 1000; return 1 + 0.03 * Math.sin(t * 2.6) + 0.015 * Math.sin(t * 6.1 + 1.3); } /* v0.8.51 影子只輕微晃動（原幅度約 ±17%、頻率 9～41） */
       function hubLight(x) {
         const d = x - HUB_FIRE_X, ad = Math.abs(d), f = hubFlick();
         const near = Math.max(0, 1 - ad / 1100);
@@ -189,11 +189,11 @@
         { const f2 = hubFlick(); ctx.save(); ctx.fillStyle = `rgba(10,6,4,${0.35 * (2 - f2)})`; ctx.beginPath(); ctx.ellipse(fx, gy + 6, 86 * (0.97 + 0.03 * f2), 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); } /* 營火接地陰影 */
         if (FB.ok) ctx.drawImage(FB.img, fx - 78, gy - 58, 156, 76);
         if (FS.ok) {
-          const cell = FS.img.naturalWidth / 4, f = Math.floor(t * 12) % 8;
+          const cell = FS.img.naturalWidth / 4, f = Math.floor(t * 8) % 8;
           ctx.save(); ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = 0.5; ctx.drawImage(FS.img, (Math.floor(t * 3) % 4) * cell, 3 * cell, cell, cell, fx - 70, gy - 300, 140, 140); /* 煙 */
+          ctx.globalAlpha = 0.5; ctx.drawImage(FS.img, (Math.floor(t * 2) % 4) * cell, 3 * cell, cell, cell, fx - 70, gy - 300, 140, 140); /* 煙 */
           ctx.globalAlpha = 1; ctx.drawImage(FS.img, (f % 4) * cell, (f < 4 ? 0 : 1) * cell, cell, cell, fx - 62, gy - 128, 124, 124); /* 火焰（格內火底約在 81% 高） */
-          ctx.globalAlpha = 0.9; ctx.drawImage(FS.img, (Math.floor(t * 6) % 4) * cell, 2 * cell, cell, cell, fx - 60, gy - 200, 120, 120); /* 火星 */
+          ctx.globalAlpha = 0.9; ctx.drawImage(FS.img, (Math.floor(t * 4) % 4) * cell, 2 * cell, cell, cell, fx - 60, gy - 200, 120, 120); /* 火星 */
           ctx.restore();
         }
 
