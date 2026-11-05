@@ -73,7 +73,7 @@
       const HUB_GATE_S = 0.42, HUB_GATE_L = -613; /* v0.8.50 山門放大（橫樑高於主角頭頂）；前柱中心約 x=-230，HUB_GATE_X=-150 越過即進場 */
       /* v0.8.50 營地光源＝營火：影子方向背向火、越近越深越長，跟火光一起晃 */
       const HUB_FIRE_X = -900;
-      function hubFlick() { const t = performance.now() / 1000; return 1 + 0.03 * Math.sin(t * 2.6) + 0.015 * Math.sin(t * 6.1 + 1.3); } /* v0.8.51 影子只輕微晃動（原幅度約 ±17%、頻率 9～41） */
+      function hubFlick() { const t = performance.now() / 1000; return 1 + 0.007 * Math.sin(t * 1.2) + 0.003 * Math.sin(t * 2.9 + 1.3); } /* v0.8.52 影子起伏 ±1%、更慢（v0.8.51 為 ±4.5%） */
       function hubLight(x) {
         const d = x - HUB_FIRE_X, ad = Math.abs(d), f = hubFlick();
         const near = Math.max(0, 1 - ad / 1100);
