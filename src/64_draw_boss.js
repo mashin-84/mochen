@@ -316,6 +316,10 @@
           }
           if (Boss._cineImg) { imgKey = Boss._cineImg; bossImg = null; isWalkFrame = false; }
           if (!bossImg) bossImg = SP.imgs[imgKey];
+          if (!bossImg) { /* v0.8.60 保險：本姿態資料夾沒有這張（例如雙姿態 Boss 借到另一姿態的招式），改用通用格，不讓 drawImage 丟錯卡死整個遊戲 */
+            imgKey = Boss.state === "windup" ? "07_windup" : Boss.state === "active" ? "09_slash" : Boss.state === "recover" ? "10_slash_rec" : "01_idle1";
+            bossImg = SP.imgs[imgKey];
+          }
           {
             let sk = bossVis(stage).k;
             if (isWalkFrame && bossImg !== SP.imgs[imgKey]) sk *= getWalkNorm(SP);

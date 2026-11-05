@@ -305,7 +305,7 @@
           simDt = dt * Game.slowScale;
           if (Game.slowT <= 0) Game.slowScale = 1;
         }
-        updatePhysics(simDt);
-        render();
+        try { updatePhysics(simDt); render(); }
+        catch (e) { if (!loop._err) { loop._err = 1; console.error("loop error", e); } try { if (ctx.reset) ctx.reset(); else ctx.restore(); } catch (e2) { } } /* v0.8.60 單幀出錯不再中斷迴圈（以前會整個遊戲卡死） */
         raf = requestAnimationFrame(loop);
       }
