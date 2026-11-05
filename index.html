@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.71";
+      const ASSET_VER = "0.8.72";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2857,7 +2857,8 @@
         M.thrust_peril.fxAct = { sheet: "boss2fx", row: 1, ox: 200, oy: -150, w: 520, dur: 0.32 };
         M.sweep_peril.dfm = { w: { sx: 1.04, sy: 0.95, rot: -0.05, oy: 6 }, a: { sx: 1.05, sy: 0.96, rot: 0.04, ox: 14, ghost: 2, gap: 30 }, r: {} };
         M.sweep_peril.fxAct = { sheet: "boss2fx", row: 2, ox: 50, oy: -40, w: 620, dur: 0.4 };
-        M.flyswords.dfm = { w: { sx: 0.97, sy: 1.03, rot: -0.06, ox: -10 }, a: { sx: 1.03, sy: 0.98, rot: 0.03, ox: 8 }, r: {} };
+        M.flyswords.dfm = { w: { sx: 0.95, sy: 1.05, rot: -0.12, ox: -22 }, a: { sx: 1.06, sy: 0.96, rot: 0.07, ox: 18 }, kick: { ox: 16, rot: 0.06, sx: 1.04, sy: 0.97 }, r: {} }; /* v0.8.72 動作加大：前搖後仰蓄勢更明顯、出手前傾、每發一把身體一頓 */
+        Object.assign(M.flyswords, { windup: 0.6, active: 0.96, bulletGap: 0.38 }); /* v0.8.72 三把間隔 0.2→0.38 秒（一次格擋 0.36 秒，逐把按）；出手姿勢撐滿整串（原 active 0.15） */
         [M.exclusive_teleport, M.teleport_combo].forEach(m => { if (m) { m.tpFx = true; m.dfm = { w: { sx: 0.95, sy: 1.04, rot: -0.05 }, a: { sx: 1.06, sy: 0.96, rot: 0.05, ox: 20, ghost: 3, gap: 40 }, r: {} }; } });
         if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
         M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
@@ -4566,6 +4567,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         for (let i = 0; i < count; i++) {
           setTimeout(() => {
             if (Boss.hp <= 0) return;
+            Boss._kickMs = performance.now(); /* v0.8.72 每射一把，Boss 身體往前一頓（dfm.kick） */
             const dir = Boss.facing;
             let sx = Boss.x + dir * (m && m.bulletX ? Math.min(m.bulletX, Math.max(30, Math.abs(Player.x - Boss.x) - 50)) : 30); /* v0.8.66 bulletX：劍尖從手前方出發（主角太近時退回 30） */
             let sy = (m && m.bulletY) ? Boss.y + m.bulletY[i % m.bulletY.length] : Boss.y - 55 + (i - 1) * 22; /* v0.8.65 bulletY：每把飛劍相對腳底的高度 */
@@ -4598,7 +4600,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               kind: (m && m.bulletKind) || null
             });
             if (!rainSfx && !(traj !== "vertical" && bsfx("swordFly"))) Sound.play("flysword", 0.7, 0.95 + i * 0.1);
-          }, i * 200);
+          }, i * ((m && m.bulletGap) || 0.2) * 1000); /* v0.8.72 bulletGap：每把飛劍間隔秒數 */
         }
       }
 
@@ -4730,6 +4732,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           out = mix(W, A, t);
           if (A.rotEnd != null) out.rot = A.rot + (A.rotEnd - A.rot) * p;
           out.ghost = A.ghost || 0; out.gap = A.gap || 40;
+          if (d.kick && Boss._kickMs) { /* v0.8.72 連發投射：每發一頓（往前推＋前傾，110ms 衰減） */
+            const e = Math.exp(-Math.max(0, performance.now() - Boss._kickMs) / 110);
+            out.ox += (d.kick.ox || 0) * K * e; out.rot += (d.kick.rot || 0) * K * e; out.sx += ((d.kick.sx || 1) - 1) * K * e; out.sy += ((d.kick.sy || 1) - 1) * K * e;
+          }
         } else {
           const rd = (move.recover || 0.5) * (Config.bossPhase === 2 ? 0.75 : 1);
           const p = cl(1 - Boss.stateTimer / Math.max(0.05, rd));
@@ -5767,6 +5773,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             if (d < 42 && sw.y > Player.y - Player.h * 2.05 && sw.y < Player.y + 6) { /* v0.8.65 判定改為圖上整個身體（約腳底上 230；原 -90～0 只到大腿，飛劍拉高後胸口也要能中） */
               if (Player.state === "parry") {
                 sw.reflected = true;
+                Player.parryCooldown = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
                 sw.vx = -sw.dir * 950;
                 sw.dir = -sw.dir;
                 Progress.parryCount++;
@@ -6030,7 +6037,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               if (il.dead || Boss.hp <= 0) return;
               const dir = Player.x >= il.x ? 1 : -1;
               Game.flyingSwords.push({ x: il.x + dir * 30, y: move.bulletY ? Boss.y + move.bulletY[(i * 2) % move.bulletY.length] : Boss.y - 55 + (i - 0.5) * 22, vx: dir * ((move.bulletSpeed || 750) * 0.9), vy: 0, dir, damage: Math.round((move.damage || 90) * ILLU.dmgK), reflected: false, life: 2.5, color: "#a5f3fc", trajectory: "linear", kind: null });
-            }, 120 + i * 220);
+            }, 120 + i * Math.max(220, (move.bulletGap || 0) * 1100));
           }
         }
       }

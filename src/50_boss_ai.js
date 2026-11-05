@@ -126,6 +126,10 @@
           out = mix(W, A, t);
           if (A.rotEnd != null) out.rot = A.rot + (A.rotEnd - A.rot) * p;
           out.ghost = A.ghost || 0; out.gap = A.gap || 40;
+          if (d.kick && Boss._kickMs) { /* v0.8.72 連發投射：每發一頓（往前推＋前傾，110ms 衰減） */
+            const e = Math.exp(-Math.max(0, performance.now() - Boss._kickMs) / 110);
+            out.ox += (d.kick.ox || 0) * K * e; out.rot += (d.kick.rot || 0) * K * e; out.sx += ((d.kick.sx || 1) - 1) * K * e; out.sy += ((d.kick.sy || 1) - 1) * K * e;
+          }
         } else {
           const rd = (move.recover || 0.5) * (Config.bossPhase === 2 ? 0.75 : 1);
           const p = cl(1 - Boss.stateTimer / Math.max(0.05, rd));

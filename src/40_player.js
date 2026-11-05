@@ -982,6 +982,7 @@
         for (let i = 0; i < count; i++) {
           setTimeout(() => {
             if (Boss.hp <= 0) return;
+            Boss._kickMs = performance.now(); /* v0.8.72 每射一把，Boss 身體往前一頓（dfm.kick） */
             const dir = Boss.facing;
             let sx = Boss.x + dir * (m && m.bulletX ? Math.min(m.bulletX, Math.max(30, Math.abs(Player.x - Boss.x) - 50)) : 30); /* v0.8.66 bulletX：劍尖從手前方出發（主角太近時退回 30） */
             let sy = (m && m.bulletY) ? Boss.y + m.bulletY[i % m.bulletY.length] : Boss.y - 55 + (i - 1) * 22; /* v0.8.65 bulletY：每把飛劍相對腳底的高度 */
@@ -1014,6 +1015,6 @@
               kind: (m && m.bulletKind) || null
             });
             if (!rainSfx && !(traj !== "vertical" && bsfx("swordFly"))) Sound.play("flysword", 0.7, 0.95 + i * 0.1);
-          }, i * 200);
+          }, i * ((m && m.bulletGap) || 0.2) * 1000); /* v0.8.72 bulletGap：每把飛劍間隔秒數 */
         }
       }

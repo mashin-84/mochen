@@ -56,7 +56,8 @@
         M.thrust_peril.fxAct = { sheet: "boss2fx", row: 1, ox: 200, oy: -150, w: 520, dur: 0.32 };
         M.sweep_peril.dfm = { w: { sx: 1.04, sy: 0.95, rot: -0.05, oy: 6 }, a: { sx: 1.05, sy: 0.96, rot: 0.04, ox: 14, ghost: 2, gap: 30 }, r: {} };
         M.sweep_peril.fxAct = { sheet: "boss2fx", row: 2, ox: 50, oy: -40, w: 620, dur: 0.4 };
-        M.flyswords.dfm = { w: { sx: 0.97, sy: 1.03, rot: -0.06, ox: -10 }, a: { sx: 1.03, sy: 0.98, rot: 0.03, ox: 8 }, r: {} };
+        M.flyswords.dfm = { w: { sx: 0.95, sy: 1.05, rot: -0.12, ox: -22 }, a: { sx: 1.06, sy: 0.96, rot: 0.07, ox: 18 }, kick: { ox: 16, rot: 0.06, sx: 1.04, sy: 0.97 }, r: {} }; /* v0.8.72 動作加大：前搖後仰蓄勢更明顯、出手前傾、每發一把身體一頓 */
+        Object.assign(M.flyswords, { windup: 0.6, active: 0.96, bulletGap: 0.38 }); /* v0.8.72 三把間隔 0.2→0.38 秒（一次格擋 0.36 秒，逐把按）；出手姿勢撐滿整串（原 active 0.15） */
         [M.exclusive_teleport, M.teleport_combo].forEach(m => { if (m) { m.tpFx = true; m.dfm = { w: { sx: 0.95, sy: 1.04, rot: -0.05 }, a: { sx: 1.06, sy: 0.96, rot: 0.05, ox: 20, ghost: 3, gap: 40 }, r: {} }; } });
         if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
         M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
