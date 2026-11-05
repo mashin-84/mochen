@@ -384,7 +384,7 @@
           spawnSparks(Player.x, Player.y - 20, "mikiri", dir);
           spawnFloatingText(Player.x, Player.y - 95, "【空中踏風瞬身】", "#34d399", 1.15);
         }
-        Sound.play("slash", 0.55, 1.4);
+        Sound.play("slash", 0.22, 1.12); /* v0.8.71 瞬步聲改輕（原 0.55／音高 1.4 太刺耳），有就好 */
 
         const dist = Math.abs(Player.x - Boss.x);
         const movingTowards = (Boss.x - Player.x) * dir > 0;
