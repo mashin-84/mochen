@@ -113,6 +113,7 @@
         drawFx(true);
         drawFlyingSwords();
         drawCineTrail();
+        drawIllusions();
         drawBossEntity();
         drawPlayer();
         drawHubFront();

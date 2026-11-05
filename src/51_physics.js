@@ -100,6 +100,8 @@
 
           if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02) {
             airAttackHit();
+          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && illusionTryHit(false)) {
+            Player.attackHitRegistered = true; /* v0.8.55 打到幻影 */
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04) {
             const dx = Boss.x - Player.x;
             const inFront = dx * Player.facing >= -30;
@@ -326,6 +328,7 @@
         }
 
         updateBossAI(dt);
+        updateIllusions(dt);
         Boss.x += Boss.vx * dt;
         Boss.x = Math.max(95, Math.min(Config.worldWidth - 95, Boss.x));
 

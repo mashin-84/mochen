@@ -78,7 +78,7 @@
         };
 
         // Phase 2 Flaming Aura Particles
-        for (const ap of Boss.auraParticles) {
+        for (const ap of (Boss._ilDraw ? [] : Boss.auraParticles)) {
           ctx.fillStyle = Boss.artId >= 11 ? "rgba(245, 158, 11, 0.6)" : Boss.artId >= 6 ? "rgba(168, 85, 247, 0.55)" : "rgba(239, 68, 68, 0.55)";
           ctx.beginPath();
           ctx.arc(ap.x, ap.y, ap.size, 0, Math.PI * 2);
@@ -320,7 +320,7 @@
             let sk = bossVis(stage).k;
             if (isWalkFrame && bossImg !== SP.imgs[imgKey]) sk *= getWalkNorm(SP);
             const cineK = Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
-            if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
+            if (Boss._ilDraw) { /* 幻影沒有影子 */ } else if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
           }
 
           ctx.save();
@@ -651,7 +651,7 @@
             ctx.restore(); // 結束後傾變換
 
         // C4: 提示畫面 (強/弱)
-        if (Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35 && Config.parryCueLevel > 0) {
+        if (!Boss._ilDraw && Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35 && Config.parryCueLevel > 0) {
             const isStrong = Config.parryCueLevel === 2;
             const isPeril = Boss.isPerilous;
             const cueColor = isPeril ? "#ef4444" : "#fde047";
@@ -689,7 +689,7 @@
         }
 
         // Perilous "危" Kanji Warning
-        if (Boss.isPerilous && (Boss.state === "windup" || Boss.state === "active")) {
+        if (!Boss._ilDraw && Boss.isPerilous && (Boss.state === "windup" || Boss.state === "active")) {
           const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.12;
           ctx.save();
           ctx.translate(Boss.x, by - 48);
@@ -705,7 +705,7 @@
         }
 
         // Posture-broken Deathblow Reticle "決"
-        if (Boss.state === "staggered") {
+        if (!Boss._ilDraw && Boss.state === "staggered") {
           const pulse = 1 + Math.sin(performance.now() * 0.02) * 0.14;
           ctx.save();
           ctx.translate(Boss.x, Boss.y - Boss.h * 0.55);

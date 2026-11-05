@@ -82,6 +82,7 @@
         Game.floatingTexts = [];
         Game.executionLines = [];
         Game.clones = [];
+        illusionReset();
         Game.camera.targetZoom = 1.0 - Math.min(0.25, ((stage.size || 1) - 1) * 0.3);
         const focusX = Player.x * 0.64 + Boss.x * 0.36;
         Game.camera.x = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, focusX - Config.baseWidth * 0.5));

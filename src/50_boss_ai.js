@@ -24,6 +24,7 @@
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;
         }
+        if (stage && stage.splitMove) Boss._splitPending = true; /* v0.8.55 第 2 關：二階段一開始先分身 */
         if (stage && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) {
           Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
           spawnFloatingText(Boss.x, Boss.y - 135, Boss.stance === "B" ? "〔拔出玄鐵重劍〕" : "〔青雲雙劍〕", "#a5b4fc", 1.2);
@@ -147,6 +148,8 @@
         if (!m) return;
 
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
+        if (m.isSplit && illusionsAlive()) { triggerBossMove(stage.splitFallback || "slash1", queue); return; }
+        illusionFaceAll(); Boss._ilStruck = false;
         Boss.moveType = moveKey;
         Boss.landedHit = false;
         if (m.isRage && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 3, Boss.x, Boss.y + 12, { anchor: "b", w: 380, dur: m.windup + m.active + 0.5, loop: true, fps: 10, follow: () => ({ x: Boss.x, y: Boss.y + 12 }) });
@@ -220,7 +223,7 @@
         // C3: 命中預測與提示記錄
         Boss.nextImpactIn = 999;
         const moveForCue = stage && stage.moves ? stage.moves[Boss.moveType] : null;
-        if (moveForCue && (Boss.state === "windup" || Boss.state === "active") && !moveForCue.isRanged && !moveForCue.isZone && !moveForCue.isSwitch && !moveForCue.isMobility) {
+        if (moveForCue && (Boss.state === "windup" || Boss.state === "active") && !moveForCue.isRanged && !moveForCue.isZone && !moveForCue.isSwitch && !moveForCue.isMobility && !moveForCue.isSplit) {
             if (moveForCue.isAerial) {
                 if (Boss.state === "active") {
                     Boss.nextImpactIn = Boss.aerialShotTimer;
@@ -374,10 +377,14 @@
             const windupProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
             if (windupProgress >= (move.teleportDelay || 0.35)) {
               Boss.teleportExecuted = true;
+              if (move.tpFx && fxReady("spark")) { /* v0.8.55 瞬移：原地碎散＋落點聚合（第 2 關） */
+                spawnFx("spark", 2, Boss.x, Boss.y - 85, { w: 300, dur: 0.38 });
+              }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
               Boss.flashFrames = 3;
+              if (move.tpFx && fxReady("spark")) { spawnFx("spark", 0, Boss.x, Boss.y - 85, { w: 260, dur: 0.32 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
               Sound.play("assist", 0.85, 1.45);
               spawnFloatingText(Boss.x, Boss.y - 120, move.teleportText || "【虛空瞬襲】！", move.teleportColor || "#c084fc", 1.2);
             }
@@ -401,6 +408,8 @@
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
             spawnMoveFx(move.fxAct);
+            if (move.isSplit) illusionSplit();
+            if (move.isRanged) illusionShoot(move);
             const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
             if (sfxA) Sound.play(sfxA, 0.9, 1);
             if (move.kick) addTrauma(move.kick);
@@ -458,7 +467,7 @@
               spawnFloatingText(zX, Config.groundY - 50, "【煞氣絕地形成】！", "#f87171", 1.15);
             }
 
-            if (!move.isRanged && !move.isZone && !move.isCounter && !move.isHeal && !move.isSwitch && !move.isMobility && !move.isLeap) {
+            if (!move.isRanged && !move.isZone && !move.isCounter && !move.isHeal && !move.isSwitch && !move.isMobility && !move.isLeap && !move.isSplit) {
               if (!sfxA) Sound.play("slash", 0.85, Boss.isPerilous ? 0.72 : 0.95);
               if (Boss.perilType !== "grab") {
                 const bType = Stages[Boss.stageId].bodyType || "human";
@@ -610,11 +619,13 @@
                   parryPostureDmg: Math.round((move.parryPostureDmg || 20) * 0.6)
                 });
               }
+              illusionStrike(move, move.comboDamagePerHit || Math.round(move.damage / move.comboTotalHits));
             }
           }
 
           const swingProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
-          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isCharge && !move.isLeap && !move.isMobility && swingProgress >= 0.35) {
+          if (!Boss._ilStruck && swingProgress >= 0.35 && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isLeap && !move.isMobility && !move.isSwitch && !move.isSplit) { Boss._ilStruck = true; illusionStrike(move); }
+          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isCharge && !move.isLeap && !move.isMobility && !move.isSplit && swingProgress >= 0.35) {
             if (Boss.perilType === "grab") {
               const d = Math.abs(Player.x - Boss.grabZoneX);
               if (d <= move.range * 0.75 && Player.y >= Config.groundY - 70) {
@@ -681,6 +692,7 @@
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
         if (stage.mirror) { mirrorAI(dt, dist); return; }
+        if (Boss._splitPending && Boss.aiCooldown <= 0 && stage.splitMove) { Boss._splitPending = false; triggerBossMove(stage.splitMove); return; }
         if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;
         }

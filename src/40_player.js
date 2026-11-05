@@ -72,7 +72,7 @@
         Player.isAirAtk = false; Player.isDive = false; Player.riposteAtk = false;
         Player.stateTimer = 0.32;
         Player.atkCd = 0.32;
-        Player.facing = Boss.x >= Player.x ? 1 : -1;
+        Player.facing = aimX() >= Player.x ? 1 : -1;
         Player.attackHitRegistered = false;
         Player.comboStep = 4; // 蓄力重斬標記
 
@@ -128,7 +128,7 @@
         if (Player.y < Config.groundY - 24) { doAirAttack(); return; }
         Player.stamina = Math.max(0, Player.stamina - 15);
 
-        Player.facing = Boss.x >= Player.x ? 1 : -1;
+        Player.facing = aimX() >= Player.x ? 1 : -1;
         const isRiposte = Player.riposteTimer > 0;
         Player.isAirAtk = false; Player.isDive = false; Player.riposteAtk = isRiposte;
         if (isRiposte) {
@@ -177,8 +177,8 @@
         Player.airAtkUsed = true;
         Player.stamina = Math.max(0, Player.stamina - 12);
         Player.staminaRecoverDelay = 0.35;
-        Player.facing = Boss.x >= Player.x ? 1 : -1;
-        const dxA = Math.abs(Boss.x - Player.x);
+        Player.facing = aimX() >= Player.x ? 1 : -1;
+        const dxA = Math.abs(aimX() - Player.x);
         const dive = Player.vy > -120 && dxA <= 130 * CHAR_K + bossHurt() && Player.y < Boss.y - 50;
         const isRiposte = Player.riposteTimer > 0;
         Player.riposteTimer = 0;
@@ -214,6 +214,7 @@
       }
 
       function airAttackHit() {
+        if (illusionTryHit(true)) { Player.attackHitRegistered = true; return; } /* v0.8.55 打到幻影 */
         const dx = Boss.x - Player.x;
         const dive = Player.isDive;
         const reach = (dive ? 100 : 135) * CHAR_K;

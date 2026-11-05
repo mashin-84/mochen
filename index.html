@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.54";
+      const ASSET_VER = "0.8.55";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2830,6 +2830,26 @@
       Stages[2].moves.teleport_combo = { name: "千幻鏡影・雙襲", isTeleport: true, teleportBehind: true, teleportDelay: 0.22, isCombo: true, comboTotalHits: 2, comboInterval: 0.22, comboDamagePerHit: 95, windup: 0.52, active: 0.50, recover: 0.40, range: 170, lunge: 260, damage: 190, parryPostureDmg: 18 };
       Stages[2].moves.sky_swords = { name: "羅天飛劍・垂落", isRanged: true, bulletCount: 5, bulletSpeed: 700, bulletTrajectory: "vertical", bulletColor: "#38bdf8", frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.20, recover: 0.60, range: 600, lunge: 0, damage: 100, parryPostureDmg: 18 };
       Stages[2].p1Pool = [["slash1", 30], ["flyswords", 20], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
+      /* ===== v0.8.55 第 2 關補強：千幻分身（二階段）＋動態感（變形、殘影、招式特效） ===== */
+      {
+        const S2 = Stages[2], M = S2.moves;
+        M.mirror_split = { name: "千幻・鏡影分身", isSplit: true, armor: true, frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.85, active: 0.30, recover: 0.45, range: 0, lunge: 0, damage: 0 };
+        S2.splitMove = "mirror_split"; S2.splitFallback = "slash1";
+        S2.pool = [["slash1", 30], ["flyswords", 20, "ranged"], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]]; /* 一階段（與 p1Pool 相同；有 pool 才會走 pickFromPool／poolP2） */
+        S2.poolP2 = [["slash1", 22], ["flyswords", 12, "ranged"], ["exclusive_zone", 9], ["thrust_peril", 13], ["sweep_peril", 11], ["grab_peril", 7], ["exclusive_teleport", 11, "chase"], ["teleport_combo", 11, "chase"], ["sky_swords", 8, "ranged"], ["mirror_split", 9]];
+        S2.dfmK = 0.5; /* 變形強度（第 5 關 0.35，顧天風動作較飄逸稍大） */
+        M.slash1.dfm = { w: { sx: 0.96, sy: 1.03, rot: -0.07, ox: -16 }, a: { sx: 1.06, sy: 0.97, rot: 0.06, ox: 24, ghost: 2, gap: 34 }, r: {} };
+        M.slash1.fxAct = { sheet: "air", row: 0, ox: 120, oy: -115, w: 320, dur: 0.28 };
+        M.thrust_peril.dfm = { w: { sx: 0.93, sy: 1.05, rot: -0.09, ox: -26 }, a: { sx: 1.12, sy: 0.93, rot: 0.06, ox: 32, ghost: 4, gap: 55 }, r: {} };
+        M.thrust_peril.fxAct = { sheet: "slash", row: 2, ox: 170, oy: -125, w: 460, dur: 0.3 };
+        M.sweep_peril.dfm = { w: { sx: 1.04, sy: 0.95, rot: -0.05, oy: 6 }, a: { sx: 1.05, sy: 0.96, rot: 0.04, ox: 14, ghost: 2, gap: 30 }, r: {} };
+        M.sweep_peril.fxAct = { sheet: "air", row: 0, ox: 40, oy: -50, w: 560, dur: 0.34 };
+        M.flyswords.dfm = { w: { sx: 0.97, sy: 1.03, rot: -0.06, ox: -10 }, a: { sx: 1.03, sy: 0.98, rot: 0.03, ox: 8 }, r: {} };
+        [M.exclusive_teleport, M.teleport_combo].forEach(m => { if (m) { m.tpFx = true; m.dfm = { w: { sx: 0.95, sy: 1.04, rot: -0.05 }, a: { sx: 1.06, sy: 0.96, rot: 0.05, ox: 20, ghost: 3, gap: 40 }, r: {} }; } });
+        if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
+        M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
+        S2.fxSheets = ["air", "slash", "spark"];
+      }
       Stages[2].farMoves = ["flyswords"];
       Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
 
@@ -3549,7 +3569,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Player.isAirAtk = false; Player.isDive = false; Player.riposteAtk = false;
         Player.stateTimer = 0.32;
         Player.atkCd = 0.32;
-        Player.facing = Boss.x >= Player.x ? 1 : -1;
+        Player.facing = aimX() >= Player.x ? 1 : -1;
         Player.attackHitRegistered = false;
         Player.comboStep = 4; // 蓄力重斬標記
 
@@ -3605,7 +3625,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (Player.y < Config.groundY - 24) { doAirAttack(); return; }
         Player.stamina = Math.max(0, Player.stamina - 15);
 
-        Player.facing = Boss.x >= Player.x ? 1 : -1;
+        Player.facing = aimX() >= Player.x ? 1 : -1;
         const isRiposte = Player.riposteTimer > 0;
         Player.isAirAtk = false; Player.isDive = false; Player.riposteAtk = isRiposte;
         if (isRiposte) {
@@ -3654,8 +3674,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Player.airAtkUsed = true;
         Player.stamina = Math.max(0, Player.stamina - 12);
         Player.staminaRecoverDelay = 0.35;
-        Player.facing = Boss.x >= Player.x ? 1 : -1;
-        const dxA = Math.abs(Boss.x - Player.x);
+        Player.facing = aimX() >= Player.x ? 1 : -1;
+        const dxA = Math.abs(aimX() - Player.x);
         const dive = Player.vy > -120 && dxA <= 130 * CHAR_K + bossHurt() && Player.y < Boss.y - 50;
         const isRiposte = Player.riposteTimer > 0;
         Player.riposteTimer = 0;
@@ -3691,6 +3711,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
 
       function airAttackHit() {
+        if (illusionTryHit(true)) { Player.attackHitRegistered = true; return; } /* v0.8.55 打到幻影 */
         const dx = Boss.x - Player.x;
         const dive = Player.isDive;
         const reach = (dive ? 100 : 135) * CHAR_K;
@@ -4511,6 +4532,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;
         }
+        if (stage && stage.splitMove) Boss._splitPending = true; /* v0.8.55 第 2 關：二階段一開始先分身 */
         if (stage && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) {
           Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
           spawnFloatingText(Boss.x, Boss.y - 135, Boss.stance === "B" ? "〔拔出玄鐵重劍〕" : "〔青雲雙劍〕", "#a5b4fc", 1.2);
@@ -4634,6 +4656,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (!m) return;
 
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
+        if (m.isSplit && illusionsAlive()) { triggerBossMove(stage.splitFallback || "slash1", queue); return; }
+        illusionFaceAll(); Boss._ilStruck = false;
         Boss.moveType = moveKey;
         Boss.landedHit = false;
         if (m.isRage && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 3, Boss.x, Boss.y + 12, { anchor: "b", w: 380, dur: m.windup + m.active + 0.5, loop: true, fps: 10, follow: () => ({ x: Boss.x, y: Boss.y + 12 }) });
@@ -4707,7 +4731,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         // C3: 命中預測與提示記錄
         Boss.nextImpactIn = 999;
         const moveForCue = stage && stage.moves ? stage.moves[Boss.moveType] : null;
-        if (moveForCue && (Boss.state === "windup" || Boss.state === "active") && !moveForCue.isRanged && !moveForCue.isZone && !moveForCue.isSwitch && !moveForCue.isMobility) {
+        if (moveForCue && (Boss.state === "windup" || Boss.state === "active") && !moveForCue.isRanged && !moveForCue.isZone && !moveForCue.isSwitch && !moveForCue.isMobility && !moveForCue.isSplit) {
             if (moveForCue.isAerial) {
                 if (Boss.state === "active") {
                     Boss.nextImpactIn = Boss.aerialShotTimer;
@@ -4861,10 +4885,14 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             const windupProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
             if (windupProgress >= (move.teleportDelay || 0.35)) {
               Boss.teleportExecuted = true;
+              if (move.tpFx && fxReady("spark")) { /* v0.8.55 瞬移：原地碎散＋落點聚合（第 2 關） */
+                spawnFx("spark", 2, Boss.x, Boss.y - 85, { w: 300, dur: 0.38 });
+              }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
               Boss.flashFrames = 3;
+              if (move.tpFx && fxReady("spark")) { spawnFx("spark", 0, Boss.x, Boss.y - 85, { w: 260, dur: 0.32 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
               Sound.play("assist", 0.85, 1.45);
               spawnFloatingText(Boss.x, Boss.y - 120, move.teleportText || "【虛空瞬襲】！", move.teleportColor || "#c084fc", 1.2);
             }
@@ -4888,6 +4916,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             Boss.stateDur = move.active * phaseMod * volSpeedMod;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
             spawnMoveFx(move.fxAct);
+            if (move.isSplit) illusionSplit();
+            if (move.isRanged) illusionShoot(move);
             const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
             if (sfxA) Sound.play(sfxA, 0.9, 1);
             if (move.kick) addTrauma(move.kick);
@@ -4945,7 +4975,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               spawnFloatingText(zX, Config.groundY - 50, "【煞氣絕地形成】！", "#f87171", 1.15);
             }
 
-            if (!move.isRanged && !move.isZone && !move.isCounter && !move.isHeal && !move.isSwitch && !move.isMobility && !move.isLeap) {
+            if (!move.isRanged && !move.isZone && !move.isCounter && !move.isHeal && !move.isSwitch && !move.isMobility && !move.isLeap && !move.isSplit) {
               if (!sfxA) Sound.play("slash", 0.85, Boss.isPerilous ? 0.72 : 0.95);
               if (Boss.perilType !== "grab") {
                 const bType = Stages[Boss.stageId].bodyType || "human";
@@ -5097,11 +5127,13 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                   parryPostureDmg: Math.round((move.parryPostureDmg || 20) * 0.6)
                 });
               }
+              illusionStrike(move, move.comboDamagePerHit || Math.round(move.damage / move.comboTotalHits));
             }
           }
 
           const swingProgress = 1 - (Boss.stateTimer / (Boss.stateDur || 1));
-          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isCharge && !move.isLeap && !move.isMobility && swingProgress >= 0.35) {
+          if (!Boss._ilStruck && swingProgress >= 0.35 && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isLeap && !move.isMobility && !move.isSwitch && !move.isSplit) { Boss._ilStruck = true; illusionStrike(move); }
+          if (!Boss.hitRegistered && Player.state !== "execution" && !move.isRanged && !move.isZone && !move.isCombo && !move.isCounter && !move.isHeal && !move.isCharge && !move.isLeap && !move.isMobility && !move.isSplit && swingProgress >= 0.35) {
             if (Boss.perilType === "grab") {
               const d = Math.abs(Player.x - Boss.grabZoneX);
               if (d <= move.range * 0.75 && Player.y >= Config.groundY - 70) {
@@ -5168,6 +5200,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
         if (stage.mirror) { mirrorAI(dt, dist); return; }
+        if (Boss._splitPending && Boss.aiCooldown <= 0 && stage.splitMove) { Boss._splitPending = false; triggerBossMove(stage.splitMove); return; }
         if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;
         }
@@ -5347,6 +5380,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
           if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02) {
             airAttackHit();
+          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && illusionTryHit(false)) {
+            Player.attackHitRegistered = true; /* v0.8.55 打到幻影 */
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04) {
             const dx = Boss.x - Player.x;
             const inFront = dx * Player.facing >= -30;
@@ -5573,6 +5608,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
 
         updateBossAI(dt);
+        updateIllusions(dt);
         Boss.x += Boss.vx * dt;
         Boss.x = Math.max(95, Math.min(Config.worldWidth - 95, Boss.x));
 
@@ -5781,6 +5817,159 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (cam.trauma > 0) cam.trauma = Math.max(0, cam.trauma - dt);
       }
 
+      /* ===== v0.8.55 千幻分身（第 2 關二階段）=====
+         Boss 施放 move.isSplit 招：一真兩假站成三處（真身隨機），三個長得一模一樣、動作同步；
+         只有真身有影子（辨真假的唯一線索）。幻影會跟著真身出招（近戰同步揮、遠程同步放飛劍，傷害減半；【危】招只做樣子不判定）。
+         打到幻影：鏡碎，0.3 秒後鏡片反噬（範圍內可招架）。打到真身或真身破勢：幻影全散（看破）。最多存在 ILLU.life 秒。 */
+      const ILLU = { life: 14, dmgK: 0.5, counterDmg: 90, counterR: 240, counterDelay: 0.3, minGap: 150 };
+      function illusionsAlive() { return Game.illusions && Game.illusions.some(il => !il.dead); }
+      function illusionReset() { Game.illusions = []; Game.illuCounters = []; Boss._splitPending = false; }
+      function illusionSplit() {
+        const W = Config.worldWidth, px = Player.x;
+        const side = px < W / 2 ? 1 : -1; /* 往空間大的一側多放一個 */
+        let slots = [px - 300, px + 300, px + side * 600].map(x => Math.max(130, Math.min(W - 130, x)));
+        for (let i = slots.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [slots[i], slots[j]] = [slots[j], slots[i]]; }
+        const old = Boss.x;
+        Boss.x = slots[0]; Boss.vx = 0; Boss.facing = Player.x >= Boss.x ? 1 : -1;
+        Game.illusions = slots.slice(1).map(x => ({ x, facing: Player.x >= x ? 1 : -1, t: 0, alpha: 0, dead: false }));
+        Game.illuBossHp = Boss.hp;
+        spawnSparks(old, Boss.y - 70, "mikiri", 1);
+        slots.forEach((x) => {
+          if (fxReady("spark")) spawnFx("spark", 2, x, Config.groundY - 80, { w: 300, dur: 0.45 });
+          emitDust(x, Config.groundY, 1, 2, 0.9); emitDust(x, Config.groundY, -1, 2, 0.9);
+        });
+        Game.flashWhiteOverlay = Math.max(Game.flashWhiteOverlay || 0, 0.35);
+        Sound.play("mikiri", 0.8, 1.3); Sound.play("assist", 0.7, 0.8);
+        addTrauma(0.25);
+        hintOnce("illusion", "【千幻分身】三個裡只有真身有影子；打到幻影會被鏡片反噬");
+      }
+      function illusionShatter(il, counter) {
+        if (il.dead) return;
+        il.dead = true;
+        spawnSparks(il.x, Boss.y - 80, "parry", Player.x >= il.x ? -1 : 1);
+        if (fxReady("spark")) spawnFx("spark", 0, il.x, Boss.y - 85, { w: 320, dur: 0.4 });
+        Sound.play("parry", 0.7, 1.7); Sound.play("block", 0.5, 1.5);
+        if (counter) {
+          Game.illuCounters.push({ x: il.x, t: ILLU.counterDelay });
+          spawnFloatingText(il.x, Boss.y - 150, "〔幻影・鏡碎〕", "#a5f3fc", 1.0);
+        }
+      }
+      function illusionDispelAll(text) {
+        let any = false;
+        (Game.illusions || []).forEach(il => { if (!il.dead) { any = true; illusionShatter(il, false); } });
+        if (any && text) spawnFloatingText(Boss.x, Boss.y - 160, text, "#fde047", 1.2);
+      }
+      /* 主角出刀前：面向最近的目標（真身或幻影），不洩漏誰是真的 */
+      function aimX() {
+        let best = Boss.x, bd = Math.abs(Boss.x - Player.x);
+        if (Game.illusions) for (const il of Game.illusions) { if (il.dead) continue; const d = Math.abs(il.x - Player.x); if (d < bd) { bd = d; best = il.x; } }
+        return best;
+      }
+      /* 主角攻擊判定：最近且在範圍內的幻影比真身近 → 打到幻影（回傳 true，真身不受傷） */
+      function illusionTryHit(air) {
+        if (!illusionsAlive()) return false;
+        const reach = (air ? (Player.isDive ? 100 : 135) : (Player.isChargedAttack ? 175 : Player.comboStep === 3 ? 165 : 140)) * CHAR_K + bossHurt();
+        const dB = Math.abs(Boss.x - Player.x);
+        let hit = null, hd = 1e9;
+        for (const il of Game.illusions) {
+          if (il.dead || il.alpha < 0.5) continue;
+          const dx = il.x - Player.x, d = Math.abs(dx);
+          const ok = (air && Player.isDive) ? d <= reach : (dx * Player.facing >= -30 && d <= reach);
+          if (ok && d < hd) { hd = d; hit = il; }
+        }
+        if (!hit || hd >= dB) return false;
+        illusionShatter(hit, true);
+        triggerHitstopMs(40); addTrauma(0.2);
+        return true;
+      }
+      /* 幻影同步出招：真身近戰判定的同一瞬間，各幻影也各自判定一次（傷害減半；危招不判定） */
+      function illusionStrike(move, perHit) {
+        if (!illusionsAlive() || Boss.isPerilous || !move || Player.state === "execution") return;
+        const dmg = Math.round((perHit || move.damage || 120) * ILLU.dmgK);
+        const pd = Math.round((move.parryPostureDmg || 18) * 0.5);
+        for (const il of Game.illusions) {
+          if (il.dead) continue;
+          const dx = Player.x - il.x;
+          if (dx * il.facing < -25 || Math.abs(dx) > (move.range || 170)) continue;
+          if (Player.y < Config.groundY - 120) continue;
+          const sx = Boss.x, sf = Boss.facing, sv = Boss.vx;
+          Boss.x = il.x; Boss.facing = il.facing;
+          resolveBossStrike({ damage: dmg, parryPostureDmg: pd });
+          Boss.x = sx; Boss.facing = sf; Boss.vx = sv;
+        }
+      }
+      /* 幻影同步放飛劍（直線彈道；垂落飛劍是全場招不重複） */
+      function illusionShoot(move) {
+        if (!illusionsAlive() || !move || move.bulletTrajectory === "vertical") return;
+        const n = Math.max(1, Math.min(2, (move.bulletCount || 3) - 1));
+        for (const il of Game.illusions) {
+          if (il.dead) continue;
+          for (let i = 0; i < n; i++) {
+            setTimeout(() => {
+              if (il.dead || Boss.hp <= 0) return;
+              const dir = Player.x >= il.x ? 1 : -1;
+              Game.flyingSwords.push({ x: il.x + dir * 30, y: Boss.y - 55 + (i - 0.5) * 22, vx: dir * ((move.bulletSpeed || 750) * 0.9), vy: 0, dir, damage: Math.round((move.damage || 90) * ILLU.dmgK), reflected: false, life: 2.5, color: "#a5f3fc", trajectory: "linear", kind: null });
+            }, 120 + i * 220);
+          }
+        }
+      }
+      function updateIllusions(dt) {
+        if (!Game.illusions) Game.illusions = [];
+        if (!Game.illuCounters) Game.illuCounters = [];
+        /* 鏡片反噬 */
+        for (let i = Game.illuCounters.length - 1; i >= 0; i--) {
+          const c = Game.illuCounters[i]; c.t -= dt;
+          if (c.t > 0) continue;
+          Game.illuCounters.splice(i, 1);
+          if (fxReady("spark")) spawnFx("spark", 2, c.x, Config.groundY - 70, { w: 420, dur: 0.4 });
+          for (let k = 0; k < 3; k++) spawnSparks(c.x + (k - 1) * 50, Config.groundY - 60 - k * 20, "mikiri", k - 1 || 1);
+          Sound.play("mikiri", 0.6, 1.6);
+          if (Math.abs(Player.x - c.x) <= ILLU.counterR && Player.y >= Config.groundY - 140 && Player.state !== "execution" && Boss.hp > 0) {
+            const sx = Boss.x, sf = Boss.facing, sv = Boss.vx, sp = Boss.isPerilous;
+            Boss.x = c.x; Boss.facing = Player.x >= c.x ? 1 : -1; Boss.isPerilous = false;
+            resolveBossStrike({ damage: ILLU.counterDmg, parryPostureDmg: 8 });
+            Boss.x = sx; Boss.facing = sf; Boss.vx = sv; Boss.isPerilous = sp;
+          }
+        }
+        if (!Game.illusions.length) return;
+        /* 看破：真身受傷、破勢、死亡 → 全散 */
+        if (Boss.hp <= 0 || Game.bossDeath || Boss.state === "staggered" || Boss.hp < (Game.illuBossHp || 0) - 0.5) {
+          illusionDispelAll(Boss.hp > 0 ? "〔看破真身・幻影盡散〕" : null);
+        }
+        const B = Boss.state, sp = Math.abs(Boss.vx);
+        for (const il of Game.illusions) {
+          il.t += dt;
+          if (il.dead) { il.alpha = Math.max(0, il.alpha - dt * 6); continue; }
+          if (il.t > ILLU.life) { il.dead = true; continue; }
+          il.alpha = Math.min(1, il.alpha + dt * 5);
+          const toP = Player.x >= il.x ? 1 : -1, d = Math.abs(Player.x - il.x);
+          if (B === "idle" || B === "approach") { il.facing = toP; if (d > ILLU.minGap) il.x += toP * Math.min(sp, 320) * dt; }
+          else if (B === "windup") { /* 前搖：不動，面向在出招瞬間鎖定 */ }
+          else if (B === "active") { if (d > 60) il.x += il.facing * sp * dt; }
+          else il.x += il.facing * sp * 0.3 * dt;
+        }
+        /* 幻影之間、幻影和真身不要重疊 */
+        const all = Game.illusions.filter(il => !il.dead);
+        for (const il of all) {
+          if (Math.abs(il.x - Boss.x) < 110) il.x += (il.x >= Boss.x ? 1 : -1) * 260 * dt;
+          for (const o of all) if (o !== il && Math.abs(il.x - o.x) < 110) il.x += (il.x >= o.x ? 1 : -1) * 260 * dt;
+          il.x = Math.max(110, Math.min(Config.worldWidth - 110, il.x));
+        }
+        Game.illusions = Game.illusions.filter(il => !(il.dead && il.alpha <= 0));
+      }
+      function illusionFaceAll() { if (Game.illusions) for (const il of Game.illusions) if (!il.dead) il.facing = Player.x >= il.x ? 1 : -1; }
+      /* 繪製：借用 drawBossEntity，暫時把 Boss 搬到幻影位置；Boss._ilDraw 時不畫影子、氣場、提示圈與危字 */
+      function drawIllusions() {
+        if (!Game.illusions || !Game.illusions.length || Game.mode !== "battle") return;
+        const sx = Boss.x, sf = Boss.facing;
+        for (const il of Game.illusions) {
+          if (il.alpha <= 0) continue;
+          Boss.x = il.x; Boss.facing = il.facing; Boss._ilDraw = true;
+          ctx.save(); ctx.globalAlpha = il.alpha;
+          try { drawBossEntity(); } finally { ctx.restore(); Boss._ilDraw = false; Boss.x = sx; Boss.facing = sf; }
+        }
+      }
+
       /* =========================================================================
        * 5. 渲染引擎：動態多場景視差背景與角色剪影
        * ========================================================================= */
@@ -5896,6 +6085,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         drawFx(true);
         drawFlyingSwords();
         drawCineTrail();
+        drawIllusions();
         drawBossEntity();
         drawPlayer();
         drawHubFront();
@@ -6983,7 +7173,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         };
 
         // Phase 2 Flaming Aura Particles
-        for (const ap of Boss.auraParticles) {
+        for (const ap of (Boss._ilDraw ? [] : Boss.auraParticles)) {
           ctx.fillStyle = Boss.artId >= 11 ? "rgba(245, 158, 11, 0.6)" : Boss.artId >= 6 ? "rgba(168, 85, 247, 0.55)" : "rgba(239, 68, 68, 0.55)";
           ctx.beginPath();
           ctx.arc(ap.x, ap.y, ap.size, 0, Math.PI * 2);
@@ -7225,7 +7415,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             let sk = bossVis(stage).k;
             if (isWalkFrame && bossImg !== SP.imgs[imgKey]) sk *= getWalkNorm(SP);
             const cineK = Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
-            if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
+            if (Boss._ilDraw) { /* 幻影沒有影子 */ } else if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
           }
 
           ctx.save();
@@ -7556,7 +7746,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             ctx.restore(); // 結束後傾變換
 
         // C4: 提示畫面 (強/弱)
-        if (Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35 && Config.parryCueLevel > 0) {
+        if (!Boss._ilDraw && Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35 && Config.parryCueLevel > 0) {
             const isStrong = Config.parryCueLevel === 2;
             const isPeril = Boss.isPerilous;
             const cueColor = isPeril ? "#ef4444" : "#fde047";
@@ -7594,7 +7784,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
 
         // Perilous "危" Kanji Warning
-        if (Boss.isPerilous && (Boss.state === "windup" || Boss.state === "active")) {
+        if (!Boss._ilDraw && Boss.isPerilous && (Boss.state === "windup" || Boss.state === "active")) {
           const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.12;
           ctx.save();
           ctx.translate(Boss.x, by - 48);
@@ -7610,7 +7800,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
 
         // Posture-broken Deathblow Reticle "決"
-        if (Boss.state === "staggered") {
+        if (!Boss._ilDraw && Boss.state === "staggered") {
           const pulse = 1 + Math.sin(performance.now() * 0.02) * 0.14;
           ctx.save();
           ctx.translate(Boss.x, Boss.y - Boss.h * 0.55);
@@ -8335,6 +8525,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Game.floatingTexts = [];
         Game.executionLines = [];
         Game.clones = [];
+        illusionReset();
         Game.camera.targetZoom = 1.0 - Math.min(0.25, ((stage.size || 1) - 1) * 0.3);
         const focusX = Player.x * 0.64 + Boss.x * 0.36;
         Game.camera.x = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, focusX - Config.baseWidth * 0.5));

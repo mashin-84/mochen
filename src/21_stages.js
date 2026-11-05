@@ -42,6 +42,26 @@
       Stages[2].moves.teleport_combo = { name: "千幻鏡影・雙襲", isTeleport: true, teleportBehind: true, teleportDelay: 0.22, isCombo: true, comboTotalHits: 2, comboInterval: 0.22, comboDamagePerHit: 95, windup: 0.52, active: 0.50, recover: 0.40, range: 170, lunge: 260, damage: 190, parryPostureDmg: 18 };
       Stages[2].moves.sky_swords = { name: "羅天飛劍・垂落", isRanged: true, bulletCount: 5, bulletSpeed: 700, bulletTrajectory: "vertical", bulletColor: "#38bdf8", frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.20, recover: 0.60, range: 600, lunge: 0, damage: 100, parryPostureDmg: 18 };
       Stages[2].p1Pool = [["slash1", 30], ["flyswords", 20], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
+      /* ===== v0.8.55 第 2 關補強：千幻分身（二階段）＋動態感（變形、殘影、招式特效） ===== */
+      {
+        const S2 = Stages[2], M = S2.moves;
+        M.mirror_split = { name: "千幻・鏡影分身", isSplit: true, armor: true, frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.85, active: 0.30, recover: 0.45, range: 0, lunge: 0, damage: 0 };
+        S2.splitMove = "mirror_split"; S2.splitFallback = "slash1";
+        S2.pool = [["slash1", 30], ["flyswords", 20, "ranged"], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]]; /* 一階段（與 p1Pool 相同；有 pool 才會走 pickFromPool／poolP2） */
+        S2.poolP2 = [["slash1", 22], ["flyswords", 12, "ranged"], ["exclusive_zone", 9], ["thrust_peril", 13], ["sweep_peril", 11], ["grab_peril", 7], ["exclusive_teleport", 11, "chase"], ["teleport_combo", 11, "chase"], ["sky_swords", 8, "ranged"], ["mirror_split", 9]];
+        S2.dfmK = 0.5; /* 變形強度（第 5 關 0.35，顧天風動作較飄逸稍大） */
+        M.slash1.dfm = { w: { sx: 0.96, sy: 1.03, rot: -0.07, ox: -16 }, a: { sx: 1.06, sy: 0.97, rot: 0.06, ox: 24, ghost: 2, gap: 34 }, r: {} };
+        M.slash1.fxAct = { sheet: "air", row: 0, ox: 120, oy: -115, w: 320, dur: 0.28 };
+        M.thrust_peril.dfm = { w: { sx: 0.93, sy: 1.05, rot: -0.09, ox: -26 }, a: { sx: 1.12, sy: 0.93, rot: 0.06, ox: 32, ghost: 4, gap: 55 }, r: {} };
+        M.thrust_peril.fxAct = { sheet: "slash", row: 2, ox: 170, oy: -125, w: 460, dur: 0.3 };
+        M.sweep_peril.dfm = { w: { sx: 1.04, sy: 0.95, rot: -0.05, oy: 6 }, a: { sx: 1.05, sy: 0.96, rot: 0.04, ox: 14, ghost: 2, gap: 30 }, r: {} };
+        M.sweep_peril.fxAct = { sheet: "air", row: 0, ox: 40, oy: -50, w: 560, dur: 0.34 };
+        M.flyswords.dfm = { w: { sx: 0.97, sy: 1.03, rot: -0.06, ox: -10 }, a: { sx: 1.03, sy: 0.98, rot: 0.03, ox: 8 }, r: {} };
+        [M.exclusive_teleport, M.teleport_combo].forEach(m => { if (m) { m.tpFx = true; m.dfm = { w: { sx: 0.95, sy: 1.04, rot: -0.05 }, a: { sx: 1.06, sy: 0.96, rot: 0.05, ox: 20, ghost: 3, gap: 40 }, r: {} }; } });
+        if (M.teleport_combo) M.teleport_combo.dfm.pulse = true;
+        M.mirror_split.dfm = { w: { sx: 0.97, sy: 1.04 }, a: { sx: 1.04, sy: 0.97 }, r: {}, shake: 3 };
+        S2.fxSheets = ["air", "slash", "spark"];
+      }
       Stages[2].farMoves = ["flyswords"];
       Stages[2].farMovesP2 = ["exclusive_teleport", "teleport_combo", "exclusive_zone", "sky_swords"];
 
