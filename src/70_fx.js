@@ -170,6 +170,15 @@
       }
       function swordImpactFx(sw) {
         if (sw && sw.kind === "halberd") spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 });
+        const fsa = sw && !sw.kind && Stages[Boss.stageId] && Stages[Boss.stageId].flySwordArt; /* v0.8.66 飛劍命中／落地的碎裂圖 */
+        if (!fsa || !fxReady(fsa.sheet)) return;
+        const w = fsa.w || 150, k = w / 256;
+        if (sw.trajectory === "vertical" && sw.y >= Config.groundY - 40 && fsa.groundRow != null) {
+          spawnFx(fsa.sheet, fsa.groundRow, sw.x, Config.groundY - 92 * k, { w: w * 1.1, dur: 0.6 }); /* 插地格劍尖約在格內 y=220 */
+        } else if (fsa.breakRow != null) {
+          const ang = Math.atan2(sw.vy, sw.vx), d = (fsa.tipX || 238) - 128;
+          spawnFx(fsa.sheet, fsa.breakRow, sw.x - Math.cos(ang) * d * k, sw.y - Math.sin(ang) * d * k, { w, dur: 0.45, rot: ang });
+        }
       }
       function drawUltArt(m, p) {
         const sh = fxSheet("ult");

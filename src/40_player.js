@@ -982,7 +982,7 @@
           setTimeout(() => {
             if (Boss.hp <= 0) return;
             const dir = Boss.facing;
-            let sx = Boss.x + dir * 30;
+            let sx = Boss.x + dir * (m && m.bulletX ? Math.min(m.bulletX, Math.max(30, Math.abs(Player.x - Boss.x) - 50)) : 30); /* v0.8.66 bulletX：劍尖從手前方出發（主角太近時退回 30） */
             let sy = (m && m.bulletY) ? Boss.y + m.bulletY[i % m.bulletY.length] : Boss.y - 55 + (i - 1) * 22; /* v0.8.65 bulletY：每把飛劍相對腳底的高度 */
             let svx = dir * speed;
             let svy = 0;

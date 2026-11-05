@@ -146,6 +146,15 @@
         spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha, rot: (f.rot || 0) * Boss.facing });
       }
       function triggerMacro(k) { const parts = k.split("+"); triggerBossMove(parts[0], parts.slice(1)); }
+      /* v0.8.66 飛劍招前搖：在出手高度召喚成形（flySwordArt.summonRow）；幻影也照它要射的高度召喚，避免洩漏真身 */
+      function summonSwordsFx(stage, m) {
+        const fsa = stage.flySwordArt;
+        if (!fsa || fsa.summonRow == null || !m.isRanged || !m.bulletY || m.bulletTrajectory === "vertical" || !fxReady(fsa.sheet)) return;
+        const w = fsa.w || 150, dur = (m.windup || 0.5) + 0.1;
+        const at = (x, fc, ys) => ys.forEach(by => spawnFx(fsa.sheet, fsa.summonRow, x + fc * ((m.bulletX || 30) - 60), Boss.y + by, { w, dur, facing: fc }));
+        at(Boss.x, Boss.facing, m.bulletY);
+        (Game.illusions || []).forEach(il => { if (!il.dead) at(il.x, Player.x >= il.x ? 1 : -1, [0, 1].map(i => m.bulletY[(i * 2) % m.bulletY.length])); });
+      }
       function triggerBossMove(moveKey, queue = []) {
         if (Boss.state === "staggered" || Boss.state === "frozen") return;
         const stage = Stages[Boss.stageId];
@@ -156,6 +165,7 @@
         if (m.isSplit && illusionsAlive()) { triggerBossMove(stage.splitFallback || "slash1", queue); return; }
         illusionFaceAll(); Boss._ilStruck = false;
         Boss.moveType = moveKey;
+        summonSwordsFx(stage, m);
         Boss.landedHit = false;
         if (m.isRage && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 3, Boss.x, Boss.y + 12, { anchor: "b", w: 380, dur: m.windup + m.active + 0.5, loop: true, fps: 10, follow: () => ({ x: Boss.x, y: Boss.y + 12 }) });
         if (m.isRage) { spawnFloatingText(Boss.x, Boss.y - 150, "〔怒氣爆發〕", "#f87171", 1.3); Sound.play("peril", 0.8, 0.8); Boss.flashFrames = 4; }
