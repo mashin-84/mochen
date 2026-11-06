@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.87（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.88（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,9 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.88 第 4 關配樂**：使用者生成兩首（spirit_of_the_bound_blade 3:04、the_bronze_blade_s_last_stand 3:02，約 -12 LUFS 不需加減），尾端 0.8 秒淡出、opus 80k → `assets/music/b4_p1.webm`（一階段）、`b4_p2.webm`（二階段，`STAGE_BGM_P2[4]`，在 `partsTransStep` 巨劍崩碎那一刻換曲）。
+- 使用者想法（討論中）：開場動畫改成像一念飛仙那樣的 Gemini 角色動畫影片（魂系 Boss 登場，不再用「背景＋剪影首幀」生成）；進二階段也播一段過場動畫並在那時切第二首歌。
 
 **v0.8.87 第 4 關美術第 2、3 批（部分）**：`assets/bg/arena4.webp`（古靈背景，已含半透明古靈身體，程式灰盒身體以 `art.bgBody` 關掉）、`arena4_ground／arena4_fg.webp`（地面帶、前景，`S4.layers` 參數同第 5 關）、`assets/boss4/name.webp`（名牌，非 introCine 關卡現在也會走 `bossNameCard`：`S4.introName`）、`assets/fx/boss4fx2.webp`（4×4：列 0 天劍落地衝擊（0～3）、列 1 橫掃劍氣、列 2 指劍劍氣 0～1／劍雨落地 2～3、列 3 巨劍崩裂 0／崩碎 1／核心突進 2～3）。已接：天劍落地、橫掃、巨掌壓落、劍雨落地、巨劍裂與碎。**未接**：核心突進（列 3 第 2、3 格）、指劍飛劍仍用 boss4fx 小劍（可改列 2 第 0、1 格箭形）、開場影片、專屬音效與兩階段配樂。待看：古靈身體在鏡頭內是否夠看得見。
 

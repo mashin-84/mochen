@@ -472,6 +472,7 @@
           P._shattered = true; const sw = P.sword; sw.mode = "gone";
           for (let i = 0; i < 26; i++) P.shards.push({ x: sw.x + (Math.random() - 0.5) * 60, y: G - 120 - Math.random() * 260, vx: (Math.random() - 0.5) * 900, vy: -300 - Math.random() * 500, t: 1.2 + Math.random() * 0.5, fly: true });
           Sound.play("hit", 1.0, 0.6); addTrauma(0.5);
+          if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* v0.8.88 巨劍崩碎＝換二階段曲 */
           if (fxReady("boss4fx2")) spawnFx("boss4fx2", 3, sw.x, G - 260, { w: 760, dur: 0.7, col: 1 });
           if (fxReady("spark")) spawnFx("spark", 3, sw.x, G - 200, { w: 600, dur: 0.6 });
         }
