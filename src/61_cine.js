@@ -303,7 +303,7 @@
         ctx.globalCompositeOperation = "source-over";
         if (nc.sub) {
           ctx.globalAlpha = a * Math.min(1, Math.max(0, (e - 250) / 250));
-          ctx.font = `700 ${Math.round(h * 0.038)}px var(--font-serif)`; ctx.textAlign = "center";
+          ctx.font = `700 ${Math.round(h * 0.038)}px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`; ctx.textAlign = "center";
           ctx.fillStyle = "#fde68a"; ctx.shadowColor = "rgba(0,0,0,0.9)"; ctx.shadowBlur = 8;
           ctx.fillText(String(nc.sub).split("").join(" "), w / 2, cy + ih / 2 + h * 0.03);
         }

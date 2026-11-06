@@ -84,6 +84,7 @@
         Game.clones = [];
         illusionReset();
         partsInit(stage); /* v0.8.83 部位 Boss */
+        Boss._headY = null;
         Game.camera.targetZoom = 1.0 - Math.min(0.25, ((stage.size || 1) - 1) * 0.3);
         const focusX = Player.x * 0.64 + Boss.x * 0.36;
         Game.camera.x = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, focusX - Config.baseWidth * 0.5));

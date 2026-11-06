@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.83";
+      const ASSET_VER = "0.8.84";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -6980,7 +6980,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             ctx.strokeRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
             }
             if (isWarn) {
-              ctx.font = "700 12px var(--font-serif)";
+              ctx.font = "700 12px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
               ctx.fillStyle = "#fde047";
               ctx.textAlign = "center";
               ctx.fillText("⚠️ 煞氣即將爆發！", hz.x, hz.y - hz.h - 8);
@@ -7049,7 +7049,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         for (const ft of Game.floatingTexts) {
           const a = Math.max(0, Math.min(1, ft.life / ft.maxLife));
           ctx.save();
-          ctx.font = `800 ${Math.round(16 * ft.scale)}px var(--font-serif)`;
+          ctx.font = `800 ${Math.round(16 * ft.scale)}px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`;
           ctx.textAlign = "center";
           ctx.fillStyle = ft.color;
           ctx.globalAlpha = a;
@@ -7083,7 +7083,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ctx.globalAlpha = a;
           const inkS = fxSheet("ink");
           if (inkS.ok) {
-            ctx.font = `900 64px var(--font-serif)`;
+            ctx.font = `900 64px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`;
             const tw = ctx.measureText("【 破 勢 處 決 ・ 一 劍 青 雲 】").width;
             const iw = Math.min(w * 0.98, tw * 1.45), ih = iw * 0.34;
             ctx.drawImage(inkS.img, 0, 768, 512, 256, w * 0.5 - iw / 2, h * 0.24 - ih / 2, iw, ih);
@@ -7100,7 +7100,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ctx.stroke();
           }
 
-          ctx.font = inkS.ok ? `900 64px var(--font-serif)` : `900 36px var(--font-serif)`;
+          ctx.font = inkS.ok ? `900 64px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif` : `900 36px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`;
           ctx.textAlign = "center";
           ctx.fillStyle = "#fef08a";
           ctx.shadowColor = "#f59e0b";
@@ -7474,7 +7474,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         ctx.globalCompositeOperation = "source-over";
         if (nc.sub) {
           ctx.globalAlpha = a * Math.min(1, Math.max(0, (e - 250) / 250));
-          ctx.font = `700 ${Math.round(h * 0.038)}px var(--font-serif)`; ctx.textAlign = "center";
+          ctx.font = `700 ${Math.round(h * 0.038)}px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`; ctx.textAlign = "center";
           ctx.fillStyle = "#fde68a"; ctx.shadowColor = "rgba(0,0,0,0.9)"; ctx.shadowBlur = 8;
           ctx.fillText(String(nc.sub).split("").join(" "), w / 2, cy + ih / 2 + h * 0.03);
         }
@@ -7880,7 +7880,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         ctx.stroke();
         }
 
-        ctx.font = "600 11px var(--font-serif)";
+        ctx.font = "600 11px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
         ctx.textAlign = "center";
         for (let x = 0; x <= Config.worldWidth && !artMode; x += 160) {
           const major = x % 640 === 0;
@@ -8083,6 +8083,19 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             "13_sweep", "14_cast", "15_hurt", "16_stagger"
           ];
           const BossSprites = {};
+          /* v0.8.84 圖上最上緣的不透明列（快取在圖上）：危字放在頭頂用 */
+          function opaqueTop(img) {
+            if (img._opTop != null) return img._opTop;
+            let top = 0;
+            try {
+              const c = document.createElement("canvas"); c.width = img.naturalWidth || 900; c.height = img.naturalHeight || 600;
+              const g = c.getContext("2d"); g.drawImage(img, 0, 0);
+              const d = g.getImageData(0, 0, c.width, c.height).data;
+              outer: for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x += 3) if (d[(y * c.width + x) * 4 + 3] > 60) { top = y; break outer; }
+            } catch (e) { top = 0; }
+            img._opTop = top;
+            return top;
+          }
           function opaqueH(img) {
             const c = document.createElement("canvas"); c.width = img.naturalWidth || 900; c.height = img.naturalHeight || 600;
             const g = c.getContext("2d"); g.drawImage(img, 0, 0);
@@ -8432,6 +8445,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             ctx.globalAlpha = keepA; ctx.filter = keepF;
           }
           ctx.drawImage(bossImg, -450, -560);
+          if (!Boss._ilDraw && !deathRot) { const hy = Boss.y + GROUND_SINK - (560 - opaqueTop(bossImg)) * bossK; Boss._headY = Boss._headY == null ? hy : Boss._headY + (hy - Boss._headY) * 0.25; } /* v0.8.84 頭頂高度（平滑，換格不跳） */
           
           ctx.filter = "none";
           ctx.restore();
@@ -8773,9 +8787,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (!Boss._ilDraw && Boss.isPerilous && (Boss.state === "windup" || Boss.state === "active")) {
           const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.12;
           ctx.save();
-          ctx.translate(Boss.x, by - 48);
+          ctx.translate(Boss.x, (useBossSprite && Boss._headY != null ? Boss._headY : by) - 28); /* v0.8.84 有動作表的 Boss：放在圖上頭頂上方 */
           ctx.scale(pulse, pulse);
-          ctx.font = "900 44px var(--font-serif)";
+          ctx.font = "900 44px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           ctx.textAlign = "center";
           ctx.fillStyle = "#ef4444";
           ctx.shadowColor = "#ef4444";
@@ -8799,7 +8813,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ctx.fill();
           ctx.stroke();
 
-          ctx.font = "900 20px var(--font-serif)";
+          ctx.font = "900 20px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           ctx.fillStyle = "#ffffff";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
@@ -9522,6 +9536,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Game.clones = [];
         illusionReset();
         partsInit(stage); /* v0.8.83 部位 Boss */
+        Boss._headY = null;
         Game.camera.targetZoom = 1.0 - Math.min(0.25, ((stage.size || 1) - 1) * 0.3);
         const focusX = Player.x * 0.64 + Boss.x * 0.36;
         Game.camera.x = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, focusX - Config.baseWidth * 0.5));
@@ -10095,12 +10110,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
           // Cinematic Title Calligraphy Overlay
           cinemaCtx.save();
-          cinemaCtx.font = "900 22px var(--font-serif)";
+          cinemaCtx.font = "900 22px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           cinemaCtx.fillStyle = "rgba(254, 240, 138, 0.9)";
           cinemaCtx.shadowColor = "rgba(0,0,0,0.9)";
           cinemaCtx.shadowBlur = 8;
           cinemaCtx.fillText(`第 ${this.stage.id} 難・${this.stage.name}`, 20, 36);
-          cinemaCtx.font = "600 12px var(--font-serif)";
+          cinemaCtx.font = "600 12px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           cinemaCtx.fillStyle = "rgba(148, 163, 184, 0.85)";
           cinemaCtx.fillText(this.stage.chapter, 20, 56);
           cinemaCtx.restore();

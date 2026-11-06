@@ -99,7 +99,7 @@
             ctx.strokeRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
             }
             if (isWarn) {
-              ctx.font = "700 12px var(--font-serif)";
+              ctx.font = "700 12px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
               ctx.fillStyle = "#fde047";
               ctx.textAlign = "center";
               ctx.fillText("⚠️ 煞氣即將爆發！", hz.x, hz.y - hz.h - 8);
@@ -168,7 +168,7 @@
         for (const ft of Game.floatingTexts) {
           const a = Math.max(0, Math.min(1, ft.life / ft.maxLife));
           ctx.save();
-          ctx.font = `800 ${Math.round(16 * ft.scale)}px var(--font-serif)`;
+          ctx.font = `800 ${Math.round(16 * ft.scale)}px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`;
           ctx.textAlign = "center";
           ctx.fillStyle = ft.color;
           ctx.globalAlpha = a;
@@ -202,7 +202,7 @@
           ctx.globalAlpha = a;
           const inkS = fxSheet("ink");
           if (inkS.ok) {
-            ctx.font = `900 64px var(--font-serif)`;
+            ctx.font = `900 64px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`;
             const tw = ctx.measureText("【 破 勢 處 決 ・ 一 劍 青 雲 】").width;
             const iw = Math.min(w * 0.98, tw * 1.45), ih = iw * 0.34;
             ctx.drawImage(inkS.img, 0, 768, 512, 256, w * 0.5 - iw / 2, h * 0.24 - ih / 2, iw, ih);
@@ -219,7 +219,7 @@
           ctx.stroke();
           }
 
-          ctx.font = inkS.ok ? `900 64px var(--font-serif)` : `900 36px var(--font-serif)`;
+          ctx.font = inkS.ok ? `900 64px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif` : `900 36px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`;
           ctx.textAlign = "center";
           ctx.fillStyle = "#fef08a";
           ctx.shadowColor = "#f59e0b";

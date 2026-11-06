@@ -7,6 +7,19 @@
             "13_sweep", "14_cast", "15_hurt", "16_stagger"
           ];
           const BossSprites = {};
+          /* v0.8.84 圖上最上緣的不透明列（快取在圖上）：危字放在頭頂用 */
+          function opaqueTop(img) {
+            if (img._opTop != null) return img._opTop;
+            let top = 0;
+            try {
+              const c = document.createElement("canvas"); c.width = img.naturalWidth || 900; c.height = img.naturalHeight || 600;
+              const g = c.getContext("2d"); g.drawImage(img, 0, 0);
+              const d = g.getImageData(0, 0, c.width, c.height).data;
+              outer: for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x += 3) if (d[(y * c.width + x) * 4 + 3] > 60) { top = y; break outer; }
+            } catch (e) { top = 0; }
+            img._opTop = top;
+            return top;
+          }
           function opaqueH(img) {
             const c = document.createElement("canvas"); c.width = img.naturalWidth || 900; c.height = img.naturalHeight || 600;
             const g = c.getContext("2d"); g.drawImage(img, 0, 0);
@@ -356,6 +369,7 @@
             ctx.globalAlpha = keepA; ctx.filter = keepF;
           }
           ctx.drawImage(bossImg, -450, -560);
+          if (!Boss._ilDraw && !deathRot) { const hy = Boss.y + GROUND_SINK - (560 - opaqueTop(bossImg)) * bossK; Boss._headY = Boss._headY == null ? hy : Boss._headY + (hy - Boss._headY) * 0.25; } /* v0.8.84 頭頂高度（平滑，換格不跳） */
           
           ctx.filter = "none";
           ctx.restore();
@@ -697,9 +711,9 @@
         if (!Boss._ilDraw && Boss.isPerilous && (Boss.state === "windup" || Boss.state === "active")) {
           const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.12;
           ctx.save();
-          ctx.translate(Boss.x, by - 48);
+          ctx.translate(Boss.x, (useBossSprite && Boss._headY != null ? Boss._headY : by) - 28); /* v0.8.84 有動作表的 Boss：放在圖上頭頂上方 */
           ctx.scale(pulse, pulse);
-          ctx.font = "900 44px var(--font-serif)";
+          ctx.font = "900 44px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           ctx.textAlign = "center";
           ctx.fillStyle = "#ef4444";
           ctx.shadowColor = "#ef4444";
@@ -723,7 +737,7 @@
           ctx.fill();
           ctx.stroke();
 
-          ctx.font = "900 20px var(--font-serif)";
+          ctx.font = "900 20px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           ctx.fillStyle = "#ffffff";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";

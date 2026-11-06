@@ -96,7 +96,7 @@
         ctx.stroke();
         }
 
-        ctx.font = "600 11px var(--font-serif)";
+        ctx.font = "600 11px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
         ctx.textAlign = "center";
         for (let x = 0; x <= Config.worldWidth && !artMode; x += 160) {
           const major = x % 640 === 0;

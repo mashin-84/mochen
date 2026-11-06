@@ -310,12 +310,12 @@
 
           // Cinematic Title Calligraphy Overlay
           cinemaCtx.save();
-          cinemaCtx.font = "900 22px var(--font-serif)";
+          cinemaCtx.font = "900 22px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           cinemaCtx.fillStyle = "rgba(254, 240, 138, 0.9)";
           cinemaCtx.shadowColor = "rgba(0,0,0,0.9)";
           cinemaCtx.shadowBlur = 8;
           cinemaCtx.fillText(`第 ${this.stage.id} 難・${this.stage.name}`, 20, 36);
-          cinemaCtx.font = "600 12px var(--font-serif)";
+          cinemaCtx.font = "600 12px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
           cinemaCtx.fillStyle = "rgba(148, 163, 184, 0.85)";
           cinemaCtx.fillText(this.stage.chapter, 20, 56);
           cinemaCtx.restore();
