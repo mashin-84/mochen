@@ -36,6 +36,7 @@
 - 關卡資料：`Stages`（九關；`NINE_MAP`、`LegacyStages` 為舊 15 關素材庫）、`moves`、`pool/poolP2`、`sprite`、`bg`、`dialogue`
 - 流程：`loadStage`、`returnToHub`、`hubTick`、`handleStageClear`、`bossDeathOut`、`showSettlement`
 - 戰鬥：`updatePhysics`、`updateBossAI`、`triggerBossMove`、`resolveBossStrike`、`doPerfectDeflect`、`doNormalAttack`、`doAirAttack`、`performExecution`、`takeDamage`（氣血歸零＝敗北重打）
+- 部位 Boss（v0.8.83，第 4、7 關）：`53_parts.js`（`Stages[n].parts`、`Boss._pp`、`partsUpdate`／`partsTryHit`／`partStrike`／`drawPartsBack`／`drawPartsFront`）
 - 美術特效：`spawnFx`／`updateFx`／`drawFx`（`assets/fx/*.webp`，4×4 格、每格 256px）、`executionFx`、`drawUltArt`、`drawThreatMarker`、`landingFx`
 - Boss 繪製：`drawBossEntity`、`getBossSprite`、`getWalkNorm`；玩家：`drawPlayer`
 - 音樂：`Music`、`STAGE_BGM`（關卡配曲）；音效：`Sound`（程式合成＋`s_*` 外部取樣）

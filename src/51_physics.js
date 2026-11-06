@@ -101,6 +101,8 @@
           if (Boss.hp <= 0) { /* v0.8.65 Boss 已倒下：出刀不再判定（原本會把血量夾回 1） */
           } else if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02) {
             airAttackHit();
+          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && partsBusy()) {
+            if (partsMode() && partsTryHit(false)) Player.attackHitRegistered = true; /* v0.8.83 部位 Boss 一階段：只判部位，本體不可打 */
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && illusionTryHit(false)) {
             Player.attackHitRegistered = true; /* v0.8.55 打到幻影 */
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04) {
@@ -407,6 +409,8 @@
                 continue;
               }
             }
+          } else if (partsBusy()) { /* v0.8.83 部位 Boss 一階段：折射飛劍打回巨手 */
+            if (partsMode() && partsReflectHit(sw)) { Game.flyingSwords.splice(i, 1); continue; }
           } else {
             const d = Math.abs(sw.x - Boss.x);
             if (Boss.hp > 0 && d < 45 && sw.y > Boss.y - Boss.h * 1.6 && sw.y < Boss.y + 6) { /* Boss 已倒下就不再被折射飛劍打回 1 血 */ /* v0.8.65 折射回去也照圖上身高判定（原 -105～5） */
@@ -519,7 +523,7 @@
         if (!hitstopOnly) {
           const cineOn = !!Game.cine;
           const introOn = Game.introT > 0 || Game.dlgFocus || cineOn;
-          if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
+          if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = stZ.camZoomP ? (stZ.camZoomP[Config.bossPhase] || 1) : 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.83 camZoomP：依階段指定鏡頭縮放 */ /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
           const uw = Game.ultDim || 0;
           const focusX = cineOn ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
           let targetX = focusX - Config.baseWidth * 0.5;

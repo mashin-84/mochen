@@ -234,6 +234,7 @@
           Boss.isPerilous = false;
           return;
         }
+        if (partsUpdate(dt)) return; /* v0.8.83 部位 Boss：一階段與轉場由 53_parts.js 接管；二階段只更新兩側巨手 */
         const stage = Stages[Boss.stageId];
         /* v0.8.0 怒氣：累積 Boss 受到的傷害；貼身比例（讀玩家打法用） */
         if (Boss.lastHp > Boss.hp) Boss.rage += Boss.lastHp - Boss.hp;
@@ -431,6 +432,7 @@
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
             spawnMoveFx(move.fxAct); illusionMoveFx(move.fxAct); /* 幻影也出同樣的特效，否則特效會洩漏真身 */
             if (move.isSplit) illusionSplit();
+            if (move.partsCall) partsCall(move.partsCall); /* v0.8.83 交給部位引擎的招（第 4 關二階段劍雨） */
             if (move.isRanged) illusionShoot(move);
             const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
             if (sfxA) Sound.play(sfxA, 0.9, 1);

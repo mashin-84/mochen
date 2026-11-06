@@ -11,6 +11,7 @@
 50_boss_ai.js
 51_physics.js
 52_illusion.js
+53_parts.js
 60_render.js
 61_cine.js
 62_hub.js

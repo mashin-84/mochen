@@ -50,6 +50,7 @@
 
         drawDynamicBackground(cam.x);
         if (Game.mode !== "battle") drawHubScene();
+        drawPartsBack(); /* v0.8.83 部位 Boss：背景本體與地面預警 */
 
         if (Game.ultDim > 0.01) {
           ctx.save();

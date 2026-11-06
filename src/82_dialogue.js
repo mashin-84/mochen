@@ -272,4 +272,5 @@
         elMinimapLens.style.width = `${vWidth}%`;
         elMinimapP.style.left = `${(Player.x / Config.worldWidth) * 100}%`;
         elMinimapB.style.left = `${(Boss.x / Config.worldWidth) * 100}%`;
+        partsHUD(); /* v0.8.83 部位 Boss 一階段：血條改顯示封印 */
       }

@@ -217,6 +217,7 @@
       }
 
       function airAttackHit() {
+        if (partsBusy()) { if (partsMode() && partsTryHit(true)) Player.attackHitRegistered = true; return; } /* v0.8.83 部位 Boss */
         if (illusionTryHit(true)) { Player.attackHitRegistered = true; return; } /* v0.8.55 打到幻影 */
         const dx = Boss.x - Player.x;
         const dive = Player.isDive;
@@ -417,7 +418,7 @@
         }
 
         const horizDist = Math.abs(Player.x - Boss.x);
-        if (horizDist < 140 && Player.y < Config.groundY - 25 && !Player.hasVaulted) {
+        if (horizDist < 140 && Player.y < Config.groundY - 25 && !Player.hasVaulted && !partsBusy()) {
           triggerVaultStomp();
           return;
         }
@@ -551,6 +552,7 @@
         let baseRatio = getExecutionDmgRatio(Boss.stageId);
         let execRatio = isJiVersion ? baseRatio * 1.15 : baseRatio;
         let execDmg = Math.round(Boss.maxHp * execRatio);
+        if (Stages[Boss.stageId].execKill && Config.bossPhase === 2) execDmg = Boss.hp; /* v0.8.83 第 4 關：核心架勢滿處決即擊敗 */
 
         if (isJiVersion) {
           // 第 5 關解鎖【一劍青雲・極】：三段全屏裂空墨痕演出，每段各自觸發定格與震屏，提高處決架勢與血量結算！
@@ -765,6 +767,7 @@
       }
 
       function damageBossPosture(amount, label, cap) {
+        if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
         
         let postureGain = amount;

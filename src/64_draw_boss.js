@@ -65,6 +65,7 @@
           }
 
                 function drawBossEntity() {
+        if (Boss._pp && Game.mode === "battle") { drawPartsFront(); return; } /* v0.8.83 部位 Boss（灰盒） */
         ctx.save();
         const bx = Boss.x - Boss.w * 0.5;
         const by = Boss.y - Boss.h;
