@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.81";
+      const ASSET_VER = "0.8.82";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3011,7 +3011,7 @@
         M.s_claw3 = { kickHit: 0.08, fxHit: { sheet: "wolf", row: 0, ox: 110, oy: -90, w: 300, dur: 0.25 }, name: "血爪三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 80, frames: { windup: ["44_sc_rear"], active: ["45_sc_a", "46_sc_b", "45_sc_a"], recover: ["47_sc_rec"] }, windup: 0.42, active: 0.62, recover: 0.34, range: 160, lunge: 420, damage: 110, parryPostureDmg: 14 };
         M.s_pounce = { fxLand: 0.45, kick: 0.1, name: "疾撲 (閃開，或起跳踩頭)", isLeap: true, leapH: 130, leapMax: 460, frames: { windup: ["48_sp_coil"], active: ["49_sp_rise", "50_sp_dive"], recover: ["51_sp_land"] }, windup: 0.42, active: 0.36, recover: 0.42, range: 150, lunge: 0, damage: 150, parryPostureDmg: 16 };
         M.s_rush = { fxAct: { sheet: "wolf", row: 0, ox: 150, oy: -90, w: 440, dur: 0.3 }, kick: 0.22, name: "【危】狂暴衝撲 (前閃看破)", isPerilous: true, perilType: "thrust", frames: { windup: ["52_sr_tell"], active: ["53_sr_dart"], recover: ["51_sp_land", "43_sb_rec"] }, windup: 0.60, active: 0.20, recover: 0.55, range: 300, lunge: 980, damage: 300 };
-        M.s_tail = { fxAct: { sheet: "land", row: 2, ox: 0, oy: -45, w: 560, dur: 0.45, alpha: 0.6 }, kick: 0.15, name: "【危】甩尾旋斬 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: ["56_st_wind"], active: ["57_st_spin"], recover: ["58_st_rec"] }, windup: 0.60, active: 0.22, recover: 0.50, range: 230, lunge: 240, damage: 260 };
+        M.s_tail = { fxAct: { sheet: "wolf2", row: 0, ox: 20, oy: -40, w: 620, h: 280, dur: 0.45, alpha: 0.85 }, kick: 0.15, name: "【危】甩尾旋斬 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: ["56_st_wind"], active: ["57_st_spin"], recover: ["58_st_rec"] }, windup: 0.60, active: 0.22, recover: 0.50, range: 230, lunge: 240, damage: 260 };
         M.s_shadow = { name: "幽影閃 (繞背)", isTeleport: true, teleportBehind: true, teleportDelay: 0.30, teleportText: "【幽影閃】", teleportColor: "#c084fc", frames: { windup: ["40_sb_wind"], active: ["55_ss_hit"], recover: ["47_sc_rec"] }, windup: 0.50, active: 0.12, recover: 0.34, range: 150, lunge: 300, damage: 130, parryPostureDmg: 14 };
         M.backstep = { name: "後撤", isMobility: true, frames: { windup: "04_walk2", active: "04_walk2", recover: "01_idle1" }, windup: 0.08, active: 0.24, recover: 0.08, range: 0, lunge: -1000, damage: 0 };
         M.dash_in = { name: "衝步", isMobility: true, frames: { windup: "03_walk1", active: "03_walk1", recover: "01_idle1" }, windup: 0.10, active: 0.20, recover: 0.05, range: 0, lunge: 1250, damage: 0 };
@@ -3020,12 +3020,12 @@
         M.transform = { name: "九幽狼王・覺醒", isSwitch: true, isTransform: true, armor: true, switchText: { B: "〔九幽狼王・覺醒〕" }, frames: { windup: ["59_s_howl"], active: ["56_b_howl"], recover: ["56_b_howl"] }, windup: 1.4, active: 0.4, recover: 0.7, range: 0, lunge: 0, damage: 0 };
         /* --- 大狼（慢、重、大範圍；range 含半個身長） --- */
         M.b_swipe = { kick: 0.35, fxAct: { sheet: "wolf", row: 0, ox: 200, oy: -210, w: 640, dur: 0.34 }, name: "巨爪橫掃", frames: { windup: ["40_bw_wind"], active: ["41_bw_mid", "42_bw_follow"], recover: ["43_bw_rec"] }, windup: 0.62, active: 0.18, recover: 0.55, range: 330, lunge: 220, damage: 210, parryPostureDmg: 28 };
-        M.b_stomp = { kickHit: 0.3, name: "地面連錘", isCombo: true, comboTotalHits: 3, comboInterval: 0.30, comboDamagePerHit: 110, fxHit: { sheet: "land", row: 0, ox: 260, oy: 22, w: 560, dur: 0.5, anchor: "b", alpha: 0.85 }, frames: { windup: ["44_bs_up"], active: ["45_bs_down", "46_bs_up2", "45_bs_down"], recover: ["47_bs_rec"] }, windup: 0.60, active: 1.0, recover: 0.55, range: 320, lunge: 300, damage: 160, parryPostureDmg: 20 };
+        M.b_stomp = { kickHit: 0.3, name: "地面連錘", isCombo: true, comboTotalHits: 3, comboInterval: 0.30, comboDamagePerHit: 110, fxHit: { sheet: "wolf2", row: 1, ox: 260, oy: 60, w: 600, dur: 0.5, anchor: "b", alpha: 0.9 }, frames: { windup: ["44_bs_up"], active: ["45_bs_down", "46_bs_up2", "45_bs_down"], recover: ["47_bs_rec"] }, windup: 0.60, active: 1.0, recover: 0.55, range: 320, lunge: 300, damage: 160, parryPostureDmg: 20 };
         M.b_leap = { kick: 0.3, name: "【危】巨狼躍壓 (閃開，或起跳踩頭)", isLeap: true, fxLand: true, isPerilous: true, perilType: "leap", leapH: 230, leapMax: 640, frames: { windup: ["48_bl_crouch"], active: ["49_bl_fly", "50_bl_dive"], recover: ["51_bl_land"] }, windup: 0.75, active: 0.60, recover: 0.80, range: 300, lunge: 0, damage: 300, parryPostureDmg: 22 };
         M.b_howl = { kick: 0.25, fxAct: { sheet: "wolf", row: 3, ox: 260, oy: -250, w: 900, dur: 0.7 }, name: "咆哮震波 (霸體・震退)", armor: true, pushback: 900, frames: { windup: ["07_windup"], active: ["56_b_howl"], recover: ["43_bw_rec"] }, windup: 0.65, active: 0.15, recover: 0.50, range: 420, lunge: 0, damage: 90, parryPostureDmg: 20 };
         M.b_bone = { name: "白骨刺陣", isZone: true, zoneType: "bone", zoneWidth: 320, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, frames: { windup: ["14_cast"], active: ["57_b_summon"], recover: ["47_bs_rec"] }, windup: 0.55, active: 0.20, recover: 0.50, range: 300, lunge: 0, damage: 120 };
         M.b_bite = { kick: 0.4, name: "【危】噬魂吞咬 (極限側閃)", isPerilous: true, perilType: "grab", fxAct: { sheet: "wolf", row: 1, ox: 300, oy: -190, w: 560, dur: 0.36 }, frames: { windup: ["52_bb_tell"], active: ["53_bb_snap"], recover: ["47_bs_rec"] }, windup: 0.70, active: 0.16, recover: 0.75, range: 260, lunge: 0, damage: 350 };
-        M.b_tail = { kick: 0.25, fxAct: { sheet: "land", row: 2, ox: 0, oy: -60, w: 1100, dur: 0.5, alpha: 0.7 }, name: "【危】魔尾裂風掃 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: ["58_bt_wind"], active: ["59_bt_spin"], recover: ["43_bw_rec"] }, windup: 0.60, active: 0.24, recover: 0.62, range: 360, lunge: 260, damage: 300 };
+        M.b_tail = { kick: 0.25, fxAct: { sheet: "wolf2", row: 0, ox: 40, oy: -70, w: 1150, h: 520, dur: 0.5, alpha: 0.9 }, name: "【危】魔尾裂風掃 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: ["58_bt_wind"], active: ["59_bt_spin"], recover: ["43_bw_rec"] }, windup: 0.60, active: 0.24, recover: 0.62, range: 360, lunge: 260, damage: 300 };
         M.b_rush = { kick: 0.25, name: "巨狼衝撞 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 720, frames: { windup: ["54_bc_wind"], active: ["55_bc_run"], recover: ["47_bs_rec"] }, windup: 0.70, active: 0.70, recover: 0.90, range: 260, lunge: 720, damage: 260, parryPostureDmg: 24 };
         M.b_rage = { kickHit: 0.15, fxHit: { sheet: "wolf", row: 0, ox: 220, oy: -200, w: 700, dur: 0.3 }, name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: { windup: ["56_b_howl"], active: ["41_bw_mid", "45_bs_down", "42_bw_follow"], recover: ["43_bw_rec"] }, windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
         Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
@@ -3033,14 +3033,14 @@
         const SFX = { s_bite: { w: "w_snarl", a: "w_snap" }, s_bite2: { w: "w_snarl", h: "w_snap" }, s_claw3: { w: "w_snarl", h: "w_claw" }, s_pounce: { w: "w_snarl", a: "w_bark" }, s_rush: { w: "w_snarl", a: "w_bark" }, s_tail: { w: "w_snarl", a: "w_claw" }, s_shadow: { a: "w_claw" }, s_rage: { w: "w_howl", a: "w_bark" }, backstep: { a: "w_claw" }, dash_in: { a: "w_claw" },
           b_swipe: { w: "m_growl", a: "m_swipe" }, b_stomp: { w: "m_growl", h: "m_stomp" }, b_howl: { a: "m_roar" }, b_bone: { w: "m_growl" }, b_leap: { w: "m_growl", a: "m_roar" }, b_bite: { w: "m_growl", a: "m_bite" }, b_tail: { w: "m_growl", a: "m_swipe" }, b_rush: { w: "m_growl", a: "m_roar" }, b_rage: { w: "m_howl", h: "m_swipe" }, transform: { w: "w_howl" } };
         Object.keys(SFX).forEach((k) => { if (M[k]) M[k].sfx = SFX[k]; }); /* v0.8.34 狼的招式音效：w＝前搖、a＝出招、h＝連擊每一下 */
-        S5.dfmK = 0.35; /* 變形強度：使用者要求輕微（原 1.0 太誇張）*/ S5.fxSheets = ["wolf", "land", "flame"]; S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 3.0; /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
+        S5.dfmK = 0.35; /* 變形強度：使用者要求輕微（原 1.0 太誇張）*/ S5.fxSheets = ["wolf", "wolf2", "land", "flame"]; S5.zoneArt = { bone: ["wolf2", 2, "up"] }; S5.landArt = ["wolf2", 3]; /* v0.8.82 第二張專屬特效圖：0 甩尾魂焰弧、1 錘地震波、2 白骨刺（1～3 循環）、3 落地衝擊 */ S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 2.67; /* v0.8.82 小狼放大 0.64→0.72，脹大倍數 3.0×0.64/0.72 讓蛻變終點大小不變 */ /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
         /* v0.8.79 第 5 關分層場景：荒原殘陽地面帶＋前景剪影（參數同第 2 關） */
         S5.layers = [
           { img: "arena5_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.08 },
           { img: "arena5_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.15 }
         ];
         S5.stances = {
-          A: { sprite: "boss5", extras: ["20_bite_crouch", "21_bite_lunge", "22_pounce_coil", "23_pounce_fly", "24_pounce_dive", "25_pounce_land", "26_rush", "27_tail_wind", "28_tail_spin", "29_claw", "40_sb_wind", "41_sb_open", "42_sb_snap", "43_sb_rec", "44_sc_rear", "45_sc_a", "46_sc_b", "47_sc_rec", "48_sp_coil", "49_sp_rise", "50_sp_dive", "51_sp_land", "52_sr_tell", "53_sr_dart", "54_sr_skid", "55_ss_hit", "56_st_wind", "57_st_spin", "58_st_rec", "59_s_howl"], stride: 170, speed: 430, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 0.64, hurtHalf: 40, bodyW: 150, bodyH: 70, rageMove: "s_rage",
+          A: { sprite: "boss5", extras: ["20_bite_crouch", "21_bite_lunge", "22_pounce_coil", "23_pounce_fly", "24_pounce_dive", "25_pounce_land", "26_rush", "27_tail_wind", "28_tail_spin", "29_claw", "40_sb_wind", "41_sb_open", "42_sb_snap", "43_sb_rec", "44_sc_rear", "45_sc_a", "46_sc_b", "47_sc_rec", "48_sp_coil", "49_sp_rise", "50_sp_dive", "51_sp_land", "52_sr_tell", "53_sr_dart", "54_sr_skid", "55_ss_hit", "56_st_wind", "57_st_spin", "58_st_rec", "59_s_howl"], stride: 170, speed: 430, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 0.72, hurtHalf: 45, bodyW: 165, bodyH: 70, rageMove: "s_rage",
             pool: [["s_bite", 14], ["s_bite2", 12], ["s_claw3", 11], ["s_bite+backstep", 10, "mobility"], ["s_pounce+backstep", 9, "mobility"], ["dash_in+s_bite", 10, "chase"], ["s_rush", 8], ["s_tail", 8], ["s_shadow+s_bite", 8, "chase"]],
             far: ["dash_in+s_bite", "s_pounce"], farP2: [] },
           B: { sprite: "boss5b", stride: 330, speed: 250, /* 大狼：站立與走路只用外觀一致（無骨腿）的格子，避免 AI 生圖各格骨腿有無不同而閃爍 */
@@ -5318,7 +5318,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               Boss.x = Boss.leapLandX; Boss.y = Config.groundY;
               for (let k = -1; k <= 1; k++) emitDust(Boss.x + k * 70, Config.groundY, k || 1, 3, 1.0);
               if (Boss.stageId === 1 && fxReady("boss1")) { const lw = move.range * 2.8; spawnFx("boss1", 3, Boss.x, Config.groundY - lw * 0.26, { w: lw, dur: 0.5 }); landingFx(Boss.x, 1.7, 5); }
-              if (move.fxLand && fxReady("land")) {
+              const LA = Stages[Boss.stageId] && Stages[Boss.stageId].landArt; /* v0.8.82 關卡專屬落地衝擊圖 [sheet, row] */
+              if (move.fxLand && LA && fxReady(LA[0])) {
+                const fl = move.fxLand === true ? 1 : move.fxLand;
+                spawnFx(LA[0], LA[1], Boss.x, Config.groundY + 55 * fl, { w: 600 * fl, h: 600 * fl, dur: 0.7, anchor: "b", alpha: 0.7 });
+                addTrauma(0.6 * fl);
+              } else if (move.fxLand && fxReady("land")) {
                 const fl = move.fxLand === true ? 1 : move.fxLand;
                 spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 760 * fl, h: 760 * fl, dur: 0.6, anchor: "b", alpha: 0.85 });
                 spawnFx("land", 1, Boss.x, Config.groundY + 6, { w: 480 * fl, h: 480 * fl, dur: 1.0, anchor: "b", alpha: 0.7 });
@@ -6231,9 +6236,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             ctx.lineWidth = 2.5;
             const zA = Stages[Boss.stageId] && Stages[Boss.stageId].zoneArt && Stages[Boss.stageId].zoneArt[hz.type];
             if (zA && fxReady(zA[0])) { /* v0.8.59 生圖地面陣紋（4 格循環、疊加發光）；預警時淡、爆發後亮 */
-              const sh = fxSheet(zA[0]), col = Math.floor(performance.now() / 110) % 4, zw = hz.w * 1.25, zh = zw * 0.5;
+              const sh = fxSheet(zA[0]), up = zA[2] === "up";
+              /* v0.8.82 zA[2]="up"：直立物（白骨刺）腳底貼地；預警時只露第 0 格的刺尖，爆發後 1～3 格循環 */
+              const col = up ? (isWarn ? 0 : 1 + Math.floor(performance.now() / 130) % 3) : Math.floor(performance.now() / 110) % 4;
+              const zw = hz.w * (up ? 1.15 : 1.25), zh = up ? zw : zw * 0.5;
               ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = isWarn ? 0.45 + 0.25 * Math.sin(performance.now() / 60) : Math.min(1, alpha * 1.4);
-              ctx.drawImage(sh.img, col * 256, zA[1] * 256, 256, 256, hz.x - zw / 2, hz.y - zh * 0.56, zw, zh);
+              ctx.drawImage(sh.img, col * 256, zA[1] * 256, 256, 256, hz.x - zw / 2, up ? hz.y - zh * 0.92 : hz.y - zh * 0.56, zw, zh);
               ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
             } else {
             ctx.fillRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);

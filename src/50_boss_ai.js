@@ -674,7 +674,12 @@
               Boss.x = Boss.leapLandX; Boss.y = Config.groundY;
               for (let k = -1; k <= 1; k++) emitDust(Boss.x + k * 70, Config.groundY, k || 1, 3, 1.0);
               if (Boss.stageId === 1 && fxReady("boss1")) { const lw = move.range * 2.8; spawnFx("boss1", 3, Boss.x, Config.groundY - lw * 0.26, { w: lw, dur: 0.5 }); landingFx(Boss.x, 1.7, 5); }
-              if (move.fxLand && fxReady("land")) {
+              const LA = Stages[Boss.stageId] && Stages[Boss.stageId].landArt; /* v0.8.82 關卡專屬落地衝擊圖 [sheet, row] */
+              if (move.fxLand && LA && fxReady(LA[0])) {
+                const fl = move.fxLand === true ? 1 : move.fxLand;
+                spawnFx(LA[0], LA[1], Boss.x, Config.groundY + 55 * fl, { w: 600 * fl, h: 600 * fl, dur: 0.7, anchor: "b", alpha: 0.7 });
+                addTrauma(0.6 * fl);
+              } else if (move.fxLand && fxReady("land")) {
                 const fl = move.fxLand === true ? 1 : move.fxLand;
                 spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 760 * fl, h: 760 * fl, dur: 0.6, anchor: "b", alpha: 0.85 });
                 spawnFx("land", 1, Boss.x, Config.groundY + 6, { w: 480 * fl, h: 480 * fl, dur: 1.0, anchor: "b", alpha: 0.7 });

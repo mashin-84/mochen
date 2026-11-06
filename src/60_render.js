@@ -86,9 +86,12 @@
             ctx.lineWidth = 2.5;
             const zA = Stages[Boss.stageId] && Stages[Boss.stageId].zoneArt && Stages[Boss.stageId].zoneArt[hz.type];
             if (zA && fxReady(zA[0])) { /* v0.8.59 生圖地面陣紋（4 格循環、疊加發光）；預警時淡、爆發後亮 */
-              const sh = fxSheet(zA[0]), col = Math.floor(performance.now() / 110) % 4, zw = hz.w * 1.25, zh = zw * 0.5;
+              const sh = fxSheet(zA[0]), up = zA[2] === "up";
+              /* v0.8.82 zA[2]="up"：直立物（白骨刺）腳底貼地；預警時只露第 0 格的刺尖，爆發後 1～3 格循環 */
+              const col = up ? (isWarn ? 0 : 1 + Math.floor(performance.now() / 130) % 3) : Math.floor(performance.now() / 110) % 4;
+              const zw = hz.w * (up ? 1.15 : 1.25), zh = up ? zw : zw * 0.5;
               ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = isWarn ? 0.45 + 0.25 * Math.sin(performance.now() / 60) : Math.min(1, alpha * 1.4);
-              ctx.drawImage(sh.img, col * 256, zA[1] * 256, 256, 256, hz.x - zw / 2, hz.y - zh * 0.56, zw, zh);
+              ctx.drawImage(sh.img, col * 256, zA[1] * 256, 256, 256, hz.x - zw / 2, up ? hz.y - zh * 0.92 : hz.y - zh * 0.56, zw, zh);
               ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
             } else {
             ctx.fillRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
