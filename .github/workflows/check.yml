@@ -2,9 +2,9 @@
 # 失敗時 GitHub 會通知；截圖在該次執行頁面的 Artifacts「screenshots」。
 name: 自動檢查
 
+# 2026-11-07 使用者要求關閉自動寄信：改成只能手動執行（GitHub 網頁 Actions → 自動檢查 → Run workflow）。
+# 要恢復自動：在 on: 下加回  push: { branches: [main] }
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:

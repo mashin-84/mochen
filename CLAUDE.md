@@ -44,7 +44,7 @@
 - localStorage 鍵：`qingyun_*`
 
 ## 測試與工具
-- GitHub 自動檢查（2026-11-07）：`.github/workflows/check.yml`，每次推送到 main 自動跑 `build.py --check`、`check.js`、`smoke.js`（每關 20 秒）；smoke 會抓讀不到的 `assets/` 檔，已知還沒做的素材列在 `tools/missing_ok.txt`（不算失敗）。失敗時 GitHub 通知使用者，截圖在該次執行的 Artifacts。
+- GitHub 自動檢查（2026-11-07）：`.github/workflows/check.yml`，（已改為手動執行，不再自動跑、不寄信；要恢復見 workflow 檔註解）原本每次推送到 main 自動跑 `build.py --check`、`check.js`、`smoke.js`（每關 20 秒）；smoke 會抓讀不到的 `assets/` 檔，已知還沒做的素材列在 `tools/missing_ok.txt`（不算失敗）。失敗時 GitHub 通知使用者，截圖在該次執行的 Artifacts。
 - 自動對打：`NODE_PATH=$(npm root -g) node tools/smoke.js index.html 20`（九關各 20 秒鍵盤亂數對打；抓頁面錯誤、NaN、卡狀態、招式不輪替；截圖存 /home/claude/smoke/；可加第三個參數指定關卡如 `1,5`）。
 - 原始碼分檔：`src/manifest.txt` 決定組合順序；`00_head`／`01_style.css`／`02_body` 是版面，`10_boot`～`91_main` 是程式（`20_legacy_stages`、`81_legacy_story` 為舊系統，Beta 期清除）。新增檔案要加進 manifest。
 - 測試：Playwright（Chromium 已預裝）。做除錯副本，在 `window.onload = function () {` 前面插入 `window.__B=Boss;window.__P=Player;window.__G=Game;window.__L=loadStage;…` 掛鉤，用 `python3 -m http.server` 從本機載入（要和測試在同一個 Bash 指令內啟動）。測試前先開 `Progress.unlockedStages=9`，並用 `#dlg-skip` 跳過開場對話。
