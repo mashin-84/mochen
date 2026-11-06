@@ -235,6 +235,7 @@
               Sound.play("hit", 1.0, 0.45); Sound.play("block", 0.8, 0.5);
               emitDust(a.x, G, 1, 6, 1.5); emitDust(a.x, G, -1, 6, 1.5);
               Game.shockwaves.push({ x: a.x, y: G - 10, r: 10, maxR: 170, alpha: 0.9, color: "#bae6fd" });
+              if (fxReady("boss4fx2")) spawnFx("boss4fx2", 0, a.x, G - 110, { w: 420, dur: 0.7 });
               if (k === "sky" && Math.abs(Player.x - a.x) <= m.w * 0.5 + 26 && Player.y > G - 260) partHitPlayer(a.x, m, "天劍斬落！");
               hintOnce("p4_seal", "巨劍插地露出封印！按住攻擊 0.45 秒放【蓄力斬】斬斷它");
               a.st = "stuck"; a.t = 0;
@@ -251,7 +252,8 @@
         if (k === "sweep") {
           if (a.st === "windup") {
             sw.mode = "sweepw"; sw.ang = Math.PI / 2 * a.s; sw.tx = a.x0 + a.s * 60 * Math.min(1, a.t / m.windup); sw.ttip = G - 30;
-            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 1.0, 0.55); addTrauma(0.2); }
+            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 1.0, 0.55); addTrauma(0.2);
+              if (fxReady("boss4fx2")) { const s0 = a.s; spawnFx("boss4fx2", 1, sw.x + s0 * 200, G - 130, { w: 600, h: 360, dur: m.active + 0.35, facing: s0, follow: () => ({ x: sw.x + s0 * 200, y: G - 130 }) }); } }
           } else if (a.st === "active") {
             sw.mode = "sweep"; sw.ttip = G - 30;
             const p = Math.min(1, a.t / m.active);
@@ -275,6 +277,7 @@
             if (a.t >= m.active) {
               h.y = h.ty = G;
               addTrauma(0.42); hapticBuzz(25);
+              if (fxReady("boss4fx2")) spawnFx("boss4fx2", 0, a.x, G - 80, { w: 380, dur: 0.6, col: -1 });
               Sound.play("hit", 1.0, 0.5);
               emitDust(a.x, G, 1, 6, 1.4); emitDust(a.x, G, -1, 6, 1.4);
               if (Math.abs(Player.x - a.x) <= m.r && Player.y > G - 170) partHitPlayer(a.x, m, "巨掌壓落！");
@@ -363,6 +366,7 @@
             Sound.play("hit", 0.55, 1.3);
             emitDust(k.x, G, 1, 3, 1.0); emitDust(k.x, G, -1, 3, 1.0);
             P.shards.push({ x: k.x, t: 0.5 });
+            if (fxReady("boss4fx2")) { spawnFx("boss4fx2", 2, k.x, G - 90, { w: 240, dur: 0.25, col: 2 }); setTimeout(() => spawnFx("boss4fx2", 2, k.x, G - 90, { w: 240, dur: 0.4, col: 3 }), 250); }
             if (Math.abs(Player.x - k.x) <= k.r + 22 && Player.y > G - 230) partHitPlayer(k.x, k.m, "萬劍落下！");
           }
         }
@@ -450,7 +454,7 @@
         Game.flyingSwords = [];
         const sw = P.sword;
         /* 巨劍碎裂 */
-        sw.mode = "crack"; P._shattered = false; /* 先裂 0.35 秒再碎（partsTransStep） */
+        sw.mode = "crack"; P._shattered = false; if (fxReady("boss4fx2")) spawnFx("boss4fx2", 3, P.sword.x, Config.groundY - 260, { w: 520, dur: 0.4, col: 0 }); /* 先裂 0.35 秒再碎（partsTransStep） */
         Player.invulnTimer = 3.2;
         P.coreX = Math.abs(P.spiritX - Player.x) < 320 ? clampX(Player.x + (Player.x < 1600 ? 480 : -480)) : P.spiritX;
         Sound.play("execution", 1.0, 0.8);
@@ -468,6 +472,7 @@
           P._shattered = true; const sw = P.sword; sw.mode = "gone";
           for (let i = 0; i < 26; i++) P.shards.push({ x: sw.x + (Math.random() - 0.5) * 60, y: G - 120 - Math.random() * 260, vx: (Math.random() - 0.5) * 900, vy: -300 - Math.random() * 500, t: 1.2 + Math.random() * 0.5, fly: true });
           Sound.play("hit", 1.0, 0.6); addTrauma(0.5);
+          if (fxReady("boss4fx2")) spawnFx("boss4fx2", 3, sw.x, G - 260, { w: 760, dur: 0.7, col: 1 });
           if (fxReady("spark")) spawnFx("spark", 3, sw.x, G - 200, { w: 600, dur: 0.6 });
         }
         for (const s of P.shards) if (s.fly) { s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 1400 * dt; if (s.y > G) { s.y = G; s.vy *= -0.3; s.vx *= 0.5; } }
@@ -528,7 +533,7 @@
         if (!im) { im = new Image(); im.src = `assets/${A.dir}/${k}.webp`; PART_IMG[k] = im; }
         return im.complete && im.naturalWidth ? im : null;
       }
-      function partsPreload(stage) { const A = stage.parts && stage.parts.art; if (!A) return; for (let i = 1; i <= 12; i++) partImg("h" + String(i).padStart(2, "0")); ["sw1", "sw2", "sw3"].forEach(partImg); fxSheet(A.fx); }
+      function partsPreload(stage) { const A = stage.parts && stage.parts.art; if (!A) return; for (let i = 1; i <= 12; i++) partImg("h" + String(i).padStart(2, "0")); ["sw1", "sw2", "sw3"].forEach(partImg); fxSheet(A.fx); fxSheet("boss4fx2"); }
       /* 巨手該用哪一格、朝哪邊（圖：右手、手指朝右；f=1 朝右） */
       function handPose(h) {
         const P = Boss._pp;
@@ -566,12 +571,13 @@
         /* 古靈本體（半透明、霧中、不可打）：二階段淡去 */
         const fade = P.phase === 2 ? 0.35 : P.phase === "t" ? Math.max(0.35, 1 - P.tt / 2.8 * 0.65) : 1;
         const sx = P.spiritX, bob = Math.sin(now * 0.8) * 8;
+        const bgBody = !!(partsDef().art && partsDef().art.bgBody); /* 背景圖已有古靈身體：不畫灰盒 */
         ctx.save();
-        ctx.globalAlpha = 0.16 * fade;
+        ctx.globalAlpha = bgBody ? 0 : 0.16 * fade;
         ctx.fillStyle = "#bae6fd"; ctx.strokeStyle = "#e0f2fe"; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(sx - 230, G - 560 + bob); ctx.lineTo(sx + 230, G - 560 + bob); ctx.lineTo(sx + 150, G - 90); ctx.lineTo(sx - 150, G - 90); ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.arc(sx, G - 640 + bob, 72, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.globalAlpha = 0.12 * fade; ctx.lineWidth = 26; ctx.lineCap = "round";
+        ctx.globalAlpha = bgBody ? 0 : 0.12 * fade; ctx.lineWidth = 26; ctx.lineCap = "round";
         for (const h of P.hands) { ctx.beginPath(); ctx.moveTo(sx + h.side * 210, G - 540 + bob); ctx.quadraticCurveTo(sx + h.side * 360, G - 420, h.x, h.y - 90); ctx.stroke(); }
         if (P.phase !== 2) { /* 胸口的劍魂（轉場時降下） */
           const cy = P.phase === "t" ? G - 480 + Math.min(1, Math.max(0, (P.tt - 0.8) / 1.6)) * 330 : G - 480;

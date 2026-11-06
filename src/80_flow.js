@@ -128,7 +128,7 @@
         } else {
           Game.introT = 1.9;
           Game.pendingPre = !(opts && opts.skipPre) && !!(stage.dialogue && stage.dialogue.pre && stage.dialogue.pre.length);
-          showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
+          if (stage.introName) bossNameCard(stage); else showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
           Sound.play("execution", 0.45, 0.7);
         }
         // Story is available via 📜 button without freezing startup
