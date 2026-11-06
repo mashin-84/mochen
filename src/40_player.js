@@ -541,6 +541,7 @@
 
       function performExecution() {
         hapticBuzz([40, 30, 40, 30, 90]);
+        Music.duck(0.4, 1.3); /* v0.8.74 處決時音樂壓低（目前只在第 1 關生效） */
         Player.state = "execution";
         Player.invulnTimer = 1.4;
         Player.facing = Boss.x >= Player.x ? 1 : -1;

@@ -207,6 +207,15 @@
       const HUB_BGM = "camp"; /* v0.8.69 營地專屬曲（原暫用「洞府」） */ /* 第 5 關：一階段「幽影」（小狼）、二階段 STAGE_BGM_P2「狼王」 */ /* 關卡 id → assets/music/<名>.webm；沒列的關卡維持無音樂 */
       const Music = {
         tracks: [], vol: 1.0, name: null, /* v0.8.15 預設音量 0.5→1.0（已調過滑桿的人沿用自己的設定） */
+        /* v0.8.74 音樂閃避（ducking，取自 audio-design skill；先只在第 1 關測試）：處決時、Boss 大招壓暗畫面時把音樂壓低，讓關鍵音效凸顯；
+           用獨立倍率乘在最後，不改玩家的音樂音量設定；壓下快（約 0.1 秒）、回復慢（約 0.4 秒），避免音樂忽大忽小 */
+        duckCur: 1, duckLvl: 1, duckUntil: 0,
+        duck(level, sec) { const now = performance.now(); if (now >= this.duckUntil) this.duckLvl = level; else this.duckLvl = Math.min(this.duckLvl, level); this.duckUntil = Math.max(this.duckUntil, now + sec * 1000); },
+        duckTarget() {
+          if (typeof Boss === "undefined" || typeof Game === "undefined" || Game.mode !== "battle" || Boss.stageId !== 1) return 1;
+          let t = performance.now() < this.duckUntil ? this.duckLvl : 1;
+          return Math.min(t, 1 - 0.4 * (Game.ultDim || 0));
+        },
         init() {
           try { const v = parseFloat(localStorage.getItem("qingyun_bgmvol")); if (!isNaN(v)) this.vol = Math.max(0, Math.min(1, v)); } catch (e) { }
           setInterval(() => this.tick(), 50);
@@ -232,11 +241,13 @@
         resumeAll() { this.tracks.forEach((t) => { if (t.target > 0) this.tryPlay(t); }); },
         setVol(v) { this.vol = Math.max(0, Math.min(1, v)); try { localStorage.setItem("qingyun_bgmvol", String(this.vol)); } catch (e) { } },
         tick() {
+          const dT = this.duckTarget();
+          this.duckCur += (dT - this.duckCur) * (dT < this.duckCur ? 0.5 : 0.12);
           for (let i = this.tracks.length - 1; i >= 0; i--) {
             const t = this.tracks[i];
             t.cur += (t.target - t.cur) * 0.08;
             if (t.target === 0 && t.cur < 0.01) { t.el.pause(); this.tracks.splice(i, 1); continue; }
-            t.el.volume = Math.max(0, Math.min(1, t.cur * this.vol * (Sound.muted ? 0 : 1)));
+            t.el.volume = Math.max(0, Math.min(1, t.cur * this.vol * this.duckCur * (Sound.muted ? 0 : 1)));
           }
         }
       };
