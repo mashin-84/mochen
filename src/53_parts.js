@@ -460,6 +460,12 @@
         Sound.play("execution", 1.0, 0.8);
         triggerHitstopMs(120); addTrauma(0.85); hapticBuzz([60, 40, 120]);
         Game.slowT = 0.8; Game.slowScale = 0.3;
+        const st4 = Stages[Boss.stageId];
+        if (st4.p2Movie && playMovie(st4.p2Movie, { onEnd: () => { /* 影片已演完崩碎與降臨：直接跳到轉場尾段 */
+          const Q = Boss._pp; if (!Q || Q.phase !== "t") return;
+          Q._shattered = true; Q._roar = true; Q.sword.mode = "gone"; Q.tt = Math.max(Q.tt, 2.4);
+          Game.slowT = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 1.0);
+        } })) { if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); }
         screenFlash("rgba(224,242,254,0.9)", 0.7, 0.6);
         showBanner("巨劍崩碎", "劍　魂　現　世", 1600, "#7dd3fc");
         setTelemetry("★ 三道封印盡斷！巨劍崩碎，劍魂核心降臨——回到彈刀對決！");

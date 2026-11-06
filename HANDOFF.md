@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.88（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.89（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.89 影片過場引擎（魂系登場／換階段）**：`Stages[n].introMovie`／`p2Movie`（不含副檔名，mp4 或 webm）。`playMovie(base,{audio,onEnd})` 沿用 `Game.cine`（`movie:true`）：戰鬥全停、畫面只畫影片（等比置中黑邊）、專用「跳過」鍵＋確認、影片沒載好回 false 走備案。登場：從營地走進戰場時播（敗北重打不播），影片有聲、播完才開始一階段配樂並出名牌；沒影片則直接出名牌。換階段（第 4 關）：`partsToPhase2` 封印全斷時播 `p2Movie`（靜音），開播即切 `STAGE_BGM_P2`，播完跳到轉場尾段（核心已降下）。第 4 關已掛 `assets/boss4/intro`、`p2`，等使用者生影片。
 
 **v0.8.88 第 4 關配樂**：使用者生成兩首（spirit_of_the_bound_blade 3:04、the_bronze_blade_s_last_stand 3:02，約 -12 LUFS 不需加減），尾端 0.8 秒淡出、opus 80k → `assets/music/b4_p1.webm`（一階段）、`b4_p2.webm`（二階段，`STAGE_BGM_P2[4]`，在 `partsTransStep` 巨劍崩碎那一刻換曲）。
 - 使用者想法（討論中）：開場動畫改成像一念飛仙那樣的 Gemini 角色動畫影片（魂系 Boss 登場，不再用「背景＋剪影首幀」生成）；進二階段也播一段過場動畫並在那時切第二首歌。

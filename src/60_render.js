@@ -11,6 +11,7 @@
           const bgG = ctx.createRadialGradient(cx, cy, 0, cx, cy, R); bgG.addColorStop(0, "#0f1c2e"); bgG.addColorStop(1, "#030712");
           ctx.fillStyle = bgG; ctx.fillRect(0, 0, w, h);
         }
+        if (Game.cine && Game.cine.movie) { drawMovie(w, h); ctx.restore(); return; }
         if (Game.cine && Game.cine.t < CINE.A) { drawCineA(w, h); drawCineBars(w, h); ctx.restore(); return; }
 
         const isPortrait = h > w;

@@ -24,7 +24,7 @@
         '<button id="cine-skip" type="button" style="pointer-events:auto;position:absolute;right:14px;top:12px;padding:6px 16px;border-radius:999px;border:1px solid rgba(250,204,21,.5);background:rgba(8,12,24,.7);color:#fde68a;font-size:14px;font-weight:700;font-family:inherit;">跳過 ⏭</button>' +
         '<div id="cine-ask" style="display:none;pointer-events:auto;position:absolute;inset:0;background:rgba(2,4,12,.72);align-items:center;justify-content:center;">' +
         '<div style="padding:20px 26px;border:1.5px solid rgba(250,204,21,.55);border-radius:12px;background:rgba(8,12,24,.96);text-align:center;color:#f1f5f9;">' +
-        '<div style="font-size:18px;font-weight:800;margin-bottom:16px;">要跳過登場動畫嗎？</div>' +
+        '<div style="font-size:18px;font-weight:800;margin-bottom:16px;">要跳過動畫嗎？</div>' +
         '<div style="display:flex;gap:14px;justify-content:center;">' +
         '<button id="cine-keep" type="button" style="padding:8px 22px;border-radius:999px;border:1px solid rgba(250,204,21,.6);background:#78350f;color:#fef3c7;font-size:15px;font-weight:800;font-family:inherit;">繼續看</button>' +
         '<button id="cine-yes" type="button" style="padding:8px 22px;border-radius:999px;border:1px solid rgba(148,163,184,.5);background:rgba(30,41,59,.9);color:#e2e8f0;font-size:15px;font-weight:800;font-family:inherit;">跳過</button>' +
@@ -47,8 +47,51 @@
         else if (Game.cine.ask && (e.code === "Enter" || e.code === "KeyY")) endBossCine(true);
       }, true);
 
+      /* v0.8.89 影片過場（魂系 Boss 登場／換階段）：Stages[n].introMovie、p2Movie（不含副檔名）。
+       * 期間整個戰鬥暫停（沿用 Game.cine，movie:true），只畫影片；專用「跳過」鍵＋確認；影片沒載好就回傳 false 走備案。 */
+      function playMovie(base, opts) {
+        if (!base) return false;
+        const v = getCineVideo(base);
+        if (!(v.readyState >= 3 && !v.error)) return false;
+        opts = opts || {};
+        Game.cine = { movie: true, t: 0, ask: false, vid: v, onEnd: opts.onEnd || null, landed: true };
+        v.muted = !opts.audio; v.volume = 1;
+        try { v.currentTime = 0; const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; try { v.play(); } catch (e) { } }); } catch (e) { }
+        document.body.classList.add("cine-mode");
+        elHintToast.style.visibility = "hidden";
+        elCine.style.display = "block";
+        elCine.querySelector("#cine-ask").style.display = "none";
+        return true;
+      }
+      function endMovie() {
+        const c = Game.cine; if (!c || !c.movie) return;
+        try { c.vid.pause(); c.vid.muted = true; } catch (e) { }
+        Game.cine = null;
+        document.body.classList.remove("cine-mode");
+        elHintToast.style.visibility = "";
+        elCine.style.display = "none";
+        if (c.onEnd) c.onEnd();
+      }
+      function updateMovie(dt) {
+        const c = Game.cine; if (c.ask) return;
+        c.t += dt;
+        const v = c.vid;
+        if (v.ended || (v.duration && v.currentTime >= v.duration - 0.05) || v.error || c.t > 40) { endMovie(); return; }
+        if (v.paused) { try { const pr = v.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
+      }
+      function drawMovie(w, h) {
+        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
+        const v = Game.cine.vid, vw = v.videoWidth || 16, vh = v.videoHeight || 9;
+        const k = Math.min(w / vw, h / vh), dw = vw * k, dh = vh * k;
+        if (v.readyState >= 2) ctx.drawImage(v, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      }
       function startBossCine() {
         const stage = Stages[Boss.stageId];
+        if (stage && stage.introMovie) { /* 影片登場：播完出名牌；沒載好就回 false（呼叫端出名牌） */
+          const ok = playMovie(stage.introMovie, { audio: true, onEnd: () => { if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]); bossNameCard(stage); Game.introT = 0.7; Progress.battleStartTime = performance.now(); } });
+          if (ok) { Game.introT = 0; Boss.facing = -1; }
+          return ok;
+        }
         if (!stage || !stage.introCine) return false;
         const SP = getBossSprite(stage.sprite || (stage.stances && stage.stances[(stage.stanceByPhase && stage.stanceByPhase[1]) || "A"].sprite));
         if (!(SP && SP.ready === 16 && MC_READY === 16 && MC_IMGS["01_idle1"])) return false;
@@ -72,6 +115,7 @@
       }
       function endBossCine(skipped) {
         if (!Game.cine) return;
+        if (Game.cine.movie) { endMovie(); return; }
         const landed = Game.cine.landed;
         if (Game.cine.dash) Boss.x = Game.cine.bx;
         if (Game.cine.vid) { try { Game.cine.vid.pause(); } catch (e) { } }
@@ -102,6 +146,7 @@
       }
       function updateCine(dt) {
         const c = Game.cine;
+        if (c.movie) { updateMovie(dt); return; }
         if (c.ask) return;
         c.t += dt;
         if (c.vid && c.t < CINE.A) {

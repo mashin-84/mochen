@@ -351,7 +351,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S4.pool = [["slash1", 26], ["ring_slash", 26], ["thrust_peril", 18], ["flyswords", 16, "ranged"], ["rain2", 12, "ranged"]];
         S4.poolP2 = S4.pool;
         S4.farMoves = ["flyswords"];
-        S4.bg = "arena4"; S4.bgDim = 0.12; S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; /* v0.8.87 古靈背景、書法名牌 */
+        S4.bg = "arena4"; S4.bgDim = 0.12; S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
         S4.layers = [
           { img: "arena4_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.06 },
           { img: "arena4_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.9, dim: 0.12 }
