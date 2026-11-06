@@ -212,7 +212,7 @@
         duckCur: 1, duckLvl: 1, duckUntil: 0,
         duck(level, sec) { const now = performance.now(); if (now >= this.duckUntil) this.duckLvl = level; else this.duckLvl = Math.min(this.duckLvl, level); this.duckUntil = Math.max(this.duckUntil, now + sec * 1000); },
         duckTarget() {
-          if (typeof Boss === "undefined" || typeof Game === "undefined" || Game.mode !== "battle" || Boss.stageId !== 1) return 1;
+          if (typeof Boss === "undefined" || typeof Game === "undefined" || Game.mode !== "battle") return 1;
           let t = performance.now() < this.duckUntil ? this.duckLvl : 1;
           return Math.min(t, 1 - 0.4 * (Game.ultDim || 0));
         },

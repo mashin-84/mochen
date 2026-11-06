@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.76";
+      const ASSET_VER = "0.8.77";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2301,7 +2301,7 @@
         duckCur: 1, duckLvl: 1, duckUntil: 0,
         duck(level, sec) { const now = performance.now(); if (now >= this.duckUntil) this.duckLvl = level; else this.duckLvl = Math.min(this.duckLvl, level); this.duckUntil = Math.max(this.duckUntil, now + sec * 1000); },
         duckTarget() {
-          if (typeof Boss === "undefined" || typeof Game === "undefined" || Game.mode !== "battle" || Boss.stageId !== 1) return 1;
+          if (typeof Boss === "undefined" || typeof Game === "undefined" || Game.mode !== "battle") return 1;
           let t = performance.now() < this.duckUntil ? this.duckLvl : 1;
           return Math.min(t, 1 - 0.4 * (Game.ultDim || 0));
         },
