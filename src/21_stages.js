@@ -335,7 +335,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           skyPity: 3, /* 連續 3 招沒出天劍斬落，下一招必出（封印要有機會露出） */
           cd: 0.7, /* 招與招之間的空檔 */
           handHit: { normal: 12, heavy: 18, charged: 30, reflect: 15 }, /* 砍手／折射打手的架勢（滿 100 巨手崩勢 → 古靈失衡、巨劍插地 3 秒） */
-          p2: { palmEvery: [7, 10], palmDmg: 180 } /* 二階段兩側巨手偶爾壓掌 */
+          p2: { palmEvery: [7, 10], palmDmg: 180 } /* 二階段兩側巨手偶爾壓掌 */,
+          /* v0.8.85 生圖：assets/boss4/h01～h12（巨手，0.5 倍、下緣中點錨點）、sw1／sw2／sw3（巨劍 0.6 倍，畫時 ×swK）；boss4fx 列 0 核心、1 核心蓄光、2 封印環、3 小飛劍 */
+          art: { dir: "boss4", fx: "boss4fx", swK: 0.667, swTip: [[94.5, 803], [103, 811]], ringY: [416, 442, 470] }
         };
         S4.moves = {
           slash1: { name: "劍魂・驚鴻", windup: 0.45, active: 0.14, recover: 0.42, range: 185, lunge: 380, damage: 150, parryPostureDmg: 22 },
@@ -349,4 +351,5 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S4.pool = [["slash1", 26], ["ring_slash", 26], ["thrust_peril", 18], ["flyswords", 16, "ranged"], ["rain2", 12, "ranged"]];
         S4.poolP2 = S4.pool;
         S4.farMoves = ["flyswords"];
+        S4.flySwordArt = { sheet: "boss4fx", row: 3, frames: [2, 3], fps: 10, w: 150, tipX: 222, tipY: 128 }; /* 指劍劍氣與核心飛劍 */
       }

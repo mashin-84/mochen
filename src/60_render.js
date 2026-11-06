@@ -6,6 +6,11 @@
         const h = canvas.height;
         ctx.save();
         ctx.clearRect(0, 0, w, h);
+        { /* v0.8.85 先畫跟 #game-container 一樣的底色漸層，讓畫布不透明：黑底發光特效（lighter）在背景半透明處不再變成黑方塊 */
+          const cx = w * 0.5, cy = h * 0.25, R = Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy));
+          const bgG = ctx.createRadialGradient(cx, cy, 0, cx, cy, R); bgG.addColorStop(0, "#0f1c2e"); bgG.addColorStop(1, "#030712");
+          ctx.fillStyle = bgG; ctx.fillRect(0, 0, w, h);
+        }
         if (Game.cine && Game.cine.t < CINE.A) { drawCineA(w, h); drawCineBars(w, h); ctx.restore(); return; }
 
         const isPortrait = h > w;

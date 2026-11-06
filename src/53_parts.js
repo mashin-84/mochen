@@ -15,6 +15,7 @@
       function partsInit(stage) {
         Boss._pp = null;
         if (!stage || !stage.parts) return;
+        partsPreload(stage);
         const G = Config.groundY, sx = 1700;
         const hand = (side) => ({ side, x: sx + side * 420, y: G - 330, tx: sx + side * 420, ty: G - 330, posture: 0, pdelay: 0, flash: 0, brokenT: 0, busy: false });
         Boss._pp = {
@@ -46,7 +47,7 @@
       function partsList() {
         const P = Boss._pp, G = Config.groundY, L = [];
         if (!P) return L;
-        for (const h of P.hands) if (h.y > G - 175) L.push({ id: "hand", ref: h, x: h.x, top: h.y - 150, bot: h.y, hw: 100 });
+        for (const h of P.hands) if (h.y > G - 175) L.push({ id: "hand", ref: h, x: h.x, top: h.y - 150, bot: h.y, hw: 120 });
         if (P.sword.mode === "stuck") L.push({ id: "seal", ref: P.sword, x: P.sword.x, top: G - 275, bot: G - 100, hw: 46 });
         return L;
       }
@@ -161,6 +162,8 @@
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.08);
         spawnSparks(sw.x, G - 190, "execution", Player.facing);
         if (fxReady("spark")) spawnFx("spark", 3, sw.x, G - 190, { w: 520, dur: 0.6 });
+        { const A = partsDef().art, ry = sw.tip - (A ? A.ringY[P.seals - 1] || 420 : 420); /* 封印環：裂開→爆散（boss4fx 列 2 第 2、3 格） */
+          if (A && fxReady(A.fx)) { spawnFx(A.fx, 2, sw.x, ry, { w: 190, dur: 0.14, col: 2 }); setTimeout(() => spawnFx(A.fx, 2, sw.x, ry, { w: 260, dur: 0.45, col: 3 }), 140); } }
         const dots = "●".repeat(P.seals) + "○".repeat((partsDef().seals || 3) - P.seals);
         spawnFloatingText(sw.x, G - 330, `封印斷！ ${dots}`, "#fde047", 1.4);
         setTelemetry(`★ 蓄力斬斬斷劍柄封印！剩餘封印 ${P.seals}`);
@@ -225,9 +228,9 @@
             if (a.t >= m.windup) { a.st = "active"; a.t = 0; a.tip0 = sw.tip; sw.x = a.x; }
           } else if (a.st === "active") {
             sw.mode = "fall"; sw.x = a.x;
-            sw.tip = a.tip0 + (G + 230 - a.tip0) * Math.min(1, a.t / m.active);
+            sw.tip = a.tip0 + (G + 256 - a.tip0) * Math.min(1, a.t / m.active);
             if (a.t >= m.active) {
-              sw.tip = G + 230; sw.mode = "stuck";
+              sw.tip = G + 256; sw.mode = "stuck";
               addTrauma(k === "sky" ? 0.5 : 0.35); hapticBuzz(30);
               Sound.play("hit", 1.0, 0.45); Sound.play("block", 0.8, 0.5);
               emitDust(a.x, G, 1, 6, 1.5); emitDust(a.x, G, -1, 6, 1.5);
@@ -265,7 +268,7 @@
         if (k === "palm") {
           if (a.st === "windup") {
             if (a.t < m.windup * m.track) a.x += (Player.x - a.x) * Math.min(1, dt * 6);
-            h.tx = a.x; h.ty = G - 470 + 90 * (a.t / m.windup); /* 手要留在畫面內（鏡頭 0.85 時上緣約 y -60） */
+            h.tx = a.x; h.ty = G - 320 + 50 * (a.t / m.windup); /* 舉掌格（直立的手）上緣要留在畫面內（鏡頭 0.85 時上緣約 y -60） */
             if (a.t >= m.windup) { a.st = "active"; a.t = 0; a.y0 = h.y; h.x = a.x; }
           } else if (a.st === "active") {
             h.x = h.tx = a.x; h.y = h.ty = a.y0 + (G - a.y0) * Math.min(1, a.t / m.active);
@@ -447,8 +450,7 @@
         Game.flyingSwords = [];
         const sw = P.sword;
         /* 巨劍碎裂 */
-        for (let i = 0; i < 26; i++) P.shards.push({ x: sw.x + (Math.random() - 0.5) * 60, y: G - 120 - Math.random() * 260, vx: (Math.random() - 0.5) * 900, vy: -300 - Math.random() * 500, t: 1.2 + Math.random() * 0.5, fly: true });
-        sw.mode = "gone";
+        sw.mode = "crack"; P._shattered = false; /* 先裂 0.35 秒再碎（partsTransStep） */
         Player.invulnTimer = 3.2;
         P.coreX = Math.abs(P.spiritX - Player.x) < 320 ? clampX(Player.x + (Player.x < 1600 ? 480 : -480)) : P.spiritX;
         Sound.play("execution", 1.0, 0.8);
@@ -462,6 +464,12 @@
       function partsTransStep(dt) {
         const P = Boss._pp, G = Config.groundY;
         P.tt += dt;
+        if (P.tt >= 0.35 && !P._shattered) { /* 巨劍崩碎 */
+          P._shattered = true; const sw = P.sword; sw.mode = "gone";
+          for (let i = 0; i < 26; i++) P.shards.push({ x: sw.x + (Math.random() - 0.5) * 60, y: G - 120 - Math.random() * 260, vx: (Math.random() - 0.5) * 900, vy: -300 - Math.random() * 500, t: 1.2 + Math.random() * 0.5, fly: true });
+          Sound.play("hit", 1.0, 0.6); addTrauma(0.5);
+          if (fxReady("spark")) spawnFx("spark", 3, sw.x, G - 200, { w: 600, dur: 0.6 });
+        }
         for (const s of P.shards) if (s.fly) { s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 1400 * dt; if (s.y > G) { s.y = G; s.vy *= -0.3; s.vx *= 0.5; } }
         if (P.tt > 0.6 && !P._roar) { P._roar = true; Sound.play("peril", 1.0, 0.5); addTrauma(0.4); }
         Boss.x = P.coreX; Boss.vx = 0; Boss.state = "recover"; Boss.stateTimer = 9; Boss.hp = Boss.maxHp;
@@ -512,7 +520,27 @@
         const st = document.getElementById("boss-state-txt"); if (st) st.textContent = P.phase === "t" ? "劍魂降臨" : Boss.isPerilous ? `危:${String(Boss.perilType).toUpperCase()}` : "封印";
       }
 
-      /* ---------- 繪製（灰盒） ---------- */
+      /* ---------- 繪製（v0.8.85 起：有生圖用生圖，沒有退回方塊） ---------- */
+      const PART_IMG = {};
+      function partImg(k) {
+        const A = partsDef() && partsDef().art; if (!A) return null;
+        let im = PART_IMG[k];
+        if (!im) { im = new Image(); im.src = `assets/${A.dir}/${k}.webp`; PART_IMG[k] = im; }
+        return im.complete && im.naturalWidth ? im : null;
+      }
+      function partsPreload(stage) { const A = stage.parts && stage.parts.art; if (!A) return; for (let i = 1; i <= 12; i++) partImg("h" + String(i).padStart(2, "0")); ["sw1", "sw2", "sw3"].forEach(partImg); fxSheet(A.fx); }
+      /* 巨手該用哪一格、朝哪邊（圖：右手、手指朝右；f=1 朝右） */
+      function handPose(h) {
+        const P = Boss._pp;
+        if (h.brokenT > 0) return ["h10", -h.side];
+        const a = [P.act, P.side].find(x => x && x.hand === h);
+        if (!a) return [P.phase === 2 ? "h12" : "h01", -h.side];
+        const t = a.t;
+        if (a.key === "palm") return [a.st === "windup" ? "h02" : a.st === "active" ? "h03" : a.st === "rest" ? (t < 0.18 ? "h03" : "h04") : "h11", -h.side];
+        if (a.key === "finger") { const f = Player.x >= h.x ? 1 : -1; return [a.st === "active" ? "h06" : "h05", f]; }
+        if (a.key === "grab") return [a.st === "windup" ? "h07" : a.st === "active" ? "h08" : a.st === "rest" ? "h09" : "h11", -a.s];
+        return ["h01", -h.side];
+      }
       function pMark(x, y, p, kind) { /* 預警圈：黃＝可招架、紅＝危（同 drawThreatMarker） */
         const key = kind === "red" ? 1 : kind === "blue" ? 2 : 0;
         if (fxReady("mark")) {
@@ -584,7 +612,9 @@
           ctx.strokeStyle = "#f87171"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(k.x, G + 2, k.r * (1 - p * 0.6), 14 * (1 - p * 0.6), 0, 0, Math.PI * 2); ctx.stroke();
           if (k.warn < 0.18) { /* 落下中的劍 */
             const fy = G - 40 - (k.warn / 0.18) * 520;
-            ctx.fillStyle = "#e0f2fe"; ctx.fillRect(k.x - 5, fy - 110, 10, 110); ctx.fillRect(k.x - 16, fy - 120, 32, 8);
+            const A = partsDef().art, fs = A && fxReady(A.fx) && fxSheet(A.fx).img;
+            if (fs) { ctx.globalCompositeOperation = "lighter"; ctx.translate(k.x, fy); ctx.rotate(Math.PI / 2); ctx.drawImage(fs, 3 * 256, 3 * 256, 256, 256, -0.87 * 170, -85, 170, 170); }
+            else { ctx.fillStyle = "#e0f2fe"; ctx.fillRect(k.x - 5, fy - 110, 10, 110); ctx.fillRect(k.x - 16, fy - 120, 32, 8); }
           }
           ctx.restore();
         }
@@ -604,18 +634,35 @@
           ctx.save();
           if (sw.tip > G - 30) { ctx.beginPath(); ctx.rect(sw.x - 700, -2000, 1400, G + 4 + 2000); ctx.clip(); } /* 插進地裡的部分不畫 */
           ctx.translate(sw.x, sw.tip); ctx.rotate(sw.ang);
-          const fl = sw.flash > 0;
+          const fl = sw.flash > 0, A = partsDef().art;
+          const simg = A && partImg(sw.mode === "stuck" ? "sw2" : sw.mode === "crack" ? "sw3" : "sw1");
+          if (simg) { /* 生圖巨劍：劍尖對準 (sw.x, sw.tip) */
+            const K = A.swK, tp = A.swTip[sw.mode === "stuck" ? 1 : 0];
+            if (fl) ctx.filter = "brightness(2.2)";
+            ctx.drawImage(simg, -tp[0] * K, -tp[1] * K, simg.naturalWidth * K, simg.naturalHeight * K);
+            ctx.filter = "none";
+            const n = partsDef().seals || 3, fs = fxReady(A.fx) && fxSheet(A.fx).img;
+            if (fs) { /* 劍柄封印環（boss4fx 列 2）：插地時亮、平時淡 */
+              ctx.globalCompositeOperation = "lighter";
+              for (let i = 0; i < P.seals && i < n; i++) {
+                const on = sw.mode === "stuck", w = on ? 92 : 64, col = on ? (Math.floor(now * 6) % 2) : 0;
+                ctx.globalAlpha = on ? 1 : 0.55;
+                ctx.drawImage(fs, col * 256, 2 * 256, 256, 256, -w / 2, -A.ringY[i] - w / 2, w, w);
+              }
+              ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+            }
+          } else {
           ctx.fillStyle = fl ? "#ffffff" : "#cbd5e1"; ctx.strokeStyle = "#475569"; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-24, -40); ctx.lineTo(-24, -370); ctx.lineTo(24, -370); ctx.lineTo(24, -40); ctx.closePath(); ctx.fill(); ctx.stroke();
           ctx.fillStyle = fl ? "#ffffff" : "#64748b"; ctx.fillRect(-70, -386, 140, 18); ctx.strokeRect(-70, -386, 140, 18);
           ctx.fillStyle = fl ? "#ffffff" : "#334155"; ctx.fillRect(-14, -480, 28, 94);
-          /* 劍柄三道封印（插地時發光可斬） */
           const n = partsDef().seals || 3;
           for (let i = 0; i < n; i++) {
             const on = i < P.seals, cy = -400 - i * 26;
             ctx.fillStyle = !on ? "#1e293b" : sw.mode === "stuck" ? `rgba(253,224,71,${0.6 + 0.4 * sw.glow})` : "#a16207";
             if (on && sw.mode === "stuck") { ctx.shadowColor = "#fde047"; ctx.shadowBlur = 16; }
             ctx.beginPath(); ctx.arc(0, cy, 11, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+          }
           }
           ctx.restore();
           if (sw.mode === "stuck") { /* 插地：地面裂痕 */
@@ -625,6 +672,22 @@
         }
         /* 巨手 */
         for (const h of P.hands) {
+          const [hk, hf] = handPose(h), himg = partImg(hk);
+          if (himg) { /* 生圖巨手：下緣中點對準 (h.x, h.y) */
+            const fl = h.flash > 0, broken = h.brokenT > 0;
+            ctx.save();
+            ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse(h.x, G + 3, 110 * Math.max(0.3, 1 - (G - h.y) / 600), 9, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.translate(h.x, h.y); ctx.scale(hf, 1);
+            if (fl) ctx.filter = "brightness(2.2)";
+            ctx.drawImage(himg, -himg.naturalWidth / 2, -himg.naturalHeight + 4);
+            ctx.filter = "none"; ctx.scale(hf, 1);
+            if (h.posture > 0 && !broken) {
+              ctx.fillStyle = "rgba(15,23,42,0.7)"; ctx.fillRect(-60, -himg.naturalHeight - 18, 120, 7);
+              ctx.fillStyle = h.posture >= 80 ? "#f97316" : "#fde047"; ctx.fillRect(-60, -himg.naturalHeight - 18, 120 * h.posture / 100, 7);
+            }
+            ctx.restore();
+            continue;
+          }
           ctx.save();
           const fl = h.flash > 0, broken = h.brokenT > 0;
           ctx.translate(h.x, h.y);
@@ -667,11 +730,27 @@
           const spin = now * (st === "windup" || st === "active" ? 5 : 1.6);
           for (let i = 0; i < 6; i++) {
             const an = spin + i * Math.PI / 3, rx = cx + Math.cos(an) * 92, ry = cy + Math.sin(an) * 36;
-            ctx.save(); ctx.translate(rx, ry); ctx.rotate(an + Math.PI / 2); ctx.fillStyle = "#e0f2fe"; ctx.fillRect(-4, -26, 8, 52); ctx.restore();
+            const A2 = partsDef().art, fs2 = A2 && fxReady(A2.fx) && fxSheet(A2.fx).img;
+            ctx.save(); ctx.translate(rx, ry); ctx.rotate(an + Math.PI / 2);
+            if (fs2) { ctx.globalCompositeOperation = "lighter"; ctx.rotate(-Math.PI / 2); ctx.drawImage(fs2, 0, 3 * 256, 256, 256, -45, -45, 90, 90); }
+            else { ctx.fillStyle = "#e0f2fe"; ctx.fillRect(-4, -26, 8, 52); }
+            ctx.restore();
           }
+          const A = partsDef().art, fs = A && fxReady(A.fx) && fxSheet(A.fx).img;
+          if (fs) { /* 生圖核心：平時列 0 呼吸、出招列 1 蓄光；破勢偏金 */
+            const act = st === "windup" || st === "active";
+            const fr = act ? Math.min(3, Math.floor((1 - Boss.stateTimer / (Boss.stateDur || 1)) * 4)) : Math.floor(now * 5) % 4;
+            const w = 190;
+            ctx.globalCompositeOperation = "lighter";
+            if (st === "staggered") ctx.filter = "sepia(1) saturate(3) hue-rotate(-10deg)";
+            ctx.drawImage(fs, fr * 256, (act ? 1 : 0) * 256, 256, 256, cx - w / 2, cy - w / 2, w, w);
+            if (fl) ctx.drawImage(fs, fr * 256, (act ? 1 : 0) * 256, 256, 256, cx - w / 2, cy - w / 2, w, w);
+            ctx.filter = "none"; ctx.globalCompositeOperation = "source-over";
+          } else {
           ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 30;
           ctx.beginPath(); ctx.arc(cx, cy, 46, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0; ctx.strokeStyle = "#0c4a6e"; ctx.lineWidth = 3; ctx.stroke();
+          }
           ctx.restore();
           if (!dead) {
             if (Boss.isPerilous && (st === "windup" || st === "active")) pKanji(cx, cy - 110, "危", "#ef4444");
