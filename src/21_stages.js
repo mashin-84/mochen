@@ -81,7 +81,12 @@
         if (M.flyswords) M.flyswords.frames = { windup: "35_fs_wind", active: ["36_fs_1", "37_fs_2", "38_fs_3"], recover: "39_fs_rec" };
         if (M.sky_swords) M.sky_swords.frames = { windup: "40_sky_cast", active: "40_sky_cast", recover: "39_fs_rec" };
         [M.exclusive_teleport, M.teleport_combo].forEach(m => { if (m) m.frames = { windup: "32_tp_wind", active: "33_tp_hit", recover: "34_tp_rec" }; });
-        S2.spriteExtras = ["20_fan_wind", "21_fan_hit", "22_fan_rec", "23_thr_wind", "24_thr_hit", "25_thr_rec", "26_swp_wind", "27_swp_hit", "28_swp_rec", "29_cast_wind", "30_cast_hit", "31_cast_rec", "32_tp_wind", "33_tp_hit", "34_tp_rec", "35_fs_wind", "36_fs_1", "37_fs_2", "38_fs_3", "39_fs_rec", "40_sky_cast"];
+        /* v0.8.81 三招法陣＋雙襲第二擊關鍵格（生圖 3×4 兩版各取所長，縮放 0.90／0.872 對齊站姿高 490） */
+        M.exclusive_zone.frames = { windup: "41_zone_wind", active: "42_zone_hit", recover: "43_zone_rec" };
+        M.grab_peril.frames = { windup: "44_grab_tell", active: "45_grab_hit", recover: "46_grab_rec" };
+        M.mirror_split.frames = { windup: "47_mir_wind", active: "48_mir_spin", recover: "49_mir_rec" };
+        if (M.teleport_combo) M.teleport_combo.frames = { windup: "32_tp_wind", active: ["33_tp_hit", "50_tc_back", "51_tc_low"], recover: "52_tc_rec" };
+        S2.spriteExtras = ["41_zone_wind", "42_zone_hit", "43_zone_rec", "44_grab_tell", "45_grab_hit", "46_grab_rec", "47_mir_wind", "48_mir_spin", "49_mir_rec", "50_tc_back", "51_tc_low", "52_tc_rec", "20_fan_wind", "21_fan_hit", "22_fan_rec", "23_thr_wind", "24_thr_hit", "25_thr_rec", "26_swp_wind", "27_swp_hit", "28_swp_rec", "29_cast_wind", "30_cast_hit", "31_cast_rec", "32_tp_wind", "33_tp_hit", "34_tp_rec", "35_fs_wind", "36_fs_1", "37_fs_2", "38_fs_3", "39_fs_rec", "40_sky_cast"];
         S2.layers = [
           { img: "arena2_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.08 },
           { img: "arena2_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.15 }
@@ -233,7 +238,7 @@
         };
       })();
       Stages[1].introCine = true; /* v0.8.18 登場動畫 */
-      Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "21_fall", "22_land", "23_rise", "24_chop_wind", "25_chop_hit", "26_chop_rec", "27_thr_wind", "28_thr_hit", "29_thr_rec", "30_swp_wind", "31_swp_hit", "32_swp_rec", "33_leap_crouch", "34_leap_air", "35_leap_land"];
+      Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "36_tq_wind", "37_tq_hit", "38_tq_rec", "39_cb_wind", "40_cb_h1", "41_cb_h2", "42_cb_rec", "43_dl_hold", "44_dl_hit", "45_tw_wind", "46_tw_rel", "47_tw_catch", "48_sp_wind", "49_sp_hit", "50_sp_rec", "51_ch_wind", "52_ch_run", "53_ch_stop", "54_sh_vanish", "55_sh_strike", "21_fall", "22_land", "23_rise", "24_chop_wind", "25_chop_hit", "26_chop_rec", "27_thr_wind", "28_thr_hit", "29_thr_rec", "30_swp_wind", "31_swp_hit", "32_swp_rec", "33_leap_crouch", "34_leap_air", "35_leap_land"];
       /* v0.8.33 第 5 關登場：影片（剪影小狼＋巨狼影子）→ 揚塵淡出 → 小狼衝進場煞停、名字卡（introDash 模式，需影片） */
 Stages[5].introCine = true; Stages[5].introDash = true; Stages[5].introVideo = "assets/boss5/intro"; Stages[5].introBg = "intro5"; Stages[5].introName = "assets/boss5/name.webp";
 Stages[5].introA = 5.6; Stages[5].introFlash = "214,196,170"; Stages[5].introSfx = [[1.9, "w_snarl", 0.45, 1.1], [2.9, "m_howl", 0.95, 1], [4.0, "w_bark", 0.85, 1.1], [4.4, "w_claw", 0.7, 1]]; Stages[5].introLandSfx = "w_snarl"; Stages[5].spriteExtras = ["26_rush", "25_pounce_land", "20_bite_crouch"];
@@ -257,6 +262,16 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         M.shock_push = { name: "神衛震戟 (霸體・震退)", armor: true, pushback: 780, windup: 0.52, active: 0.14, recover: 0.55, range: 215, lunge: 120, damage: 90, parryPostureDmg: 18 };
         M.shadow_strike = { name: "神衛影遁斬 (繞背)", isTeleport: true, teleportBehind: true, teleportDelay: 0.4, teleportText: "【神衛影遁】", teleportColor: "#f87171", windup: 0.62, active: 0.13, recover: 0.38, range: 175, lunge: 260, damage: 170, parryPostureDmg: 20 };
         M.rage_chain = { name: "神衛怒煞連戟 (霸體)", isRage: true, armor: true, isCombo: true, pose: "thrust", comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 105, windup: 0.60, active: 0.75, recover: 0.65, range: 195, lunge: 420, damage: 200, parryPostureDmg: 24 };
+        /* v0.8.81 其餘七招三拍關鍵格（生圖 4×5，縮放 1.13 對齊 v0.8.46 關鍵格）；陣列＝active 期間依進度平均切換 */
+        const F1 = (w, a, r) => ({ windup: w, active: a, recover: r });
+        M.slash2.frames = F1("36_tq_wind", "37_tq_hit", "38_tq_rec");
+        if (M.exclusive_combo) M.exclusive_combo.frames = F1("39_cb_wind", ["40_cb_h1", "41_cb_h2"], "42_cb_rec");
+        M.combo_delay.frames = F1("39_cb_wind", ["40_cb_h1", "41_cb_h2", "43_dl_hold", "44_dl_hit", "44_dl_hit"], "42_cb_rec"); /* 第三刀前定在高舉停頓格 */
+        M.rage_chain.frames = F1("39_cb_wind", ["40_cb_h1", "41_cb_h2", "44_dl_hit"], "42_cb_rec");
+        M.halberd_throw.frames = F1("45_tw_wind", "46_tw_rel", "47_tw_catch");
+        M.shock_push.frames = F1("48_sp_wind", "49_sp_hit", "50_sp_rec");
+        M.charge_rush.frames = F1("51_ch_wind", "52_ch_run", "53_ch_stop");
+        M.shadow_strike.frames = F1("54_sh_vanish", "55_sh_strike", "42_cb_rec");
         Stages[1].pool = [
           ["slash1", 14, "break"], ["slash2", 9], ["exclusive_combo", 11], ["combo_delay", 11], ["thrust_peril", 9], ["sweep_peril", 8],
           ["leap_slam", 16, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],
