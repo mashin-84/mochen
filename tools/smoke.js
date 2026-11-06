@@ -11,7 +11,7 @@ const file = path.resolve(process.argv[2] || 'index.html');
 const secs = Number(process.argv[3] || 20);
 const stages = (process.argv[4] || '1,2,3,4,5,6,7,8,9').split(',').map(Number);
 const root = path.dirname(file);
-const outDir = '/home/claude/smoke';
+const outDir = process.env.SMOKE_OUT || '/home/claude/smoke';
 fs.mkdirSync(outDir, { recursive: true });
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'smoke-'));
@@ -23,10 +23,11 @@ fs.writeFileSync(path.join(tmp, 'index.html'), html);
 fs.symlinkSync(path.join(root, 'assets'), path.join(tmp, 'assets'));
 
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.webp': 'image/webp', '.png': 'image/png', '.mp3': 'audio/mpeg', '.webm': 'video/webm', '.mp4': 'video/mp4', '.json': 'application/json' };
+const missing = new Set(); /* v0.8.89 讀不到的 assets/ 檔案（缺圖、缺音效）一律記下，最後算 FAIL */
 const server = http.createServer((req, res) => {
   const p = path.join(tmp, decodeURIComponent(req.url.split('?')[0]));
   fs.readFile(p, (err, data) => {
-    if (err) { res.writeHead(404); res.end(); return; }
+    if (err) { if (req.url.startsWith('/assets/')) missing.add(req.url.split('?')[0]); res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'Content-Type': types[path.extname(p)] || 'application/octet-stream' });
     res.end(data);
   });
@@ -86,6 +87,12 @@ const server = http.createServer((req, res) => {
     console.log(`${probs.length ? 'FAIL' : 'ok  '} 第 ${sid} 關${stat.won ? '（擊敗）' : ''}｜招式 ${stat.moves.size} 種｜Boss 最低血量 ${stat.minHp === Infinity ? '-' : Math.round(stat.minHp)}${probs.length ? '｜' + probs.join('；') : ''}`);
   }
   await b.close(); server.close();
+  /* tools/missing_ok.txt 列的是「還沒做、程式會自動退回替代圖」的檔案（例：還沒生的半身像、走路影片），只提示不算 FAIL */
+  const okFile = path.join(__dirname, 'missing_ok.txt');
+  const okSet = new Set(fs.existsSync(okFile) ? fs.readFileSync(okFile, 'utf8').split(/\r?\n/).map(x => x.trim()).filter(x => x && !x.startsWith('#')) : []);
+  const newMiss = [...missing].filter(x => !okSet.has(x)).sort();
+  if (newMiss.length) { failed++; console.log(`FAIL 缺檔 ${newMiss.length} 個：${newMiss.join('、')}`); }
+  if (missing.size - newMiss.length) console.log(`（已知未製作 ${missing.size - newMiss.length} 個，見 tools/missing_ok.txt）`);
   console.log(failed ? `SMOKE FAIL ${failed} 關` : `SMOKE OK ${stages.length} 關，截圖在 ${outDir}/`);
   process.exit(failed ? 1 : 0);
 })().catch(e => { console.log('SMOKE ERROR', e.message); process.exit(1); });

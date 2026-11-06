@@ -1,0 +1,52 @@
+# 自動檢查：每次推送到 main 後，在 GitHub 伺服器上跑建置比對、語法＋載入檢查、九關自動對打（含缺檔偵測）。
+# 失敗時 GitHub 會通知；截圖在該次執行頁面的 Artifacts「screenshots」。
+name: 自動檢查
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CHECK_OUT: ${{ github.workspace }}/out
+      SMOKE_OUT: ${{ github.workspace }}/out/smoke
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安裝 Playwright（Chromium）
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+
+      - name: 建置比對（index.html 與 src/ 一致）
+        run: python3 tools/build.py --check
+
+      - name: 語法＋載入檢查
+        run: mkdir -p out && node tools/check.js index.html
+
+      - name: 九關自動對打（每關 20 秒，含缺檔偵測）
+        run: node tools/smoke.js index.html 20
+
+      - name: 上傳截圖
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: out/
+          if-no-files-found: ignore
