@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.77";
+      const ASSET_VER = "0.8.78";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2853,6 +2853,7 @@
       Stages[2].moves.exclusive_zone.zoneTargetP2 = true; /* 二階段罡風陣鎖定玩家位置 */
       Stages[2].moves.teleport_combo = { name: "千幻鏡影・雙襲", isTeleport: true, teleportBehind: true, teleportDelay: 0.22, isCombo: true, comboTotalHits: 2, comboInterval: 0.22, comboDamagePerHit: 95, windup: 0.52, active: 0.50, recover: 0.40, range: 170, lunge: 260, damage: 190, parryPostureDmg: 18 };
       Stages[2].moves.sky_swords = { name: "羅天飛劍・垂落", isRanged: true, bulletCount: 5, bulletSpeed: 700, bulletTrajectory: "vertical", bulletColor: "#38bdf8", frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.20, recover: 0.60, range: 600, lunge: 0, damage: 100, parryPostureDmg: 18 };
+      Stages[2].reflectDmg = [70, 10]; /* v0.8.78 三把都彈得到後一輪送 330 血＋42% 架勢太多（使用者：第 2 關比第 1 關簡單）→ 一輪 210＋30% */
       Stages[2].p1Pool = [["slash1", 30], ["flyswords", 20], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]];
       /* ===== v0.8.55 第 2 關補強：千幻分身（二階段）＋動態感（變形、殘影、招式特效） ===== */
       {
@@ -2999,9 +3000,9 @@
         const M = {};
         const FR = (w, a, r) => ({ windup: w, active: a, recover: r });
         /* --- 小狼（快、低、打了就跑） --- */
-        M.s_bite = { fxAct: { sheet: "wolf", row: 1, ox: 120, oy: -85, w: 280, dur: 0.26 }, kick: 0.12, name: "幽影撕咬", frames: { windup: ["07_windup", "20_bite_crouch"], active: ["21_bite_lunge"], recover: ["10_slash_rec"] }, windup: 0.26, active: 0.12, recover: 0.22, range: 150, lunge: 520, damage: 120, parryPostureDmg: 16 };
-        M.s_bite2 = { fxHit: { sheet: "wolf", row: 1, ox: 110, oy: -85, w: 240, dur: 0.22 }, kickHit: 0.08, name: "連環撕咬", isCombo: true, comboTotalHits: 2, comboInterval: 0.16, comboDamagePerHit: 85, frames: { windup: ["20_bite_crouch"], active: ["21_bite_lunge", "29_claw", "21_bite_lunge"], recover: ["10_slash_rec"] }, windup: 0.30, active: 0.45, recover: 0.30, range: 155, lunge: 420, damage: 100, parryPostureDmg: 14 };
-        M.s_claw3 = { kickHit: 0.08, fxHit: { sheet: "wolf", row: 0, ox: 110, oy: -90, w: 300, dur: 0.25 }, name: "血爪三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 80, frames: { windup: ["07_windup"], active: ["29_claw", "09_slash", "29_claw"], recover: ["10_slash_rec"] }, windup: 0.38, active: 0.62, recover: 0.34, range: 160, lunge: 420, damage: 110, parryPostureDmg: 14 };
+        M.s_bite = { fxAct: { sheet: "wolf", row: 1, ox: 120, oy: -85, w: 280, dur: 0.26 }, kick: 0.12, name: "幽影撕咬", frames: { windup: ["07_windup", "20_bite_crouch"], active: ["21_bite_lunge"], recover: ["10_slash_rec"] }, windup: 0.40, active: 0.12, recover: 0.22, range: 150, lunge: 520, damage: 120, parryPostureDmg: 16 };
+        M.s_bite2 = { fxHit: { sheet: "wolf", row: 1, ox: 110, oy: -85, w: 240, dur: 0.22 }, kickHit: 0.08, name: "連環撕咬", isCombo: true, comboTotalHits: 2, comboInterval: 0.16, comboDamagePerHit: 85, frames: { windup: ["20_bite_crouch"], active: ["21_bite_lunge", "29_claw", "21_bite_lunge"], recover: ["10_slash_rec"] }, windup: 0.38, active: 0.45, recover: 0.30, range: 155, lunge: 420, damage: 100, parryPostureDmg: 14 };
+        M.s_claw3 = { kickHit: 0.08, fxHit: { sheet: "wolf", row: 0, ox: 110, oy: -90, w: 300, dur: 0.25 }, name: "血爪三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.18, comboDamagePerHit: 80, frames: { windup: ["07_windup"], active: ["29_claw", "09_slash", "29_claw"], recover: ["10_slash_rec"] }, windup: 0.42, active: 0.62, recover: 0.34, range: 160, lunge: 420, damage: 110, parryPostureDmg: 14 };
         M.s_pounce = { fxLand: 0.45, kick: 0.1, name: "疾撲 (閃開，或起跳踩頭)", isLeap: true, leapH: 130, leapMax: 460, frames: { windup: ["08_windup_thrust", "22_pounce_coil"], active: ["23_pounce_fly", "24_pounce_dive"], recover: ["25_pounce_land", "12_thrust_rec"] }, windup: 0.42, active: 0.36, recover: 0.42, range: 150, lunge: 0, damage: 150, parryPostureDmg: 16 };
         M.s_rush = { fxAct: { sheet: "wolf", row: 0, ox: 150, oy: -90, w: 440, dur: 0.3 }, kick: 0.22, name: "【危】狂暴衝撲 (前閃看破)", isPerilous: true, perilType: "thrust", frames: { windup: ["08_windup_thrust", "22_pounce_coil"], active: ["26_rush"], recover: ["25_pounce_land", "12_thrust_rec"] }, windup: 0.50, active: 0.20, recover: 0.55, range: 300, lunge: 980, damage: 300 };
         M.s_tail = { fxAct: { sheet: "land", row: 2, ox: 0, oy: -45, w: 560, dur: 0.45, alpha: 0.6 }, kick: 0.15, name: "【危】甩尾旋斬 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: ["27_tail_wind"], active: ["28_tail_spin", "13_sweep"], recover: ["10_slash_rec"] }, windup: 0.52, active: 0.22, recover: 0.50, range: 230, lunge: 240, damage: 260 };
@@ -5828,13 +5829,14 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           } else {
             const d = Math.abs(sw.x - Boss.x);
             if (Boss.hp > 0 && d < 45 && sw.y > Boss.y - Boss.h * 1.6 && sw.y < Boss.y + 6) { /* Boss 已倒下就不再被折射飛劍打回 1 血 */ /* v0.8.65 折射回去也照圖上身高判定（原 -105～5） */
-              Boss.hp = Math.max(1, Boss.hp - 110);
+              const RD = (Stages[Boss.stageId] && Stages[Boss.stageId].reflectDmg) || [110, 14]; /* v0.8.78 每關可設折射傷害 [氣血, 架勢] */
+              Boss.hp = Math.max(1, Boss.hp - RD[0]);
               Boss.flashFrames = 3;
-              damageBossPosture(14, "折射命中！架勢 +14%");
+              damageBossPosture(RD[1], "折射命中！架勢 +" + RD[1] + "%");
               Sound.play("hit", 1.0, 1.1);
               triggerHitstop(4);
               spawnSparks(sw.x, sw.y, "hit", -sw.dir);
-              spawnFloatingText(Boss.x, Boss.y - 100, "-110", "#fde047", 1.2);
+              spawnFloatingText(Boss.x, Boss.y - 100, "-" + RD[0], "#fde047", 1.2);
               swordImpactFx(sw);
               Game.flyingSwords.splice(i, 1);
               continue;

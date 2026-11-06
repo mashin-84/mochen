@@ -410,13 +410,14 @@
           } else {
             const d = Math.abs(sw.x - Boss.x);
             if (Boss.hp > 0 && d < 45 && sw.y > Boss.y - Boss.h * 1.6 && sw.y < Boss.y + 6) { /* Boss 已倒下就不再被折射飛劍打回 1 血 */ /* v0.8.65 折射回去也照圖上身高判定（原 -105～5） */
-              Boss.hp = Math.max(1, Boss.hp - 110);
+              const RD = (Stages[Boss.stageId] && Stages[Boss.stageId].reflectDmg) || [110, 14]; /* v0.8.78 每關可設折射傷害 [氣血, 架勢] */
+              Boss.hp = Math.max(1, Boss.hp - RD[0]);
               Boss.flashFrames = 3;
-              damageBossPosture(14, "折射命中！架勢 +14%");
+              damageBossPosture(RD[1], "折射命中！架勢 +" + RD[1] + "%");
               Sound.play("hit", 1.0, 1.1);
               triggerHitstop(4);
               spawnSparks(sw.x, sw.y, "hit", -sw.dir);
-              spawnFloatingText(Boss.x, Boss.y - 100, "-110", "#fde047", 1.2);
+              spawnFloatingText(Boss.x, Boss.y - 100, "-" + RD[0], "#fde047", 1.2);
               swordImpactFx(sw);
               Game.flyingSwords.splice(i, 1);
               continue;
