@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.116（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.117（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.117 玄天珠發射頓挫＋營地選擇**：①發射瞬間頓挫：十字星縮到珠心→`freeze` 0.12 秒→新增 `launch` 階段（`tLaunch` 0.12 秒，珠子沿「背離敵人」方向後拉 30px，ease-out）→炸出：`addTrauma(0.8)`、白閃、手機震動、鏡頭 zoom +0.12 瞬間推近、`flysword`＋`hit` 音，進 `dash`（太初替身不經 launch，直接 absorb）。整段約 1.9 秒。②營地選擇：跟師妹說話的最後多一句「今夜要我催動玄天珠的哪一種力量？」→ `showAssistPicker`（`62_hub.js`；全螢幕半透明＋三張選項卡〔太初靈光＝打斷、符陣定身＝控制、太初替身＝護身〕含說明、目前選擇打勾、「保持不變」鈕）；選擇存 `localStorage["qingyun_assist"]`，`loadAssistChoice` 於 `window.onload` 讀回並同步舊選單的 `.assist-seal-btn`；選完 `showHintToast`。`ASSIST_OPTS` 在 `62_hub.js`。無頭驗證：說話→選單出現→選替身→存檔→重新整理後仍是替身；靈光演出 `in→star→freeze→launch→dash` 時序與 trauma 0.8；截圖看過選單；smoke 第 1、3 關 ok。待手機實測：頓挫感是否夠明顯（要更明顯可加長 `tLaunch` 或加大後拉距離）、震動強度、選單是否好按（手機觸控）。
 
 **v0.8.116 玄天珠生圖接入＋演出拉長**（使用者回饋：演出拉到 1.5～2 秒、珠子高度在主角胸口；圖已生好）：①`assets/fx/xtz.webp`（Gemini 黑底 4×4，原圖 2048 → 縮 1024、扣黑底 18、格邊淡出；列 0 珠子脈動、列 1 灰珠、列 2 向右衝刺彗星〔珠頭約在格內 78%〕、列 3 命中爆光）、`assets/fx/xtz_star.webp`（十字星，512×512）、主角前指三格 `assets/mc/41_point_a／42_point_b／43_point_c`（Gemini 洋紅底 2×2，用 `tools/sheet.py` 的 `band_cells`〔cols=2,rows=2〕去背；統一縮放 0.445＝與 `11_thrust` 同大，腳中心 x=450、腳底 y=525；第 4 格〔手舉高〕未用）；已加進 `MC_NAMES` 預載。②`ASSIST_CFG`：`tIn` 0.35、`tStar` 0.8、`tFreeze` 0.12、`dashSpd` 1500（遠處敵人衝刺約 0.3～0.5 秒）→ 整段約 1.6～2 秒；`chestY` 138（珠子繞行高度＝胸口）、`handY` 148（前指指尖）、聚光暗角中心 y-120、替身飛回胸口。③畫法：`drawXtzOrb` 用 `xtz` 列 0／1（尺寸 64／96 px，`lighter`）；衝刺階段改畫列 2 彗星並依飛行方向旋轉（`D.tp*18` 取 3 格循環）；十字星用 `xtz_star`（`2L = 60×s`）；命中 `spawnFx("xtz",3,…)`；營地師妹旁的珠子（`62_hub`）也換成 `xtz` 列 0。無圖時仍退回程式畫。④`tools/missing_ok.txt` 移除 xtz 兩行；啟動時預載 `xtz`、`xtz_star`。無頭驗證：前指三格姿勢切換、胸口高度、十字星、衝刺彗星方向、結束後珠子變灰；smoke 第 1、3 關 ok。待手機實測：整段時長、十字星轉速與亮度（中心偏白）、暗角強度。
 

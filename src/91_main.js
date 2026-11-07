@@ -201,6 +201,7 @@
         BOOT_KEYS.forEach(getBgArt); fxSheet("campfire"); fxSheet("xtz"); fxSheet("xtz_star"); /* 玄天珠圖要在營地與第一場就能用 */ /* 師妹各姿勢一開始就載好（原本到那個姿勢才載，圖沒到就整個人消失） */
         bootGate();
         refreshUnlocked();
+        loadAssistChoice(); /* 讀回營地選的玄天珠之力 */
         loadPersistedEchoes();
         initScenery();
         initScarf();

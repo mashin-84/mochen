@@ -70,7 +70,38 @@
           { speaker: "師妹", role: "shidi", text: HUB_TIPS[hubTipIdx % HUB_TIPS.length] }
         ];
         hubTipIdx++;
-        dlgStart(lines, null);
+        lines.push({ speaker: "師妹", role: "shidi", text: "師兄，今夜要我催動玄天珠的哪一種力量？" });
+        dlgStart(lines, () => showAssistPicker());
+      }
+      /* v0.8.117 營地選擇玄天珠之力（跟師妹說話後詢問；選擇存在 localStorage qingyun_assist） */
+      const ASSIST_OPTS = [
+        { key: "lingguang", name: "太初靈光", tag: "打斷", desc: "珠子命中時強制打斷敵人出招，並削 22 點架勢。" },
+        { key: "fuzhen", name: "符陣定身", tag: "控制", desc: "珠子命中後定身敵人 2 秒，並削 50% 架勢。" },
+        { key: "tishen", name: "太初替身", tag: "護身", desc: "珠子融入身體：2.2 秒無敵、回復氣血，並抵擋一次致命傷。" }
+      ];
+      function loadAssistChoice() {
+        try { const v = localStorage.getItem("qingyun_assist"); if (v && ASSIST_OPTS.some(o => o.key === v)) Player.selectedAssist = v; } catch (e) { }
+        document.querySelectorAll(".assist-seal-btn").forEach(b => b.classList.toggle("selected", b.getAttribute("data-assist") === Player.selectedAssist));
+      }
+      function showAssistPicker() {
+        let el = document.getElementById("assist-picker");
+        if (!el) {
+          el = document.createElement("div"); el.id = "assist-picker";
+          el.style.cssText = "position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.62);font-family:'Noto Serif TC','Songti TC','PMingLiU',serif;";
+          document.body.appendChild(el);
+        }
+        const close = () => { el.style.display = "none"; Game.cutsceneActive = false; };
+        const cur = Player.selectedAssist;
+        el.innerHTML = '<div style="width:min(560px,92vw);padding:16px 18px;border-radius:16px;background:rgba(10,15,26,.96);border:1px solid #b8952f;box-shadow:0 0 30px rgba(96,165,250,.25);color:#e2e8f0;">'
+          + '<div style="font-size:17px;color:#fde68a;letter-spacing:.2em;margin-bottom:4px;">玄天珠之力</div><div style="font-size:12px;opacity:.7;margin-bottom:10px;">選擇之後，戰鬥中按「玄天珠」鈕即施展（每場一次）。</div>'
+          + ASSIST_OPTS.map(o => '<button type="button" data-k="' + o.key + '" style="display:block;width:100%;text-align:left;margin:7px 0;padding:10px 12px;border-radius:10px;cursor:pointer;color:#e2e8f0;font:inherit;background:' + (o.key === cur ? 'rgba(59,130,246,.28)' : 'rgba(30,41,59,.85)') + ';border:1px solid ' + (o.key === cur ? '#60a5fa' : '#475569') + ';"><div style="font-size:15px;color:#bfdbfe;">' + o.name + '　<span style="font-size:12px;color:#93c5fd;">［' + o.tag + '］</span>' + (o.key === cur ? '　✔' : '') + '</div><div style="font-size:12.5px;opacity:.8;margin-top:3px;">' + o.desc + '</div></button>').join("")
+          + '<button type="button" data-k="" style="display:block;width:100%;margin-top:8px;padding:8px;border-radius:10px;cursor:pointer;color:#94a3b8;font:inherit;background:transparent;border:1px solid #334155;">保持不變</button></div>';
+        el.querySelectorAll("button").forEach(b => b.addEventListener("click", (e) => {
+          e.stopPropagation(); const k = b.getAttribute("data-k");
+          if (k) { Player.selectedAssist = k; try { localStorage.setItem("qingyun_assist", k); } catch (er) { } loadAssistChoice(); const o = ASSIST_OPTS.find(x => x.key === k); showHintToast("玄天珠之力：" + o.name + "（" + o.tag + "）"); Sound.play("assist", 0.35, 1.5); }
+          close();
+        }));
+        Game.cutsceneActive = true; el.style.display = "flex";
       }
 
       const HUB_GATE_S = 0.42, HUB_GATE_L = -613; /* v0.8.50 山門放大（橫樑高於主角頭頂）；前柱中心約 x=-230，HUB_GATE_X=-150 越過即進場 */

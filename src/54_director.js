@@ -177,7 +177,7 @@
        *   → 珠子衝向敵人（太初替身＝飛回主角胸口）→ 命中那一刻才 applyAssistEffect 並恢復戰鬥。
        * 美術掛鉤（有圖用圖，沒圖退回程式畫）：assets/fx/xtz.webp（4×4：列 0 珠子脈動、列 1 灰珠、列 2 拖尾、列 3 命中爆光）、
        *   assets/fx/xtz_star.webp（單張十字星）、主角前指關鍵格 mc/41_point_a／42_point_b／43_point_c（沒有時用 11_thrust 頂替）。 */
-      const ASSIST_CFG = { tIn: 0.35, tStar: 0.8, tFreeze: 0.12, dashSpd: 1500, chestY: 138, handY: 148, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
+      const ASSIST_CFG = { tIn: 0.35, tStar: 0.8, tFreeze: 0.12, tLaunch: 0.12, dashSpd: 1500, chestY: 138, handY: 148, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
       function assistStart(type) {
         if (Game.mode !== "battle" || Game.cine || Game.dir || Boss.hp <= 0 || Player.hp <= 0) return false;
         const o0 = orbCurrent();
@@ -207,7 +207,21 @@
           if (u >= 1) { D.phase = "freeze"; D.tp = 0; screenFlash("rgba(220,240,255,0.55)", 0.45, 0.2); Sound.play("parry", 0.5, 1.9); }
         } else if (D.phase === "freeze") { /* 縮到珠心的瞬間，一切停住極短暫的時間 */
           D.star = { a: D.sa, s: 0.35, alpha: 1 };
-          if (D.tp >= C.tFreeze) { D.phase = D.type === "tishen" ? "absorb" : "dash"; D.tp = 0; D.star = null; D.hs = { x: D.orb.x, y: D.orb.y }; if (D.phase === "dash") { Sound.play("flysword", 0.8, 1.3); D.camNow = { zoom: Game.camera.targetZoom + 0.1, y: 0, rate: 9 }; D.focusX = (Player.x + Boss.x) * 0.5; } }
+          if (D.tp >= C.tFreeze) {
+            D.tp = 0; D.star = null; D.hs = { x: D.orb.x, y: D.orb.y };
+            if (D.type === "tishen") D.phase = "absorb";
+            else { D.phase = "launch"; const dx = Boss.x - D.orb.x, dy = Boss.y - 110 - D.orb.y, d = Math.hypot(dx, dy) || 1; D.ux = dx / d; D.uy = dy / d; }
+          }
+        } else if (D.phase === "launch") { /* v0.8.117 發射前「頓挫」：珠子先向後拉一下蓄力，再炸出去（發射瞬間震動＋推近） */
+          const u = Math.min(1, D.tp / C.tLaunch), r = 30 * (1 - (1 - u) * (1 - u));
+          D.orb.x = D.hs.x - D.ux * r; D.orb.y = D.hs.y - D.uy * r;
+          if (u >= 1) {
+            D.phase = "dash"; D.tp = 0;
+            addTrauma(0.8); screenFlash("rgba(235,245,255,0.5)", 0.45, 0.2); hapticBuzz([40, 20, 60]);
+            Game.camera.zoom += 0.12; /* 推近一下 */
+            Sound.play("flysword", 0.9, 1.3); Sound.play("hit", 0.35, 1.6);
+            D.camNow = { zoom: Game.camera.targetZoom + 0.1, y: 0, rate: 9 }; D.focusX = (Player.x + Boss.x) * 0.5;
+          }
         } else if (D.phase === "dash") { /* 珠子衝向敵人，拖尾 */
           const tx = Boss.x, ty = Boss.y - 110, dx = tx - D.orb.x, dy = ty - D.orb.y, d = Math.hypot(dx, dy), step = C.dashSpd * dt;
           D.trail.push({ x: D.orb.x, y: D.orb.y, t: 0 }); if (D.trail.length > 14) D.trail.shift();
