@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.93";
+      const ASSET_VER = "0.8.94";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3167,6 +3167,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Object.values(S4.moves).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S4.parts.moves.rain2 = Object.assign({}, S4.parts.moves.rain, { name: "萬劍歸宗・疾", gap: 0.55, warn: 0.65, per: 4 });
         S4.pool = [["slash1", 26], ["ring_slash", 22], ["thrust_peril", 15], ["sweep_peril", 13], ["flyswords", 14, "ranged"], ["rain2", 10, "ranged"]];
+        /* v0.8.94 古靈四招專屬特效（boss4fx3：列 0 驚鴻斬弧、列 1 前 2 格環劍旋斬／後 2 格突進拖尾、列 2 前 2 格掃地劍氣／後 2 格合圍拖尾、列 3 前 2 格插地漣漪／後 2 格擊落碎裂） */
+        S4.fxSheets = ["boss4fx3", "boss4warn"]; S4.arcArt = "boss4fx3";
+        S4.moves.slash1.fxAct = { sheet: "boss4fx3", row: 0, ox: 150, oy: -140, w: 440, dur: 0.38 };
+        S4.moves.ring_slash.fxHit = { sheet: "boss4fx3", row: 1, c0: 0, nf: 2, ox: 0, oy: -120, w: 520, dur: 0.3 };
+        S4.moves.thrust_peril.fxAct = { sheet: "boss4fx3", row: 1, c0: 2, nf: 2, ox: 280, oy: -140, w: 680, dur: 0.3 };
+        S4.moves.sweep_peril.fxAct = { sheet: "boss4fx3", row: 2, c0: 0, nf: 2, ox: 120, oy: -50, w: 560, dur: 0.4 };
         S4.poolP2 = S4.pool;
         S4.farMoves = ["flyswords"];
         S4.bg = "arena4"; S4.bgDim = 0.42; /* v0.8.90 劍塚調暗 */ S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
@@ -4852,7 +4858,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       function spawnMoveFx(f) {
         if (Array.isArray(f)) { f.forEach(spawnMoveFx); return; } /* v0.8.59 一次可出多個特效（刀弧＋落地震波） */
         if (!f || !fxReady(f.sheet)) return;
-        spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha, rot: (f.rot || 0) * Boss.facing });
+        spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha, rot: (f.rot || 0) * Boss.facing, c0: f.c0, nf: f.nf });
       }
       function triggerMacro(k) { const parts = k.split("+"); triggerBossMove(parts[0], parts.slice(1)); }
       /* v0.8.66 飛劍招前搖：在出手高度召喚成形（flySwordArt.summonRow）；幻影也照它要射的高度召喚，避免洩漏真身 */
@@ -6436,6 +6442,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         setTelemetry("★ 三道封印盡斷！主劍分作六劍——等劍插地，以蓄力斬一一擊落！");
         hintOnce("form_intro", "六劍陣：劍出招後會插地片刻，這時用【蓄力斬】把它打落");
       }
+      /* v0.8.94 劍陣特效（boss4fx3 列 3）：插地漣漪（前 2 格）、被打落的碎裂爆光（後 2 格）、橫穿拖尾（列 2 後 2 格） */
+      function plantFx(x) { if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, x, Config.groundY - 30, { c0: 0, nf: 2, w: 380, dur: 0.6 }); }
       function swordDown(h) {
         const P = Boss._pp, G = Config.groundY;
         h.dead = true; h.planted = false; h.busy = false; h.flash = 6;
@@ -6445,7 +6453,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         triggerHitstopMs(100); addTrauma(0.5); hapticBuzz([40, 30, 70]);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.06);
         spawnSparks(h.x, G - 120, "execution", Player.facing);
-        if (fxReady("spark")) spawnFx("spark", 3, h.x, G - 120, { w: 420, dur: 0.5 });
+        if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, h.x, G - 110, { c0: 2, nf: 2, w: 440, dur: 0.5 });
         const n = formAlive().length, tot = P.hands.length;
         spawnFloatingText(h.x, G - 300, `劍落！ ${"◆".repeat(n)}${"◇".repeat(tot - n)}`, "#fde047", 1.3);
         setTelemetry(`★ 蓄力斬擊落一劍！劍陣剩 ${n} 把`);
@@ -6593,6 +6601,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               a.st = "rest"; a.t = 0;
             }
           } else if (a.st === "rest") {
+            if (!a._rip) { a._rip = 1; plantFx(h.x); }
             h.ty = G + 60; h.planted = true;
             if (a.t >= m.rest) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
@@ -6615,6 +6624,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             }
             if (a.t >= (m.count - 1) * m.gap + 0.12) { a.st = "rest"; a.t = 0; }
           } else if (a.st === "rest") { /* v0.8.92 發完劍氣：劍尖朝下插進地面，可擊落 */
+            if (!a._rip) { a._rip = 1; plantFx(h.x); }
             h.ty = G + 60; h.tang = 0.25 * (Player.x >= h.x ? 1 : -1); h.planted = a.t > 0.2;
             if (a.t >= 0.2 + (m.rest || 1.4)) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
@@ -6628,13 +6638,15 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           if (a.st === "windup") {
             const pull = Math.min(1, a.t / m.windup);
             h.tx = a.x0 + a.s * 70 * pull; h.ty = gy; h.tang = a.s * Math.PI / 2; /* 劍尖朝穿刺方向（-a.s） */
-            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 0.9, 0.7); }
+            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 0.9, 0.7);
+              if (fxReady("boss4fx3")) { const dr = -a.s, tw = 560; spawnFx("boss4fx3", 2, h.x - dr * tw * 0.4, gy, { c0: 2, nf: 2, w: tw, h: 300, dur: m.active + 0.12, facing: dr, follow: () => ({ x: h.x - dr * tw * 0.4, y: gy }) }); } }
           } else if (a.st === "active") {
             const p = Math.min(1, a.t / m.active);
             h.x = h.tx = a.x0 + (a.x1 - a.x0) * p; h.y = h.ty = gy;
             if (!a.hit && Math.abs(Player.x - h.x) <= 110 && Player.y >= G - 230) { a.hit = true; partStrike(h.x + a.s * 80, m); }
             if (a.t >= m.active) { a.st = "rest"; a.t = 0; }
           } else if (a.st === "rest") { /* v0.8.92 穿過後插地，可擊落 */
+            if (!a._rip) { a._rip = 1; plantFx(h.x); }
             h.ty = G + 60; h.tang = -a.s * 0.3; h.planted = a.t > 0.15;
             if (a.t >= 0.15 + m.rest) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
@@ -6867,6 +6879,29 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (a && (a.st === "windup" || a.st === "active")) return pre + "2";
         return pre + "1";
       }
+      /* v0.8.94 預警生圖（assets/fx/boss4warn.webp，4×4 黑底：列 0 劍落紅線、列 1 地面危險橢圓、列 2 橫掃預警條、列 3 合圍箭頭；每列 4 格由淡到強，依前搖進度 p 選格） */
+      function warnDraw(row, p, x, y, w, h, flip) {
+        const sh = fxSheet("boss4warn"); if (!sh.ok) return;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.92;
+        ctx.translate(x, y); ctx.scale(flip || 1, 1);
+        ctx.drawImage(sh.img, Math.min(3, Math.floor(p * 4)) * 256, row * 256, 256, 256, -w / 2, -h / 2, w, h);
+        ctx.restore();
+      }
+      function warnArt(a, p, G) {
+        const k = a.key, m = a.m;
+        if (k === "sky") { if (a.st === "windup") warnDraw(0, p, a.x, G - 0.39 * 640, 640, 640, 1); return true; }
+        if (k === "plant") return true;
+        if (k === "palm") { if (a.st === "windup" || a.st === "active") { const w = 2 * m.r / 0.75; warnDraw(1, p, a.hand.x, G + 2 - 0.16 * w, w, w, 1); } return true; }
+        if (k === "sweep" || k === "grab") {
+          if (a.st === "windup") { const x0 = Math.min(a.x0, a.x1), x1 = Math.max(a.x0, a.x1); warnDraw(2, p, (x0 + x1) / 2, k === "grab" ? G - 70 : G - 20, (x1 - x0) / 0.88, 230, Math.sign(a.x1 - a.x0) || 1); }
+          return true;
+        }
+        if (k === "pincer") {
+          if (a.st === "windup" && a.s === 1) { warnDraw(3, p, a.x0 - 640, G - 76, (1280 + 160) / 0.84, 170, 1); }
+          return true;
+        }
+        return false;
+      }
       function pMark(x, y, p, kind) { /* 預警圈：黃＝可招架、紅＝危（同 drawThreatMarker） */
         const key = kind === "red" ? 1 : kind === "blue" ? 2 : 0;
         if (fxReady("mark")) {
@@ -6908,9 +6943,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
         ctx.restore();
         /* 地面預警 */
-        const acts = [P.act, P.side, P.rainAct].filter(Boolean);
+        const acts = [...new Set([P.act, P.side, P.rainAct, ...(P.facts || [])])].filter(Boolean);
+        const warnOk = fxReady("boss4warn");
         for (const a of acts) {
           const m = a.m, p = a.st === "windup" ? Math.min(1, a.t / m.windup) : 1;
+          if (warnOk && warnArt(a, p, G)) continue; /* v0.8.94 預警改用生圖（boss4warn） */
           ctx.save();
           if ((a.key === "sky") && a.st === "windup") {
             ctx.fillStyle = `rgba(239,68,68,${0.12 + 0.3 * p})`; ctx.fillRect(a.x - m.w / 2, G - 14, m.w, 20);
@@ -6935,8 +6972,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         for (const k of P.marks) {
           const p = 1 - k.warn / k.w0;
           ctx.save();
+          if (warnOk) { const w = 2 * k.r / 0.75; warnDraw(1, p, k.x, G + 2 - 0.16 * w, w, w, 1); }
+          else {
           ctx.fillStyle = `rgba(239,68,68,${0.15 + 0.35 * p})`; ctx.beginPath(); ctx.ellipse(k.x, G + 2, k.r, 14, 0, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = "#f87171"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(k.x, G + 2, k.r * (1 - p * 0.6), 14 * (1 - p * 0.6), 0, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeStyle = "#f87171"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(k.x, G + 2, k.r * (1 - p * 0.6), 14 * (1 - p * 0.6), 0, 0, Math.PI * 2); ctx.stroke(); }
           if (k.warn < 0.18) { /* 落下中的劍 */
             const fy = G - 40 - (k.warn / 0.18) * 520;
             const A = partsDef().art, fs = A && fxReady(A.fx) && fxSheet(A.fx).img;
@@ -9395,7 +9434,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           facing: o.facing || 1, anchor: o.anchor || "c", rot: o.rot || 0, alpha: o.alpha == null ? 1 : o.alpha,
           loop: !!o.loop, fps: o.fps || 12, follow: o.follow || null, add: o.add !== false,
           vx: o.vx || 0, vy: o.vy || 0, grav: o.grav || 0, grow: o.grow || 0,
-          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back
+          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back, c0: o.c0 || 0, nf: o.nf || 4 /* v0.8.94 只播該列的第 c0 起 nf 格（2 格一組的特效） */
         });
         if (Game.fxList.length > 60) Game.fxList.shift();
       }
@@ -9435,7 +9474,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           const sh = fxSheet(f.sheet);
           if (!sh.ok) continue;
           const t = f.age / f.dur;
-          const col = f.col >= 0 ? f.col : (f.loop ? Math.floor(f.age * f.fps) % 4 : Math.min(3, Math.floor(t * 4)));
+          const col = f.col >= 0 ? f.col : f.c0 + (f.loop ? Math.floor(f.age * f.fps) % f.nf : Math.min(f.nf - 1, Math.floor(t * f.nf)));
           const a = f.alpha * (t > 0.78 ? (1 - t) / 0.22 : 1);
           ctx.save();
           ctx.globalCompositeOperation = f.add ? "lighter" : "source-over";

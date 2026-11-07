@@ -219,6 +219,8 @@
         setTelemetry("★ 三道封印盡斷！主劍分作六劍——等劍插地，以蓄力斬一一擊落！");
         hintOnce("form_intro", "六劍陣：劍出招後會插地片刻，這時用【蓄力斬】把它打落");
       }
+      /* v0.8.94 劍陣特效（boss4fx3 列 3）：插地漣漪（前 2 格）、被打落的碎裂爆光（後 2 格）、橫穿拖尾（列 2 後 2 格） */
+      function plantFx(x) { if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, x, Config.groundY - 30, { c0: 0, nf: 2, w: 380, dur: 0.6 }); }
       function swordDown(h) {
         const P = Boss._pp, G = Config.groundY;
         h.dead = true; h.planted = false; h.busy = false; h.flash = 6;
@@ -228,7 +230,7 @@
         triggerHitstopMs(100); addTrauma(0.5); hapticBuzz([40, 30, 70]);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.06);
         spawnSparks(h.x, G - 120, "execution", Player.facing);
-        if (fxReady("spark")) spawnFx("spark", 3, h.x, G - 120, { w: 420, dur: 0.5 });
+        if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, h.x, G - 110, { c0: 2, nf: 2, w: 440, dur: 0.5 });
         const n = formAlive().length, tot = P.hands.length;
         spawnFloatingText(h.x, G - 300, `劍落！ ${"◆".repeat(n)}${"◇".repeat(tot - n)}`, "#fde047", 1.3);
         setTelemetry(`★ 蓄力斬擊落一劍！劍陣剩 ${n} 把`);
@@ -376,6 +378,7 @@
               a.st = "rest"; a.t = 0;
             }
           } else if (a.st === "rest") {
+            if (!a._rip) { a._rip = 1; plantFx(h.x); }
             h.ty = G + 60; h.planted = true;
             if (a.t >= m.rest) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
@@ -398,6 +401,7 @@
             }
             if (a.t >= (m.count - 1) * m.gap + 0.12) { a.st = "rest"; a.t = 0; }
           } else if (a.st === "rest") { /* v0.8.92 發完劍氣：劍尖朝下插進地面，可擊落 */
+            if (!a._rip) { a._rip = 1; plantFx(h.x); }
             h.ty = G + 60; h.tang = 0.25 * (Player.x >= h.x ? 1 : -1); h.planted = a.t > 0.2;
             if (a.t >= 0.2 + (m.rest || 1.4)) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
@@ -411,13 +415,15 @@
           if (a.st === "windup") {
             const pull = Math.min(1, a.t / m.windup);
             h.tx = a.x0 + a.s * 70 * pull; h.ty = gy; h.tang = a.s * Math.PI / 2; /* 劍尖朝穿刺方向（-a.s） */
-            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 0.9, 0.7); }
+            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 0.9, 0.7);
+              if (fxReady("boss4fx3")) { const dr = -a.s, tw = 560; spawnFx("boss4fx3", 2, h.x - dr * tw * 0.4, gy, { c0: 2, nf: 2, w: tw, h: 300, dur: m.active + 0.12, facing: dr, follow: () => ({ x: h.x - dr * tw * 0.4, y: gy }) }); } }
           } else if (a.st === "active") {
             const p = Math.min(1, a.t / m.active);
             h.x = h.tx = a.x0 + (a.x1 - a.x0) * p; h.y = h.ty = gy;
             if (!a.hit && Math.abs(Player.x - h.x) <= 110 && Player.y >= G - 230) { a.hit = true; partStrike(h.x + a.s * 80, m); }
             if (a.t >= m.active) { a.st = "rest"; a.t = 0; }
           } else if (a.st === "rest") { /* v0.8.92 穿過後插地，可擊落 */
+            if (!a._rip) { a._rip = 1; plantFx(h.x); }
             h.ty = G + 60; h.tang = -a.s * 0.3; h.planted = a.t > 0.15;
             if (a.t >= 0.15 + m.rest) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
@@ -650,6 +656,29 @@
         if (a && (a.st === "windup" || a.st === "active")) return pre + "2";
         return pre + "1";
       }
+      /* v0.8.94 預警生圖（assets/fx/boss4warn.webp，4×4 黑底：列 0 劍落紅線、列 1 地面危險橢圓、列 2 橫掃預警條、列 3 合圍箭頭；每列 4 格由淡到強，依前搖進度 p 選格） */
+      function warnDraw(row, p, x, y, w, h, flip) {
+        const sh = fxSheet("boss4warn"); if (!sh.ok) return;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.92;
+        ctx.translate(x, y); ctx.scale(flip || 1, 1);
+        ctx.drawImage(sh.img, Math.min(3, Math.floor(p * 4)) * 256, row * 256, 256, 256, -w / 2, -h / 2, w, h);
+        ctx.restore();
+      }
+      function warnArt(a, p, G) {
+        const k = a.key, m = a.m;
+        if (k === "sky") { if (a.st === "windup") warnDraw(0, p, a.x, G - 0.39 * 640, 640, 640, 1); return true; }
+        if (k === "plant") return true;
+        if (k === "palm") { if (a.st === "windup" || a.st === "active") { const w = 2 * m.r / 0.75; warnDraw(1, p, a.hand.x, G + 2 - 0.16 * w, w, w, 1); } return true; }
+        if (k === "sweep" || k === "grab") {
+          if (a.st === "windup") { const x0 = Math.min(a.x0, a.x1), x1 = Math.max(a.x0, a.x1); warnDraw(2, p, (x0 + x1) / 2, k === "grab" ? G - 70 : G - 20, (x1 - x0) / 0.88, 230, Math.sign(a.x1 - a.x0) || 1); }
+          return true;
+        }
+        if (k === "pincer") {
+          if (a.st === "windup" && a.s === 1) { warnDraw(3, p, a.x0 - 640, G - 76, (1280 + 160) / 0.84, 170, 1); }
+          return true;
+        }
+        return false;
+      }
       function pMark(x, y, p, kind) { /* 預警圈：黃＝可招架、紅＝危（同 drawThreatMarker） */
         const key = kind === "red" ? 1 : kind === "blue" ? 2 : 0;
         if (fxReady("mark")) {
@@ -691,9 +720,11 @@
         }
         ctx.restore();
         /* 地面預警 */
-        const acts = [P.act, P.side, P.rainAct].filter(Boolean);
+        const acts = [...new Set([P.act, P.side, P.rainAct, ...(P.facts || [])])].filter(Boolean);
+        const warnOk = fxReady("boss4warn");
         for (const a of acts) {
           const m = a.m, p = a.st === "windup" ? Math.min(1, a.t / m.windup) : 1;
+          if (warnOk && warnArt(a, p, G)) continue; /* v0.8.94 預警改用生圖（boss4warn） */
           ctx.save();
           if ((a.key === "sky") && a.st === "windup") {
             ctx.fillStyle = `rgba(239,68,68,${0.12 + 0.3 * p})`; ctx.fillRect(a.x - m.w / 2, G - 14, m.w, 20);
@@ -718,8 +749,10 @@
         for (const k of P.marks) {
           const p = 1 - k.warn / k.w0;
           ctx.save();
+          if (warnOk) { const w = 2 * k.r / 0.75; warnDraw(1, p, k.x, G + 2 - 0.16 * w, w, w, 1); }
+          else {
           ctx.fillStyle = `rgba(239,68,68,${0.15 + 0.35 * p})`; ctx.beginPath(); ctx.ellipse(k.x, G + 2, k.r, 14, 0, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = "#f87171"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(k.x, G + 2, k.r * (1 - p * 0.6), 14 * (1 - p * 0.6), 0, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeStyle = "#f87171"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(k.x, G + 2, k.r * (1 - p * 0.6), 14 * (1 - p * 0.6), 0, 0, Math.PI * 2); ctx.stroke(); }
           if (k.warn < 0.18) { /* 落下中的劍 */
             const fy = G - 40 - (k.warn / 0.18) * 520;
             const A = partsDef().art, fs = A && fxReady(A.fx) && fxSheet(A.fx).img;

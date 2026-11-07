@@ -51,7 +51,7 @@
           facing: o.facing || 1, anchor: o.anchor || "c", rot: o.rot || 0, alpha: o.alpha == null ? 1 : o.alpha,
           loop: !!o.loop, fps: o.fps || 12, follow: o.follow || null, add: o.add !== false,
           vx: o.vx || 0, vy: o.vy || 0, grav: o.grav || 0, grow: o.grow || 0,
-          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back
+          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back, c0: o.c0 || 0, nf: o.nf || 4 /* v0.8.94 只播該列的第 c0 起 nf 格（2 格一組的特效） */
         });
         if (Game.fxList.length > 60) Game.fxList.shift();
       }
@@ -91,7 +91,7 @@
           const sh = fxSheet(f.sheet);
           if (!sh.ok) continue;
           const t = f.age / f.dur;
-          const col = f.col >= 0 ? f.col : (f.loop ? Math.floor(f.age * f.fps) % 4 : Math.min(3, Math.floor(t * 4)));
+          const col = f.col >= 0 ? f.col : f.c0 + (f.loop ? Math.floor(f.age * f.fps) % f.nf : Math.min(f.nf - 1, Math.floor(t * f.nf)));
           const a = f.alpha * (t > 0.78 ? (1 - t) / 0.22 : 1);
           ctx.save();
           ctx.globalCompositeOperation = f.add ? "lighter" : "source-over";

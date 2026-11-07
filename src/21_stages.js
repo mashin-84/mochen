@@ -355,6 +355,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Object.values(S4.moves).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S4.parts.moves.rain2 = Object.assign({}, S4.parts.moves.rain, { name: "萬劍歸宗・疾", gap: 0.55, warn: 0.65, per: 4 });
         S4.pool = [["slash1", 26], ["ring_slash", 22], ["thrust_peril", 15], ["sweep_peril", 13], ["flyswords", 14, "ranged"], ["rain2", 10, "ranged"]];
+        /* v0.8.94 古靈四招專屬特效（boss4fx3：列 0 驚鴻斬弧、列 1 前 2 格環劍旋斬／後 2 格突進拖尾、列 2 前 2 格掃地劍氣／後 2 格合圍拖尾、列 3 前 2 格插地漣漪／後 2 格擊落碎裂） */
+        S4.fxSheets = ["boss4fx3", "boss4warn"]; S4.arcArt = "boss4fx3";
+        S4.moves.slash1.fxAct = { sheet: "boss4fx3", row: 0, ox: 150, oy: -140, w: 440, dur: 0.38 };
+        S4.moves.ring_slash.fxHit = { sheet: "boss4fx3", row: 1, c0: 0, nf: 2, ox: 0, oy: -120, w: 520, dur: 0.3 };
+        S4.moves.thrust_peril.fxAct = { sheet: "boss4fx3", row: 1, c0: 2, nf: 2, ox: 280, oy: -140, w: 680, dur: 0.3 };
+        S4.moves.sweep_peril.fxAct = { sheet: "boss4fx3", row: 2, c0: 0, nf: 2, ox: 120, oy: -50, w: 560, dur: 0.4 };
         S4.poolP2 = S4.pool;
         S4.farMoves = ["flyswords"];
         S4.bg = "arena4"; S4.bgDim = 0.42; /* v0.8.90 劍塚調暗 */ S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
