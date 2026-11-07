@@ -1662,6 +1662,12 @@
 </style>
 </head>
 <body>
+  <!-- v0.8.114 載入畫面：主要圖片載完才揭開，避免重新整理時先閃出灰盒介面／方塊人／師妹缺圖 -->
+  <div id="boot-loading" style="position:fixed;inset:0;z-index:99999;background:#0b1220;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#cbd5e1;font-family:'Noto Serif TC','Songti TC','PMingLiU',serif;transition:opacity .45s ease-out;">
+    <div style="font-size:24px;letter-spacing:.5em;color:#fde68a;text-indent:.5em;">墨　塵　傳</div>
+    <div style="margin-top:16px;font-size:13px;letter-spacing:.3em;opacity:.7;">載入中…</div>
+    <div style="margin-top:16px;width:180px;height:3px;background:#1e293b;border-radius:2px;overflow:hidden;"><div id="boot-bar" style="height:100%;width:6%;background:#7dd3fc;transition:width .3s;"></div></div>
+  </div>
   <div id="game-container">
     <canvas id="battle-canvas"></canvas>
 
@@ -2077,7 +2083,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.113";
+      const ASSET_VER = "0.8.114";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -7611,8 +7617,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
       function getBgArt(key) {
         if (!BG_ART[key]) {
-          const a = { ok: false, img: new Image() };
+          const a = { ok: false, fail: false, n: 0, img: new Image() };
           a.img.onload = () => { a.ok = true; };
+          a.img.onerror = () => { if (a.n < 3) { a.n++; setTimeout(() => { a.img.src = "assets/bg/" + key + ".webp?v=" + ASSET_VER + "&r=" + a.n; }, 500 * a.n); } else a.fail = true; }; /* v0.8.114 載入失敗自動重試 3 次 */
           a.img.src = "assets/bg/" + key + ".webp";
           BG_ART[key] = a;
         }
@@ -8704,9 +8711,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             const sp = { key, imgs: {}, ready: 0, walk: [], walkReady: 0, phase: 0, lastX: null,
               death: { kneel: { ok: false, img: new Image() }, fall: { ok: false, img: new Image() }, lie: { ok: false, img: new Image() } } };
             BOSS_FRAME_NAMES.forEach(name => {
-              const img = new Image();
-              img.onload = () => { sp.ready++; };
-              img.onerror = () => { console.warn("Failed to load: " + dir + name); };
+              const img = new Image(); let rn = 0;
+              img.onload = () => { if (!img._ok) { img._ok = true; sp.ready++; } };
+              img.onerror = () => { if (rn < 3) { rn++; setTimeout(() => { img.src = dir + name + ".webp?v=" + ASSET_VER + "&r=" + rn; }, 500 * rn); } else console.warn("Failed to load: " + dir + name); };
               img.src = dir + name + ".webp";
               sp.imgs[name] = img;
             });
@@ -9411,8 +9418,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
       MC_NAMES.forEach(name => {
         const img = new Image();
-        img.onload = () => { MC_READY++; };
-        img.onerror = () => { console.warn("Failed to load: " + name); };
+        let rn = 0;
+        img.onload = () => { MC_READY = MC_NAMES.filter(n => MC_IMGS[n] && MC_IMGS[n].complete && MC_IMGS[n].naturalWidth > 0).length; }; /* v0.8.114 用實際載入狀態計數（原本 ++ 計數，重複觸發或失敗就永遠 !==16＝方塊人） */
+        img.onerror = () => { if (rn < 3) { rn++; setTimeout(() => { img.src = 'assets/mc/' + name + '.webp?v=' + ASSET_VER + '&r=' + rn; }, 500 * rn); } else console.warn("Failed to load: " + name); };
         img.src = 'assets/mc/' + name + '.webp';
         MC_IMGS[name] = img;
       });
@@ -11695,7 +11703,23 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
       }
 
+      /* v0.8.114 載入畫面：等主角 16 格、營地用圖（師妹四姿勢、山門、營火）與當下所有請求中的背景圖載完才揭開；最久等 9 秒 */
+      const BOOT_KEYS = ["hub_shimei_1", "hub_shimei_2", "hub_shimei_3", "hub_shimei_4", "hub_gate", "hub_gate_front", "hub_fire_base"];
+      function bootGate() {
+        const el = document.getElementById("boot-loading"), bar = document.getElementById("boot-bar"), t0 = performance.now();
+        if (!el) return;
+        const tick = () => {
+          const okK = BOOT_KEYS.filter(k => BG_ART[k] && (BG_ART[k].ok || BG_ART[k].fail)).length;
+          const pend = Object.values(BG_ART).filter(a => a.img && a.img.src && !a.ok && !a.fail).length; /* 預設的 camp／s1 空殼沒有 src，不算 */
+          if (bar) bar.style.width = Math.min(100, Math.round(100 * (Math.min(MC_READY, 16) + okK) / (16 + BOOT_KEYS.length))) + "%";
+          if ((MC_READY >= 16 && okK === BOOT_KEYS.length && pend === 0) || performance.now() - t0 > 9000) { el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); return; }
+          setTimeout(tick, 100);
+        };
+        tick();
+      }
       window.onload = function () {
+        BOOT_KEYS.forEach(getBgArt); fxSheet("campfire"); /* 師妹各姿勢一開始就載好（原本到那個姿勢才載，圖沒到就整個人消失） */
+        bootGate();
         refreshUnlocked();
         loadPersistedEchoes();
         initScenery();

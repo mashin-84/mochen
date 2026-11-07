@@ -55,9 +55,9 @@
             const sp = { key, imgs: {}, ready: 0, walk: [], walkReady: 0, phase: 0, lastX: null,
               death: { kneel: { ok: false, img: new Image() }, fall: { ok: false, img: new Image() }, lie: { ok: false, img: new Image() } } };
             BOSS_FRAME_NAMES.forEach(name => {
-              const img = new Image();
-              img.onload = () => { sp.ready++; };
-              img.onerror = () => { console.warn("Failed to load: " + dir + name); };
+              const img = new Image(); let rn = 0;
+              img.onload = () => { if (!img._ok) { img._ok = true; sp.ready++; } };
+              img.onerror = () => { if (rn < 3) { rn++; setTimeout(() => { img.src = dir + name + ".webp?v=" + ASSET_VER + "&r=" + rn; }, 500 * rn); } else console.warn("Failed to load: " + dir + name); };
               img.src = dir + name + ".webp";
               sp.imgs[name] = img;
             });
@@ -762,8 +762,9 @@
 
       MC_NAMES.forEach(name => {
         const img = new Image();
-        img.onload = () => { MC_READY++; };
-        img.onerror = () => { console.warn("Failed to load: " + name); };
+        let rn = 0;
+        img.onload = () => { MC_READY = MC_NAMES.filter(n => MC_IMGS[n] && MC_IMGS[n].complete && MC_IMGS[n].naturalWidth > 0).length; }; /* v0.8.114 用實際載入狀態計數（原本 ++ 計數，重複觸發或失敗就永遠 !==16＝方塊人） */
+        img.onerror = () => { if (rn < 3) { rn++; setTimeout(() => { img.src = 'assets/mc/' + name + '.webp?v=' + ASSET_VER + '&r=' + rn; }, 500 * rn); } else console.warn("Failed to load: " + name); };
         img.src = 'assets/mc/' + name + '.webp';
         MC_IMGS[name] = img;
       });

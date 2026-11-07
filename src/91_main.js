@@ -183,7 +183,23 @@
         }
       }
 
+      /* v0.8.114 載入畫面：等主角 16 格、營地用圖（師妹四姿勢、山門、營火）與當下所有請求中的背景圖載完才揭開；最久等 9 秒 */
+      const BOOT_KEYS = ["hub_shimei_1", "hub_shimei_2", "hub_shimei_3", "hub_shimei_4", "hub_gate", "hub_gate_front", "hub_fire_base"];
+      function bootGate() {
+        const el = document.getElementById("boot-loading"), bar = document.getElementById("boot-bar"), t0 = performance.now();
+        if (!el) return;
+        const tick = () => {
+          const okK = BOOT_KEYS.filter(k => BG_ART[k] && (BG_ART[k].ok || BG_ART[k].fail)).length;
+          const pend = Object.values(BG_ART).filter(a => a.img && a.img.src && !a.ok && !a.fail).length; /* 預設的 camp／s1 空殼沒有 src，不算 */
+          if (bar) bar.style.width = Math.min(100, Math.round(100 * (Math.min(MC_READY, 16) + okK) / (16 + BOOT_KEYS.length))) + "%";
+          if ((MC_READY >= 16 && okK === BOOT_KEYS.length && pend === 0) || performance.now() - t0 > 9000) { el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); return; }
+          setTimeout(tick, 100);
+        };
+        tick();
+      }
       window.onload = function () {
+        BOOT_KEYS.forEach(getBgArt); fxSheet("campfire"); /* 師妹各姿勢一開始就載好（原本到那個姿勢才載，圖沒到就整個人消失） */
+        bootGate();
         refreshUnlocked();
         loadPersistedEchoes();
         initScenery();

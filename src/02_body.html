@@ -1,5 +1,11 @@
 </head>
 <body>
+  <!-- v0.8.114 載入畫面：主要圖片載完才揭開，避免重新整理時先閃出灰盒介面／方塊人／師妹缺圖 -->
+  <div id="boot-loading" style="position:fixed;inset:0;z-index:99999;background:#0b1220;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#cbd5e1;font-family:'Noto Serif TC','Songti TC','PMingLiU',serif;transition:opacity .45s ease-out;">
+    <div style="font-size:24px;letter-spacing:.5em;color:#fde68a;text-indent:.5em;">墨　塵　傳</div>
+    <div style="margin-top:16px;font-size:13px;letter-spacing:.3em;opacity:.7;">載入中…</div>
+    <div style="margin-top:16px;width:180px;height:3px;background:#1e293b;border-radius:2px;overflow:hidden;"><div id="boot-bar" style="height:100%;width:6%;background:#7dd3fc;transition:width .3s;"></div></div>
+  </div>
   <div id="game-container">
     <canvas id="battle-canvas"></canvas>
 

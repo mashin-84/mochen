@@ -287,8 +287,9 @@
       }
       function getBgArt(key) {
         if (!BG_ART[key]) {
-          const a = { ok: false, img: new Image() };
+          const a = { ok: false, fail: false, n: 0, img: new Image() };
           a.img.onload = () => { a.ok = true; };
+          a.img.onerror = () => { if (a.n < 3) { a.n++; setTimeout(() => { a.img.src = "assets/bg/" + key + ".webp?v=" + ASSET_VER + "&r=" + a.n; }, 500 * a.n); } else a.fail = true; }; /* v0.8.114 載入失敗自動重試 3 次 */
           a.img.src = "assets/bg/" + key + ".webp";
           BG_ART[key] = a;
         }
