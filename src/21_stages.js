@@ -317,44 +317,46 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
          二階段：劍魂核心（一般 Boss AI、彈刀戰），架勢滿處決即結束（execKill）；巨手退到兩側偶爾壓掌。 */
       {
         const S4 = Stages[4];
-        S4.name = "萬劍古靈"; S4.maxHp = 2400; S4.maxPosture = 120; S4.deathblows = 1;
-        S4.execKill = true; /* 二階段處決＝擊敗（核心血量只影響架勢恢復速度） */
+        S4.name = "萬劍古靈"; S4.maxHp = 2400; S4.maxPosture = 120; S4.deathblows = 2;
+        S4.execKill = 2; /* v0.8.90 二階段人形劍魂：處決 2 次才擊敗 */
+        S4.sprite = "boss4s"; S4.spriteExtras = ["20_spin_wind", "21_spin_hit"]; /* v0.8.90 二階段人形古靈（動作表 16 格：03/04 飄移、20/21 旋斬） */
         S4.camZoomP = { 1: 0.85, 2: 0.92 }; /* 鏡頭依階段縮放 */
         S4.parts = {
           seals: 3, handPosture: 100,
           moves: { /* 一階段部位招式（時間單位秒；不受卷二加速影響，數字即實際值） */
             sky:    { name: "天劍斬落", windup: 1.0, track: 0.7, active: 0.14, stuck: 2.0, pull: 0.45, w: 150, damage: 260, unblockable: true },
             sweep:  { name: "【危】橫掃千軍", windup: 0.8, active: 0.5, span: 1500, damage: 280, isPerilous: true, perilType: "sweep" },
-            palm:   { name: "巨掌壓落", windup: 1.1, track: 0.65, active: 0.12, rest: 1.0, lift: 0.45, r: 150, damage: 220, unblockable: true },
-            finger: { name: "指劍三連", windup: 0.6, count: 3, gap: 0.4, speed: 820, recover: 0.6, damage: 110 },
+            palm:   { name: "副劍落", windup: 1.1, track: 0.65, active: 0.12, rest: 1.0, lift: 0.45, r: 150, damage: 220, unblockable: true },
+            finger: { name: "劍氣三連", windup: 0.6, count: 3, gap: 0.4, speed: 820, recover: 0.6, damage: 110 },
             rain:   { name: "萬劍歸宗", windup: 0.6, waves: 3, per: 5, gap: 0.75, warn: 0.8, r: 62, recover: 0.5, damage: 140, unblockable: true },
-            grab:   { name: "【危】巨手擒拿", windup: 0.85, active: 0.38, span: 1300, rest: 0.6, lift: 0.4, damage: 300, isPerilous: true, perilType: "grab" },
+            grab:   { name: "【危】劍陣橫穿", windup: 0.85, active: 0.38, span: 1300, rest: 0.6, lift: 0.4, damage: 300, isPerilous: true, perilType: "grab" },
             plant:  { name: "古靈失衡", windup: 0.5, active: 0.12, stuck: 3.0, pull: 0.45, w: 150, damage: 0 }
           },
           pool: [["sky", 26], ["sweep", 16], ["palm", 20], ["finger", 16], ["rain", 10], ["grab", 12]],
           skyPity: 3, /* 連續 3 招沒出天劍斬落，下一招必出（封印要有機會露出） */
           cd: 0.7, /* 招與招之間的空檔 */
           handHit: { normal: 12, heavy: 18, charged: 30, reflect: 15 }, /* 砍手／折射打手的架勢（滿 100 巨手崩勢 → 古靈失衡、巨劍插地 3 秒） */
-          p2: { palmEvery: [7, 10], palmDmg: 180 } /* 二階段兩側巨手偶爾壓掌 */,
+          p2: { palmEvery: [9, 13], palmDmg: 180 } /* 二階段兩側巨手偶爾壓掌 */,
           /* v0.8.85 生圖：assets/boss4/h01～h12（巨手，0.5 倍、下緣中點錨點）、sw1／sw2／sw3（巨劍 0.6 倍，畫時 ×swK）；boss4fx 列 0 核心、1 核心蓄光、2 封印環、3 小飛劍 */
           art: { dir: "boss4", fx: "boss4fx", bgBody: true, swK: 0.667, swTip: [[94.5, 803], [103, 811]], ringY: [416, 442, 470] }
         };
         S4.moves = {
-          slash1: { name: "劍魂・驚鴻", windup: 0.45, active: 0.14, recover: 0.42, range: 185, lunge: 380, damage: 150, parryPostureDmg: 22 },
-          ring_slash: { name: "環劍旋斬", isCombo: true, comboTotalHits: 3, comboInterval: 0.3, comboDamagePerHit: 90, windup: 0.5, active: 0.75, recover: 0.55, range: 190, lunge: 260, damage: 270, parryPostureDmg: 22 },
-          thrust_peril: { name: "【危】核心突進 (前閃看破)", windup: 0.75, active: 0.2, recover: 0.7, range: 280, lunge: 920, damage: 300, isPerilous: true, perilType: "thrust" },
-          flyswords: { name: "繞身飛劍", isRanged: true, bulletCount: 3, bulletGap: 0.4, bulletSpeed: 760, bulletTrajectory: "linear", bulletColor: "#7dd3fc", bulletY: [-175, -145, -115], bulletX: 60, windup: 0.6, active: 0.9, recover: 0.5, range: 600, lunge: 0, damage: 110, parryPostureDmg: 18 },
-          rain2: { name: "萬劍歸宗・疾", isMobility: true, partsCall: "rain2", windup: 0.6, active: 0.3, recover: 1.6, range: 0, lunge: 0, damage: 0 }
+          slash1: { name: "劍魂・驚鴻", frames: { windup: "07_windup", active: "09_slash", recover: "10_slash_rec" }, windup: 0.45, active: 0.14, recover: 0.42, range: 185, lunge: 380, damage: 150, parryPostureDmg: 22 },
+          ring_slash: { name: "環劍旋斬", frames: { windup: "20_spin_wind", active: "21_spin_hit", recover: "10_slash_rec" }, isCombo: true, comboTotalHits: 3, comboInterval: 0.3, comboDamagePerHit: 90, windup: 0.5, active: 0.75, recover: 0.55, range: 190, lunge: 260, damage: 270, parryPostureDmg: 22 },
+          thrust_peril: { name: "【危】劍魂突進 (前閃看破)", frames: { windup: "08_windup_thrust", active: "11_thrust", recover: "12_thrust_rec" }, windup: 0.75, active: 0.2, recover: 0.7, range: 280, lunge: 920, damage: 300, isPerilous: true, perilType: "thrust" },
+          flyswords: { name: "劍指飛劍", frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, isRanged: true, bulletCount: 3, bulletGap: 0.4, bulletSpeed: 760, bulletTrajectory: "linear", bulletColor: "#7dd3fc", bulletY: [-175, -145, -115], bulletX: 60, windup: 0.6, active: 0.9, recover: 0.5, range: 600, lunge: 0, damage: 110, parryPostureDmg: 18 },
+          rain2: { name: "萬劍歸宗・疾", frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, isMobility: true, partsCall: "rain2", windup: 0.6, active: 0.3, recover: 1.6, range: 0, lunge: 0, damage: 0 }
         };
+        S4.moves.sweep_peril = { name: "【危】劍魂掃地 (跳躍)", frames: { windup: "07_windup", active: "13_sweep", recover: "10_slash_rec" }, windup: 0.7, active: 0.2, recover: 0.65, range: 230, lunge: 300, damage: 260, isPerilous: true, perilType: "sweep" };
         Object.values(S4.moves).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S4.parts.moves.rain2 = Object.assign({}, S4.parts.moves.rain, { name: "萬劍歸宗・疾", gap: 0.55, warn: 0.65, per: 4 });
-        S4.pool = [["slash1", 26], ["ring_slash", 26], ["thrust_peril", 18], ["flyswords", 16, "ranged"], ["rain2", 12, "ranged"]];
+        S4.pool = [["slash1", 26], ["ring_slash", 22], ["thrust_peril", 15], ["sweep_peril", 13], ["flyswords", 14, "ranged"], ["rain2", 10, "ranged"]];
         S4.poolP2 = S4.pool;
         S4.farMoves = ["flyswords"];
-        S4.bg = "arena4"; S4.bgDim = 0.12; S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
+        S4.bg = "arena4"; S4.bgDim = 0.42; /* v0.8.90 劍塚調暗 */ S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
         S4.layers = [
-          { img: "arena4_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.06 },
-          { img: "arena4_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.9, dim: 0.12 }
+          { img: "arena4_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.32 },
+          { img: "arena4_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.9, dim: 0.5 }
         ];
         S4.flySwordArt = { sheet: "boss4fx", row: 3, frames: [2, 3], fps: 10, w: 150, tipX: 222, tipY: 128 }; /* 指劍劍氣與核心飛劍 */
       }

@@ -291,7 +291,7 @@
         const now = performance.now();
 
         Player.state = "parry";
-        Player.facing = Boss.x >= Player.x ? 1 : -1;
+        { const tx = partsBusy() ? partsThreatX() : null; Player.facing = (tx == null ? Boss.x : tx) >= Player.x ? 1 : -1; } /* v0.8.90 部位 Boss：面向來襲的飛劍／出招部位 */
         Player.stateTimer = Config.guardStanceMs / 1000;
         Player.parryStartMs = now;
         Player.vx *= 0.1;
@@ -552,7 +552,11 @@
         let baseRatio = getExecutionDmgRatio(Boss.stageId);
         let execRatio = isJiVersion ? baseRatio * 1.15 : baseRatio;
         let execDmg = Math.round(Boss.maxHp * execRatio);
-        if (Stages[Boss.stageId].execKill && Config.bossPhase === 2) execDmg = Boss.hp; /* v0.8.83 第 4 關：核心架勢滿處決即擊敗 */
+        const ek = Stages[Boss.stageId].execKill;
+        if (ek && Config.bossPhase === 2) { /* v0.8.83 第 4 關：二階段處決計次；v0.8.90 execKill＝數字時要處決該次數才擊敗（前幾次血量砍到剩一半以下） */
+          Boss._ekN = (Boss._ekN || 0) + 1;
+          execDmg = Boss._ekN >= (ek === true ? 1 : ek) ? Boss.hp : Math.max(1, Math.min(Boss.hp - 1, Boss.hp - Math.round(Boss.maxHp * 0.5)));
+        }
 
         if (isJiVersion) {
           // 第 5 關解鎖【一劍青雲・極】：三段全屏裂空墨痕演出，每段各自觸發定格與震屏，提高處決架勢與血量結算！
