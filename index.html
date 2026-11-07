@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.105";
+      const ASSET_VER = "0.8.106";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -6069,7 +6069,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             zTarget = Math.max(zTarget, (canvas.width * Config.baseHeight) / (canvas.height * Config.baseWidth));
             if (!cam._hubSnap) { cam._hubSnap = true; cam.x = -1280; cam.zoom = zTarget; }
           } else if (Game.mode !== "hub") cam._hubSnap = false;
-          cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * 7.5);
+          const dc = Game.dir && Game.dir.camNow; /* v0.8.106 導演鏡頭：瞬間拉近（rate 大）／垂直對焦 */
+          if (dc) zTarget = dc.zoom;
+          cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * (dc ? dc.rate : 7.5));
+          cam.y = (cam.y || 0) + ((dc ? dc.y : 0) - (cam.y || 0)) * Math.min(1, dt * (dc ? dc.rate : 6));
         }
 
         cam.shakeClock += dt;
@@ -7156,9 +7159,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
       const DIR_CFG = {
         1: { /* 赤煞神衛統領：單膝跪地、血煞紅氣湧起 → 起身怒吼，衝擊波 */
-          intro: { dur: 2.5, burstAt: 1.2, poses: [[0, "17_kneel"], [1.2, "14_cast"], [1.9, "07_windup"]], tint: "120,20,20", tintA: 0.35,
-            aura: { sheet: "boss2", row: 3, w: 380, at: 0.3, fps: 10, dy: 12 }, ring: { sheet: "land", row: 0, w: 900, dur: 0.7 }, name: true,
-            sfx: [["execution", 0.8, 0.8]] },
+          intro: { kind: "drop", dur: 3.5, burstAt: 1.15, fall: 0.85, height: 760, zoomAt: 1.15, zoomOutAt: 2.65, sub: "第一難", poses: [[0, "21_fall"], [0.85, "22_land"], [2.65, "23_rise"]],
+            ring: { sheet: "land", row: 0, w: 1000, dur: 0.7 }, dust: { sheet: "land", row: 1, w: 560, dur: 0.8 }, sfx: [["execution", 1.0, 0.55]] },
           phase: { dur: 2.6, burstAt: 1.15, poses: [[0, "17_kneel"], [1.15, "14_cast"], [1.95, "07_windup"]], tint: "150,20,20", tintA: 0.5,
             aura: { sheet: "boss2", row: 3, w: 440, at: 0.2, fps: 11, dy: 12 }, ring: { sheet: "land", row: 0, w: 1100, dur: 0.8 },
             pillar: { sheet: "ult", row: 3, w: 420, dur: 0.9 }, title: ["煞氣暴走", "二　階　段", "#f87171"],
@@ -7197,7 +7199,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Boss.facing = Player.x >= Boss.x ? 1 : -1; Boss.vx = 0; Boss.vy = 0; Boss.y = Config.groundY;
         Boss._cineImg = dirPoseAt(c, 0);
         Game.introT = 0; Boss.isPerilous = false;
-        Music.duck(0.12, c.burstAt + 0.3);
+        Music.duck(0.12, (c.burstAt || c.zoomAt) + 0.3);
         if (kind === "phase") { screenFlash("rgba(255,255,255,0.7)", 0.6, 0.4); triggerHitstopMs(90); addTrauma(0.35); hapticBuzz([40, 30, 80]); }
         return true;
       }
@@ -7218,9 +7220,34 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (c.title) showBanner(c.title[0], c.title[1], 1500, c.title[2]);
         if (c.name) bossNameCard(st);
       }
+      /* v0.8.106 「從天而降」登場：下落（陰影變大）→ 落地（震動、停頓、塵浪、衝擊環）→ 瞬間拉近到 Boss 上半身 → 稱謂蓋章（戴夫式）→ 拉回起身 */
+      function dropStep(D, dt) {
+        const c = D.c, t = D.t, G = Config.groundY, st = D.st, z0 = Game.camera.targetZoom + 0.2;
+        Boss._cineImg = dirPoseAt(c, t);
+        Boss.y = t < c.fall ? G - c.height * (1 - (t / c.fall) * (t / c.fall)) : G;
+        if (t < c.fall) D.camNow = { zoom: z0, y: Math.min(0, (Boss.y - G) * 0.35), rate: 10 };
+        if (!D.hit && t >= c.fall) {
+          D.hit = true;
+          if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 });
+          if (c.dust && fxReady(c.dust.sheet)) { spawnFx(c.dust.sheet, c.dust.row, Boss.x - 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: -1 }); spawnFx(c.dust.sheet, c.dust.row, Boss.x + 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: 1 }); }
+          (c.sfx || []).forEach(sf => Sound.play(sf[0], sf[1], sf[2]));
+          addTrauma(0.95); triggerHitstopMs(110); hapticBuzz([70, 40, 120]); screenFlash("rgba(255,244,230,0.45)", 0.4, 0.3);
+          D.camNow = { zoom: z0, y: 0, rate: 14 };
+        }
+        if (!D.zoomed && t >= c.zoomAt) { /* 瞬間拉近：rate 很大＝幾乎一幀到位 */
+          D.zoomed = true; D.zoomT0 = t;
+          D.camNow = { zoom: z0 + 0.75, y: -30, rate: 60 };
+          screenFlash("rgba(255,255,255,0.8)", 0.55, 0.3); addTrauma(0.5); hapticBuzz([30, 20, 50]);
+          Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
+        }
+        if (D.zoomed && !D.named && t >= c.zoomAt + 0.18) { D.named = true; bossNameCard(st, { slam: true, sub: c.sub, dur: 1900 }); Sound.play("execution", 0.7, 1.2); addTrauma(0.45); hapticBuzz([40, 20, 70]); }
+        if (D.zoomed && !D.out && t >= c.zoomOutAt) { D.out = true; D.camNow = { zoom: z0, y: 0, rate: 9 }; }
+        D.a += ((D.zoomed && !D.out ? 0.55 : 0) - D.a) * Math.min(1, dt * 12);
+      }
       function dirUpdate(dt) {
         const D = Game.dir; if (!D) return;
         const c = D.c; D.t += dt;
+        if (c.kind === "drop") { dropStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
         Boss._cineImg = dirPoseAt(c, D.t);
         if (!D.aura && c.aura && D.t >= (c.aura.at || 0) && fxReady(c.aura.sheet)) {
           D.aura = true; const A = c.aura, dy = A.dy || 0;
@@ -7237,8 +7264,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (D.t >= c.dur) dirEnd(D);
       }
       function dirEnd(D) {
-        Game.dir = null; Boss._cineImg = null;
-        Music.duckUntil = 0; Music.duckLvl = 1;
+        Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0;
+        Music.duckUntil = 0; Music.duckLvl = 1; Boss.y = Config.groundY;
         if (["staggered", "frozen", "hurt", "recover", "grounded"].includes(Boss.state)) { Boss.state = "idle"; Boss.stateTimer = 0; Boss.frozenTimer = 0; }
         Boss.aiCooldown = Math.max(Boss.aiCooldown || 0, 0.7);
         Game.introT = D.kind === "intro" ? 0.35 : 0.3; /* 登場：結束後才跳開場對話 */
@@ -7246,9 +7273,16 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Progress.battleStartTime = performance.now();
       }
       function drawDirOverlay(w, h) {
-        const D = Game.dir; if (!D || D.a < 0.01) return;
+        const D = Game.dir; if (!D) return;
+        if (D.c.kind === "drop" && D.zoomed && D.t - D.zoomT0 < 0.55) { /* 放射速度線（程式備案；之後可換生圖） */
+          const k = 1 - (D.t - D.zoomT0) / 0.55; ctx.save(); ctx.strokeStyle = `rgba(255,255,255,${0.75 * k})`; ctx.lineCap = "round";
+          const cx = w / 2, cy = h * 0.5, n = 46;
+          for (let i = 0; i < n; i++) { const an = (i / n) * Math.PI * 2 + Math.random() * 0.12, r0 = h * (0.3 + Math.random() * 0.15), r1 = h * (0.75 + Math.random() * 0.3); ctx.lineWidth = 1.5 + Math.random() * 4.5; ctx.beginPath(); ctx.moveTo(cx + Math.cos(an) * r0, cy + Math.sin(an) * r0); ctx.lineTo(cx + Math.cos(an) * r1, cy + Math.sin(an) * r1); ctx.stroke(); }
+          ctx.restore();
+        }
+        if (D.a < 0.01) return;
         const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.22, w / 2, h / 2, h * 0.95);
-        g.addColorStop(0, `rgba(${D.c.tint},0)`); g.addColorStop(1, `rgba(${D.c.tint},${D.a})`);
+        const tn = D.c.tint || "0,0,0"; g.addColorStop(0, `rgba(${tn},0)`); g.addColorStop(1, `rgba(${tn},${D.a})`);
         ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); ctx.restore();
       }
 
@@ -7306,7 +7340,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         ctx.translate(Config.baseWidth * 0.5, Config.baseHeight * 0.5);
         if (shakeRoll) ctx.rotate(shakeRoll);
         ctx.scale(cam.zoom, cam.zoom);
-        ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 + shakeOffY);
+        ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 - (cam.y || 0) + shakeOffY); /* v0.8.106 cam.y：導演用的垂直對焦（平時 0） */
 
         drawDynamicBackground(cam.x);
         if (Game.mode !== "battle") drawHubScene();
@@ -7898,9 +7932,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         drawFxCell("land", 3, Math.min(3, Math.floor(k * 3.3)), Boss.x - 10, Boss.y - 90, 640, 640, 0.9, true);
       }
       /* 名字卡（書法圖，疊加發光）；圖沒載入就退回 DOM 橫幅 */
-      function bossNameCard(st) {
+      function bossNameCard(st, opts) {
         const o = st.introName ? getCineImg("name", st.introName) : null;
-        if (o && o.ok) Game.nameCard = { t0: performance.now(), dur: 2000, img: o.img, sub: st.realmBadge };
+        if (o && o.ok) Game.nameCard = { t0: performance.now(), dur: (opts && opts.dur) || 2000, img: o.img, sub: (opts && opts.sub) || st.realmBadge, slam: !!(opts && opts.slam) };
         else showBanner(st.name, st.realmBadge, 1500, "#fde68a");
       }
       function drawNameCard(w, h) {
@@ -7908,10 +7942,16 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const e = performance.now() - nc.t0;
         if (e > nc.dur) { Game.nameCard = null; return; }
         const aIn = Math.min(1, e / 200), aOut = Math.min(1, (nc.dur - e) / 600), a = Math.min(aIn, aOut);
-        const pop = 1 + 0.12 * (1 - Math.min(1, e / 260)) * (1 - Math.min(1, e / 260));
+        let pop = 1 + 0.12 * (1 - Math.min(1, e / 260)) * (1 - Math.min(1, e / 260)), sx = 0, sy = 0, a2 = a;
+        if (nc.slam) { /* v0.8.106 蓋章：2.6 倍快速砸到 1.0，過衝回彈，附震動（戴夫式 Boss 登場字卡） */
+          pop = e < 140 ? 2.6 - 1.6 * (e / 140) * (e / 140) : 1 + 0.09 * Math.sin((e - 140) / 80) * Math.exp(-(e - 140) / 170);
+          const sh = Math.max(0, 1 - e / 320) * 16; sx = (Math.random() - 0.5) * sh; sy = (Math.random() - 0.5) * sh;
+          a2 = Math.min(a, Math.min(1, e / 50));
+        }
         const iw = Math.min(w * 0.5, h * 1.5) * pop, ih = iw * nc.img.height / nc.img.width, cy = h * 0.25;
-        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a;
-        ctx.drawImage(nc.img, w / 2 - iw / 2, cy - ih / 2, iw, ih);
+        if (nc.slam) { ctx.save(); ctx.globalAlpha = a2 * 0.5; ctx.fillStyle = "#000"; ctx.fillRect(0, cy - ih * 0.62, w, ih * 1.24 + h * 0.07); ctx.restore(); }
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a2;
+        ctx.drawImage(nc.img, w / 2 - iw / 2 + sx, cy - ih / 2 + sy, iw, ih);
         ctx.globalCompositeOperation = "source-over";
         if (nc.sub) {
           ctx.globalAlpha = a * Math.min(1, Math.max(0, (e - 250) / 250));
@@ -8604,7 +8644,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
         // Ground shadow（有 sprite 的 Boss 在下面改畫輪廓投影；沒有的畫橢圓）
         const bossEllipse = () => {
-          ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * (Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1)})`;
+          ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * ((Game.cine || (Game.dir && Game.dir.c.kind === "drop")) ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1)})`;
           ctx.beginPath();
           ctx.ellipse(Boss.x, Config.groundY + 3, Boss.w * 0.65, 9, 0, 0, Math.PI * 2);
           ctx.fill();
@@ -8856,7 +8896,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           {
             let sk = bossVis(stage).k;
             if (isWalkFrame && bossImg !== SP.imgs[imgKey]) sk *= getWalkNorm(SP);
-            const cineK = Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
+            const cineK = (Game.cine || (Game.dir && Game.dir.c.kind === "drop")) ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
             if (Boss._ilDraw) { /* 幻影沒有影子 */ } else if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
           }
 

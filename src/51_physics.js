@@ -548,7 +548,10 @@
             zTarget = Math.max(zTarget, (canvas.width * Config.baseHeight) / (canvas.height * Config.baseWidth));
             if (!cam._hubSnap) { cam._hubSnap = true; cam.x = -1280; cam.zoom = zTarget; }
           } else if (Game.mode !== "hub") cam._hubSnap = false;
-          cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * 7.5);
+          const dc = Game.dir && Game.dir.camNow; /* v0.8.106 導演鏡頭：瞬間拉近（rate 大）／垂直對焦 */
+          if (dc) zTarget = dc.zoom;
+          cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * (dc ? dc.rate : 7.5));
+          cam.y = (cam.y || 0) + ((dc ? dc.y : 0) - (cam.y || 0)) * Math.min(1, dt * (dc ? dc.rate : 6));
         }
 
         cam.shakeClock += dt;

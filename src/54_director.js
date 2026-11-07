@@ -9,9 +9,8 @@
 
       const DIR_CFG = {
         1: { /* 赤煞神衛統領：單膝跪地、血煞紅氣湧起 → 起身怒吼，衝擊波 */
-          intro: { dur: 2.5, burstAt: 1.2, poses: [[0, "17_kneel"], [1.2, "14_cast"], [1.9, "07_windup"]], tint: "120,20,20", tintA: 0.35,
-            aura: { sheet: "boss2", row: 3, w: 380, at: 0.3, fps: 10, dy: 12 }, ring: { sheet: "land", row: 0, w: 900, dur: 0.7 }, name: true,
-            sfx: [["execution", 0.8, 0.8]] },
+          intro: { kind: "drop", dur: 3.5, burstAt: 1.15, fall: 0.85, height: 760, zoomAt: 1.15, zoomOutAt: 2.65, sub: "第一難", poses: [[0, "21_fall"], [0.85, "22_land"], [2.65, "23_rise"]],
+            ring: { sheet: "land", row: 0, w: 1000, dur: 0.7 }, dust: { sheet: "land", row: 1, w: 560, dur: 0.8 }, sfx: [["execution", 1.0, 0.55]] },
           phase: { dur: 2.6, burstAt: 1.15, poses: [[0, "17_kneel"], [1.15, "14_cast"], [1.95, "07_windup"]], tint: "150,20,20", tintA: 0.5,
             aura: { sheet: "boss2", row: 3, w: 440, at: 0.2, fps: 11, dy: 12 }, ring: { sheet: "land", row: 0, w: 1100, dur: 0.8 },
             pillar: { sheet: "ult", row: 3, w: 420, dur: 0.9 }, title: ["煞氣暴走", "二　階　段", "#f87171"],
@@ -50,7 +49,7 @@
         Boss.facing = Player.x >= Boss.x ? 1 : -1; Boss.vx = 0; Boss.vy = 0; Boss.y = Config.groundY;
         Boss._cineImg = dirPoseAt(c, 0);
         Game.introT = 0; Boss.isPerilous = false;
-        Music.duck(0.12, c.burstAt + 0.3);
+        Music.duck(0.12, (c.burstAt || c.zoomAt) + 0.3);
         if (kind === "phase") { screenFlash("rgba(255,255,255,0.7)", 0.6, 0.4); triggerHitstopMs(90); addTrauma(0.35); hapticBuzz([40, 30, 80]); }
         return true;
       }
@@ -71,9 +70,34 @@
         if (c.title) showBanner(c.title[0], c.title[1], 1500, c.title[2]);
         if (c.name) bossNameCard(st);
       }
+      /* v0.8.106 「從天而降」登場：下落（陰影變大）→ 落地（震動、停頓、塵浪、衝擊環）→ 瞬間拉近到 Boss 上半身 → 稱謂蓋章（戴夫式）→ 拉回起身 */
+      function dropStep(D, dt) {
+        const c = D.c, t = D.t, G = Config.groundY, st = D.st, z0 = Game.camera.targetZoom + 0.2;
+        Boss._cineImg = dirPoseAt(c, t);
+        Boss.y = t < c.fall ? G - c.height * (1 - (t / c.fall) * (t / c.fall)) : G;
+        if (t < c.fall) D.camNow = { zoom: z0, y: Math.min(0, (Boss.y - G) * 0.35), rate: 10 };
+        if (!D.hit && t >= c.fall) {
+          D.hit = true;
+          if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 });
+          if (c.dust && fxReady(c.dust.sheet)) { spawnFx(c.dust.sheet, c.dust.row, Boss.x - 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: -1 }); spawnFx(c.dust.sheet, c.dust.row, Boss.x + 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: 1 }); }
+          (c.sfx || []).forEach(sf => Sound.play(sf[0], sf[1], sf[2]));
+          addTrauma(0.95); triggerHitstopMs(110); hapticBuzz([70, 40, 120]); screenFlash("rgba(255,244,230,0.45)", 0.4, 0.3);
+          D.camNow = { zoom: z0, y: 0, rate: 14 };
+        }
+        if (!D.zoomed && t >= c.zoomAt) { /* 瞬間拉近：rate 很大＝幾乎一幀到位 */
+          D.zoomed = true; D.zoomT0 = t;
+          D.camNow = { zoom: z0 + 0.75, y: -30, rate: 60 };
+          screenFlash("rgba(255,255,255,0.8)", 0.55, 0.3); addTrauma(0.5); hapticBuzz([30, 20, 50]);
+          Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
+        }
+        if (D.zoomed && !D.named && t >= c.zoomAt + 0.18) { D.named = true; bossNameCard(st, { slam: true, sub: c.sub, dur: 1900 }); Sound.play("execution", 0.7, 1.2); addTrauma(0.45); hapticBuzz([40, 20, 70]); }
+        if (D.zoomed && !D.out && t >= c.zoomOutAt) { D.out = true; D.camNow = { zoom: z0, y: 0, rate: 9 }; }
+        D.a += ((D.zoomed && !D.out ? 0.55 : 0) - D.a) * Math.min(1, dt * 12);
+      }
       function dirUpdate(dt) {
         const D = Game.dir; if (!D) return;
         const c = D.c; D.t += dt;
+        if (c.kind === "drop") { dropStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
         Boss._cineImg = dirPoseAt(c, D.t);
         if (!D.aura && c.aura && D.t >= (c.aura.at || 0) && fxReady(c.aura.sheet)) {
           D.aura = true; const A = c.aura, dy = A.dy || 0;
@@ -90,8 +114,8 @@
         if (D.t >= c.dur) dirEnd(D);
       }
       function dirEnd(D) {
-        Game.dir = null; Boss._cineImg = null;
-        Music.duckUntil = 0; Music.duckLvl = 1;
+        Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0;
+        Music.duckUntil = 0; Music.duckLvl = 1; Boss.y = Config.groundY;
         if (["staggered", "frozen", "hurt", "recover", "grounded"].includes(Boss.state)) { Boss.state = "idle"; Boss.stateTimer = 0; Boss.frozenTimer = 0; }
         Boss.aiCooldown = Math.max(Boss.aiCooldown || 0, 0.7);
         Game.introT = D.kind === "intro" ? 0.35 : 0.3; /* 登場：結束後才跳開場對話 */
@@ -99,8 +123,15 @@
         Progress.battleStartTime = performance.now();
       }
       function drawDirOverlay(w, h) {
-        const D = Game.dir; if (!D || D.a < 0.01) return;
+        const D = Game.dir; if (!D) return;
+        if (D.c.kind === "drop" && D.zoomed && D.t - D.zoomT0 < 0.55) { /* 放射速度線（程式備案；之後可換生圖） */
+          const k = 1 - (D.t - D.zoomT0) / 0.55; ctx.save(); ctx.strokeStyle = `rgba(255,255,255,${0.75 * k})`; ctx.lineCap = "round";
+          const cx = w / 2, cy = h * 0.5, n = 46;
+          for (let i = 0; i < n; i++) { const an = (i / n) * Math.PI * 2 + Math.random() * 0.12, r0 = h * (0.3 + Math.random() * 0.15), r1 = h * (0.75 + Math.random() * 0.3); ctx.lineWidth = 1.5 + Math.random() * 4.5; ctx.beginPath(); ctx.moveTo(cx + Math.cos(an) * r0, cy + Math.sin(an) * r0); ctx.lineTo(cx + Math.cos(an) * r1, cy + Math.sin(an) * r1); ctx.stroke(); }
+          ctx.restore();
+        }
+        if (D.a < 0.01) return;
         const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.22, w / 2, h / 2, h * 0.95);
-        g.addColorStop(0, `rgba(${D.c.tint},0)`); g.addColorStop(1, `rgba(${D.c.tint},${D.a})`);
+        const tn = D.c.tint || "0,0,0"; g.addColorStop(0, `rgba(${tn},0)`); g.addColorStop(1, `rgba(${tn},${D.a})`);
         ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); ctx.restore();
       }

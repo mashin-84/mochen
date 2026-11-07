@@ -338,9 +338,9 @@
         drawFxCell("land", 3, Math.min(3, Math.floor(k * 3.3)), Boss.x - 10, Boss.y - 90, 640, 640, 0.9, true);
       }
       /* 名字卡（書法圖，疊加發光）；圖沒載入就退回 DOM 橫幅 */
-      function bossNameCard(st) {
+      function bossNameCard(st, opts) {
         const o = st.introName ? getCineImg("name", st.introName) : null;
-        if (o && o.ok) Game.nameCard = { t0: performance.now(), dur: 2000, img: o.img, sub: st.realmBadge };
+        if (o && o.ok) Game.nameCard = { t0: performance.now(), dur: (opts && opts.dur) || 2000, img: o.img, sub: (opts && opts.sub) || st.realmBadge, slam: !!(opts && opts.slam) };
         else showBanner(st.name, st.realmBadge, 1500, "#fde68a");
       }
       function drawNameCard(w, h) {
@@ -348,10 +348,16 @@
         const e = performance.now() - nc.t0;
         if (e > nc.dur) { Game.nameCard = null; return; }
         const aIn = Math.min(1, e / 200), aOut = Math.min(1, (nc.dur - e) / 600), a = Math.min(aIn, aOut);
-        const pop = 1 + 0.12 * (1 - Math.min(1, e / 260)) * (1 - Math.min(1, e / 260));
+        let pop = 1 + 0.12 * (1 - Math.min(1, e / 260)) * (1 - Math.min(1, e / 260)), sx = 0, sy = 0, a2 = a;
+        if (nc.slam) { /* v0.8.106 蓋章：2.6 倍快速砸到 1.0，過衝回彈，附震動（戴夫式 Boss 登場字卡） */
+          pop = e < 140 ? 2.6 - 1.6 * (e / 140) * (e / 140) : 1 + 0.09 * Math.sin((e - 140) / 80) * Math.exp(-(e - 140) / 170);
+          const sh = Math.max(0, 1 - e / 320) * 16; sx = (Math.random() - 0.5) * sh; sy = (Math.random() - 0.5) * sh;
+          a2 = Math.min(a, Math.min(1, e / 50));
+        }
         const iw = Math.min(w * 0.5, h * 1.5) * pop, ih = iw * nc.img.height / nc.img.width, cy = h * 0.25;
-        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a;
-        ctx.drawImage(nc.img, w / 2 - iw / 2, cy - ih / 2, iw, ih);
+        if (nc.slam) { ctx.save(); ctx.globalAlpha = a2 * 0.5; ctx.fillStyle = "#000"; ctx.fillRect(0, cy - ih * 0.62, w, ih * 1.24 + h * 0.07); ctx.restore(); }
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a2;
+        ctx.drawImage(nc.img, w / 2 - iw / 2 + sx, cy - ih / 2 + sy, iw, ih);
         ctx.globalCompositeOperation = "source-over";
         if (nc.sub) {
           ctx.globalAlpha = a * Math.min(1, Math.max(0, (e - 250) / 250));

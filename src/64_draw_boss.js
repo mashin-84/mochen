@@ -85,7 +85,7 @@
 
         // Ground shadow（有 sprite 的 Boss 在下面改畫輪廓投影；沒有的畫橢圓）
         const bossEllipse = () => {
-          ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * (Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1)})`;
+          ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * ((Game.cine || (Game.dir && Game.dir.c.kind === "drop")) ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1)})`;
           ctx.beginPath();
           ctx.ellipse(Boss.x, Config.groundY + 3, Boss.w * 0.65, 9, 0, 0, Math.PI * 2);
           ctx.fill();
@@ -337,7 +337,7 @@
           {
             let sk = bossVis(stage).k;
             if (isWalkFrame && bossImg !== SP.imgs[imgKey]) sk *= getWalkNorm(SP);
-            const cineK = Game.cine ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
+            const cineK = (Game.cine || (Game.dir && Game.dir.c.kind === "drop")) ? Math.max(0, Math.min(1, (Boss.y + 200) / (Config.groundY + 200))) : 1;
             if (Boss._ilDraw) { /* 幻影沒有影子 */ } else if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
           }
 

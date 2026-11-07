@@ -52,7 +52,7 @@
         ctx.translate(Config.baseWidth * 0.5, Config.baseHeight * 0.5);
         if (shakeRoll) ctx.rotate(shakeRoll);
         ctx.scale(cam.zoom, cam.zoom);
-        ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 + shakeOffY);
+        ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 - (cam.y || 0) + shakeOffY); /* v0.8.106 cam.y：導演用的垂直對焦（平時 0） */
 
         drawDynamicBackground(cam.x);
         if (Game.mode !== "battle") drawHubScene();
