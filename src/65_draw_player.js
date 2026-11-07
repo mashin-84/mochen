@@ -36,6 +36,7 @@
 
           let frame = "01_idle1";
           let playerImg = null;
+          let idleNext = null, idleMix = 0;
           const isAirborne = Player.y < Config.groundY - 2;
 
           if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
@@ -77,6 +78,10 @@
             }
           } else {
             frame = Math.floor(performance.now() / 600) % 2 === 0 ? "01_idle1" : "02_idle2";
+            if (MCI_READY === MCI_N) { /* v0.8.97 待機影片格：相鄰兩格淡入淡出 */
+              const ph = ((performance.now() / 1000) % MCI_PERIOD) / MCI_PERIOD * MCI_N, i0 = Math.floor(ph) % MCI_N;
+              playerImg = MCI_IMGS[i0]; idleNext = MCI_IMGS[(i0 + 1) % MCI_N]; idleMix = ph - Math.floor(ph);
+            }
           }
 
           if (!playerImg) {
@@ -95,6 +100,7 @@
           }
           ctx.scale((Player.facing > 0 ? S : -S) * sqX, S * sqY);
           ctx.drawImage(playerImg, -450, -529);
+          if (idleNext && idleMix > 0.02) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * idleMix; ctx.drawImage(idleNext, -450, -529); ctx.globalAlpha = ga; }
           Player._mcSpr = playerImg; Player._mcS = S; /* 殘影取樣（v0.8.96） */
           if (Player.flashFrames > 0) ctx.filter = "none";
           ctx.restore();

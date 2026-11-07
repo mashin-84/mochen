@@ -784,6 +784,17 @@
         MCR_IMGS.push(img);
       }
 
+      /* v0.8.97 待機影片抽幀 24 格（4 秒循環，呼吸＋微晃）；沒載齊時退回舊的兩格待機 */
+      const MCI_IMGS = [], MCI_N = 24, MCI_PERIOD = 4.0;
+      let MCI_READY = 0;
+      for (let i = 1; i <= MCI_N; i++) {
+        const img = new Image();
+        img.onload = () => { MCI_READY++; };
+        img.onerror = () => { console.warn("Failed to load: idle_" + i); };
+        img.src = 'assets/mc/idle_' + String(i).padStart(2, '0') + '.webp';
+        MCI_IMGS.push(img);
+      }
+
       /* v0.8.22 輪廓投影影子：把當下那一格的剪影壓扁貼在地上（跟著姿勢、武器變化），順月光方向微微斜拉；
          離地越高越淡越窄（跳躍、躍斬、墜落）。快取用 1/3 解析度（柔邊、省記憶體）。回傳 false＝圖還沒載入，呼叫端改畫橢圓。 */
       const _shMap = new WeakMap();
