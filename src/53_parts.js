@@ -169,7 +169,7 @@
         const P = Boss._pp, G = Config.groundY;
         h.brokenT = 3.6; h.posture = 0; h.busy = false; h.ty = G + 40; h.tang = h.side * 0.35; h.flash = 5;
         if (P.act && P.act.hand === h) actCancel(P.act), P.act = null;
-        Sound.play("mikiri", 1.0, 0.85);
+        Sound.play("mikiri", 0.5, 0.85);
         triggerHitstopMs(90); addTrauma(0.45); hapticBuzz([30, 20, 50]);
         if (fxReady("spark")) spawnFx("spark", 3, h.x, h.y - 100, { w: 440, dur: 0.55 });
         spawnFloatingText(h.x, h.y - 210, "【副劍崩勢】古靈失衡！", "#ef4444", 1.3);

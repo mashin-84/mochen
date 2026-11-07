@@ -315,7 +315,7 @@
           Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Boss.x - Boss.facing * 140));
           Player.facing = Boss.facing;
           Player.riposteTimer = 1.2;
-          Sound.play("assist", 1.0, 1.4);
+          Sound.play("assist", 0.5, 1.4); /* 替身反切 */
           triggerHitstop(5);
           triggerShake(0, 1, 16, 0.2);
           spawnSparks(Player.x, Player.y - 50, "mikiri", 1);
@@ -492,7 +492,7 @@
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 10);
         Progress.mikiriCount++;
 
-        Sound.play("mikiri", 0.95, 1.0);
+        Sound.play("mikiri", 0.47, 1.0); /* v0.8.109 閃過敵人的看破音量減半 */
         triggerHitstopMs(100);
         triggerShake(Boss.facing, 0.35, 24, 0.32);
         spawnSparks((Player.x + Boss.x) * 0.5, Config.groundY - 45, "mikiri", -Boss.facing);
@@ -517,7 +517,7 @@
           Boss.stateTimer = 0.62;
           Boss.vx = 0;
           Progress.mikiriCount++;
-          Sound.play("mikiri", 0.95, 1.15);
+          Sound.play("mikiri", 0.47, 1.15);
           triggerHitstopMs(90);
           triggerShake(0, 1, 22, 0.28);
           spawnSparks(Boss.x, Boss.y - Boss.h, "mikiri", 0);
