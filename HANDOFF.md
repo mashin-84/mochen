@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.104（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.105（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.105 戰場上的登場／階段轉換導演（取代第 1～3 關的影片過場）**：使用者試玩後覺得影片過場突兀，決定改成像九日、空洞騎士那樣「留在戰場上」演（登場也改）。新檔 `src/54_director.js`（manifest 在 53 之後）：`DIR_CFG[關卡] = { intro, phase }`，每段設定 `dur`／`burstAt`（爆發時刻）／`poses:[[秒,格名]…]`（用 `Boss._cineImg` 擺姿勢，17_kneel 取自 `SP.death.kneel`）／`tint`＋`tintA`（暗角變色）／`aura`（氣場，循環跟隨 Boss）／`ring`（地面衝擊波環）／`pillar`（光柱）／`title`（書法橫幅）／`sfx`／`name`（登場爆發時出名牌）。`dirMode:true` 的關卡由 `stMovie(st,key)` 回傳 null，不播 introMovie／p2Movie（檔案與設定保留，把 `dirMode` 拿掉就切回影片）。**流程**：`Game.dir`（physics 在 `Game.cine` 之後 `dirUpdate`，戰鬥暫停、鏡頭沿用登場推近 `introOn`、特效照跑）→ 爆發：換曲（階段＝`STAGE_BGM_P2`，登場＝`STAGE_BGM`）、第 3 關在此刻 `applyP2Stance` 換重劍、衝擊波把近身玩家推開、閃白＋震屏＋命中停頓＋橫幅 → 結束：Boss 回待機（`aiCooldown` 0.7）、玩家無敵 1.2 秒、登場結束後 0.35 秒才跳開場對話。入口：`beginBattleIntro`（登場）、`bossPhaseCinematic`（階段）。目前第 1 關：跪姿＋紅氣焰（`boss2` 列 3）＋紅衝擊環（`land` 列 0）＋光柱（`ult` 列 3）、「煞氣暴走」；第 2 關：跪姿＋八卦風圈（`boss2fx` 列 2）＋白環（`exec2` 列 3）、「真假難辨」；第 3 關：跪姿＋陣紋（`boss3bfx` 列 2）、爆發換重劍＋拔劍爆氣（`boss3bfx` 列 3）、「拔劍・玄鐵」。**借用現有特效圖**；之後可請 Gemini 生每位 Boss 專屬的氣場／衝擊波 4×4 黑底圖替換（只改 DIR_CFG 的 sheet／row）。第 4 關暫仍用影片（有自己的部位轉場）；第 5～9 關日後同樣加 DIR_CFG。無頭驗證：三關登場與階段轉換姿勢、特效、第 3 關換姿態、結束狀態；smoke 第 1～3 關 ok。**待手機實測**：演出長度（登場 2.5 秒、階段約 2.6 秒，全程暫停戰鬥）、氣場位置與亮度、第 3 關爆發是否太白、暗角顏色、是否還需要「最後 0.3 秒就還控制權」。
 
 **v0.8.104 第 4 關三支影片**（純文字生影片、日式賽璐璐、8 秒有聲、loudnorm -16 LUFS）：①登場「劍塚甦醒」`assets/boss4/intro`（Gemini 原片 8 秒，6.85 秒後劍突然反向〔劍尖變朝上〕，已剪到 6.85 秒，結尾由引擎淡出到黑）；②「巨劍崩解成六劍」`assets/boss4/form`；③「古靈降臨」`assets/boss4/p2`（人形白髮古靈由光柱凝成）。`Stages[4].introMovie／formMovie／p2Movie`。**引擎**：新增 `formMovie`＝三道封印盡斷進劍陣時（`formationStart` 結尾，850 ms 後 `formMovieStart`，期間關卡曲壓成無聲、播完恢復，劍陣冷卻 `cd` 至少 1.6 秒、無敵至少 1 秒）；`p2Movie` 仍在六劍盡落時（`partsToPhase2`）播；`80_flow.js` 預載 formMovie。無頭驗證：封印斷→劍陣→影片 0.85 秒後開始、期間戰鬥凍結、播完恢復；六劍盡落→p2 影片→三階段；smoke 第 4 關 ok。**待手機實測**：三支影片載入時間（各約 1.3～1.7 MB）、閃白與影片切入的銜接、影片時機、劍陣開始時六把劍是否從原巨劍位置出來、音量。登場影片未做完整流程無頭測試（沿用第 3 關已驗證的 `introMovie` 路徑）。
 

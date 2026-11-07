@@ -94,7 +94,7 @@
       }
       function startBossCine() {
         const stage = Stages[Boss.stageId];
-        if (stage && stage.introMovie) { /* 影片登場：播完出名牌；沒載好就回 false（呼叫端出名牌） */
+        if (stage && stMovie(stage, "introMovie")) { /* 影片登場：播完出名牌；沒載好就回 false（呼叫端出名牌） */
           const ok = playMovie(stage.introMovie, { audio: true, onEnd: () => { if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]); bossNameCard(stage); Game.introT = 0.7; Progress.battleStartTime = performance.now(); } });
           if (ok) { Game.introT = 0; Boss.facing = -1; }
           return ok;

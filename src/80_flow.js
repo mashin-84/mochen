@@ -17,8 +17,8 @@
         if (stage.introName) getCineImg("name", stage.introName);
         if (stage.introCine) fxSheet("land");
         if (stage.introVideo) getCineVideo(stage.introVideo);
-        if (stage.introMovie) getCineVideo(stage.introMovie);
-        if (stage.p2Movie) getCineVideo(stage.p2Movie);
+        if (stMovie(stage, "introMovie")) getCineVideo(stage.introMovie);
+        if (stMovie(stage, "p2Movie")) getCineVideo(stage.p2Movie);
         if (stage.formMovie) getCineVideo(stage.formMovie);
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite, st.extras));
         (stage.fxSheets || []).forEach(k => fxSheet(k));
@@ -68,7 +68,7 @@
         Game.shockwaves = [];
         Game.slashArcs = [];
         Game.hitFx = [];
-        Game.fxList = [];
+        Game.fxList = []; dirReset();
         initAmbient();
         Game.comboCount = 0;
         Game.comboTimer = 0;

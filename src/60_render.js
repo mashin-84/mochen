@@ -201,6 +201,7 @@
           drawCineBars(w, h);
         }
         drawNameCard(w, h);
+        drawDirOverlay(w, h);
 
         if (Game.flashWhiteOverlay > 0) {
           ctx.save();

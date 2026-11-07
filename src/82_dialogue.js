@@ -156,6 +156,7 @@
       }, true);
 
       function bossPhaseCinematic() {
+        { const stD = Stages[Boss.stageId]; if (stD && stD.dirMode && stD.dir && stD.dir.phase && !stD.parts && dirStart("phase", stD)) return; } /* v0.8.105 戰場上演階段轉換（取代二階段影片） */
         showBanner("煞氣暴走", "二　階　段", 1500, "#f87171");
         screenFlash("rgba(255,255,255,0.9)", 0.75, 0.55);
         triggerShake(0, 1, 40, 0.6);
@@ -164,7 +165,7 @@
         Sound.play("peril", 1.0, 0.6);
         hapticBuzz([60, 40, 120]);
         const stP = Stages[Boss.stageId];
-        if (stP && stP.p2Movie && !stP.parts) setTimeout(() => bossPhase2Movie(stP), 850); /* v0.8.99 一般關卡二階段影片：等閃白與慢動作演完再切黑場播影片 */
+        if (stP && stMovie(stP, "p2Movie") && !stP.parts) setTimeout(() => bossPhase2Movie(stP), 850); /* v0.8.99 一般關卡二階段影片：等閃白與慢動作演完再切黑場播影片 */
       }
       function bossPhase2Movie(st) {
         if (Boss._p2MoviePending) applyP2Stance(st); /* v0.8.103 影片一開始就換姿態（影片沒播成也要換，否則會卡在雙劍） */

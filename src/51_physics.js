@@ -27,6 +27,7 @@
         // Pause active combat actions only during story cutscenes
         if (Game.cutsceneActive) return;
         if (Game.cine) { updateCine(dt); return; }
+        if (Game.dir) { dirUpdate(dt); return; } /* v0.8.105 戰場上的登場／階段轉換：戰鬥暫停，鏡頭＋姿勢＋特效 */
         if (Game.introT > 0) {
           Game.introT -= dt;
           if (Game.introT <= 0 && Game.pendingPre) {
@@ -531,7 +532,7 @@
         const cam = Game.camera;
         if (!hitstopOnly) {
           const cineOn = !!Game.cine;
-          const introOn = Game.introT > 0 || Game.dlgFocus || cineOn;
+          const introOn = Game.introT > 0 || Game.dlgFocus || cineOn || !!Game.dir;
           if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = stZ.camZoomP ? (stZ.camZoomP[Config.bossPhase] || 1) : 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.83 camZoomP：依階段指定鏡頭縮放 */ /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
           const uw = Game.ultDim || 0;
           const focusX = cineOn ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);

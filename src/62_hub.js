@@ -23,12 +23,13 @@
       function beginBattleIntro() {
         Game.mode = "battle";
         const stage0 = Stages[Boss.stageId];
-        if (STAGE_BGM[Boss.stageId] && !(stage0.introMovie && getCineVideo(stage0.introMovie).readyState >= 3)) Music.play(STAGE_BGM[Boss.stageId]); /* v0.8.14 修正：走進戰場才開始放配樂 */
+        if (STAGE_BGM[Boss.stageId] && !(stMovie(stage0, "introMovie") && getCineVideo(stage0.introMovie).readyState >= 3) && !(stage0.dirMode && stage0.dir && stage0.dir.intro)) Music.play(STAGE_BGM[Boss.stageId]); /* v0.8.14 修正：走進戰場才開始放配樂 */
         const stage = Stages[Boss.stageId];
         Game.introT = 1.9;
         Game.pendingPre = !!(stage.dialogue && stage.dialogue.pre && stage.dialogue.pre.length);
         Progress.battleStartTime = performance.now();
-        if (!startBossCine()) { /* v0.8.18 有登場動畫的關卡，名字卡改在 Boss 落地時顯示 */
+        if (stage.dirMode && stage.dir && stage.dir.intro && dirStart("intro", stage)) { /* v0.8.105 戰場上登場：爆發那一刻才開配樂與名牌 */
+        } else if (!startBossCine()) { /* v0.8.18 有登場動畫的關卡，名字卡改在 Boss 落地時顯示 */
           if (stage.introName) bossNameCard(stage); else showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
           Sound.play("execution", 0.45, 0.7);
         }
