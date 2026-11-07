@@ -24,6 +24,7 @@
         (stage.fxSheets || []).forEach(k => fxSheet(k));
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");
         if (stage.bg) getBgArt(stage.bg);
+        if (stage.bgSky) getBgArt(stage.bgSky);
         Boss.maxHp = stage.maxHp;
         Boss.hp = stage.maxHp;
         Boss._leapPity = 0;

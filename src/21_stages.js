@@ -24,7 +24,7 @@
         Stages[nid] = st;
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
-      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28;
+      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28; Stages[1].bgSky = "arena1_sky"; /* v0.8.113 從天而降登場往上看的天空延伸圖（Gemini 星空＋鏡像連續，已含調暗） */
       /* M2 分層場景：崖頂地面帶（取代共用地面帶，表面中線對齊 groundY）＋前景松石剪影 */
       Stages[1].layers = [
         { img: "arena1_ground", ground: true, par: 1, y: 475, h: 330, dim: 0.12 },

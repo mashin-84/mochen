@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.112";
+      const ASSET_VER = "0.8.113";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2836,7 +2836,7 @@
         Stages[nid] = st;
       });
       Stages[2].dialogue.camp = LegacyStages[2].dialogue.camp;
-      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28;
+      Stages[1].bg = "arena1"; Stages[1].bgDim = 0.28; Stages[1].bgSky = "arena1_sky"; /* v0.8.113 從天而降登場往上看的天空延伸圖（Gemini 星空＋鏡像連續，已含調暗） */
       /* M2 分層場景：崖頂地面帶（取代共用地面帶，表面中線對齊 groundY）＋前景松石剪影 */
       Stages[1].layers = [
         { img: "arena1_ground", ground: true, par: 1, y: 475, h: 330, dim: 0.12 },
@@ -7599,6 +7599,15 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const t = a.top, gr = ctx.createLinearGradient(0, -1200, 0, 140), c0 = `rgb(${Math.round(t[0] * 0.85)},${Math.round(t[1] * 0.85)},${Math.round(t[2] * 0.9)})`, c1 = `rgb(${t[0]},${t[1]},${t[2]})`;
         gr.addColorStop(0, c0); gr.addColorStop(0.8955, c1); gr.addColorStop(1, `rgba(${t[0]},${t[1]},${t[2]},0)`); /* 0.8955 = 世界 y=0（1200/1340）；往下 140px 羽化進背景，蓋掉接縫 */
         ctx.save(); ctx.fillStyle = gr; ctx.fillRect(cam.x - 600, -1200, Config.baseWidth + 1200, 1340); ctx.restore();
+        const S = stg.bgSky ? getBgArt(stg.bgSky) : null; /* v0.8.113 有天空延伸圖就畫圖（與背景同一套左右鏡像補滿；底端 40 列淡出蓋接縫，圖已含調暗） */
+        if (S && S.ok) {
+          const h = Config.baseHeight, w = h * (a.img.naturalWidth / a.img.naturalHeight), k = w / S.img.naturalWidth, sh = S.img.naturalHeight * k;
+          const f = Math.max(0, (w - Config.baseWidth) / (Config.worldWidth - Config.baseWidth)), cx = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, cam.x)), il = cx * (1 - f), y0 = -sh + 40 * k;
+          ctx.save(); ctx.drawImage(S.img, il, y0, w, sh);
+          ctx.save(); ctx.translate(il, 0); ctx.scale(-1, 1); ctx.drawImage(S.img, 0, y0, w, sh); ctx.restore();
+          ctx.save(); ctx.translate(il + 2 * w, 0); ctx.scale(-1, 1); ctx.drawImage(S.img, 0, y0, w, sh); ctx.restore();
+          ctx.restore();
+        }
       }
       function getBgArt(key) {
         if (!BG_ART[key]) {
@@ -10076,6 +10085,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         (stage.fxSheets || []).forEach(k => fxSheet(k));
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");
         if (stage.bg) getBgArt(stage.bg);
+        if (stage.bgSky) getBgArt(stage.bgSky);
         Boss.maxHp = stage.maxHp;
         Boss.hp = stage.maxHp;
         Boss._leapPity = 0;

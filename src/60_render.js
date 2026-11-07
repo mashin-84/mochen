@@ -275,6 +275,15 @@
         const t = a.top, gr = ctx.createLinearGradient(0, -1200, 0, 140), c0 = `rgb(${Math.round(t[0] * 0.85)},${Math.round(t[1] * 0.85)},${Math.round(t[2] * 0.9)})`, c1 = `rgb(${t[0]},${t[1]},${t[2]})`;
         gr.addColorStop(0, c0); gr.addColorStop(0.8955, c1); gr.addColorStop(1, `rgba(${t[0]},${t[1]},${t[2]},0)`); /* 0.8955 = 世界 y=0（1200/1340）；往下 140px 羽化進背景，蓋掉接縫 */
         ctx.save(); ctx.fillStyle = gr; ctx.fillRect(cam.x - 600, -1200, Config.baseWidth + 1200, 1340); ctx.restore();
+        const S = stg.bgSky ? getBgArt(stg.bgSky) : null; /* v0.8.113 有天空延伸圖就畫圖（與背景同一套左右鏡像補滿；底端 40 列淡出蓋接縫，圖已含調暗） */
+        if (S && S.ok) {
+          const h = Config.baseHeight, w = h * (a.img.naturalWidth / a.img.naturalHeight), k = w / S.img.naturalWidth, sh = S.img.naturalHeight * k;
+          const f = Math.max(0, (w - Config.baseWidth) / (Config.worldWidth - Config.baseWidth)), cx = Math.max(0, Math.min(Config.worldWidth - Config.baseWidth, cam.x)), il = cx * (1 - f), y0 = -sh + 40 * k;
+          ctx.save(); ctx.drawImage(S.img, il, y0, w, sh);
+          ctx.save(); ctx.translate(il, 0); ctx.scale(-1, 1); ctx.drawImage(S.img, 0, y0, w, sh); ctx.restore();
+          ctx.save(); ctx.translate(il + 2 * w, 0); ctx.scale(-1, 1); ctx.drawImage(S.img, 0, y0, w, sh); ctx.restore();
+          ctx.restore();
+        }
       }
       function getBgArt(key) {
         if (!BG_ART[key]) {
