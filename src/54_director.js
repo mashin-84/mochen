@@ -106,6 +106,7 @@
       function dirUpdate(dt) {
         const D = Game.dir; if (!D) return;
         const c = D.c; D.t += dt;
+        if (c.kind === "assist") { assistStep(D, dt); return; } /* v0.8.115 玄天珠演出：世界暫停（不更新特效／粒子） */
         if (c.kind === "drop") { dropStep(D, dt); if (!D.freeze) updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
         Boss._cineImg = dirPoseAt(c, D.t);
         if (!D.aura && c.aura && D.t >= (c.aura.at || 0) && fxReady(c.aura.sheet)) {
@@ -168,4 +169,109 @@
         const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.22, w / 2, h / 2, h * 0.95);
         const tn = D.c.tint || "0,0,0"; g.addColorStop(0, `rgba(${tn},0)`); g.addColorStop(1, `rgba(${tn},${D.a})`);
         ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); ctx.restore();
+      }
+
+      /* ====================== v0.8.115 玄天珠：繞身圈與技能演出 ======================
+       * 平時：珠子繞主角勻速畫橢圓（繞到前面／背面有遮擋層次；用盡後變灰、轉慢）。
+       * 技能（約 1 秒）：世界暫停＋鏡頭拉近主角＋聚光暗角 → 主角前指 → 十字星由大到小越轉越快、縮進珠心 → 極短暫定格
+       *   → 珠子衝向敵人（太初替身＝飛回主角胸口）→ 命中那一刻才 applyAssistEffect 並恢復戰鬥。
+       * 美術掛鉤（有圖用圖，沒圖退回程式畫）：assets/fx/xtz.webp（4×4：列 0 珠子脈動、列 1 灰珠、列 2 拖尾、列 3 命中爆光）、
+       *   assets/fx/xtz_star.webp（單張十字星）、主角前指關鍵格 mc/41_point_a／42_point_b／43_point_c（沒有時用 11_thrust 頂替）。 */
+      const ASSIST_CFG = { tIn: 0.2, tStar: 0.42, tFreeze: 0.08, dashSpd: 2400, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
+      function assistStart(type) {
+        if (Game.mode !== "battle" || Game.cine || Game.dir || Boss.hp <= 0 || Player.hp <= 0) return false;
+        const o0 = orbCurrent();
+        Game.dir = { c: { kind: "assist", dur: 99 }, kind: "assist", st: Stages[Boss.stageId], type, t: 0, dark: 0, a: 0, orb: { x: o0.x, y: o0.y, R: 9 }, from: { x: o0.x, y: o0.y }, star: null, trail: [], phase: "in", tp: 0, focusX: Player.x,
+          camNow: { zoom: Game.camera.targetZoom + 0.6, y: Player.y - 85 - Config.baseHeight * 0.5, rate: 14 } };
+        Player.facing = Boss.x >= Player.x ? 1 : -1; Player.vx = 0; Player.isChargingAttack = false;
+        return true;
+      }
+      function assistPoseAt(t) {
+        const C = ASSIST_CFG, has = n => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); };
+        if (t < 0.08) return null;
+        const cand = t < 0.2 ? C.poseNames[0] : t < ASSIST_CFG.tIn + ASSIST_CFG.tStar ? C.poseNames[1] : C.poseNames[2];
+        return has(cand) ? cand : (has(C.poseNames[1]) ? C.poseNames[1] : C.poseFallback);
+      }
+      function assistStep(D, dt) {
+        const C = ASSIST_CFG, f = Player.facing, hand = { x: Player.x + f * 64, y: Player.y - 98 };
+        D.t += 0; D.tp += dt; Player._pose = assistPoseAt(D.t);
+        if (D.phase === "in") { /* 拉近＋變暗＋珠子飛到指尖 */
+          const u = Math.min(1, D.tp / C.tIn), e = 1 - Math.pow(1 - u, 3);
+          D.dark = e; D.orb.x = D.from.x + (hand.x - D.from.x) * e; D.orb.y = D.from.y + (hand.y - D.from.y) * e;
+          D.star = null;
+          if (u >= 1) { D.phase = "star"; D.tp = 0; D.sa = 0; }
+        } else if (D.phase === "star") { /* 十字星：大於珠子，越轉越快、越縮越小 */
+          const u = Math.min(1, D.tp / C.tStar), w = 4 + 46 * u * u;
+          D.sa += w * dt; D.star = { a: D.sa, s: 3.6 - 3.0 * u * u, alpha: 0.5 + 0.5 * u };
+          D.orb.x = hand.x + (Math.random() - 0.5) * 2 * u; D.orb.y = hand.y + (Math.random() - 0.5) * 2 * u;
+          if (u >= 1) { D.phase = "freeze"; D.tp = 0; screenFlash("rgba(220,240,255,0.55)", 0.45, 0.2); Sound.play("parry", 0.5, 1.9); }
+        } else if (D.phase === "freeze") { /* 縮到珠心的瞬間，一切停住極短暫的時間 */
+          D.star = { a: D.sa, s: 0.35, alpha: 1 };
+          if (D.tp >= C.tFreeze) { D.phase = D.type === "tishen" ? "absorb" : "dash"; D.tp = 0; D.star = null; D.hs = { x: D.orb.x, y: D.orb.y }; if (D.phase === "dash") { Sound.play("flysword", 0.8, 1.3); D.camNow = { zoom: Game.camera.targetZoom + 0.1, y: 0, rate: 9 }; D.focusX = (Player.x + Boss.x) * 0.5; } }
+        } else if (D.phase === "dash") { /* 珠子衝向敵人，拖尾 */
+          const tx = Boss.x, ty = Boss.y - 110, dx = tx - D.orb.x, dy = ty - D.orb.y, d = Math.hypot(dx, dy), step = C.dashSpd * dt;
+          D.trail.push({ x: D.orb.x, y: D.orb.y, t: 0 }); if (D.trail.length > 14) D.trail.shift();
+          if (d <= step + 24) { D.orb.x = tx; D.orb.y = ty; assistHit(D); }
+          else { D.orb.x += dx / d * step; D.orb.y += dy / d * step; }
+          D.dark += (0.65 - D.dark) * Math.min(1, dt * 8);
+        } else if (D.phase === "absorb") { /* 太初替身：珠子飛回主角胸口 */
+          const u = Math.min(1, D.tp / 0.16), tx = Player.x, ty = Player.y - 80;
+          D.orb.x = D.hs.x + (tx - D.hs.x) * u; D.orb.y = D.hs.y + (ty - D.hs.y) * u;
+          if (u >= 1) assistHit(D);
+        } else if (D.phase === "out") { /* 命中後：暗角與鏡頭快速退場，戰鬥已恢復運作 */ }
+        D.trail.forEach(p => p.t += dt);
+      }
+      function assistHit(D) {
+        D.phase = "done";
+        if (fxReady("xtz")) spawnFx("xtz", 3, D.orb.x, D.orb.y, { w: 300, dur: 0.4 });
+        screenFlash("rgba(200,230,255,0.7)", 0.6, 0.25); addTrauma(0.35);
+        const type = D.type; assistEnd(D);
+        applyAssistEffect(type); /* 命中觸發效果，同一刻恢復戰鬥 */
+      }
+      function assistEnd(D) {
+        Game.dir = null; Player._pose = null; Game.hitstopT = 0;
+        Game.camera.shakeRate = 1;
+      }
+      /* 珠子目前位置：繞主角勻速橢圓（z>0 在前、<0 在後） */
+      function orbCurrent() {
+        const D = Game.dir && Game.dir.kind === "assist" ? Game.dir : null;
+        if (D && D.orb) return { x: D.orb.x, y: D.orb.y, z: 1, R: D.orb.R };
+        const th = (performance.now() / 1000) * (Player.assistAvailable ? 2.6 : 1.3);
+        return { x: Player.x + Math.cos(th) * 46, y: Player.y - 88 + Math.sin(th) * 14, z: Math.sin(th), R: 7.5 };
+      }
+      function drawXtzOrb(front) {
+        const o = orbCurrent(), D = Game.dir && Game.dir.kind === "assist" ? Game.dir : null;
+        if (front !== (o.z >= 0)) return;
+        const on = Player.assistAvailable || !!D, now = performance.now();
+        ctx.save();
+        if (D && D.trail.length) { /* 衝刺拖尾 */
+          ctx.globalCompositeOperation = "lighter";
+          D.trail.forEach((p, i) => { const a = Math.max(0, 1 - p.t * 6) * (i / D.trail.length); ctx.globalAlpha = a * 0.7; ctx.fillStyle = "#93c5fd"; ctx.beginPath(); ctx.arc(p.x, p.y, 4 + 6 * (i / D.trail.length), 0, Math.PI * 2); ctx.fill(); });
+        }
+        ctx.globalCompositeOperation = "lighter";
+        const size = (D ? 76 : 52) * (o.z < 0 ? 0.85 : 1);
+        if (fxReady("xtz")) { /* 美術：列 0 珠子脈動、列 1 灰珠 */
+          const A = fxSheet("xtz"), col = Math.floor(now / 120) % 4;
+          ctx.globalAlpha = o.z < 0 ? 0.7 : 1; ctx.drawImage(A.img, col * 256, (on ? 0 : 1) * 256, 256, 256, o.x - size / 2, o.y - size / 2, size, size);
+        } else { /* 備案：程式畫的圓珠 */
+          const R = o.R * (D ? 1.5 : 1) * (o.z < 0 ? 0.85 : 1), g = ctx.createRadialGradient(o.x, o.y, 1, o.x, o.y, R * 2.6);
+          g.addColorStop(0, on ? "rgba(235,245,255,1)" : "rgba(148,163,184,0.9)"); g.addColorStop(0.35, on ? "rgba(96,165,250,0.85)" : "rgba(71,85,105,0.7)"); g.addColorStop(1, "rgba(96,165,250,0)");
+          ctx.globalAlpha = o.z < 0 ? 0.65 : 1; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, R * 2.6, 0, Math.PI * 2); ctx.fill();
+        }
+        if (D && D.star) { /* 十字星（旋轉、由大縮小） */
+          const S = D.star, L = 30 * S.s, W = Math.max(1.5, 5 * S.s);
+          ctx.globalAlpha = S.alpha;
+          if (fxReady("xtz_star")) { const I = fxSheet("xtz_star").img, z = 2 * L; ctx.translate(o.x, o.y); ctx.rotate(S.a); ctx.drawImage(I, -z / 2, -z / 2, z, z); }
+          else {
+            for (let k = 0; k < 2; k++) { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(S.a + k * Math.PI / 2); const g = ctx.createLinearGradient(-L, 0, L, 0); g.addColorStop(0, "rgba(180,220,255,0)"); g.addColorStop(0.5, "rgba(255,255,255,1)"); g.addColorStop(1, "rgba(180,220,255,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-L, 0); ctx.quadraticCurveTo(0, -W, L, 0); ctx.quadraticCurveTo(0, W, -L, 0); ctx.fill(); ctx.restore(); }
+          }
+        }
+        ctx.restore();
+      }
+      /* 聚光暗角：主角外的畫面變暗（畫在敵人／場景之後、主角與珠子之前，世界座標） */
+      function drawAssistDark() {
+        const D = Game.dir; if (!D || D.kind !== "assist" || !(D.dark > 0.01)) return;
+        const cx = Player.x, cy = Player.y - 85, k = D.dark, g = ctx.createRadialGradient(cx, cy, 70, cx, cy, 360);
+        g.addColorStop(0, "rgba(2,6,23,0)"); g.addColorStop(0.5, `rgba(2,6,23,${0.5 * k})`); g.addColorStop(1, `rgba(2,6,23,${0.88 * k})`);
+        ctx.save(); ctx.fillStyle = g; ctx.fillRect(cx - 3200, -1600, 6400, 4200); ctx.restore();
       }

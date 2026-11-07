@@ -723,7 +723,7 @@
 
       function activateAssist() {
         Sound.resume();
-        if (inputLocked()) return;
+        if (inputLocked() || Game.dir) return;
         if (!Player.assistAvailable) {
           spawnFloatingText(Player.x, Player.y - 105, "太初玄天珠靈氣枯竭", "#94a3b8", 0.95);
           return;
@@ -731,9 +731,14 @@
 
         Player.assistAvailable = false;
         Sound.play("assist", 0.95, 1.0);
+        syncAssistUI();
+        if (assistStart(Player.selectedAssist)) return; /* v0.8.115 玄天珠演出：拉近、變暗、十字星、衝向敵人，命中那一刻才呼叫 applyAssistEffect */
+        applyAssistEffect(Player.selectedAssist);
+      }
+      function applyAssistEffect(sel) {
         Game.flashWhiteOverlay = 0.5;
 
-        if (Player.selectedAssist === "lingguang") {
+        if (sel === "lingguang") {
           Boss.isPerilous = false;
           Boss.state = "hurt";
           Boss.stateTimer = 0.95;
@@ -745,7 +750,7 @@
           damageBossPosture(22, "太初靈光強制破招！");
           spawnFloatingText(Boss.x, Boss.y - 135, "【太初靈光】強制打斷殺招！", "#60a5fa", 1.25);
           setTelemetry("✦ 師弟妹催動玄天珠【太初靈光】：強制中斷大招！");
-        } else if (Player.selectedAssist === "tishen") {
+        } else if (sel === "tishen") {
           Player.tishenActive = true;
           let tishenDuration = 2.2;
           if (Progress.equippedSeals.includes("bumie")) tishenDuration = 3.5;
@@ -754,7 +759,7 @@
           spawnSparks(Player.x, Player.y - 50, "parry", Player.facing);
           spawnFloatingText(Player.x, Player.y - 125, `【太初替身】${tishenDuration}秒無敵＋免死護魂！`, "#60a5fa", 1.22);
           setTelemetry("✦ 師弟妹賦予【太初替身】：護佑墨塵元神，無敵時隙！");
-        } else if (Player.selectedAssist === "fuzhen") {
+        } else if (sel === "fuzhen") {
           Boss.isPerilous = false;
           Boss.state = "frozen";
           Boss.frozenTimer = 2.0;

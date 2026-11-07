@@ -143,7 +143,10 @@
         drawCineTrail();
         drawIllusions();
         drawBossEntity();
+        drawAssistDark(); /* v0.8.115 玄天珠演出的聚光暗角（暗化場景與敵人，主角與珠子在上） */
+        drawXtzOrb(false); /* 珠子在主角背後那半圈 */
         drawPlayer();
+        drawXtzOrb(true);
         drawHubFront();
         drawArcs();
         drawSparks();

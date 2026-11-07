@@ -37,7 +37,8 @@
           let frame = "01_idle1";
           let playerImg = null;
           let idleNext = null, idleMix = 0;
-          const has = (n) => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); }; /* v0.8.98 補格是選用美術，沒載到就退回舊格 */
+          const has = (n) => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); };
+          /* v0.8.98 補格是選用美術，沒載到就退回舊格 */
           const isAirborne = Player.y < Config.groundY - 2;
 
           if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
@@ -101,6 +102,7 @@
             }
           }
 
+          if (Player._pose && has(Player._pose)) { frame = Player._pose; playerImg = null; idleNext = null; } /* v0.8.115 玄天珠前指姿勢（導演設定） */
           if (!playerImg) {
             playerImg = MC_IMGS[frame];
           }
@@ -209,19 +211,7 @@
           ctx.restore();
         }
 
-        const orbX = Player.x - Player.facing * 34;
-        const orbY = Player.y - 82 + Math.sin(performance.now() * 0.005) * 6;
-        ctx.save();
-        ctx.fillStyle = Player.assistAvailable ? "#60a5fa" : "#475569";
-        ctx.shadowColor = Player.assistAvailable ? "#60a5fa" : "transparent";
-        ctx.shadowBlur = Player.assistAvailable ? 14 : 0;
-        ctx.beginPath();
-        ctx.arc(orbX, orbY, 7.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#dbeafe";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        ctx.restore();
+        /* v0.8.115 玄天珠改由 drawXtzOrb 畫（繞身勻速橢圓） */
 
         ctx.restore();
       }
