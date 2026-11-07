@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.100（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.101（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.101 第 3 關登場影片**：竹林拔劍（池畔石階、背影鏡頭繞到側面拔雙劍、拉遠劍交叉震出水環）＝`assets/boss3/intro.mp4／webm`（6.9 秒）。`Stages[3].introMovie`；舊剪影＋飛劍聚合登場（`introBg／introCine／introVideo／introDash／introAppear／introA／introFlash／introAppearCfg／introSfx`）已移除。**教訓（影片提示詞）**：第一版分鏡切了 5 次，銜接不順；修正版改成連續運鏡（最多 2 處轉場）、鎖定單一地點與色調、明寫白靴。Gemini 實際仍把「繞到側面」做了兩次，用 ffmpeg 剪掉重複的 3.5～4.5 秒並 0.25 秒溶接。**待辦**：第 3 關二階段影片（連續運鏡版提示詞已給，未生成）；接上時要處理 `transformMove`／`phaseSwitchMove`（拔重劍招式）與影片的先後，影片開始時就該換成重劍姿態。
 
 **v0.8.100 第 2 關影片過場**：同第 1 關做法（日式賽璐璐、純文字生影片、8 秒有聲、loudnorm）。登場「千鏡一影」（鏡片映出微笑臉→穿過鏡環→真身睜眼翠光→收扇鏡片炸碎＋分身一圈收攏→低角度定格淡黑）＝`assets/boss2/intro.mp4／webm`；二階段「真假難辨」（扇裂、陣紋熄滅→重燃→罡風、分身數十個→衝擊格→夜空數百飛劍→睜眼指鏡頭）＝`p2.mp4／webm`。`Stages[2].introMovie／p2Movie`；舊的剪影＋鏡片聚合登場（`introCine／introVideo／introDash／introAppear／introA／introFlash／introSfx`、`introBg`）已移除，`assets/boss2/intro` 舊檔被新片覆蓋，`S2.sfx.introSwirl／introLand` 暫留未用。二階段影片播完後，`onBossPhase2` 設的 `_splitPending` 會讓他立刻放一次分身（呼應影片）；`b2_p2` 二階段曲改在影片結束時才換。無頭驗證：登場與二階段播放、淡入淡出、結束皆正常。
 

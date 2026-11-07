@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.100";
+      const ASSET_VER = "0.8.101";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2972,10 +2972,8 @@
           { img: "arena3_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.18 } /* v0.8.63 前景竹叢剪影 */
         ];
         S3.introName = "assets/boss3/name.webp"; /* v0.8.63 書法名牌「莫寒川」 */
-        /* v0.8.64 開場影片（Gemini 原片 10 秒剪到光蓋滿的 7.6 秒）：剪影莫寒川舉雙劍 → 池中升起飛劍 → 萬劍撲向鏡頭；之後戰場淡入、飛劍落在原位、旋風環收束現身 */
-        S3.introBg = "intro3"; S3.introCine = true; S3.introVideo = "assets/boss3/intro"; S3.introDash = true; S3.introAppear = "boss3fx"; S3.introA = 7.6; S3.introFlash = "226,220,246";
-        S3.introAppearCfg = { swirl: [1, 560, -110, 330], land: [0, 420, -150], frames: ["25_x_hit", "22_hs_rec"], rain: 7, sparks: null };
-        S3.introSfx = [[1.0, "b3_twin", 0.5, 1], [3.0, "b3_rain", 0.6, 0.9], [4.6, "b3_cross", 0.55, 1], [5.8, "b3_rain", 0.8, 1]]; /* v0.8.68 改用專屬音效 */
+        /* v0.8.101 第 3 關改影片過場（日式賽璐璐風）：登場「竹林拔劍」；舊的剪影＋飛劍聚合登場停用（二階段影片待接） */
+        S3.introMovie = "assets/boss3/intro";
         /* v0.8.68 Boss 專屬音效（ElevenLabs b3_*）：招式 sfx {w 前搖, a 出招, h 連擊每下}；zone＝戒律陣紋生成時的低鳴 */
         S3.sfx = { zone: ["b3_seal", 0.75], introSwirl: ["b3_spin", 0.8], introLand: ["b3_cross", 0.85] };
         [["slash1", { a: "b3_twin" }], ["exclusive_combo", { h: "b3_cross" }], ["exclusive_feint", { a: "b3_cross" }], ["slash2", { a: "b3_spin" }], ["dash_rush", { a: "b3_dash" }], ["thrust_peril", { a: "b3_dash" }], ["sweep_peril", { a: "b3_low" }], ["grab_peril", { a: "b3_rain" }],
