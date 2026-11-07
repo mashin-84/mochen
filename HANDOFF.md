@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.99（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.100（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.100 第 2 關影片過場**：同第 1 關做法（日式賽璐璐、純文字生影片、8 秒有聲、loudnorm）。登場「千鏡一影」（鏡片映出微笑臉→穿過鏡環→真身睜眼翠光→收扇鏡片炸碎＋分身一圈收攏→低角度定格淡黑）＝`assets/boss2/intro.mp4／webm`；二階段「真假難辨」（扇裂、陣紋熄滅→重燃→罡風、分身數十個→衝擊格→夜空數百飛劍→睜眼指鏡頭）＝`p2.mp4／webm`。`Stages[2].introMovie／p2Movie`；舊的剪影＋鏡片聚合登場（`introCine／introVideo／introDash／introAppear／introA／introFlash／introSfx`、`introBg`）已移除，`assets/boss2/intro` 舊檔被新片覆蓋，`S2.sfx.introSwirl／introLand` 暫留未用。二階段影片播完後，`onBossPhase2` 設的 `_splitPending` 會讓他立刻放一次分身（呼應影片）；`b2_p2` 二階段曲改在影片結束時才換。無頭驗證：登場與二階段播放、淡入淡出、結束皆正常。
 
 **v0.8.99 第 1 關影片過場（日式賽璐璐風）＋影片淡入淡出**：使用者決定影片改日式賽璐璐動畫風（只限影片，圖仍依風格聖經）、不必對應首格、重點是魂系的震撼感；純文字生影片（提示詞見對話：登場＝空橋→靴與戟拖火花→仰拍臉睜眼泛紅→戟插地衝擊波→低角度英雄定格淡黑；二階段＝單膝跪地→紅色血脈爬過石橋→怒吼、紅柱衝天、衝擊格→戟指鏡頭定格）。`assets/boss1/intro.mp4／webm`（8.1 秒、1280×720、有聲、loudnorm -16 LUFS，約 1.5 MB）取代舊的崖頂剪影影片；`p2.mp4／webm` 為二階段。`Stages[1].introMovie／p2Movie`（舊 `introCine／introVideo／introBg` 已移除，`assets/bg/intro1.webp` 與 `assets/boss1/20_jump` 等躍下演出素材暫留未用，Beta 期清除）。**引擎**（`61_cine.js`）：`playMovie` 新增 `fadeIn`（預設 0.6 秒）／`fadeOut`（0.8 秒）→ 影片畫面與音量由 `movieAlpha` 控制（開頭由黑淡入、結尾淡出到黑），影片結束 `screenFlash` 黑場 0.8 秒淡回戰場；靜音設定（`Sound.muted`）會讓影片靜音。**一般關卡二階段影片**（新，`82_dialogue.js`）：`bossPhaseCinematic` 結尾若 `stage.p2Movie` 且非部位 Boss（`!stage.parts`）→ 850ms 後 `bossPhase2Movie`（讓閃白與慢動作先演完）；影片期間 `Music.duck(0, 長度+0.5)` 把關卡曲壓成無聲、結束時 `duckUntil=0` 立即恢復並換 `STAGE_BGM_P2`（`50_boss_ai.js onBossPhase2` 對有二階段影片的關卡不再立刻換曲）；播完給 0.7 秒喘息（`introT`）。可用「跳過」。第 2、3、5 關要二階段影片只要設 `Stages[n].p2Movie`（第 3、5 關有蛻變／拔劍招式，接上時要確認和 `transformMove`／`phaseSwitchMove` 的先後）。無頭驗證：登場播放→淡入淡出→結束；二階段 0.85 秒後切入、音量淡入淡出、播完恢復。待使用者手機實測：影片載入時間（兩支各 1.5～1.9 MB）、淡入淡出速度、音量、二階段切入時機是否順。\n\n**v0.8.98 主角補 12 格關鍵格**：`assets/mc/29～40`（`tools/sheet12.py` 切圖：4×3 洋紅底，逐列 band 去格線並濾掉殘留細線，基準高度 434＝新格縮放 0.775，腳底 y=525）。接入（`65_draw_player.js`，每組都檢查圖載到才用，否則退回舊格）：招架 29 預備（前 90ms 涵蓋完美窗口）→ 30 架開（彈開後 220ms 內一律用 30）、架勢結束後 170ms 用 31 收勢；瞬步 33／34／35 依 `stateTimer` 的 0.22 秒分 25%／50%／25%（空中只用 34）；受擊 36（前 0.12 秒）→ 37（後段，破勢 staggered 也用 37）；蓄力重斬 `MC_ATK[4]` = 38／39／40（總長 0.32 秒），蓄力按住 150ms 後用 38 高舉；起跳 32（離地前 40px）。舊的單格 13_parry／14_dash／16_hurt 當退回格保留。注意：新格比舊格縮放是目測（腰帶與頭大小）定的，待使用者手機實測大小是否一致。
 
