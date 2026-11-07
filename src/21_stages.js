@@ -356,7 +356,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S4.fxSheets = ["boss4fx3", "boss4warn"]; S4.arcArt = "boss4fx3";
         S4.moves.slash1.fxAct = { sheet: "boss4fx3", row: 0, ox: 150, oy: -140, w: 440, dur: 0.38 };
         S4.moves.ring_slash.fxHit = { sheet: "boss4fx3", row: 1, c0: 0, nf: 2, ox: 0, oy: -120, w: 520, dur: 0.3 };
-        S4.moves.thrust_peril.fxAct = { sheet: "boss4fx3", row: 1, c0: 2, nf: 2, ox: 280, oy: -140, w: 680, dur: 0.3 };
+        S4.moves.thrust_peril.fxAct = [{ sheet: "boss4fx3", row: 1, c0: 2, nf: 2, ox: 280, oy: -140, w: 680, dur: 0.3 },
+          { sheet: "boss4fx2", row: 3, c0: 2, nf: 2, ox: -100, oy: -150, w: 420, dur: 0.34, follow: true }]; /* v0.8.102 核心突進：光球彗星跟著劍魂衝（boss4fx2 列 3 第 3、4 格） */
         S4.moves.sweep_peril.fxAct = { sheet: "boss4fx3", row: 2, c0: 0, nf: 2, ox: 120, oy: -50, w: 560, dur: 0.4 };
         S4.poolP2 = S4.pool;
         S4.farMoves = ["flyswords"];

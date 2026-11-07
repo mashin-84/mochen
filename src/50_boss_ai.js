@@ -148,7 +148,8 @@
       function spawnMoveFx(f) {
         if (Array.isArray(f)) { f.forEach(spawnMoveFx); return; } /* v0.8.59 一次可出多個特效（刀弧＋落地震波） */
         if (!f || !fxReady(f.sheet)) return;
-        spawnFx(f.sheet, f.row, Boss.x + Boss.facing * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: Boss.facing, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha, rot: (f.rot || 0) * Boss.facing, c0: f.c0, nf: f.nf });
+        const fc = Boss.facing; /* v0.8.102 f.follow：特效跟著 Boss 移動（衝刺拖尾），位置偏移鎖定出招時的面向 */
+        spawnFx(f.sheet, f.row, Boss.x + fc * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: f.dur || 0.35, facing: fc, anchor: f.anchor || "c", alpha: f.alpha == null ? 1 : f.alpha, rot: (f.rot || 0) * fc, c0: f.c0, nf: f.nf, follow: f.follow ? () => ({ x: Boss.x + fc * (f.ox || 0), y: Boss.y + (f.oy || 0) }) : null });
       }
       function triggerMacro(k) { const parts = k.split("+"); triggerBossMove(parts[0], parts.slice(1)); }
       /* v0.8.66 飛劍招前搖：在出手高度召喚成形（flySwordArt.summonRow）；幻影也照它要射的高度召喚，避免洩漏真身 */

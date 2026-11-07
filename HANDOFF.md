@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.101（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.102（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.102 第 4 關核心突進圖接入**：`thrust_peril`（【危】劍魂突進）的 `fxAct` 改成陣列：原箭形拖尾（boss4fx3）＋光球彗星（`boss4fx2` 列 3 第 3、4 格，`follow:true` 跟著劍魂衝刺，`ox:-100` 讓球頭落在身上、尾巴拖在後）。`spawnMoveFx` 新增 `follow` 欄位（偏移鎖定出招時面向）。判定、時間未改。驗證：check／smoke 第 4 關 ok；無頭測試確認 active 時特效生成並跟隨、收招後清除。待手機實測：光球大小（w 420）與亮度會不會蓋住劍魂與預警。
 
 **v0.8.101 第 3 關登場影片**：竹林拔劍（池畔石階、背影鏡頭繞到側面拔雙劍、拉遠劍交叉震出水環）＝`assets/boss3/intro.mp4／webm`（6.9 秒）。`Stages[3].introMovie`；舊剪影＋飛劍聚合登場（`introBg／introCine／introVideo／introDash／introAppear／introA／introFlash／introAppearCfg／introSfx`）已移除。**教訓（影片提示詞）**：第一版分鏡切了 5 次，銜接不順；修正版改成連續運鏡（最多 2 處轉場）、鎖定單一地點與色調、明寫白靴。Gemini 實際仍把「繞到側面」做了兩次，用 ffmpeg 剪掉重複的 3.5～4.5 秒並 0.25 秒溶接。**待辦**：第 3 關二階段影片（連續運鏡版提示詞已給，未生成）；接上時要處理 `transformMove`／`phaseSwitchMove`（拔重劍招式）與影片的先後，影片開始時就該換成重劍姿態。
 
