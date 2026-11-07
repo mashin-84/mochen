@@ -237,8 +237,8 @@
             far: ["b_rush", "b_leap"], farP2: [] }
         };
       })();
-      Stages[1].introCine = true; /* v0.8.18 登場動畫 */
-      Stages[1].introVideo = "assets/boss1/intro"; Stages[1].introBg = "intro1"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "36_tq_wind", "37_tq_hit", "38_tq_rec", "39_cb_wind", "40_cb_h1", "41_cb_h2", "42_cb_rec", "43_dl_hold", "44_dl_hit", "45_tw_wind", "46_tw_rel", "47_tw_catch", "48_sp_wind", "49_sp_hit", "50_sp_rec", "51_ch_wind", "52_ch_run", "53_ch_stop", "54_sh_vanish", "55_sh_strike", "21_fall", "22_land", "23_rise", "24_chop_wind", "25_chop_hit", "26_chop_rec", "27_thr_wind", "28_thr_hit", "29_thr_rec", "30_swp_wind", "31_swp_hit", "32_swp_rec", "33_leap_crouch", "34_leap_air", "35_leap_land"];
+      /* v0.8.99 第 1 關改影片過場（日式賽璐璐風，使用者用 Gemini 生；舊的崖頂剪影躍下演出停用） */
+      Stages[1].introMovie = "assets/boss1/intro"; Stages[1].p2Movie = "assets/boss1/p2"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "36_tq_wind", "37_tq_hit", "38_tq_rec", "39_cb_wind", "40_cb_h1", "41_cb_h2", "42_cb_rec", "43_dl_hold", "44_dl_hit", "45_tw_wind", "46_tw_rel", "47_tw_catch", "48_sp_wind", "49_sp_hit", "50_sp_rec", "51_ch_wind", "52_ch_run", "53_ch_stop", "54_sh_vanish", "55_sh_strike", "21_fall", "22_land", "23_rise", "24_chop_wind", "25_chop_hit", "26_chop_rec", "27_thr_wind", "28_thr_hit", "29_thr_rec", "30_swp_wind", "31_swp_hit", "32_swp_rec", "33_leap_crouch", "34_leap_air", "35_leap_land"];
       /* v0.8.33 第 5 關登場：影片（剪影小狼＋巨狼影子）→ 揚塵淡出 → 小狼衝進場煞停、名字卡（introDash 模式，需影片） */
 Stages[5].introCine = true; Stages[5].introDash = true; Stages[5].introVideo = "assets/boss5/intro"; Stages[5].introBg = "intro5"; Stages[5].introName = "assets/boss5/name.webp";
 Stages[5].introA = 5.6; Stages[5].introFlash = "214,196,170"; Stages[5].introSfx = [[1.9, "w_snarl", 0.45, 1.1], [2.9, "m_howl", 0.95, 1], [4.0, "w_bark", 0.85, 1.1], [4.4, "w_claw", 0.7, 1]]; Stages[5].introLandSfx = "w_snarl"; Stages[5].spriteExtras = ["26_rush", "25_pounce_land", "20_bite_crouch"];

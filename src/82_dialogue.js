@@ -163,6 +163,18 @@
         Game.slowScale = 0.3;
         Sound.play("peril", 1.0, 0.6);
         hapticBuzz([60, 40, 120]);
+        const stP = Stages[Boss.stageId];
+        if (stP && stP.p2Movie && !stP.parts) setTimeout(() => bossPhase2Movie(stP), 850); /* v0.8.99 一般關卡二階段影片：等閃白與慢動作演完再切黑場播影片 */
+      }
+      function bossPhase2Movie(st) {
+        if (Game.mode !== "battle" || Game.cine || Game.defeated || Boss.hp <= 0 || Player.hp <= 0 || Config.bossPhase !== 2) { if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); return; }
+        const v = getCineVideo(st.p2Movie), dur = (v.duration && isFinite(v.duration)) ? v.duration : 8;
+        const ok = playMovie(st.p2Movie, { audio: true, onEnd: () => {
+          Music.duckUntil = 0; Music.duckLvl = 1; /* 解除影片期間的靜音（提早跳過時也要立刻恢復） */
+          if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
+          Game.introT = Math.max(Game.introT, 0.7); /* 影片後給 0.7 秒喘息 */
+        } });
+        if (ok) Music.duck(0.0, dur + 0.5); else if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
       }
 
       function bossKillCinematic() {

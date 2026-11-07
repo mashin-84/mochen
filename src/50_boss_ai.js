@@ -20,7 +20,7 @@
       /* 進二階段：依 stage.stanceByPhase 換姿態（第 3 關：一階段雙劍、二階段玄鐵重劍） */
       function onBossPhase2() {
         const stage = Stages[Boss.stageId];
-        if (stage && !stage.transformMove && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
+        if (stage && !stage.transformMove && !(stage.p2Movie && !stage.parts) && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* 有二階段影片的關卡，換曲改在影片結束時 */ /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
         if (stage && stage.transformMove && stage.moves[stage.transformMove] && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) {
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;

@@ -54,8 +54,8 @@
         const v = getCineVideo(base);
         if (!(v.readyState >= 3 && !v.error)) return false;
         opts = opts || {};
-        Game.cine = { movie: true, t: 0, ask: false, vid: v, onEnd: opts.onEnd || null, landed: true };
-        v.muted = !opts.audio; v.volume = 1;
+        Game.cine = { movie: true, t: 0, ask: false, vid: v, onEnd: opts.onEnd || null, landed: true, fi: opts.fadeIn == null ? 0.6 : opts.fadeIn, fo: opts.fadeOut == null ? 0.8 : opts.fadeOut, aud: !!opts.audio }; /* v0.8.99 淡入淡出（魂系：黑場淡入、結尾淡出到黑） */
+        v.muted = !opts.audio || !!Sound.muted; v.volume = 0;
         try { v.currentTime = 0; const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; try { v.play(); } catch (e) { } }); } catch (e) { }
         document.body.classList.add("cine-mode");
         elHintToast.style.visibility = "hidden";
@@ -70,7 +70,13 @@
         document.body.classList.remove("cine-mode");
         elHintToast.style.visibility = "";
         elCine.style.display = "none";
+        screenFlash("rgba(0,0,0,1)", 1, 0.8); /* v0.8.99 影片結束：從黑場淡入回到戰場 */
         if (c.onEnd) c.onEnd();
+      }
+      /* v0.8.99 影片淡入淡出係數（0～1）：開頭 fi 秒由黑淡入、結尾 fo 秒淡出到黑；音量跟著走 */
+      function movieAlpha(c) {
+        const v = c.vid, t = v.currentTime || 0, d = v.duration || 8;
+        return Math.max(0, Math.min(1, t / Math.max(0.01, c.fi), (d - t) / Math.max(0.01, c.fo)));
       }
       function updateMovie(dt) {
         const c = Game.cine; if (c.ask) return;
@@ -78,12 +84,13 @@
         const v = c.vid;
         if (v.ended || (v.duration && v.currentTime >= v.duration - 0.05) || v.error || c.t > 40) { endMovie(); return; }
         if (v.paused) { try { const pr = v.play(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
+        if (c.aud) { try { v.volume = Math.max(0, Math.min(1, movieAlpha(c))); } catch (e) { } }
       }
       function drawMovie(w, h) {
         ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
         const v = Game.cine.vid, vw = v.videoWidth || 16, vh = v.videoHeight || 9;
         const k = Math.min(w / vw, h / vh), dw = vw * k, dh = vh * k;
-        if (v.readyState >= 2) ctx.drawImage(v, (w - dw) / 2, (h - dh) / 2, dw, dh);
+        if (v.readyState >= 2) { ctx.save(); ctx.globalAlpha = movieAlpha(Game.cine); ctx.drawImage(v, (w - dw) / 2, (h - dh) / 2, dw, dh); ctx.restore(); }
       }
       function startBossCine() {
         const stage = Stages[Boss.stageId];
