@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.97";
+      const ASSET_VER = "0.8.98";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -9149,8 +9149,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       });
 
       /* M2 主角攻擊關鍵格：每一刀「預備 a → 出刀 b → 收招 c」三拍（v0.8.45 生圖，900×560、腳底 y=529、x=450） */
-      const MC_ATK = { 1: ["20_s1a", "21_s1b", "22_s1c"], 2: ["23_s2a", "24_s2b", "25_s2c"], 3: ["26_t_a", "27_t_b", "28_t_c"] };
-      ['17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
+      const MC_ATK = { 1: ["20_s1a", "21_s1b", "22_s1c"], 2: ["23_s2a", "24_s2b", "25_s2c"], 3: ["26_t_a", "27_t_b", "28_t_c"], 4: ["38_hv_a", "39_hv_b", "40_hv_c"] /* v0.8.98 蓄力重斬 */ };
+      ['17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
       const MC_STRIDE = 250;
       let MC_PHASE = 0;
       let MC_LASTX = null;
@@ -9245,6 +9245,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           let frame = "01_idle1";
           let playerImg = null;
           let idleNext = null, idleMix = 0;
+          const has = (n) => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); }; /* v0.8.98 補格是選用美術，沒載到就退回舊格 */
           const isAirborne = Player.y < Config.groundY - 2;
 
           if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
@@ -9256,12 +9257,24 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             frame = ph === "plant" ? xf("18_plant", "13_parry") : ph === "rise" ? xf("19_rise", "01_idle1") : (!isAirborne ? xf("17_slide", "16_hurt") : "16_hurt");
           } else if (Player.state === "hitstun" || Player.state === "staggered" || Player.state === "frozen") {
             frame = "16_hurt";
+            if (has("36_hurt_a") && has("37_hurt_b")) { /* v0.8.98 受擊：瞬間仰身 → 踉蹌 */
+              if (Player.state === "hitstun") frame = Player.stateTimer > 0.16 ? "36_hurt_a" : "37_hurt_b";
+              else if (Player.state === "staggered") frame = "37_hurt_b";
+            }
           } else if (Player.state === "drink") {
             frame = "15_drink";
           } else if (Player.state === "dash") {
             frame = "14_dash";
+            if (has("33_dash_a") && has("34_dash_b") && has("35_dash_c")) { /* v0.8.98 瞬步三拍：蹬出 → 衝刺 → 煞停（空中只用衝刺格） */
+              const pr = 1 - Player.stateTimer / 0.22;
+              frame = isAirborne ? "34_dash_b" : pr < 0.25 ? "33_dash_a" : pr < 0.75 ? "34_dash_b" : "35_dash_c";
+            }
           } else if (Player.state === "parry") {
             frame = "13_parry";
+            if (has("29_parry_a") && has("30_parry_b")) { /* v0.8.98 招架：預備（前 90ms，涵蓋完美窗口）→ 架開（剛彈開時一律用架開格） */
+              const nowT = performance.now();
+              frame = (Player.lastDeflectMs && nowT - Player.lastDeflectMs < 220) || nowT - Player.parryStartMs >= 90 ? "30_parry_b" : "29_parry_a";
+            }
           } else if (Player.state === "attack" && Player.isDive) {
             frame = "08_fall";
           } else if (Player.state === "attack") {
@@ -9270,13 +9283,15 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             const seq = MC_ATK[Player.comboStep] || MC_ATK[1];
             const ok = (n) => { const im = MC_IMGS[n]; return im && im.complete && im.naturalWidth; };
             if (seq.every(ok)) {
-              const dur = Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
+              const dur = Player.comboStep === 4 ? 0.32 : Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
               frame = isAirborne ? seq[1] : el < 0.05 ? seq[0] : el < dur * 0.45 ? seq[1] : seq[2];
             }
           } else if (Player.isChargingAttack) {
             frame = "12_charge";
+            if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（0.45 秒蓄滿會自動出重斬，所以提早換格） */
           } else if (isAirborne) {
             frame = Player.vy < 0 ? "07_jump" : "08_fall";
+            if (Player.vy < 0 && Config.groundY - Player.y < 40 && has("32_jump_a")) frame = "32_jump_a"; /* v0.8.98 起跳蹲蓄（離地前 40px） */
           } else if (Player.state === "move") {
             if (MCR_READY === 10) {
               playerImg = MCR_IMGS[Math.floor(MC_PHASE * 10) % 10];
@@ -9286,7 +9301,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             }
           } else {
             frame = Math.floor(performance.now() / 600) % 2 === 0 ? "01_idle1" : "02_idle2";
-            if (MCI_READY === MCI_N) { /* v0.8.97 待機影片格：相鄰兩格淡入淡出 */
+            const pSince = performance.now() - Player.parryStartMs;
+            if (has("31_parry_c") && pSince >= Config.guardStanceMs && pSince < Config.guardStanceMs + 170) frame = "31_parry_c"; /* v0.8.98 招架收勢（架勢結束後 170ms） */
+            else if (MCI_READY === MCI_N) { /* v0.8.97 待機影片格：相鄰兩格淡入淡出 */
               const ph = ((performance.now() / 1000) % MCI_PERIOD) / MCI_PERIOD * MCI_N, i0 = Math.floor(ph) % MCI_N;
               playerImg = MCI_IMGS[i0]; idleNext = MCI_IMGS[(i0 + 1) % MCI_N]; idleMix = ph - Math.floor(ph);
             }
