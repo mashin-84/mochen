@@ -301,6 +301,17 @@
         const now = performance.now() / 1000, inv = Player.invulnTimer > 0.05, k = inv ? 1.5 : 0.95, pulse = 0.85 + 0.15 * Math.sin(now * 4);
         const cx = Player.x, cy = Player.y - 70;
         ctx.save(); ctx.globalCompositeOperation = "lighter";
+        const SH = fxReady("xtz_shield") ? fxSheet("xtz_shield") : null;
+        if (SH) { /* v0.8.119 生圖護罩：展開（列 2，0.5 秒）→ 待命循環（列 0）／無敵期強化（列 1）；星塵留在主角前 */
+          if (!front) {
+            const age = (performance.now() - (Player._shieldT0 || 0)) / 1000, sz = 310;
+            let row, col; if (age < 0.5) { row = 2; col = Math.min(3, Math.floor(age / 0.125)); } else { row = inv ? 1 : 0; col = Math.floor(now * 8) % 4; }
+            ctx.globalAlpha = inv ? 1 : 0.85; ctx.drawImage(SH.img, col * 256, row * 256, 256, 256, cx - sz / 2, Player.y - 125 - sz / 2, sz, sz);
+          } else {
+            for (let i = 0; i < 6; i++) { const ph = (now * 0.5 + i / 6) % 1, an = now * 1.6 + i * 1.05; ctx.globalAlpha = (1 - ph) * k; ctx.fillStyle = "#dbeafe"; ctx.beginPath(); ctx.arc(cx + Math.cos(an) * 40, Player.y - 8 - ph * 150, 2.4 * (1 - ph * 0.5), 0, Math.PI * 2); ctx.fill(); }
+          }
+          ctx.restore(); return;
+        }
         if (!front) {
           const R = 115 * pulse, g = ctx.createRadialGradient(cx, cy, 12, cx, cy, R);
           g.addColorStop(0, `rgba(147,197,253,${0.34 * k})`); g.addColorStop(0.6, `rgba(96,165,250,${0.22 * k})`); g.addColorStop(1, "rgba(96,165,250,0)");

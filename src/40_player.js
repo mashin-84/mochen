@@ -751,7 +751,7 @@
           spawnFloatingText(Boss.x, Boss.y - 135, "【太初靈光】強制打斷殺招！", "#60a5fa", 1.25);
           setTelemetry("✦ 師弟妹催動玄天珠【太初靈光】：強制中斷大招！");
         } else if (sel === "tishen") {
-          Player.tishenActive = true;
+          Player.tishenActive = true; Player._shieldT0 = performance.now();
           let tishenDuration = 2.2;
           if (Progress.equippedSeals.includes("bumie")) tishenDuration = 3.5;
           Player.invulnTimer = tishenDuration;
@@ -935,7 +935,7 @@
         Progress.damageTaken += dmg;
         if (Player.hp - dmg <= 0 && (Player.tishenActive || (Player.selectedAssist === "tishen" && Player.assistAvailable))) {
           Player.assistAvailable = false;
-          Player.tishenActive = false; if (fxReady("xtz")) spawnFx("xtz", 3, Player.x, Player.y - 75, { w: 340, dur: 0.45 }); /* 護魂消耗：光暈爆開 */
+          Player.tishenActive = false; if (fxReady("xtz_shield")) spawnFx("xtz_shield", 3, Player.x, Player.y - 125, { w: 310, dur: 0.6 }); else if (fxReady("xtz")) spawnFx("xtz", 3, Player.x, Player.y - 75, { w: 340, dur: 0.45 }); /* 護魂消耗：護罩破碎 */
           Player.hp = Math.round(Player.maxHp * 0.45);
           Player.invulnTimer = Progress.equippedSeals.includes("bumie") ? 3.5 : 2.0;
           Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Player.x + dir * 230));
