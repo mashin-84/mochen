@@ -641,7 +641,7 @@
         if (!im) { im = new Image(); im.src = `assets/${A.dir}/${k}.webp`; PART_IMG[k] = im; }
         return im.complete && im.naturalWidth ? im : null;
       }
-      function partsPreload(stage) { const A = stage.parts && stage.parts.art; if (!A) return; ["sw1", "sw2", "sw3", "ls1", "ls2", "ls3", "ls4", "rs1", "rs2", "rs3", "rs4"].forEach(partImg); fxSheet(A.fx); fxSheet("boss4fx2"); }
+      function partsPreload(stage) { const A = stage.parts && stage.parts.art; if (!A) return; ["sw1", "sw2", "sw3", "ls1", "ls2", "ls3", "ls4", "rs1", "rs2", "rs3", "rs4", ...[1, 2, 3, 4].flatMap(d => [1, 2, 4].map(n => "fs" + d + n))].forEach(partImg); fxSheet(A.fx); fxSheet("boss4fx2"); }
       /* v0.8.90 副劍該用哪一格：1 平時、2 蓄氣（出招前搖與出招）、4 崩斷 */
       function handPose(h) {
         const P = Boss._pp, pre = h.design || (h.side < 0 ? "ls" : "rs");

@@ -335,7 +335,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           },
           pool: [["sky", 44], ["sweep", 34], ["rain", 22]], /* v0.8.92 一階：只有主劍 */
           form: { /* v0.8.92 二階：六劍陣（slots＝相對古靈的站位、lift＝懸空高低差；designs＝劍圖前綴，之後補 4 種劍） */
-            slots: [-640, -390, -140, 140, 390, 640], lift: [0, 40, 15, 15, 40, 0], designs: ["ls", "rs", "ls", "rs", "ls", "rs"],
+            slots: [-640, -390, -140, 140, 390, 640], lift: [0, 40, 15, 15, 40, 0], designs: ["fs1", "fs3", "fs2", "fs4", "fs1", "fs3"],
             pool: [["palm", 32], ["finger", 30], ["grab", 22], ["pincer", 30]], cd: [0.9, 0.75, 0.55], fastK: 0.85 },
           skyPity: 3, /* 連續 3 招沒出天劍斬落，下一招必出（封印要有機會露出） */
           cd: 0.7, /* 招與招之間的空檔 */
