@@ -19,6 +19,7 @@
         if (stage.introVideo) getCineVideo(stage.introVideo);
         if (stage.introMovie) getCineVideo(stage.introMovie);
         if (stage.p2Movie) getCineVideo(stage.p2Movie);
+        if (stage.formMovie) getCineVideo(stage.formMovie);
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite, st.extras));
         (stage.fxSheets || []).forEach(k => fxSheet(k));
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");

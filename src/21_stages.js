@@ -361,7 +361,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S4.moves.sweep_peril.fxAct = { sheet: "boss4fx3", row: 2, c0: 0, nf: 2, ox: 120, oy: -50, w: 560, dur: 0.4 };
         S4.poolP2 = S4.pool;
         S4.farMoves = ["flyswords"];
-        S4.bg = "arena4"; S4.bgDim = 0.42; /* v0.8.90 劍塚調暗 */ S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
+        S4.bg = "arena4"; S4.bgDim = 0.42; /* v0.8.90 劍塚調暗 */ S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; S4.formMovie = "assets/boss4/form"; /* v0.8.104 三段影片：登場 intro／三封印斷→六劍 form／六劍盡落→人形古靈 p2 */ /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
         S4.layers = [
           { img: "arena4_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.32 },
           { img: "arena4_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.9, dim: 0.5 }

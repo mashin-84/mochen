@@ -218,6 +218,20 @@
         showBanner("劍陣・六合", "主　劍　崩　分", 1500, "#7dd3fc");
         setTelemetry("★ 三道封印盡斷！主劍分作六劍——等劍插地，以蓄力斬一一擊落！");
         hintOnce("form_intro", "六劍陣：劍出招後會插地片刻，這時用【蓄力斬】把它打落");
+        const stF = Stages[Boss.stageId];
+        if (stF && stF.formMovie) setTimeout(() => formMovieStart(stF), 850); /* v0.8.104 巨劍崩成六劍的影片：等閃白與命中停頓演完再切黑場 */
+      }
+      function formMovieStart(st) {
+        const Q = Boss._pp;
+        if (Game.mode !== "battle" || Game.cine || Game.defeated || Boss.hp <= 0 || Player.hp <= 0 || !Q || !Q.form) return;
+        const v = getCineVideo(st.formMovie), dur = (v.duration && isFinite(v.duration)) ? v.duration : 8;
+        const ok = playMovie(st.formMovie, { audio: true, onEnd: () => {
+          Music.duckUntil = 0; Music.duckLvl = 1; /* 影片期間關卡曲壓成無聲，結束（含提早跳過）立刻恢復 */
+          const R = Boss._pp; if (R && R.form) R.cd = Math.max(R.cd || 0, 1.6); /* 影片後給劍陣一點喘息 */
+          Game.introT = Math.max(Game.introT, 0.7);
+          Player.invulnTimer = Math.max(Player.invulnTimer, 1.0);
+        } });
+        if (ok) Music.duck(0.0, dur + 0.5);
       }
       /* v0.8.94 劍陣特效（boss4fx3 列 3）：插地漣漪（前 2 格）、被打落的碎裂爆光（後 2 格）、橫穿拖尾（列 2 後 2 格） */
       function plantFx(x) { if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, x, Config.groundY - 30, { c0: 0, nf: 2, w: 380, dur: 0.6 }); }
