@@ -9,7 +9,7 @@
 
       const DIR_CFG = {
         1: { /* 赤煞神衛統領：單膝跪地、血煞紅氣湧起 → 起身怒吼，衝擊波 */
-          intro: { kind: "drop", dur: 3.95, burstAt: 2.0, fall: 1.0, height: 760, shake: 1.0, plate: { tin: 0.22, hold: 0.85, tout: 0.3 }, sub: "第一難", poses: [[0, "21_fall"], [1.0, "22_land"], [3.37, "23_rise"]],
+          intro: { kind: "drop", dur: 6.0, burstAt: 2.9, fall: 1.3, height: 760, shake: 1.6, shakeRate: 0.45, plate: { tin: 0.22, hold: 2.05, tout: 0.3 }, sub: "第一難", poses: [[0, "21_fall"], [1.3, "22_land"], [5.47, "23_rise"]],
             ring: { sheet: "land", row: 0, w: 1000, dur: 0.7 }, dust: { sheet: "land", row: 1, w: 560, dur: 0.8 }, sfx: [["execution", 1.0, 0.55]] },
           phase: { dur: 2.6, burstAt: 1.15, poses: [[0, "17_kneel"], [1.15, "14_cast"], [1.95, "07_windup"]], tint: "150,20,20", tintA: 0.5,
             aura: { sheet: "dir1", row: 0, w: 460, at: 0.15, fps: 10, dy: 8 }, gather: { sheet: "dir1", row: 3, w: 560, at: 0.1, dy: -110 }, ring: { sheet: "dir1", row: 1, w: 1100, dur: 0.8 },
@@ -38,7 +38,7 @@
       Object.keys(DIR_CFG).forEach(k => { const st = Stages[k]; if (st) { st.dir = DIR_CFG[k]; st.dirMode = true; } });
 
       function dirPoseAt(c, t) { let k = c.poses[0][1]; for (const p of c.poses) if (t >= p[0]) k = p[1]; return k; }
-      function dirReset() { Game.dir = null; Boss._cineImg = null; }
+      function dirReset() { Game.dir = null; Boss._cineImg = null; Game.camera.shakeRate = 1; }
       function dirStart(kind, st) {
         const c = st && st.dir && st.dir[kind];
         if (!c) return false;
@@ -90,9 +90,9 @@
           hapticBuzz([90, 40, 80, 40, 70, 40, 60, 40, 50, 40, 40]);
           D.camNow = { zoom: z0, y: 0, rate: 14 };
         }
-        if (t >= c.fall && t < t0) { const pr = (t - c.fall) / c.shake; cam.trauma = Math.max(cam.trauma || 0, 1.0 - 0.3 * pr); } /* 落地後持續劇烈晃動約 1 秒 */
+        if (t >= c.fall && t < t0) { const pr = (t - c.fall) / c.shake; cam.shakeRate = c.shakeRate || 1; cam.trauma = Math.max(cam.trauma || 0, 1.0 - 0.4 * pr); } /* 落地後持續劇烈晃動（頻率放慢＝更沉重） */
         if (!D.zoomed && t >= t0) { /* 名牌滑入的同時瞬間拉近，停震 */
-          D.zoomed = true; D.zoomT0 = t; cam.trauma = 0;
+          D.zoomed = true; D.zoomT0 = t; cam.trauma = 0; cam.shakeRate = 1;
           D.camNow = { zoom: z0 + 0.75, y: -30, rate: 60 };
           screenFlash("rgba(255,255,255,0.7)", 0.5, 0.25); hapticBuzz([30, 20, 50]);
           Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
@@ -148,7 +148,7 @@
       }
       function dirEnd(D) {
         if (D.c.grow) { Boss._scaleMul = D.c.grow; applyBossBody(D.st); Boss.w *= D.c.grow; Boss.h *= D.c.grow; } /* 放大後受擊範圍同步 */
-        Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0;
+        Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0; Game.camera.shakeRate = 1;
         Music.duckUntil = 0; Music.duckLvl = 1; Boss.y = Config.groundY;
         if (["staggered", "frozen", "hurt", "recover", "grounded"].includes(Boss.state)) { Boss.state = "idle"; Boss.stateTimer = 0; Boss.frozenTimer = 0; }
         Boss.aiCooldown = Math.max(Boss.aiCooldown || 0, 0.7);

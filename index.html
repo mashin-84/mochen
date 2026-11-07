@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.111";
+      const ASSET_VER = "0.8.112";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -7161,7 +7161,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
       const DIR_CFG = {
         1: { /* 赤煞神衛統領：單膝跪地、血煞紅氣湧起 → 起身怒吼，衝擊波 */
-          intro: { kind: "drop", dur: 3.95, burstAt: 2.0, fall: 1.0, height: 760, shake: 1.0, plate: { tin: 0.22, hold: 0.85, tout: 0.3 }, sub: "第一難", poses: [[0, "21_fall"], [1.0, "22_land"], [3.37, "23_rise"]],
+          intro: { kind: "drop", dur: 6.0, burstAt: 2.9, fall: 1.3, height: 760, shake: 1.6, shakeRate: 0.45, plate: { tin: 0.22, hold: 2.05, tout: 0.3 }, sub: "第一難", poses: [[0, "21_fall"], [1.3, "22_land"], [5.47, "23_rise"]],
             ring: { sheet: "land", row: 0, w: 1000, dur: 0.7 }, dust: { sheet: "land", row: 1, w: 560, dur: 0.8 }, sfx: [["execution", 1.0, 0.55]] },
           phase: { dur: 2.6, burstAt: 1.15, poses: [[0, "17_kneel"], [1.15, "14_cast"], [1.95, "07_windup"]], tint: "150,20,20", tintA: 0.5,
             aura: { sheet: "dir1", row: 0, w: 460, at: 0.15, fps: 10, dy: 8 }, gather: { sheet: "dir1", row: 3, w: 560, at: 0.1, dy: -110 }, ring: { sheet: "dir1", row: 1, w: 1100, dur: 0.8 },
@@ -7190,7 +7190,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       Object.keys(DIR_CFG).forEach(k => { const st = Stages[k]; if (st) { st.dir = DIR_CFG[k]; st.dirMode = true; } });
 
       function dirPoseAt(c, t) { let k = c.poses[0][1]; for (const p of c.poses) if (t >= p[0]) k = p[1]; return k; }
-      function dirReset() { Game.dir = null; Boss._cineImg = null; }
+      function dirReset() { Game.dir = null; Boss._cineImg = null; Game.camera.shakeRate = 1; }
       function dirStart(kind, st) {
         const c = st && st.dir && st.dir[kind];
         if (!c) return false;
@@ -7242,9 +7242,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           hapticBuzz([90, 40, 80, 40, 70, 40, 60, 40, 50, 40, 40]);
           D.camNow = { zoom: z0, y: 0, rate: 14 };
         }
-        if (t >= c.fall && t < t0) { const pr = (t - c.fall) / c.shake; cam.trauma = Math.max(cam.trauma || 0, 1.0 - 0.3 * pr); } /* 落地後持續劇烈晃動約 1 秒 */
+        if (t >= c.fall && t < t0) { const pr = (t - c.fall) / c.shake; cam.shakeRate = c.shakeRate || 1; cam.trauma = Math.max(cam.trauma || 0, 1.0 - 0.4 * pr); } /* 落地後持續劇烈晃動（頻率放慢＝更沉重） */
         if (!D.zoomed && t >= t0) { /* 名牌滑入的同時瞬間拉近，停震 */
-          D.zoomed = true; D.zoomT0 = t; cam.trauma = 0;
+          D.zoomed = true; D.zoomT0 = t; cam.trauma = 0; cam.shakeRate = 1;
           D.camNow = { zoom: z0 + 0.75, y: -30, rate: 60 };
           screenFlash("rgba(255,255,255,0.7)", 0.5, 0.25); hapticBuzz([30, 20, 50]);
           Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
@@ -7300,7 +7300,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
       function dirEnd(D) {
         if (D.c.grow) { Boss._scaleMul = D.c.grow; applyBossBody(D.st); Boss.w *= D.c.grow; Boss.h *= D.c.grow; } /* 放大後受擊範圍同步 */
-        Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0;
+        Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0; Game.camera.shakeRate = 1;
         Music.duckUntil = 0; Music.duckLvl = 1; Boss.y = Config.groundY;
         if (["staggered", "frozen", "hurt", "recover", "grounded"].includes(Boss.state)) { Boss.state = "idle"; Boss.stateTimer = 0; Boss.frozenTimer = 0; }
         Boss.aiCooldown = Math.max(Boss.aiCooldown || 0, 0.7);
@@ -7367,7 +7367,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         let shakeRoll = 0;
         if (cam.trauma > 0) {
           const sh = cam.trauma * cam.trauma * Config.shakeMultiplier;
-          const tt = cam.shakeClock * 28;
+          const tt = cam.shakeClock * 28 * (cam.shakeRate || 1); /* v0.8.112 導演可放慢震動頻率 */
           shakeOffX = 60 * sh * noise1(tt + 11.3);
           shakeOffY = 60 * sh * noise1(tt + 47.7);
           shakeRoll = 0.035 * sh * noise1(tt + 91.1);
@@ -7583,12 +7583,22 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (!(cam.y < -0.5)) return;
         const stg = Stages[Boss.stageId], a = stg && stg.bg ? getBgArt(stg.bg) : null;
         if (!a || !a.ok) return;
+        if (!a.top) { /* 直接取剛畫好的背景頂端像素（含調暗），只取一次；取不到才退回原圖頂端色 */
+          try {
+            const m = ctx.getTransform(), pt = m.transformPoint({ x: cam.x + Config.baseWidth * 0.5, y: 4 });
+            if (pt.y >= 0 && pt.y < canvas.height - 1) {
+              const px = Math.max(0, Math.min(canvas.width - 24, Math.round(pt.x) - 12)), d = ctx.getImageData(px, Math.round(pt.y), 24, 1).data;
+              let r = 0, g = 0, b = 0; for (let i = 0; i < 24; i++) { r += d[i * 4]; g += d[i * 4 + 1]; b += d[i * 4 + 2]; }
+              a.top = [Math.round(r / 24), Math.round(g / 24), Math.round(b / 24)];
+            }
+          } catch (e) { }
+        }
         if (!a.top) {
           try { const c = document.createElement("canvas"); c.width = 8; c.height = 1; const x = c.getContext("2d"); x.drawImage(a.img, 0, 0, a.img.naturalWidth, Math.max(2, a.img.naturalHeight * 0.01), 0, 0, 8, 1); const d = x.getImageData(0, 0, 8, 1).data; let r = 0, g = 0, b = 0; for (let i = 0; i < 8; i++) { r += d[i * 4]; g += d[i * 4 + 1]; b += d[i * 4 + 2]; } a.top = [Math.round(r / 8), Math.round(g / 8), Math.round(b / 8)]; } catch (e) { a.top = [60, 60, 90]; }
         }
-        const t = a.top, gr = ctx.createLinearGradient(0, -1200, 0, 0);
-        gr.addColorStop(0, `rgb(${Math.round(t[0] * 0.8)},${Math.round(t[1] * 0.8)},${Math.round(t[2] * 0.85)})`); gr.addColorStop(1, `rgb(${t[0]},${t[1]},${t[2]})`);
-        ctx.save(); ctx.fillStyle = gr; ctx.fillRect(cam.x - 600, -1200, Config.baseWidth + 1200, 1201); ctx.restore();
+        const t = a.top, gr = ctx.createLinearGradient(0, -1200, 0, 140), c0 = `rgb(${Math.round(t[0] * 0.85)},${Math.round(t[1] * 0.85)},${Math.round(t[2] * 0.9)})`, c1 = `rgb(${t[0]},${t[1]},${t[2]})`;
+        gr.addColorStop(0, c0); gr.addColorStop(0.8955, c1); gr.addColorStop(1, `rgba(${t[0]},${t[1]},${t[2]},0)`); /* 0.8955 = 世界 y=0（1200/1340）；往下 140px 羽化進背景，蓋掉接縫 */
+        ctx.save(); ctx.fillStyle = gr; ctx.fillRect(cam.x - 600, -1200, Config.baseWidth + 1200, 1340); ctx.restore();
       }
       function getBgArt(key) {
         if (!BG_ART[key]) {
@@ -7990,7 +8000,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       function drawNameSlide(w, h, nc) {
         const ms = Game.dir ? (Game.dir.t - nc.d0) * 1000 : performance.now() - nc.t0;
         if (ms > nc.tin + nc.hold + nc.tout) { Game.nameCard = null; return; }
-        const iw = Math.min(w * 0.56, h * 1.6), ih = iw * nc.img.height / nc.img.width, cy = h * 0.3;
+        const iw = Math.min(w * 0.56, h * 1.6), ih = iw * nc.img.height / nc.img.width, cy = h * 0.5; /* v0.8.112 名牌置中（可蓋到敵人） */
         const off = w / 2 + iw * 0.75;
         let px, mv = 0;
         if (ms < nc.tin) { const k = ms / nc.tin; px = w / 2 - off * Math.pow(1 - k, 3); mv = 1 - k; }
@@ -8062,6 +8072,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Game.introT = 1.9;
         Game.pendingPre = !!(stage.dialogue && stage.dialogue.pre && stage.dialogue.pre.length);
         Progress.battleStartTime = performance.now();
+        Boss._introHide = false; /* 登場開始（或沒有導演登場）就不再隱藏；從天而降的導演自己把 Boss 放在畫面上方 */
         if (stage.dirMode && stage.dir && stage.dir.intro && dirStart("intro", stage)) { /* v0.8.105 戰場上登場：爆發那一刻才開配樂與名牌 */
         } else if (!startBossCine()) { /* v0.8.18 有登場動畫的關卡，名字卡改在 Boss 落地時顯示 */
           if (stage.introName) bossNameCard(stage); else showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
@@ -8707,6 +8718,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           }
 
                 function drawBossEntity() {
+        if (Boss._introHide) return; /* v0.8.112 從天而降登場前，Boss 不先站在右邊 */
         if (Boss._pp && Game.mode === "battle") { drawPartsFront(); if (Boss._pp.phase !== 2 || !Stages[Boss.stageId].sprite) return; } /* v0.8.83 部位 Boss；v0.8.90 二階段有人形 sprite 照一般 Boss 畫 */
         ctx.save();
         const bx = Boss.x - Boss.w * 0.5;
@@ -10081,6 +10093,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Boss.aerialShotTimer = 0;
         Boss.groundedTimer = 0;
         Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0; Boss._scaleMul = 1; applyBossBody(stage); Player.blast = null;
+        { const iD = stage.dir && stage.dir.intro; Boss._introHide = !!(opts && opts.hub && stage.dirMode && iD && iD.kind === "drop"); /* 只在「營地載入→走進戰場」時藏；直接進戰鬥／敗北重打都不藏（沒有 beginBattleIntro 解除就會看不到 Boss） */ } /* 有「從天而降」登場的關卡：進場前先藏起來 */
         Boss.rage = 0; Boss.lastHp = stage.maxHp; Boss.landedHit = false; Reader.reset();
         Config.bossPhase = 1;
 

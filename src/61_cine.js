@@ -347,7 +347,7 @@
       function drawNameSlide(w, h, nc) {
         const ms = Game.dir ? (Game.dir.t - nc.d0) * 1000 : performance.now() - nc.t0;
         if (ms > nc.tin + nc.hold + nc.tout) { Game.nameCard = null; return; }
-        const iw = Math.min(w * 0.56, h * 1.6), ih = iw * nc.img.height / nc.img.width, cy = h * 0.3;
+        const iw = Math.min(w * 0.56, h * 1.6), ih = iw * nc.img.height / nc.img.width, cy = h * 0.5; /* v0.8.112 名牌置中（可蓋到敵人） */
         const off = w / 2 + iw * 0.75;
         let px, mv = 0;
         if (ms < nc.tin) { const k = ms / nc.tin; px = w / 2 - off * Math.pow(1 - k, 3); mv = 1 - k; }

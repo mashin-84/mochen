@@ -28,6 +28,7 @@
         Game.introT = 1.9;
         Game.pendingPre = !!(stage.dialogue && stage.dialogue.pre && stage.dialogue.pre.length);
         Progress.battleStartTime = performance.now();
+        Boss._introHide = false; /* 登場開始（或沒有導演登場）就不再隱藏；從天而降的導演自己把 Boss 放在畫面上方 */
         if (stage.dirMode && stage.dir && stage.dir.intro && dirStart("intro", stage)) { /* v0.8.105 戰場上登場：爆發那一刻才開配樂與名牌 */
         } else if (!startBossCine()) { /* v0.8.18 有登場動畫的關卡，名字卡改在 Boss 落地時顯示 */
           if (stage.introName) bossNameCard(stage); else showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");

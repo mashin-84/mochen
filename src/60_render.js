@@ -43,7 +43,7 @@
         let shakeRoll = 0;
         if (cam.trauma > 0) {
           const sh = cam.trauma * cam.trauma * Config.shakeMultiplier;
-          const tt = cam.shakeClock * 28;
+          const tt = cam.shakeClock * 28 * (cam.shakeRate || 1); /* v0.8.112 導演可放慢震動頻率 */
           shakeOffX = 60 * sh * noise1(tt + 11.3);
           shakeOffY = 60 * sh * noise1(tt + 47.7);
           shakeRoll = 0.035 * sh * noise1(tt + 91.1);
@@ -259,12 +259,22 @@
         if (!(cam.y < -0.5)) return;
         const stg = Stages[Boss.stageId], a = stg && stg.bg ? getBgArt(stg.bg) : null;
         if (!a || !a.ok) return;
+        if (!a.top) { /* 直接取剛畫好的背景頂端像素（含調暗），只取一次；取不到才退回原圖頂端色 */
+          try {
+            const m = ctx.getTransform(), pt = m.transformPoint({ x: cam.x + Config.baseWidth * 0.5, y: 4 });
+            if (pt.y >= 0 && pt.y < canvas.height - 1) {
+              const px = Math.max(0, Math.min(canvas.width - 24, Math.round(pt.x) - 12)), d = ctx.getImageData(px, Math.round(pt.y), 24, 1).data;
+              let r = 0, g = 0, b = 0; for (let i = 0; i < 24; i++) { r += d[i * 4]; g += d[i * 4 + 1]; b += d[i * 4 + 2]; }
+              a.top = [Math.round(r / 24), Math.round(g / 24), Math.round(b / 24)];
+            }
+          } catch (e) { }
+        }
         if (!a.top) {
           try { const c = document.createElement("canvas"); c.width = 8; c.height = 1; const x = c.getContext("2d"); x.drawImage(a.img, 0, 0, a.img.naturalWidth, Math.max(2, a.img.naturalHeight * 0.01), 0, 0, 8, 1); const d = x.getImageData(0, 0, 8, 1).data; let r = 0, g = 0, b = 0; for (let i = 0; i < 8; i++) { r += d[i * 4]; g += d[i * 4 + 1]; b += d[i * 4 + 2]; } a.top = [Math.round(r / 8), Math.round(g / 8), Math.round(b / 8)]; } catch (e) { a.top = [60, 60, 90]; }
         }
-        const t = a.top, gr = ctx.createLinearGradient(0, -1200, 0, 0);
-        gr.addColorStop(0, `rgb(${Math.round(t[0] * 0.8)},${Math.round(t[1] * 0.8)},${Math.round(t[2] * 0.85)})`); gr.addColorStop(1, `rgb(${t[0]},${t[1]},${t[2]})`);
-        ctx.save(); ctx.fillStyle = gr; ctx.fillRect(cam.x - 600, -1200, Config.baseWidth + 1200, 1201); ctx.restore();
+        const t = a.top, gr = ctx.createLinearGradient(0, -1200, 0, 140), c0 = `rgb(${Math.round(t[0] * 0.85)},${Math.round(t[1] * 0.85)},${Math.round(t[2] * 0.9)})`, c1 = `rgb(${t[0]},${t[1]},${t[2]})`;
+        gr.addColorStop(0, c0); gr.addColorStop(0.8955, c1); gr.addColorStop(1, `rgba(${t[0]},${t[1]},${t[2]},0)`); /* 0.8955 = 世界 y=0（1200/1340）；往下 140px 羽化進背景，蓋掉接縫 */
+        ctx.save(); ctx.fillStyle = gr; ctx.fillRect(cam.x - 600, -1200, Config.baseWidth + 1200, 1340); ctx.restore();
       }
       function getBgArt(key) {
         if (!BG_ART[key]) {

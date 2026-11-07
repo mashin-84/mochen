@@ -78,6 +78,7 @@
           }
 
                 function drawBossEntity() {
+        if (Boss._introHide) return; /* v0.8.112 從天而降登場前，Boss 不先站在右邊 */
         if (Boss._pp && Game.mode === "battle") { drawPartsFront(); if (Boss._pp.phase !== 2 || !Stages[Boss.stageId].sprite) return; } /* v0.8.83 部位 Boss；v0.8.90 二階段有人形 sprite 照一般 Boss 畫 */
         ctx.save();
         const bx = Boss.x - Boss.w * 0.5;
