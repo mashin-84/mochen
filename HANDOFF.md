@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.117（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.118（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.118 太初替身護體光暈**：`drawTishenAura`（`54_director.js`，`render` 在主角前後各呼叫一次）：`Player.tishenActive`（免死護魂尚未用掉）期間，主角身上有淡藍橢圓光暈＋外圈細環（脈動）、繞身上升星塵、胸口珠光（`xtz` 列 0）；2.2 秒無敵內亮度 1.5 倍，之後待命 0.95 倍；護魂被致命傷消耗時在身上爆開 `xtz` 列 3。演出期間（assist 導演）不畫。待手機實測亮度與是否遮住主角。
 
 **v0.8.117 玄天珠發射頓挫＋營地選擇**：①發射瞬間頓挫：十字星縮到珠心→`freeze` 0.12 秒→新增 `launch` 階段（`tLaunch` 0.12 秒，珠子沿「背離敵人」方向後拉 30px，ease-out）→炸出：`addTrauma(0.8)`、白閃、手機震動、鏡頭 zoom +0.12 瞬間推近、`flysword`＋`hit` 音，進 `dash`（太初替身不經 launch，直接 absorb）。整段約 1.9 秒。②營地選擇：跟師妹說話的最後多一句「今夜要我催動玄天珠的哪一種力量？」→ `showAssistPicker`（`62_hub.js`；全螢幕半透明＋三張選項卡〔太初靈光＝打斷、符陣定身＝控制、太初替身＝護身〕含說明、目前選擇打勾、「保持不變」鈕）；選擇存 `localStorage["qingyun_assist"]`，`loadAssistChoice` 於 `window.onload` 讀回並同步舊選單的 `.assist-seal-btn`；選完 `showHintToast`。`ASSIST_OPTS` 在 `62_hub.js`。無頭驗證：說話→選單出現→選替身→存檔→重新整理後仍是替身；靈光演出 `in→star→freeze→launch→dash` 時序與 trauma 0.8；截圖看過選單；smoke 第 1、3 關 ok。待手機實測：頓挫感是否夠明顯（要更明顯可加長 `tLaunch` 或加大後拉距離）、震動強度、選單是否好按（手機觸控）。
 

@@ -935,7 +935,7 @@
         Progress.damageTaken += dmg;
         if (Player.hp - dmg <= 0 && (Player.tishenActive || (Player.selectedAssist === "tishen" && Player.assistAvailable))) {
           Player.assistAvailable = false;
-          Player.tishenActive = false;
+          Player.tishenActive = false; if (fxReady("xtz")) spawnFx("xtz", 3, Player.x, Player.y - 75, { w: 340, dur: 0.45 }); /* 護魂消耗：光暈爆開 */
           Player.hp = Math.round(Player.maxHp * 0.45);
           Player.invulnTimer = Progress.equippedSeals.includes("bumie") ? 3.5 : 2.0;
           Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Player.x + dir * 230));

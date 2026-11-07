@@ -294,3 +294,24 @@
         g.addColorStop(0, "rgba(2,6,23,0)"); g.addColorStop(0.5, `rgba(2,6,23,${0.5 * k})`); g.addColorStop(1, `rgba(2,6,23,${0.88 * k})`);
         ctx.save(); ctx.fillStyle = g; ctx.fillRect(cx - 3200, -1600, 6400, 4200); ctx.restore();
       }
+
+      /* v0.8.118 太初替身護體光暈：tishenActive（免死護魂尚未用掉）期間，主角身上有淡藍光暈＋繞身光點；無敵時間內更亮，護魂被消耗時爆開消失 */
+      function drawTishenAura(front) {
+        const on = Player.tishenActive && Game.mode === "battle"; if (!on || Game.dir && Game.dir.kind === "assist") return;
+        const now = performance.now() / 1000, inv = Player.invulnTimer > 0.05, k = inv ? 1.5 : 0.95, pulse = 0.85 + 0.15 * Math.sin(now * 4);
+        const cx = Player.x, cy = Player.y - 70;
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        if (!front) {
+          const R = 115 * pulse, g = ctx.createRadialGradient(cx, cy, 12, cx, cy, R);
+          g.addColorStop(0, `rgba(147,197,253,${0.34 * k})`); g.addColorStop(0.6, `rgba(96,165,250,${0.22 * k})`); g.addColorStop(1, "rgba(96,165,250,0)");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, cy, R * 0.8, R * 1.15, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = `rgba(191,219,254,${0.5 * k})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(cx, cy, 46 * pulse, 84 * pulse, 0, 0, Math.PI * 2); ctx.stroke();
+        } else {
+          for (let i = 0; i < 6; i++) { /* 繞身光點（上升的星塵） */
+            const ph = (now * 0.5 + i / 6) % 1, an = now * 1.6 + i * 1.05, x = cx + Math.cos(an) * 40, y = Player.y - 8 - ph * 150;
+            ctx.globalAlpha = (1 - ph) * k; ctx.fillStyle = "#dbeafe"; ctx.beginPath(); ctx.arc(x, y, 2.4 * (1 - ph * 0.5), 0, Math.PI * 2); ctx.fill();
+          }
+          if (fxReady("xtz")) { const A = fxSheet("xtz"), col = Math.floor(now * 8) % 4, sz = 46; ctx.globalAlpha = 0.9 * k; ctx.drawImage(A.img, col * 256, 0, 256, 256, cx - sz / 2, cy - 8 - sz / 2, sz, sz); } /* 胸口的珠光 */
+        }
+        ctx.restore();
+      }
