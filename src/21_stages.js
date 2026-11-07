@@ -326,13 +326,17 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           moves: { /* 一階段部位招式（時間單位秒；不受卷二加速影響，數字即實際值） */
             sky:    { name: "天劍斬落", windup: 1.0, track: 0.7, active: 0.14, stuck: 2.0, pull: 0.45, w: 150, damage: 260, unblockable: true },
             sweep:  { name: "【危】橫掃千軍", windup: 0.8, active: 0.5, span: 1500, damage: 280, isPerilous: true, perilType: "sweep" },
-            palm:   { name: "副劍落", windup: 1.1, track: 0.65, active: 0.12, rest: 1.0, lift: 0.45, r: 150, damage: 220, unblockable: true },
-            finger: { name: "劍氣三連", windup: 0.6, count: 3, gap: 0.4, speed: 820, recover: 0.6, damage: 110 },
+            palm:   { name: "劍落", windup: 1.0, track: 0.65, active: 0.12, rest: 1.5, lift: 0.45, r: 150, damage: 220, unblockable: true },
+            finger: { name: "劍氣三連", windup: 0.6, count: 3, gap: 0.4, speed: 820, rest: 1.4, recover: 0.45, damage: 110 },
             rain:   { name: "萬劍歸宗", windup: 0.6, waves: 3, per: 5, gap: 0.75, warn: 0.8, r: 62, recover: 0.5, damage: 140, unblockable: true },
-            grab:   { name: "【危】劍陣橫穿", windup: 0.85, active: 0.38, span: 1300, rest: 0.6, lift: 0.4, damage: 300, isPerilous: true, perilType: "grab" },
+            grab:   { name: "【危】劍陣橫穿", windup: 0.85, active: 0.38, span: 1300, rest: 1.4, lift: 0.4, damage: 300, isPerilous: true, perilType: "grab" },
+            pincer: { name: "【危】雙劍合圍", windup: 0.9, active: 0.42, span: 1280, rest: 1.4, lift: 0.4, damage: 260, isPerilous: true, perilType: "sweep" },
             plant:  { name: "古靈失衡", windup: 0.5, active: 0.12, stuck: 3.0, pull: 0.45, w: 150, damage: 0 }
           },
-          pool: [["sky", 26], ["sweep", 16], ["palm", 20], ["finger", 16], ["rain", 10], ["grab", 12]],
+          pool: [["sky", 44], ["sweep", 34], ["rain", 22]], /* v0.8.92 一階：只有主劍 */
+          form: { /* v0.8.92 二階：六劍陣（slots＝相對古靈的站位、lift＝懸空高低差；designs＝劍圖前綴，之後補 4 種劍） */
+            slots: [-640, -390, -140, 140, 390, 640], lift: [0, 40, 15, 15, 40, 0], designs: ["ls", "rs", "ls", "rs", "ls", "rs"],
+            pool: [["palm", 32], ["finger", 30], ["grab", 22], ["pincer", 30]], cd: [0.9, 0.75, 0.55], fastK: 0.85 },
           skyPity: 3, /* 連續 3 招沒出天劍斬落，下一招必出（封印要有機會露出） */
           cd: 0.7, /* 招與招之間的空檔 */
           handHit: { normal: 12, heavy: 18, charged: 30, reflect: 15 }, /* 砍手／折射打手的架勢（滿 100 巨手崩勢 → 古靈失衡、巨劍插地 3 秒） */

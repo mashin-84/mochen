@@ -22,7 +22,7 @@
         Boss._pp = {
           phase: 1, seals: stage.parts.seals || 3, act: null, side: null, cd: 1.4, hist: [], skyMiss: 0, spiritX: sx,
           sword: { x: sx + 280, tip: G - 120, ang: 0, tx: sx + 280, ttip: G - 120, mode: "hover", flash: 0, glow: 0 },
-          hands: [hand(-1), hand(1)], marks: [], shards: [], tt: 0, coreX: sx, p2t: 8, pauseT: 0, lastHand: null
+          hands: [], marks: [], shards: [], tt: 0, coreX: sx, p2t: 8, pauseT: 0, lastHand: null, form: false, facts: []
         };
         Boss._ekN = 0;
         Boss.x = sx;
@@ -52,7 +52,7 @@
         for (const h of P.hands) { /* v0.8.90 副劍：劍身中心＝劍尖往劍柄方向半個劍長 */
           const cx = h.x + Math.sin(h.ang) * SWORD_L * 0.5, cy = h.y - Math.cos(h.ang) * SWORD_L * 0.5;
           const hw = Math.abs(Math.sin(h.ang)) * SWORD_L * 0.5 + 40, hh = Math.abs(Math.cos(h.ang)) * SWORD_L * 0.5 + 40;
-          if (h.brokenT <= 0 && Math.max(h.y, h.y - Math.cos(h.ang) * SWORD_L) > G - 125) L.push({ id: "hand", ref: h, x: cx, top: cy - hh, bot: cy + hh, hw });
+          if (!h.dead && h.planted) L.push({ id: "hand", ref: h, x: cx, top: cy - hh, bot: cy + hh, hw });
         }
         if (P.sword.mode === "stuck") L.push({ id: "seal", ref: P.sword, x: P.sword.x, top: G - 275, bot: G - 100, hw: 46 });
         return L;
@@ -110,6 +110,15 @@
           setTelemetry("〔封印堅不可摧：按住攻擊鍵蓄力，以【蓄力重斬】斬斷劍柄封印！〕");
           return;
         }
+        if (p.id === "hand" && P.form) { /* v0.8.92 劍陣：插地的劍只有蓄力斬打得落 */
+          const h = p.ref;
+          if (k.charged) { swordDown(h); return; }
+          h.flash = 2; Sound.play("block", 0.9, 1.3); triggerHitstopMs(30);
+          spawnSparks(p.x, hy, "block", Player.facing); partFx(p.x, hy, "block");
+          spawnFloatingText(p.x, p.top - 20, "鏗！", "#cbd5e1", 0.8);
+          hintOnce("form_charge", "劍陣的劍插地時，用【蓄力斬】才打得落：按住攻擊 0.45 秒");
+          return;
+        }
         if (p.id === "hand") {
           const h = p.ref, HH = D.handHit;
           let amt = k.charged ? HH.charged : (k.heavy || k.dive) ? HH.heavy : HH.normal;
@@ -126,6 +135,7 @@
       /* 折射回去的飛劍：打中發射它的巨手（加架勢） */
       function partsReflectHit(sw) {
         const P = Boss._pp;
+        if (P.form) return false; /* 劍陣：折射飛劍穿過 */
         for (const h of P.hands) {
           if (Math.abs(sw.x - h.x) < 110 && sw.y > h.y - 175 && sw.y < h.y + 15) {
             h.flash = 3;
@@ -143,6 +153,7 @@
       function partsPosture(amount, label) {
         const P = Boss._pp;
         let h = null, bd = 1e9;
+        if (P.form) return;
         for (const c of P.hands) { if (c.brokenT > 0) continue; const d = Math.abs(c.x - Player.x); if (d < bd) { bd = d; h = c; } }
         if (h) handPosture(h, amount, label);
       }
@@ -183,45 +194,110 @@
         spawnFloatingText(sw.x, G - 330, `封印斷！ ${dots}`, "#fde047", 1.4);
         setTelemetry(`★ 蓄力斬斬斷劍柄封印！剩餘封印 ${P.seals}`);
         Game.comboCount++; Game.comboTimer = 2.0;
-        if (P.seals <= 0) { partsToPhase2(); return; }
+        if (P.seals <= 0) { formationStart(); return; }
         if (P.act && (P.act.key === "sky" || P.act.key === "plant")) { P.act.st = "pull"; P.act.t = 0; } /* 巨劍立刻拔起 */
         P.cd = Math.max(P.cd, 1.0);
+      }
+
+      /* ---------- v0.8.92 二階：六劍陣 ---------- */
+      function formAlive() { return Boss._pp.hands.filter(h => !h.dead); }
+      function formationStart() {
+        const P = Boss._pp, D = partsDef(), F = D.form, sw = P.sword, G = Config.groundY;
+        if (P.act) actCancel(P.act);
+        P.act = null; P.marks = []; Game.flyingSwords = [];
+        const x0 = sw.x;
+        sw.mode = "gone";
+        for (let i = 0; i < 26; i++) P.shards.push({ x: x0 + (Math.random() - 0.5) * 60, y: G - 120 - Math.random() * 260, vx: (Math.random() - 0.5) * 900, vy: -300 - Math.random() * 500, t: 1.2 + Math.random() * 0.5, fly: true });
+        if (fxReady("boss4fx2")) spawnFx("boss4fx2", 3, x0, G - 260, { w: 760, dur: 0.7, col: 1 });
+        P.hands = F.slots.map((off, i) => ({ side: off < 0 ? -1 : 1, slot: off, lift: F.lift[i % F.lift.length], design: F.designs[i % F.designs.length], x: x0, y: G - 260, tx: x0, ty: G - 260, ang: 0, tang: 0, posture: 0, pdelay: 0, flash: 4, brokenT: 0, busy: false, dead: false, planted: false }));
+        P.form = true; P.facts = []; P.cd = 2.2; P.lastHand = null;
+        Player.invulnTimer = Math.max(Player.invulnTimer, 1.6);
+        Sound.play("execution", 1.0, 0.9); Sound.play("hit", 1.0, 0.6);
+        triggerHitstopMs(110); addTrauma(0.7); hapticBuzz([50, 30, 90]);
+        screenFlash("rgba(224,242,254,0.8)", 0.5, 0.5);
+        showBanner("劍陣・六合", "主　劍　崩　分", 1500, "#7dd3fc");
+        setTelemetry("★ 三道封印盡斷！主劍分作六劍——等劍插地，以蓄力斬一一擊落！");
+        hintOnce("form_intro", "六劍陣：劍出招後會插地片刻，這時用【蓄力斬】把它打落");
+      }
+      function swordDown(h) {
+        const P = Boss._pp, G = Config.groundY;
+        h.dead = true; h.planted = false; h.busy = false; h.flash = 6;
+        h.ty = G + 50; h.tang = (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.3);
+        P.facts = P.facts.filter(a => { if (a.hand === h) { return false; } return true; });
+        Sound.play("execution", 0.85, 1.3); Sound.play("parry", 1.0, 0.9);
+        triggerHitstopMs(100); addTrauma(0.5); hapticBuzz([40, 30, 70]);
+        Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.06);
+        spawnSparks(h.x, G - 120, "execution", Player.facing);
+        if (fxReady("spark")) spawnFx("spark", 3, h.x, G - 120, { w: 420, dur: 0.5 });
+        const n = formAlive().length, tot = P.hands.length;
+        spawnFloatingText(h.x, G - 300, `劍落！ ${"◆".repeat(n)}${"◇".repeat(tot - n)}`, "#fde047", 1.3);
+        setTelemetry(`★ 蓄力斬擊落一劍！劍陣剩 ${n} 把`);
+        Game.comboCount++; Game.comboTimer = 2.0;
+        if (n <= 0) { P.form = false; partsToPhase2(); return; }
+        if (n === 4 || n === 2) hintOnce("form_rage" + n, n === 4 ? "劍陣加速：兩把劍會同時出手！" : "最後兩劍：小心雙劍貼地合圍（跳過）！");
+        P.cd = Math.max(P.cd, 0.9);
+      }
+      function formConc(n) { return n >= 5 ? 1 : n >= 3 ? 2 : n; }
+      function formStep(dt) {
+        const P = Boss._pp, D = partsDef(), F = D.form;
+        P.facts = P.facts.filter(a => { if (!stepAct(a, dt)) { if (a.hand) a.hand.planted = false; return false; } return true; });
+        const alive = formAlive(), n = alive.length;
+        if (!n) return;
+        P.cd -= dt;
+        const free = alive.filter(h => !h.busy);
+        if (P.cd <= 0 && P.facts.length < formConc(n) && free.length && Player.state !== "execution") {
+          const canPincer = n <= 2 && free.length >= 2 && P.facts.length === 0;
+          const pool = F.pool.filter(e => e[0] !== "pincer" || canPincer).filter(e => !(P.hist.slice(-2).every(k => k === e[0]) && P.hist.length >= 2));
+          const key = weightedPick(pool, D.moves);
+          const fast = n <= 2 ? F.fastK : 1;
+          if (key === "pincer") {
+            const L = free.slice().sort((a, b) => a.x - b.x);
+            const A = actStart("pincer", L[0], 1, fast), B = actStart("pincer", L[L.length - 1], -1, fast);
+            if (A) P.facts.push(A); if (B) P.facts.push(B);
+          } else {
+            const a = actStart(key, null, 0, fast);
+            if (a) P.facts.push(a);
+          }
+          P.hist.push(key); if (P.hist.length > 6) P.hist.shift();
+          P.cd = F.cd[n >= 5 ? 0 : n >= 3 ? 1 : 2];
+        }
       }
 
       /* ---------- 一階段招式（act 狀態機） ---------- */
       function nearHand(pref) {
         const P = Boss._pp;
-        const ok = P.hands.filter(h => h.brokenT <= 0);
+        const ok = P.hands.filter(h => h.brokenT <= 0 && !h.dead && !h.busy);
         if (!ok.length) return null;
         if (ok.length > 1 && P.lastHand && Math.random() < 0.75) return ok.find(h => h !== P.lastHand); /* v0.8.90 左右副劍輪流出手 */
         ok.sort((a, b) => Math.abs(a.x - Player.x) - Math.abs(b.x - Player.x));
         return ok[0];
       }
       function clampX(x) { return Math.max(140, Math.min(Config.worldWidth - 140, x)); }
-      function actStart(key, hand) {
-        const D = partsDef(), m = D.moves[key], P = Boss._pp, G = Config.groundY;
+      function actStart(key, hand, dirS, fastK) {
+        const D = partsDef(), m0 = D.moves[key], m = fastK && fastK !== 1 ? Object.assign({}, m0, { windup: m0.windup * fastK }) : m0, P = Boss._pp, G = Config.groundY;
         const a = { key, m, st: "windup", t: 0, hand: hand || null, x: Player.x, s: 1, hit: false, shots: 0, waves: 0, stuckT: m.stuck || 0 };
-        const needHand = key === "palm" || key === "finger" || key === "grab";
+        const needHand = key === "palm" || key === "finger" || key === "grab" || key === "pincer";
         if (needHand && !a.hand) a.hand = nearHand();
         if (needHand && !a.hand) return null;
-        if (a.hand) { a.hand.busy = true; if (needHand) P.lastHand = a.hand; }
+        if (a.hand) { a.hand.busy = true; a.hand.planted = false; if (needHand) P.lastHand = a.hand; }
         if (key === "sweep") {
           a.s = (Player.x - P.spiritX >= 0) ? 1 : -1; /* 從主角外側（靠場邊那頭）掃回來 */
           if (Player.x + a.s * m.span * 0.5 > Config.worldWidth - 100 || Player.x + a.s * m.span * 0.5 < 100) a.s = -a.s;
           a.x0 = Player.x + a.s * m.span * 0.5; a.x1 = Player.x - a.s * m.span * 0.5;
         }
         if (key === "finger") { a.s = a.hand.x >= Player.x ? 1 : -1; a.x = clampX(Player.x + a.s * 520); }
+        if (key === "pincer") { a.s = dirS || (a.hand.x >= Player.x ? 1 : -1); a.x0 = clampX(Player.x + a.s * 640); a.x1 = a.x0 - a.s * m.span; }
         if (key === "grab") { a.s = a.hand.x >= Player.x ? 1 : -1; a.x0 = clampX(Player.x + a.s * 640); a.x1 = a.x0 - a.s * m.span; }
         if (key === "plant") { a.s = a.hand && a.hand.x >= Player.x ? 1 : -1; a.x = clampX(Player.x + a.s * 190); }
         if (key === "rain" || key === "rain2") a.x = P.spiritX;
         /* 預警：危招紅＋出招聲＋提示；其餘也有起手聲 */
         if (m.isPerilous) {
           Sound.play("peril", 0.9, 1.0);
-          const hint = m.perilType === "sweep" ? "【危・橫掃】巨劍貼地掃來：按 [跳躍] 跳過！" : "【危・劍陣橫穿】副劍貼地穿來：按 [瞬步] 側閃！";
-          setTelemetry(hint); hintOnce("p4_" + m.perilType, hint);
+          const hint = key === "pincer" ? "【危・合圍】雙劍貼地夾擊：按 [跳躍] 跳過！" : m.perilType === "sweep" ? "【危・橫掃】巨劍貼地掃來：按 [跳躍] 跳過！" : "【危・劍陣橫穿】副劍貼地穿來：按 [瞬步] 側閃！";
+          setTelemetry(hint); hintOnce("p4_" + key, hint);
         } else if (key === "sky") { Sound.play("slash", 0.6, 0.6); setTelemetry("〔天劍斬落：看地上紅線，閃開！巨劍插地後蓄力斬封印〕"); hintOnce("p4_sky", "巨劍高舉：看地上紅線閃開；插地後按住攻擊放【蓄力斬】斬封印"); }
-        else if (key === "palm") { Sound.play("block", 0.5, 0.5); hintOnce("p4_palm", "副劍懸在頭上＝劍落：走出紅圈；插地後可砍副劍打架勢"); }
-        else if (key === "finger") { Sound.play("flysword", 0.5, 0.8); hintOnce("p4_finger", "副劍指向你：三道劍氣，逐一招架（折射回去打副劍）"); }
+        else if (key === "palm") { Sound.play("block", 0.5, 0.5); hintOnce("p4_palm", "劍懸頭上＝劍落：走出紅圈；劍插地後用【蓄力斬】打落"); }
+        else if (key === "finger") { Sound.play("flysword", 0.5, 0.8); hintOnce("p4_finger", "劍尖指向你＝劍氣三連：逐一招架；發完會插地，用【蓄力斬】打落"); }
         else if (key === "rain" || key === "rain2") { Sound.play("peril", 0.6, 1.4); hintOnce("p4_rain", "萬劍歸宗：地上紅圈是落點，走位避開"); }
         else if (key === "plant") { Sound.play("block", 0.8, 0.6); }
         return a;
@@ -300,8 +376,8 @@
               a.st = "rest"; a.t = 0;
             }
           } else if (a.st === "rest") {
-            h.ty = G + 60;
-            if (a.t >= m.rest) { a.st = "recover"; a.t = 0; }
+            h.ty = G + 60; h.planted = true;
+            if (a.t >= m.rest) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
             h.ty = G - 200;
             if (a.t >= m.lift) { h.busy = false; return false; }
@@ -320,25 +396,30 @@
               Sound.play("flysword", 0.75, 1.0 + a.shots * 0.08);
               h.flash = 1; a.shots++;
             }
-            if (a.t >= (m.count - 1) * m.gap + 0.12) { a.st = "recover"; a.t = 0; }
+            if (a.t >= (m.count - 1) * m.gap + 0.12) { a.st = "rest"; a.t = 0; }
+          } else if (a.st === "rest") { /* v0.8.92 發完劍氣：劍尖朝下插進地面，可擊落 */
+            h.ty = G + 60; h.tang = 0.25 * (Player.x >= h.x ? 1 : -1); h.planted = a.t > 0.2;
+            if (a.t >= 0.2 + (m.rest || 1.4)) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
-            if (a.t >= m.recover) { h.ty = G - 200; h.tang = 0; h.busy = false; return false; }
+            h.ty = G - 200; h.tang = 0;
+            if (a.t >= m.recover) { h.busy = false; return false; }
           }
           return true;
         }
-        if (k === "grab") {
+        if (k === "grab" || k === "pincer") {
+          const gy = k === "pincer" ? G - 45 : G - 70;
           if (a.st === "windup") {
             const pull = Math.min(1, a.t / m.windup);
-            h.tx = a.x0 + a.s * 70 * pull; h.ty = G - 70; h.tang = a.s * Math.PI / 2; /* 劍尖朝穿刺方向（-a.s） */
+            h.tx = a.x0 + a.s * 70 * pull; h.ty = gy; h.tang = a.s * Math.PI / 2; /* 劍尖朝穿刺方向（-a.s） */
             if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 0.9, 0.7); }
           } else if (a.st === "active") {
             const p = Math.min(1, a.t / m.active);
-            h.x = h.tx = a.x0 + (a.x1 - a.x0) * p; h.y = h.ty = G - 70;
+            h.x = h.tx = a.x0 + (a.x1 - a.x0) * p; h.y = h.ty = gy;
             if (!a.hit && Math.abs(Player.x - h.x) <= 110 && Player.y >= G - 230) { a.hit = true; partStrike(h.x + a.s * 80, m); }
             if (a.t >= m.active) { a.st = "rest"; a.t = 0; }
-          } else if (a.st === "rest") {
-            h.ty = G - 70;
-            if (a.t >= m.rest) { a.st = "recover"; a.t = 0; }
+          } else if (a.st === "rest") { /* v0.8.92 穿過後插地，可擊落 */
+            h.ty = G + 60; h.tang = -a.s * 0.3; h.planted = a.t > 0.15;
+            if (a.t >= 0.15 + m.rest) { a.st = "recover"; a.t = 0; h.planted = false; }
           } else {
             h.ty = G - 200; h.tang = 0;
             if (a.t >= m.lift) { h.busy = false; return false; }
@@ -408,10 +489,11 @@
         }
         if (sw.flash > 0) sw.flash = Math.max(0, sw.flash - dt * 60);
         for (const h of P.hands) {
+          if (h.dead) { h.y += (h.ty - h.y) * Math.min(1, dt * 10); h.ang += (h.tang - h.ang) * Math.min(1, dt * 8); h.x += (h.tx - h.x) * Math.min(1, dt * 6); if (h.flash > 0) h.flash = Math.max(0, h.flash - dt * 60); continue; }
           if (h.brokenT > 0) { h.brokenT -= dt; h.ty = G + 40; if (h.brokenT <= 0) { h.ty = G - 200; h.tang = 0; } }
           if (!h.busy && h.brokenT <= 0) {
-            const hx = P.phase === 2 ? Boss.x + h.side * 560 : P.spiritX + h.side * 420;
-            h.tx = clampX(hx); h.ty = (P.phase === 2 ? G - 225 : G - 200) + Math.sin(performance.now() / 800 + h.side) * 12; h.tang = Math.sin(performance.now() / 1100 + h.side) * 0.06;
+            const hx = P.phase === 2 ? Boss.x + h.side * 560 : P.form ? P.spiritX + h.slot : P.spiritX + h.side * 420;
+            h.tx = clampX(hx); h.ty = (P.phase === 2 ? G - 225 : G - 175 - (h.lift || 0)) + Math.sin(performance.now() / 800 + h.side) * 12; h.tang = Math.sin(performance.now() / 1100 + h.side) * 0.06;
           }
           const kk = Math.min(1, dt * (h.busy ? 8 : 3.5));
           h.x += (h.tx - h.x) * kk; h.y += (h.ty - h.y) * kk; h.ang += ((h.tang || 0) - h.ang) * Math.min(1, dt * (h.busy ? 12 : 4));
@@ -431,11 +513,13 @@
         /* 師弟妹：靈光（hurt）／符陣（frozen）打斷並暫停 */
         if (Boss.state === "hurt" || Boss.state === "frozen") {
           if (P.act && P.act.st === "windup") { actCancel(P.act); P.act = null; }
+          if (P.form) P.facts = P.facts.filter(a => { if (a.st === "windup") { actCancel(a); return false; } return true; });
           P.pauseT = Boss.state === "frozen" ? (Boss.frozenTimer || 2) : (Boss.stateTimer || 0.9);
           Boss.state = "idle"; Boss.frozenTimer = 0;
         }
         if (P.pauseT > 0) { P.pauseT -= dt; partsEase(dt); updateMarks(dt); partsSync(); return true; }
-        if (P.act) {
+        if (P.form) { formStep(dt); }
+        else if (P.act) {
           if (!stepAct(P.act, dt)) { P.act = null; P.cd = partsDef().cd; }
         } else {
           P.cd -= dt;
@@ -453,7 +537,7 @@
       }
       /* Boss 欄位同步（HUD 危字、smoke 輪替檢查、鏡頭） */
       function partsSync() {
-        const P = Boss._pp, a = P.act;
+        const P = Boss._pp, a = P.form ? P.facts[0] : P.act;
         Boss.x = P.spiritX; Boss.vx = 0; Boss.y = Config.groundY;
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         Boss.hp = Boss.maxHp; Boss.posture = 0;
@@ -470,7 +554,8 @@
         Game.flyingSwords = [];
         const sw = P.sword;
         /* 巨劍碎裂 */
-        sw.mode = "crack"; P._shattered = false; if (fxReady("boss4fx2")) spawnFx("boss4fx2", 3, P.sword.x, Config.groundY - 260, { w: 520, dur: 0.4, col: 0 }); /* 先裂 0.35 秒再碎（partsTransStep） */
+        P._shattered = false; P._hadSword = sw.mode !== "gone";
+        if (P._hadSword) sw.mode = "crack"; if (P._hadSword && fxReady("boss4fx2")) spawnFx("boss4fx2", 3, P.sword.x, Config.groundY - 260, { w: 520, dur: 0.4, col: 0 }); /* 先裂 0.35 秒再碎（partsTransStep） */
         Player.invulnTimer = 3.2;
         P.coreX = Math.abs(P.spiritX - Player.x) < 320 ? clampX(Player.x + (Player.x < 1600 ? 480 : -480)) : P.spiritX;
         Sound.play("execution", 1.0, 0.8);
@@ -483,8 +568,8 @@
           Game.slowT = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 1.0);
         } })) { if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); }
         screenFlash("rgba(224,242,254,0.9)", 0.7, 0.6);
-        showBanner("巨劍崩碎", "劍　魂　現　世", 1600, "#7dd3fc");
-        setTelemetry("★ 三道封印盡斷！巨劍崩碎，劍魂核心降臨——回到彈刀對決！");
+        showBanner("萬劍歸一", "古　靈　現　世", 1600, "#7dd3fc");
+        setTelemetry("★ 劍陣盡落！古靈劍魂現身——回到彈刀對決！");
         Boss.state = "recover"; Boss.isPerilous = false;
       }
       function partsTransStep(dt) {
@@ -492,11 +577,11 @@
         P.tt += dt;
         if (P.tt >= 0.35 && !P._shattered) { /* 巨劍崩碎 */
           P._shattered = true; const sw = P.sword; sw.mode = "gone";
-          for (let i = 0; i < 26; i++) P.shards.push({ x: sw.x + (Math.random() - 0.5) * 60, y: G - 120 - Math.random() * 260, vx: (Math.random() - 0.5) * 900, vy: -300 - Math.random() * 500, t: 1.2 + Math.random() * 0.5, fly: true });
+          if (P._hadSword) for (let i = 0; i < 26; i++) P.shards.push({ x: sw.x + (Math.random() - 0.5) * 60, y: G - 120 - Math.random() * 260, vx: (Math.random() - 0.5) * 900, vy: -300 - Math.random() * 500, t: 1.2 + Math.random() * 0.5, fly: true });
           Sound.play("hit", 1.0, 0.6); addTrauma(0.5);
           if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* v0.8.88 巨劍崩碎＝換二階段曲 */
-          if (fxReady("boss4fx2")) spawnFx("boss4fx2", 3, sw.x, G - 260, { w: 760, dur: 0.7, col: 1 });
-          if (fxReady("spark")) spawnFx("spark", 3, sw.x, G - 200, { w: 600, dur: 0.6 });
+          if (P._hadSword && fxReady("boss4fx2")) spawnFx("boss4fx2", 3, sw.x, G - 260, { w: 760, dur: 0.7, col: 1 });
+          if (fxReady("spark")) spawnFx("spark", 3, P.coreX, G - 200, { w: 600, dur: 0.6 });
         }
         for (const s of P.shards) if (s.fly) { s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 1400 * dt; if (s.y > G) { s.y = G; s.vy *= -0.3; s.vx *= 0.5; } }
         if (P.tt > 0.6 && !P._roar) { P._roar = true; Sound.play("peril", 1.0, 0.5); addTrauma(0.4); }
@@ -510,8 +595,8 @@
           Sound.play("assist", 1.0, 0.7);
           spawnSparks(Boss.x, G - 150, "parry", 0);
           onBossPhase2();
-          const rb = document.getElementById("boss-realm-badge"); if (rb) rb.textContent = "二階段・劍魂核心";
-          hintOnce("p4_core", "劍魂核心：回到彈刀！架勢打滿即可處決");
+          const rb = document.getElementById("boss-realm-badge"); if (rb) rb.textContent = "三階段・古靈劍魂";
+          hintOnce("p4_core", "古靈劍魂：回到彈刀！架勢打滿處決，要處決兩次");
         }
       }
       /* 二階段：核心不在出招時，兩側巨手偶爾壓掌 */
@@ -536,16 +621,16 @@
       function partsHUD() {
         const P = Boss._pp;
         if (!P || P.phase === 2) return;
-        const n = partsDef().seals || 3, left = Math.max(0, P.seals);
+        const fm = P.form, n = fm ? P.hands.length : partsDef().seals || 3, left = fm ? formAlive().length : Math.max(0, P.seals);
         const bar = document.getElementById("boss-hp-bar"), gh = document.getElementById("boss-hp-ghost"), tx = document.getElementById("boss-hp-txt");
         if (bar) bar.style.width = `${(left / n) * 100}%`;
         if (gh) gh.style.width = `${(left / n) * 100}%`;
-        if (tx) tx.textContent = "●".repeat(left) + "○".repeat(n - left);
+        if (tx) tx.textContent = (fm ? "◆" : "●").repeat(left) + (fm ? "◇" : "○").repeat(n - left);
         let hp = 0; for (const h of P.hands) hp = Math.max(hp, h.posture);
         const pb = document.getElementById("boss-posture-bar"), pt = document.getElementById("boss-posture-txt");
         if (pb) pb.style.width = `${hp}%`;
         if (pt) pt.textContent = `${Math.round(hp)}%`;
-        const st = document.getElementById("boss-state-txt"); if (st) st.textContent = P.phase === "t" ? "劍魂降臨" : Boss.isPerilous ? `危:${String(Boss.perilType).toUpperCase()}` : "封印";
+        const st = document.getElementById("boss-state-txt"); if (st) st.textContent = P.phase === "t" ? "古靈現世" : Boss.isPerilous ? `危:${String(Boss.perilType).toUpperCase()}` : fm ? "劍陣" : "封印";
       }
 
       /* ---------- 繪製（v0.8.85 起：有生圖用生圖，沒有退回方塊） ---------- */
@@ -559,9 +644,9 @@
       function partsPreload(stage) { const A = stage.parts && stage.parts.art; if (!A) return; ["sw1", "sw2", "sw3", "ls1", "ls2", "ls3", "ls4", "rs1", "rs2", "rs3", "rs4"].forEach(partImg); fxSheet(A.fx); fxSheet("boss4fx2"); }
       /* v0.8.90 副劍該用哪一格：1 平時、2 蓄氣（出招前搖與出招）、4 崩斷 */
       function handPose(h) {
-        const P = Boss._pp, pre = h.side < 0 ? "ls" : "rs";
-        if (h.brokenT > 0) return pre + "4";
-        const a = [P.act, P.side].find(x => x && x.hand === h);
+        const P = Boss._pp, pre = h.design || (h.side < 0 ? "ls" : "rs");
+        if (h.brokenT > 0 || h.dead) return pre + "4";
+        const a = [P.act, P.side, ...(P.facts || [])].find(x => x && x.hand === h);
         if (a && (a.st === "windup" || a.st === "active")) return pre + "2";
         return pre + "1";
       }
@@ -697,7 +782,7 @@
         }
         /* 副劍（v0.8.90）：(h.x, h.y)＝劍尖，ang 0＝劍尖朝下直立 */
         for (const h of P.hands) {
-          const img = partImg(handPose(h)), fl = h.flash > 0, broken = h.brokenT > 0;
+          const img = partImg(handPose(h)), fl = h.flash > 0, broken = h.brokenT > 0 || h.dead;
           ctx.save();
           ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.ellipse(h.x, G + 3, 70 * Math.max(0.3, 1 - Math.max(0, G - h.y) / 500), 7, 0, 0, Math.PI * 2); ctx.fill();
           if (h.y > G - 30) { ctx.beginPath(); ctx.rect(h.x - 600, -2000, 1200, G + 4 + 2000); ctx.clip(); } /* 插進地裡的部分不畫 */
@@ -719,7 +804,7 @@
           }
         }
         /* 招式預警圈／危字 */
-        const acts = [P.act, P.side].filter(Boolean);
+        const acts = [P.act, P.side, ...(P.facts || [])].filter(Boolean);
         for (const a of acts) {
           if (a.st !== "windup") continue;
           const m = a.m, p = Math.min(1, a.t / m.windup);
