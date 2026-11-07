@@ -9,7 +9,7 @@
 
       const DIR_CFG = {
         1: { /* 赤煞神衛統領：單膝跪地、血煞紅氣湧起 → 起身怒吼，衝擊波 */
-          intro: { kind: "drop", dur: 4.3, burstAt: 1.3, fall: 1.0, height: 760, zoomAt: 1.3, zoomOutAt: 3.15, sub: "第一難", poses: [[0, "21_fall"], [1.0, "22_land"], [3.15, "23_rise"]],
+          intro: { kind: "drop", dur: 3.95, burstAt: 2.0, fall: 1.0, height: 760, shake: 1.0, plate: { tin: 0.22, hold: 0.85, tout: 0.3 }, sub: "第一難", poses: [[0, "21_fall"], [1.0, "22_land"], [3.37, "23_rise"]],
             ring: { sheet: "land", row: 0, w: 1000, dur: 0.7 }, dust: { sheet: "land", row: 1, w: 560, dur: 0.8 }, sfx: [["execution", 1.0, 0.55]] },
           phase: { dur: 2.6, burstAt: 1.15, poses: [[0, "17_kneel"], [1.15, "14_cast"], [1.95, "07_windup"]], tint: "150,20,20", tintA: 0.5,
             aura: { sheet: "dir1", row: 0, w: 460, at: 0.15, fps: 10, dy: 8 }, gather: { sheet: "dir1", row: 3, w: 560, at: 0.1, dy: -110 }, ring: { sheet: "dir1", row: 1, w: 1100, dur: 0.8 },
@@ -72,34 +72,41 @@
         if (c.title) showBanner(c.title[0], c.title[1], 1500, c.title[2]);
         if (c.name) bossNameCard(st);
       }
-      /* v0.8.106 「從天而降」登場：下落（陰影變大）→ 落地（震動、停頓、塵浪、衝擊環）→ 瞬間拉近到 Boss 上半身 → 稱謂蓋章（戴夫式）→ 拉回起身 */
+      /* v0.8.111 「從天而降」登場：鏡頭跟著 Boss 下落（背景頂端色往上延伸）→ 落地後晃 1 秒（持續高 trauma）→ 名牌從左快速滑進＋瞬間拉近
+       * （此刻震動停、特效／環境暫停）→ 名牌往右飛走、同時鏡頭縮回戰鬥大小 → Boss 起身。名牌不畫黑底。 */
       function dropStep(D, dt) {
-        const c = D.c, t = D.t, G = Config.groundY, st = D.st, z0 = Game.camera.targetZoom + 0.2;
+        const c = D.c, t = D.t, G = Config.groundY, st = D.st, cam = Game.camera, z0 = cam.targetZoom + 0.2, P = c.plate;
+        const t0 = c.fall + c.shake, tHold = t0 + P.tin + P.hold, tEnd = tHold + P.tout;
         Boss._cineImg = dirPoseAt(c, t);
         Boss.y = t < c.fall ? G - c.height * (1 - (t / c.fall) * (t / c.fall)) : G;
-        if (t < c.fall) D.camNow = { zoom: z0, y: Math.max(-Config.baseHeight * 0.5 * (1 - 1 / z0), Math.min(0, (Boss.y - G) * 0.35)), rate: 10 }; /* 不往上看超出背景（上方不露黑底） */
+        D.freeze = t >= t0 && t < tHold; /* 名牌滑入與停留：震動與世界暫停 */
+        if (t < c.fall) D.camNow = { zoom: z0, y: Math.max(-700, (Boss.y - G) * 0.85), rate: 10 }; /* 鏡頭跟著 Boss 往下走 */
         if (!D.hit && t >= c.fall) {
           D.hit = true;
           if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 });
           if (c.dust && fxReady(c.dust.sheet)) { spawnFx(c.dust.sheet, c.dust.row, Boss.x - 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: -1 }); spawnFx(c.dust.sheet, c.dust.row, Boss.x + 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: 1 }); }
           (c.sfx || []).forEach(sf => Sound.play(sf[0], sf[1], sf[2]));
-          addTrauma(0.95); triggerHitstopMs(110); hapticBuzz([70, 40, 120]); screenFlash("rgba(255,244,230,0.45)", 0.4, 0.3);
+          triggerHitstopMs(110); screenFlash("rgba(255,244,230,0.45)", 0.4, 0.3);
+          hapticBuzz([90, 40, 80, 40, 70, 40, 60, 40, 50, 40, 40]);
           D.camNow = { zoom: z0, y: 0, rate: 14 };
         }
-        if (!D.zoomed && t >= c.zoomAt) { /* 瞬間拉近：rate 很大＝幾乎一幀到位 */
-          D.zoomed = true; D.zoomT0 = t;
+        if (t >= c.fall && t < t0) { const pr = (t - c.fall) / c.shake; cam.trauma = Math.max(cam.trauma || 0, 1.0 - 0.3 * pr); } /* 落地後持續劇烈晃動約 1 秒 */
+        if (!D.zoomed && t >= t0) { /* 名牌滑入的同時瞬間拉近，停震 */
+          D.zoomed = true; D.zoomT0 = t; cam.trauma = 0;
           D.camNow = { zoom: z0 + 0.75, y: -30, rate: 60 };
-          screenFlash("rgba(255,255,255,0.8)", 0.55, 0.3); addTrauma(0.5); hapticBuzz([30, 20, 50]);
+          screenFlash("rgba(255,255,255,0.7)", 0.5, 0.25); hapticBuzz([30, 20, 50]);
           Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
+          Sound.play("execution", 0.7, 1.3);
+          bossNameCard(st, { slide: true, sub: c.sub, tin: P.tin, hold: P.hold, tout: P.tout });
         }
-        if (D.zoomed && !D.named && t >= c.zoomAt + 0.18) { D.named = true; bossNameCard(st, { slam: true, sub: c.sub, dur: 2300 }); Sound.play("execution", 0.7, 1.2); addTrauma(0.45); hapticBuzz([40, 20, 70]); }
-        if (D.zoomed && !D.out && t >= c.zoomOutAt) { D.out = true; D.camNow = { zoom: z0, y: 0, rate: 9 }; }
-        D.a += ((D.zoomed && !D.out ? 0.55 : 0) - D.a) * Math.min(1, dt * 12);
+        if (D.freeze) cam.trauma = 0;
+        if (D.zoomed && !D.out && t >= tHold) { D.out = true; D.camNow = { zoom: cam.targetZoom, y: 0, rate: 7 }; hapticBuzz(20); } /* 名牌飛走，鏡頭縮回戰鬥大小 */
+        D.a += ((D.zoomed && !D.out ? 0.5 : 0) - D.a) * Math.min(1, dt * 12);
       }
       function dirUpdate(dt) {
         const D = Game.dir; if (!D) return;
         const c = D.c; D.t += dt;
-        if (c.kind === "drop") { dropStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
+        if (c.kind === "drop") { dropStep(D, dt); if (!D.freeze) updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
         Boss._cineImg = dirPoseAt(c, D.t);
         if (!D.aura && c.aura && D.t >= (c.aura.at || 0) && fxReady(c.aura.sheet)) {
           D.aura = true; const A = c.aura, dy = A.dy || 0;

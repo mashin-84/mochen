@@ -55,6 +55,7 @@
         ctx.translate(-Config.baseWidth * 0.5 - cam.x + shakeOffX, -Config.baseHeight * 0.5 - (cam.y || 0) + shakeOffY); /* v0.8.106 cam.y：導演用的垂直對焦（平時 0） */
 
         drawDynamicBackground(cam.x);
+        drawSkyExtension(cam);
         if (Game.mode !== "battle") drawHubScene();
         drawPartsBack(); /* v0.8.83 部位 Boss：背景本體與地面預警 */
 
@@ -253,6 +254,18 @@
       BG_ART.s1.img.src = "assets/bg/arena1.webp";
 
       /* 戰場背景資料化：Stages[n].bg = "arena2" → assets/bg/arena2.webp；Stages[n].bgDim 為暗化（預設 0.4） */
+      /* v0.8.111 鏡頭往上看超出背景時（登場下落），用背景頂端的顏色往上延伸，不露黑底 */
+      function drawSkyExtension(cam) {
+        if (!(cam.y < -0.5)) return;
+        const stg = Stages[Boss.stageId], a = stg && stg.bg ? getBgArt(stg.bg) : null;
+        if (!a || !a.ok) return;
+        if (!a.top) {
+          try { const c = document.createElement("canvas"); c.width = 8; c.height = 1; const x = c.getContext("2d"); x.drawImage(a.img, 0, 0, a.img.naturalWidth, Math.max(2, a.img.naturalHeight * 0.01), 0, 0, 8, 1); const d = x.getImageData(0, 0, 8, 1).data; let r = 0, g = 0, b = 0; for (let i = 0; i < 8; i++) { r += d[i * 4]; g += d[i * 4 + 1]; b += d[i * 4 + 2]; } a.top = [Math.round(r / 8), Math.round(g / 8), Math.round(b / 8)]; } catch (e) { a.top = [60, 60, 90]; }
+        }
+        const t = a.top, gr = ctx.createLinearGradient(0, -1200, 0, 0);
+        gr.addColorStop(0, `rgb(${Math.round(t[0] * 0.8)},${Math.round(t[1] * 0.8)},${Math.round(t[2] * 0.85)})`); gr.addColorStop(1, `rgb(${t[0]},${t[1]},${t[2]})`);
+        ctx.save(); ctx.fillStyle = gr; ctx.fillRect(cam.x - 600, -1200, Config.baseWidth + 1200, 1201); ctx.restore();
+      }
       function getBgArt(key) {
         if (!BG_ART[key]) {
           const a = { ok: false, img: new Image() };

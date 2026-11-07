@@ -1,6 +1,7 @@
       function updatePhysics(dt) {
-        // Scarf and atmospheric leaves always animate
-        if (Player.scarfNodes.length > 0) {
+        // Scarf and atmospheric leaves always animate（導演名牌滑入時一起暫停）
+        const dirFrz = !!(Game.dir && Game.dir.freeze);
+        if (Player.scarfNodes.length > 0 && !dirFrz) {
           Player.scarfNodes[0].x = Player.x - Player.facing * 10;
           Player.scarfNodes[0].y = Player.y - 68;
           for (let i = 1; i < Player.scarfNodes.length; i++) {
@@ -12,7 +13,7 @@
             p.y += (ty - p.y) * Math.min(1, dt * 22);
           }
         }
-        for (const leaf of Game.inkBambooLeaves) {
+        for (const leaf of (dirFrz ? [] : Game.inkBambooLeaves)) {
           leaf.x += leaf.vx * dt;
           leaf.y += leaf.vy * dt;
           leaf.angle += leaf.vAngle * dt;
