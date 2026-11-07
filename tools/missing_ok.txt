@@ -53,5 +53,3 @@
 /assets/boss4s/walk_10.webp
 /assets/boss4s/walk_11.webp
 /assets/boss4s/walk_12.webp
-/assets/fx/xtz.webp
-/assets/fx/xtz_star.webp

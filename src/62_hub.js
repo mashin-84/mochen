@@ -251,6 +251,10 @@
             ctx.save(); ctx.translate(nx, gy - 695 * k + h / 2 + 2); ctx.scale(-1, 1); ctx.drawImage(SI.img, -w / 2, -h / 2, w, h); ctx.restore();
           }
           const oy = gy - 205 + Math.sin(t * 2) * 6;
+          if (fxReady("xtz")) { /* v0.8.116 師妹旁的玄天珠改用生圖（列 0 脈動） */
+            const A = fxSheet("xtz"), col = Math.floor(performance.now() / 120) % 4, sz = 70;
+            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.drawImage(A.img, col * 256, 0, 256, 256, nx + 46 - sz / 2, oy - sz / 2, sz, sz); ctx.restore();
+          } else {
           const og = ctx.createRadialGradient(nx + 46, oy, 2, nx + 46, oy, 18);
           og.addColorStop(0, "rgba(219,234,254,1)");
           og.addColorStop(1, "rgba(96,165,250,0)");
@@ -258,6 +262,7 @@
           ctx.beginPath();
           ctx.arc(nx + 46, oy, 18, 0, Math.PI * 2);
           ctx.fill();
+          }
           if (Game.hubNpcNear && !talking) {
             ctx.font = "700 15px 'Noto Serif TC', serif";
             ctx.textAlign = "center";

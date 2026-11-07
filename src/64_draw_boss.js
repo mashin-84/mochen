@@ -771,7 +771,7 @@
 
       /* M2 主角攻擊關鍵格：每一刀「預備 a → 出刀 b → 收招 c」三拍（v0.8.45 生圖，900×560、腳底 y=529、x=450） */
       const MC_ATK = { 1: ["20_s1a", "21_s1b", "22_s1c"], 2: ["23_s2a", "24_s2b", "25_s2c"], 3: ["26_t_a", "27_t_b", "28_t_c"], 4: ["38_hv_a", "39_hv_b", "40_hv_c"] /* v0.8.98 蓄力重斬 */ };
-      ['17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
+      ['41_point_a', '42_point_b', '43_point_c', '17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
       const MC_STRIDE = 250;
       let MC_PHASE = 0;
       let MC_LASTX = null;

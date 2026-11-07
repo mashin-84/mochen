@@ -177,23 +177,23 @@
        *   → 珠子衝向敵人（太初替身＝飛回主角胸口）→ 命中那一刻才 applyAssistEffect 並恢復戰鬥。
        * 美術掛鉤（有圖用圖，沒圖退回程式畫）：assets/fx/xtz.webp（4×4：列 0 珠子脈動、列 1 灰珠、列 2 拖尾、列 3 命中爆光）、
        *   assets/fx/xtz_star.webp（單張十字星）、主角前指關鍵格 mc/41_point_a／42_point_b／43_point_c（沒有時用 11_thrust 頂替）。 */
-      const ASSIST_CFG = { tIn: 0.2, tStar: 0.42, tFreeze: 0.08, dashSpd: 2400, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
+      const ASSIST_CFG = { tIn: 0.35, tStar: 0.8, tFreeze: 0.12, dashSpd: 1500, chestY: 138, handY: 148, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
       function assistStart(type) {
         if (Game.mode !== "battle" || Game.cine || Game.dir || Boss.hp <= 0 || Player.hp <= 0) return false;
         const o0 = orbCurrent();
         Game.dir = { c: { kind: "assist", dur: 99 }, kind: "assist", st: Stages[Boss.stageId], type, t: 0, dark: 0, a: 0, orb: { x: o0.x, y: o0.y, R: 9 }, from: { x: o0.x, y: o0.y }, star: null, trail: [], phase: "in", tp: 0, focusX: Player.x,
-          camNow: { zoom: Game.camera.targetZoom + 0.6, y: Player.y - 85 - Config.baseHeight * 0.5, rate: 14 } };
+          camNow: { zoom: Game.camera.targetZoom + 0.6, y: Player.y - ASSIST_CFG.chestY + 20 - Config.baseHeight * 0.5, rate: 14 } };
         Player.facing = Boss.x >= Player.x ? 1 : -1; Player.vx = 0; Player.isChargingAttack = false;
         return true;
       }
       function assistPoseAt(t) {
         const C = ASSIST_CFG, has = n => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); };
-        if (t < 0.08) return null;
-        const cand = t < 0.2 ? C.poseNames[0] : t < ASSIST_CFG.tIn + ASSIST_CFG.tStar ? C.poseNames[1] : C.poseNames[2];
+        if (t < 0.06) return null;
+        const cand = t < C.tIn ? C.poseNames[0] : t < C.tIn + C.tStar ? C.poseNames[1] : C.poseNames[2];
         return has(cand) ? cand : (has(C.poseNames[1]) ? C.poseNames[1] : C.poseFallback);
       }
       function assistStep(D, dt) {
-        const C = ASSIST_CFG, f = Player.facing, hand = { x: Player.x + f * 64, y: Player.y - 98 };
+        const C = ASSIST_CFG, f = Player.facing, hand = { x: Player.x + f * 78, y: Player.y - C.handY };
         D.t += 0; D.tp += dt; Player._pose = assistPoseAt(D.t);
         if (D.phase === "in") { /* 拉近＋變暗＋珠子飛到指尖 */
           const u = Math.min(1, D.tp / C.tIn), e = 1 - Math.pow(1 - u, 3);
@@ -215,7 +215,7 @@
           else { D.orb.x += dx / d * step; D.orb.y += dy / d * step; }
           D.dark += (0.65 - D.dark) * Math.min(1, dt * 8);
         } else if (D.phase === "absorb") { /* 太初替身：珠子飛回主角胸口 */
-          const u = Math.min(1, D.tp / 0.16), tx = Player.x, ty = Player.y - 80;
+          const u = Math.min(1, D.tp / 0.16), tx = Player.x, ty = Player.y - ASSIST_CFG.chestY;
           D.orb.x = D.hs.x + (tx - D.hs.x) * u; D.orb.y = D.hs.y + (ty - D.hs.y) * u;
           if (u >= 1) assistHit(D);
         } else if (D.phase === "out") { /* 命中後：暗角與鏡頭快速退場，戰鬥已恢復運作 */ }
@@ -237,20 +237,25 @@
         const D = Game.dir && Game.dir.kind === "assist" ? Game.dir : null;
         if (D && D.orb) return { x: D.orb.x, y: D.orb.y, z: 1, R: D.orb.R };
         const th = (performance.now() / 1000) * (Player.assistAvailable ? 2.6 : 1.3);
-        return { x: Player.x + Math.cos(th) * 46, y: Player.y - 88 + Math.sin(th) * 14, z: Math.sin(th), R: 7.5 };
+        return { x: Player.x + Math.cos(th) * 46, y: Player.y - ASSIST_CFG.chestY + Math.sin(th) * 14, z: Math.sin(th), R: 7.5 }; /* 高度＝主角胸口 */
       }
       function drawXtzOrb(front) {
         const o = orbCurrent(), D = Game.dir && Game.dir.kind === "assist" ? Game.dir : null;
         if (front !== (o.z >= 0)) return;
         const on = Player.assistAvailable || !!D, now = performance.now();
         ctx.save();
-        if (D && D.trail.length) { /* 衝刺拖尾 */
+        const comet = !!(D && D.phase === "dash" && fxReady("xtz"));
+        if (D && D.trail.length && !comet) { /* 衝刺拖尾（程式備案；有圖時用彗星格） */
           ctx.globalCompositeOperation = "lighter";
           D.trail.forEach((p, i) => { const a = Math.max(0, 1 - p.t * 6) * (i / D.trail.length); ctx.globalAlpha = a * 0.7; ctx.fillStyle = "#93c5fd"; ctx.beginPath(); ctx.arc(p.x, p.y, 4 + 6 * (i / D.trail.length), 0, Math.PI * 2); ctx.fill(); });
         }
         ctx.globalCompositeOperation = "lighter";
-        const size = (D ? 76 : 52) * (o.z < 0 ? 0.85 : 1);
-        if (fxReady("xtz")) { /* 美術：列 0 珠子脈動、列 1 灰珠 */
+        const size = (D ? 96 : 64) * (o.z < 0 ? 0.85 : 1);
+        if (comet) { /* 衝刺：列 2 彗星（珠頭在右、尾巴向左），依飛行方向旋轉；珠頭落在格內約 78% 處 */
+          const A = fxSheet("xtz"), col = Math.floor(D.tp * 18) % 3, ang = Math.atan2(Boss.y - 110 - o.y, Boss.x - o.x), cz = 170;
+          ctx.translate(o.x, o.y); ctx.rotate(ang); ctx.globalAlpha = 1;
+          ctx.drawImage(A.img, col * 256, 2 * 256, 256, 256, -cz * 0.78, -cz / 2, cz, cz);
+        } else if (fxReady("xtz")) { /* 美術：列 0 珠子脈動、列 1 灰珠 */
           const A = fxSheet("xtz"), col = Math.floor(now / 120) % 4;
           ctx.globalAlpha = o.z < 0 ? 0.7 : 1; ctx.drawImage(A.img, col * 256, (on ? 0 : 1) * 256, 256, 256, o.x - size / 2, o.y - size / 2, size, size);
         } else { /* 備案：程式畫的圓珠 */
@@ -271,7 +276,7 @@
       /* 聚光暗角：主角外的畫面變暗（畫在敵人／場景之後、主角與珠子之前，世界座標） */
       function drawAssistDark() {
         const D = Game.dir; if (!D || D.kind !== "assist" || !(D.dark > 0.01)) return;
-        const cx = Player.x, cy = Player.y - 85, k = D.dark, g = ctx.createRadialGradient(cx, cy, 70, cx, cy, 360);
+        const cx = Player.x, cy = Player.y - 120, k = D.dark, g = ctx.createRadialGradient(cx, cy, 70, cx, cy, 360);
         g.addColorStop(0, "rgba(2,6,23,0)"); g.addColorStop(0.5, `rgba(2,6,23,${0.5 * k})`); g.addColorStop(1, `rgba(2,6,23,${0.88 * k})`);
         ctx.save(); ctx.fillStyle = g; ctx.fillRect(cx - 3200, -1600, 6400, 4200); ctx.restore();
       }

@@ -2083,7 +2083,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.115";
+      const ASSET_VER = "0.8.116";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -7340,23 +7340,23 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
        *   → 珠子衝向敵人（太初替身＝飛回主角胸口）→ 命中那一刻才 applyAssistEffect 並恢復戰鬥。
        * 美術掛鉤（有圖用圖，沒圖退回程式畫）：assets/fx/xtz.webp（4×4：列 0 珠子脈動、列 1 灰珠、列 2 拖尾、列 3 命中爆光）、
        *   assets/fx/xtz_star.webp（單張十字星）、主角前指關鍵格 mc/41_point_a／42_point_b／43_point_c（沒有時用 11_thrust 頂替）。 */
-      const ASSIST_CFG = { tIn: 0.2, tStar: 0.42, tFreeze: 0.08, dashSpd: 2400, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
+      const ASSIST_CFG = { tIn: 0.35, tStar: 0.8, tFreeze: 0.12, dashSpd: 1500, chestY: 138, handY: 148, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
       function assistStart(type) {
         if (Game.mode !== "battle" || Game.cine || Game.dir || Boss.hp <= 0 || Player.hp <= 0) return false;
         const o0 = orbCurrent();
         Game.dir = { c: { kind: "assist", dur: 99 }, kind: "assist", st: Stages[Boss.stageId], type, t: 0, dark: 0, a: 0, orb: { x: o0.x, y: o0.y, R: 9 }, from: { x: o0.x, y: o0.y }, star: null, trail: [], phase: "in", tp: 0, focusX: Player.x,
-          camNow: { zoom: Game.camera.targetZoom + 0.6, y: Player.y - 85 - Config.baseHeight * 0.5, rate: 14 } };
+          camNow: { zoom: Game.camera.targetZoom + 0.6, y: Player.y - ASSIST_CFG.chestY + 20 - Config.baseHeight * 0.5, rate: 14 } };
         Player.facing = Boss.x >= Player.x ? 1 : -1; Player.vx = 0; Player.isChargingAttack = false;
         return true;
       }
       function assistPoseAt(t) {
         const C = ASSIST_CFG, has = n => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); };
-        if (t < 0.08) return null;
-        const cand = t < 0.2 ? C.poseNames[0] : t < ASSIST_CFG.tIn + ASSIST_CFG.tStar ? C.poseNames[1] : C.poseNames[2];
+        if (t < 0.06) return null;
+        const cand = t < C.tIn ? C.poseNames[0] : t < C.tIn + C.tStar ? C.poseNames[1] : C.poseNames[2];
         return has(cand) ? cand : (has(C.poseNames[1]) ? C.poseNames[1] : C.poseFallback);
       }
       function assistStep(D, dt) {
-        const C = ASSIST_CFG, f = Player.facing, hand = { x: Player.x + f * 64, y: Player.y - 98 };
+        const C = ASSIST_CFG, f = Player.facing, hand = { x: Player.x + f * 78, y: Player.y - C.handY };
         D.t += 0; D.tp += dt; Player._pose = assistPoseAt(D.t);
         if (D.phase === "in") { /* 拉近＋變暗＋珠子飛到指尖 */
           const u = Math.min(1, D.tp / C.tIn), e = 1 - Math.pow(1 - u, 3);
@@ -7378,7 +7378,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           else { D.orb.x += dx / d * step; D.orb.y += dy / d * step; }
           D.dark += (0.65 - D.dark) * Math.min(1, dt * 8);
         } else if (D.phase === "absorb") { /* 太初替身：珠子飛回主角胸口 */
-          const u = Math.min(1, D.tp / 0.16), tx = Player.x, ty = Player.y - 80;
+          const u = Math.min(1, D.tp / 0.16), tx = Player.x, ty = Player.y - ASSIST_CFG.chestY;
           D.orb.x = D.hs.x + (tx - D.hs.x) * u; D.orb.y = D.hs.y + (ty - D.hs.y) * u;
           if (u >= 1) assistHit(D);
         } else if (D.phase === "out") { /* 命中後：暗角與鏡頭快速退場，戰鬥已恢復運作 */ }
@@ -7400,20 +7400,25 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const D = Game.dir && Game.dir.kind === "assist" ? Game.dir : null;
         if (D && D.orb) return { x: D.orb.x, y: D.orb.y, z: 1, R: D.orb.R };
         const th = (performance.now() / 1000) * (Player.assistAvailable ? 2.6 : 1.3);
-        return { x: Player.x + Math.cos(th) * 46, y: Player.y - 88 + Math.sin(th) * 14, z: Math.sin(th), R: 7.5 };
+        return { x: Player.x + Math.cos(th) * 46, y: Player.y - ASSIST_CFG.chestY + Math.sin(th) * 14, z: Math.sin(th), R: 7.5 }; /* 高度＝主角胸口 */
       }
       function drawXtzOrb(front) {
         const o = orbCurrent(), D = Game.dir && Game.dir.kind === "assist" ? Game.dir : null;
         if (front !== (o.z >= 0)) return;
         const on = Player.assistAvailable || !!D, now = performance.now();
         ctx.save();
-        if (D && D.trail.length) { /* 衝刺拖尾 */
+        const comet = !!(D && D.phase === "dash" && fxReady("xtz"));
+        if (D && D.trail.length && !comet) { /* 衝刺拖尾（程式備案；有圖時用彗星格） */
           ctx.globalCompositeOperation = "lighter";
           D.trail.forEach((p, i) => { const a = Math.max(0, 1 - p.t * 6) * (i / D.trail.length); ctx.globalAlpha = a * 0.7; ctx.fillStyle = "#93c5fd"; ctx.beginPath(); ctx.arc(p.x, p.y, 4 + 6 * (i / D.trail.length), 0, Math.PI * 2); ctx.fill(); });
         }
         ctx.globalCompositeOperation = "lighter";
-        const size = (D ? 76 : 52) * (o.z < 0 ? 0.85 : 1);
-        if (fxReady("xtz")) { /* 美術：列 0 珠子脈動、列 1 灰珠 */
+        const size = (D ? 96 : 64) * (o.z < 0 ? 0.85 : 1);
+        if (comet) { /* 衝刺：列 2 彗星（珠頭在右、尾巴向左），依飛行方向旋轉；珠頭落在格內約 78% 處 */
+          const A = fxSheet("xtz"), col = Math.floor(D.tp * 18) % 3, ang = Math.atan2(Boss.y - 110 - o.y, Boss.x - o.x), cz = 170;
+          ctx.translate(o.x, o.y); ctx.rotate(ang); ctx.globalAlpha = 1;
+          ctx.drawImage(A.img, col * 256, 2 * 256, 256, 256, -cz * 0.78, -cz / 2, cz, cz);
+        } else if (fxReady("xtz")) { /* 美術：列 0 珠子脈動、列 1 灰珠 */
           const A = fxSheet("xtz"), col = Math.floor(now / 120) % 4;
           ctx.globalAlpha = o.z < 0 ? 0.7 : 1; ctx.drawImage(A.img, col * 256, (on ? 0 : 1) * 256, 256, 256, o.x - size / 2, o.y - size / 2, size, size);
         } else { /* 備案：程式畫的圓珠 */
@@ -7434,7 +7439,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       /* 聚光暗角：主角外的畫面變暗（畫在敵人／場景之後、主角與珠子之前，世界座標） */
       function drawAssistDark() {
         const D = Game.dir; if (!D || D.kind !== "assist" || !(D.dark > 0.01)) return;
-        const cx = Player.x, cy = Player.y - 85, k = D.dark, g = ctx.createRadialGradient(cx, cy, 70, cx, cy, 360);
+        const cx = Player.x, cy = Player.y - 120, k = D.dark, g = ctx.createRadialGradient(cx, cy, 70, cx, cy, 360);
         g.addColorStop(0, "rgba(2,6,23,0)"); g.addColorStop(0.5, `rgba(2,6,23,${0.5 * k})`); g.addColorStop(1, `rgba(2,6,23,${0.88 * k})`);
         ctx.save(); ctx.fillStyle = g; ctx.fillRect(cx - 3200, -1600, 6400, 4200); ctx.restore();
       }
@@ -8425,6 +8430,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             ctx.save(); ctx.translate(nx, gy - 695 * k + h / 2 + 2); ctx.scale(-1, 1); ctx.drawImage(SI.img, -w / 2, -h / 2, w, h); ctx.restore();
           }
           const oy = gy - 205 + Math.sin(t * 2) * 6;
+          if (fxReady("xtz")) { /* v0.8.116 師妹旁的玄天珠改用生圖（列 0 脈動） */
+            const A = fxSheet("xtz"), col = Math.floor(performance.now() / 120) % 4, sz = 70;
+            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.drawImage(A.img, col * 256, 0, 256, 256, nx + 46 - sz / 2, oy - sz / 2, sz, sz); ctx.restore();
+          } else {
           const og = ctx.createRadialGradient(nx + 46, oy, 2, nx + 46, oy, 18);
           og.addColorStop(0, "rgba(219,234,254,1)");
           og.addColorStop(1, "rgba(96,165,250,0)");
@@ -8432,6 +8441,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ctx.beginPath();
           ctx.arc(nx + 46, oy, 18, 0, Math.PI * 2);
           ctx.fill();
+          }
           if (Game.hubNpcNear && !talking) {
             ctx.font = "700 15px 'Noto Serif TC', serif";
             ctx.textAlign = "center";
@@ -9541,7 +9551,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
       /* M2 主角攻擊關鍵格：每一刀「預備 a → 出刀 b → 收招 c」三拍（v0.8.45 生圖，900×560、腳底 y=529、x=450） */
       const MC_ATK = { 1: ["20_s1a", "21_s1b", "22_s1c"], 2: ["23_s2a", "24_s2b", "25_s2c"], 3: ["26_t_a", "27_t_b", "28_t_c"], 4: ["38_hv_a", "39_hv_b", "40_hv_c"] /* v0.8.98 蓄力重斬 */ };
-      ['17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
+      ['41_point_a', '42_point_b', '43_point_c', '17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
       const MC_STRIDE = 250;
       let MC_PHASE = 0;
       let MC_LASTX = null;
@@ -11822,7 +11832,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         tick();
       }
       window.onload = function () {
-        BOOT_KEYS.forEach(getBgArt); fxSheet("campfire"); /* 師妹各姿勢一開始就載好（原本到那個姿勢才載，圖沒到就整個人消失） */
+        BOOT_KEYS.forEach(getBgArt); fxSheet("campfire"); fxSheet("xtz"); fxSheet("xtz_star"); /* 玄天珠圖要在營地與第一場就能用 */ /* 師妹各姿勢一開始就載好（原本到那個姿勢才載，圖沒到就整個人消失） */
         bootGate();
         refreshUnlocked();
         loadPersistedEchoes();
