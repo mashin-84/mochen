@@ -7,7 +7,7 @@
             Game.mode = "enter"; document.body.classList.remove("hub-mode", "hub-near"); /* v0.8.48 出山門就恢復戰鬥按鈕 */
             document.body.classList.remove("hub-mode");
             hapticBuzz(25);
-            Sound.play("slash", 0.2, 0.7); /* v0.8.109 過門音量減半 */
+            Sound.play("slash", 0.1, 0.7); /* v0.8.110 過門音量再減半 */
           }
         } else if (Game.mode === "enter") {
           if (Player.x > 80) Game.gateClosed = true;
@@ -31,7 +31,7 @@
         if (stage.dirMode && stage.dir && stage.dir.intro && dirStart("intro", stage)) { /* v0.8.105 戰場上登場：爆發那一刻才開配樂與名牌 */
         } else if (!startBossCine()) { /* v0.8.18 有登場動畫的關卡，名字卡改在 Boss 落地時顯示 */
           if (stage.introName) bossNameCard(stage); else showBanner(stage.name, stage.realmBadge, 1500, "#fde68a");
-          Sound.play("execution", 0.22, 0.7);
+          Sound.play("execution", 0.11, 0.7);
         }
         setTelemetry(`〔啟程：進入${stage.chapter}！〕`);
       }
@@ -280,7 +280,7 @@
           const cx0 = HUB_GATE_L + 409 * HUB_GATE_S, cx1 = HUB_GATE_L + 911 * HUB_GATE_S;
           const dist = cx0 - Player.x;
           const open = Math.max(0, Math.min(1, 1 - (dist - 40) / 260));
-          if (open > 0.85 && !Game._gateChimed) { Game._gateChimed = true; Sound.play("assist", 0.3, 1.25); }
+          if (open > 0.85 && !Game._gateChimed) { Game._gateChimed = true; Sound.play("assist", 0.15, 1.25); }
           if (open < 0.3) Game._gateChimed = false;
           const a = (1 - open) * (0.5 + 0.08 * Math.sin(t * 2.2));
           if (a > 0.01) {
