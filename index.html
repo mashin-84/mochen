@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.107";
+      const ASSET_VER = "0.8.108";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -5561,6 +5561,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
 
         executeBuffered();
+        dirAuraTick();
 
         if (Game.hitstopT > 0) {
           Game.hitstopT = Math.max(0, Game.hitstopT - dt);
@@ -6056,7 +6057,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           const introOn = Game.introT > 0 || Game.dlgFocus || cineOn || !!Game.dir;
           if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = stZ.camZoomP ? (stZ.camZoomP[Config.bossPhase] || 1) : 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.83 camZoomP：依階段指定鏡頭縮放 */ /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
           const uw = Game.ultDim || 0;
-          const focusX = cineOn ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
+          const focusX = cineOn || (Game.dir && Player.blast) ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
           let targetX = focusX - Config.baseWidth * 0.5;
           let minCam = 0;
           if (Game.mode === "hub") { targetX = -1280; minCam = -1280; }
@@ -7159,11 +7160,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
       const DIR_CFG = {
         1: { /* 赤煞神衛統領：單膝跪地、血煞紅氣湧起 → 起身怒吼，衝擊波 */
-          intro: { kind: "drop", dur: 3.5, burstAt: 1.15, fall: 0.85, height: 760, zoomAt: 1.15, zoomOutAt: 2.65, sub: "第一難", poses: [[0, "21_fall"], [0.85, "22_land"], [2.65, "23_rise"]],
+          intro: { kind: "drop", dur: 4.3, burstAt: 1.3, fall: 1.0, height: 760, zoomAt: 1.3, zoomOutAt: 3.15, sub: "第一難", poses: [[0, "21_fall"], [1.0, "22_land"], [3.15, "23_rise"]],
             ring: { sheet: "land", row: 0, w: 1000, dur: 0.7 }, dust: { sheet: "land", row: 1, w: 560, dur: 0.8 }, sfx: [["execution", 1.0, 0.55]] },
           phase: { dur: 2.6, burstAt: 1.15, poses: [[0, "17_kneel"], [1.15, "14_cast"], [1.95, "07_windup"]], tint: "150,20,20", tintA: 0.5,
             aura: { sheet: "dir1", row: 0, w: 460, at: 0.15, fps: 10, dy: 8 }, gather: { sheet: "dir1", row: 3, w: 560, at: 0.1, dy: -110 }, ring: { sheet: "dir1", row: 1, w: 1100, dur: 0.8 },
-            pillar: { sheet: "dir1", row: 2, w: 430, dur: 0.9 }, title: ["煞氣暴走", "二　階　段", "#f87171"],
+            pillar: { sheet: "dir1", row: 2, w: 430, dur: 0.9 }, title: ["煞氣暴走", "二　階　段", "#f87171"], blast: true, grow: 1.18,
             sfx: [["peril", 1.0, 0.6], ["execution", 0.9, 0.7]] }
         },
         2: { /* 千幻長老・顧天風：蹲伏、八卦風起 → 舉扇，陣紋大亮 */
@@ -7184,6 +7185,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
       };
       if (Stages[1]) Stages[1].fxSheets = (Stages[1].fxSheets || []).concat(["land", "ult", "boss2", "dir1"]); /* 階段轉換用的衝擊波環、光柱、氣焰 */
+      DIR_CFG[1].p2Aura = { sheet: "dir1", row: 0, w: 330, fps: 9, dy: 6, alpha: 0.85 }; /* 二階段全程紅焰（跟著 Boss，隨放大倍率） */
       Object.keys(DIR_CFG).forEach(k => { const st = Stages[k]; if (st) { st.dir = DIR_CFG[k]; st.dirMode = true; } });
 
       function dirPoseAt(c, t) { let k = c.poses[0][1]; for (const p of c.poses) if (t >= p[0]) k = p[1]; return k; }
@@ -7205,7 +7207,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
       function dirBurst(D) {
         const c = D.c, st = D.st, G = Config.groundY;
-        D.burst = true; D.push = 0.35;
+        D.burst = true; D.push = c.blast ? 0 : 0.35;
+        if (c.blast) blastPlayer(Player.x >= Boss.x ? 1 : -1); /* v0.8.108 沿用第 5 關的震飛：主角被轟飛、劍駐地、起身（無敵） */
         Music.duckUntil = 0; Music.duckLvl = 1;
         if (D.kind === "phase") {
           if (Boss._p2MoviePending) applyP2Stance(st); /* 第 3 關：爆發這一刻換成重劍姿態 */
@@ -7225,7 +7228,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const c = D.c, t = D.t, G = Config.groundY, st = D.st, z0 = Game.camera.targetZoom + 0.2;
         Boss._cineImg = dirPoseAt(c, t);
         Boss.y = t < c.fall ? G - c.height * (1 - (t / c.fall) * (t / c.fall)) : G;
-        if (t < c.fall) D.camNow = { zoom: z0, y: Math.min(0, (Boss.y - G) * 0.35), rate: 10 };
+        if (t < c.fall) D.camNow = { zoom: z0, y: Math.max(-Config.baseHeight * 0.5 * (1 - 1 / z0), Math.min(0, (Boss.y - G) * 0.35)), rate: 10 }; /* 不往上看超出背景（上方不露黑底） */
         if (!D.hit && t >= c.fall) {
           D.hit = true;
           if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 });
@@ -7240,7 +7243,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           screenFlash("rgba(255,255,255,0.8)", 0.55, 0.3); addTrauma(0.5); hapticBuzz([30, 20, 50]);
           Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
         }
-        if (D.zoomed && !D.named && t >= c.zoomAt + 0.18) { D.named = true; bossNameCard(st, { slam: true, sub: c.sub, dur: 1900 }); Sound.play("execution", 0.7, 1.2); addTrauma(0.45); hapticBuzz([40, 20, 70]); }
+        if (D.zoomed && !D.named && t >= c.zoomAt + 0.18) { D.named = true; bossNameCard(st, { slam: true, sub: c.sub, dur: 2300 }); Sound.play("execution", 0.7, 1.2); addTrauma(0.45); hapticBuzz([40, 20, 70]); }
         if (D.zoomed && !D.out && t >= c.zoomOutAt) { D.out = true; D.camNow = { zoom: z0, y: 0, rate: 9 }; }
         D.a += ((D.zoomed && !D.out ? 0.55 : 0) - D.a) * Math.min(1, dt * 12);
       }
@@ -7258,6 +7261,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           spawnFx(g.sheet, g.row, Boss.x, Boss.y + gy, { anchor: "c", w: g.w, dur: Math.max(0.4, c.burstAt - D.t), follow: () => ({ x: Boss.x, y: Boss.y + gy }) });
         }
         if (!D.burst && D.t >= c.burstAt) dirBurst(D);
+        if (c.grow && D.burst) { const k = Math.min(1, (D.t - c.burstAt) / 0.5); Boss._scaleMul = 1 + (c.grow - 1) * (1 - (1 - k) * (1 - k)); } /* 二階段放大 */
+        if (Player.blast) dirPlayerStep(dt); /* 凍結期間只讓被震飛的主角繼續飛 */
         if (D.push > 0) { /* 衝擊波把靠太近的玩家推開 */
           D.push -= dt; const dx = Player.x - Boss.x;
           if (Math.abs(dx) < 330) Player.x = Math.max(60, Math.min(Config.worldWidth - 60, Player.x + (dx >= 0 ? 1 : -1) * 700 * dt));
@@ -7267,7 +7272,26 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         updateHitParticles(dt); /* 內含 updateFx */
         if (D.t >= c.dur) dirEnd(D);
       }
+      function dirPlayerStep(dt) {
+        updateBlast(dt);
+        if (!Player.blast) return;
+        Player.x += Player.vx * dt; Player.vy += Config.gravity * dt; Player.y += Player.vy * dt;
+        if (Player.y >= Config.groundY) { Player.y = Config.groundY; Player.vy = 0; }
+        Player.x = Math.max(70, Math.min(Config.worldWidth - 70, Player.x));
+      }
+      /* v0.8.108 二階段全程紅焰：dir.p2Aura，跟著 Boss、隨放大倍率；Boss 倒下即停 */
+      function dirAuraTick() {
+        const st = Stages[Boss.stageId], a = st && st.dir && st.dir.p2Aura;
+        if (!a || Config.bossPhase !== 2 || Game.mode !== "battle" || Game.dir) return;
+        if (Boss.hp <= 0) { if (Game._p2AuraFx) { const i = Game.fxList.indexOf(Game._p2AuraFx); if (i >= 0) Game.fxList.splice(i, 1); Game._p2AuraFx = null; } return; }
+        if (Game._p2AuraFx && Game.fxList.indexOf(Game._p2AuraFx) >= 0) return;
+        if (!fxReady(a.sheet)) return;
+        const m = Boss._scaleMul || 1, dy = a.dy || 0;
+        spawnFx(a.sheet, a.row, Boss.x, Boss.y + dy, { anchor: "b", w: a.w * m, dur: 36000, loop: true, fps: a.fps || 9, alpha: a.alpha == null ? 1 : a.alpha, follow: () => ({ x: Boss.x, y: Boss.y + dy }) });
+        Game._p2AuraFx = Game.fxList[Game.fxList.length - 1];
+      }
       function dirEnd(D) {
+        if (D.c.grow) { Boss._scaleMul = D.c.grow; applyBossBody(D.st); Boss.w *= D.c.grow; Boss.h *= D.c.grow; } /* 放大後受擊範圍同步 */
         Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0;
         Music.duckUntil = 0; Music.duckLvl = 1; Boss.y = Config.groundY;
         if (["staggered", "frozen", "hurt", "recover", "grounded"].includes(Boss.state)) { Boss.state = "idle"; Boss.stateTimer = 0; Boss.frozenTimer = 0; }
