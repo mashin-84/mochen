@@ -474,6 +474,15 @@
           if (arc.life <= 0) Game.slashArcs.splice(i, 1);
         }
 
+        /* v0.8.96 角色殘影：瞬步／出刀衝步／下劈時，每 0.035 秒留一張半透明剪影（取代舊的藍色方塊） */
+        if (Player._mcSpr && (Player.state === "dash" || Player.isDive || (Player.state === "attack" && Math.abs(Player.vx) > 150))) {
+          Game._ghostT = (Game._ghostT || 0) - dt;
+          if (Game._ghostT <= 0 && Game.afterimages.length < 14) {
+            Game._ghostT = 0.035;
+            Game.afterimages.push({ x: Player.x, y: Player.y, w: Player.w, h: Player.h, alpha: 0.55, spr: Player._mcSpr, s: Player._mcS, f: Player.facing,
+              color: Player.y < Config.groundY - 2 ? "#86efac" : Player.state === "attack" ? "#bae6fd" : "#7dd3fc" });
+          }
+        }
         for (let i = Game.afterimages.length - 1; i >= 0; i--) {
           const img = Game.afterimages[i];
           img.alpha -= dt * 2.8;

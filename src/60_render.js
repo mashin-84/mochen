@@ -123,8 +123,17 @@
         if (Game.cine && !Game.cine.landed && !Game.cine.dash) drawCineMark();
 
         for (const img of Game.afterimages) {
-          ctx.fillStyle = `rgba(56, 189, 248, ${img.alpha * 0.45})`;
-          ctx.fillRect(img.x - img.w * 0.5, img.y - img.h, img.w, img.h);
+          if (img.spr) { /* v0.8.96 角色剪影殘影 */
+            const sil = silImg(img.spr, img.color || "#7dd3fc");
+            if (sil) {
+              ctx.save(); ctx.globalAlpha = Math.max(0, img.alpha * 0.85);
+              ctx.translate(img.x, img.y + GROUND_SINK); ctx.scale(img.f > 0 ? img.s : -img.s, img.s);
+              ctx.drawImage(sil, -450, -529); ctx.restore();
+            }
+          } else if (MC_READY !== 16) { /* 沒有角色圖時才畫舊方塊 */
+            ctx.fillStyle = `rgba(56, 189, 248, ${img.alpha * 0.45})`;
+            ctx.fillRect(img.x - img.w * 0.5, img.y - img.h, img.w, img.h);
+          }
         }
 
         drawMist();

@@ -95,6 +95,7 @@
           }
           ctx.scale((Player.facing > 0 ? S : -S) * sqX, S * sqY);
           ctx.drawImage(playerImg, -450, -529);
+          Player._mcSpr = playerImg; Player._mcS = S; /* 殘影取樣（v0.8.96） */
           if (Player.flashFrames > 0) ctx.filter = "none";
           ctx.restore();
         } else {
