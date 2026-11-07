@@ -167,6 +167,7 @@
         if (stP && stP.p2Movie && !stP.parts) setTimeout(() => bossPhase2Movie(stP), 850); /* v0.8.99 一般關卡二階段影片：等閃白與慢動作演完再切黑場播影片 */
       }
       function bossPhase2Movie(st) {
+        if (Boss._p2MoviePending) applyP2Stance(st); /* v0.8.103 影片一開始就換姿態（影片沒播成也要換，否則會卡在雙劍） */
         if (Game.mode !== "battle" || Game.cine || Game.defeated || Boss.hp <= 0 || Player.hp <= 0 || Config.bossPhase !== 2) { if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); return; }
         const v = getCineVideo(st.p2Movie), dur = (v.duration && isFinite(v.duration)) ? v.duration : 8;
         const ok = playMovie(st.p2Movie, { audio: true, onEnd: () => {

@@ -4,7 +4,7 @@
          打到幻影：鏡碎，0.3 秒後鏡片反噬（範圍內可招架）。打到真身或真身破勢：幻影全散（看破）。最多存在 ILLU.life 秒。 */
       const ILLU = { life: 14, dmgK: 0.5, counterDmg: 90, counterR: 240, counterDelay: 0.3, minGap: 150 };
       function illusionsAlive() { return Game.illusions && Game.illusions.some(il => !il.dead); }
-      function illusionReset() { Game.illusions = []; Game.illuCounters = []; Boss._splitPending = false; }
+      function illusionReset() { Game.illusions = []; Game.illuCounters = []; Boss._splitPending = false; Boss._p2MoviePending = false; }
       function illusionSplit() {
         const W = Config.worldWidth, px = Player.x;
         const side = px < W / 2 ? 1 : -1; /* 往空間大的一側多放一個 */

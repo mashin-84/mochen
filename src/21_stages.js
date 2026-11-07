@@ -161,7 +161,7 @@
         ];
         S3.introName = "assets/boss3/name.webp"; /* v0.8.63 書法名牌「莫寒川」 */
         /* v0.8.101 第 3 關改影片過場（日式賽璐璐風）：登場「竹林拔劍」；舊的剪影＋飛劍聚合登場停用（二階段影片待接） */
-        S3.introMovie = "assets/boss3/intro";
+        S3.introMovie = "assets/boss3/intro"; S3.p2Movie = "assets/boss3/p2"; /* v0.8.103 二階段影片（跪姿→竹葉→背影拔重劍→白光→全身定格） */
         /* v0.8.68 Boss 專屬音效（ElevenLabs b3_*）：招式 sfx {w 前搖, a 出招, h 連擊每下}；zone＝戒律陣紋生成時的低鳴 */
         S3.sfx = { zone: ["b3_seal", 0.75], introSwirl: ["b3_spin", 0.8], introLand: ["b3_cross", 0.85] };
         [["slash1", { a: "b3_twin" }], ["exclusive_combo", { h: "b3_cross" }], ["exclusive_feint", { a: "b3_cross" }], ["slash2", { a: "b3_spin" }], ["dash_rush", { a: "b3_dash" }], ["thrust_peril", { a: "b3_dash" }], ["sweep_peril", { a: "b3_low" }], ["grab_peril", { a: "b3_rain" }],

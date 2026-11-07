@@ -21,6 +21,7 @@
       function onBossPhase2() {
         const stage = Stages[Boss.stageId];
         if (stage && !stage.transformMove && !(stage.p2Movie && !stage.parts) && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* 有二階段影片的關卡，換曲改在影片結束時 */ /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
+        if (stage && stage.p2Movie && !stage.parts && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) { Boss._p2MoviePending = true; return; } /* v0.8.103 有二階段影片：影片裡演拔劍，姿態等影片開始時才換（applyP2Stance），不播拔劍招式 */
         if (stage && stage.transformMove && stage.moves[stage.transformMove] && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) {
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;
@@ -34,6 +35,13 @@
           Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
           spawnFloatingText(Boss.x, Boss.y - 135, Boss.stance === "B" ? "〔拔出玄鐵重劍〕" : "〔青雲雙劍〕", "#a5b4fc", 1.2);
         }
+      }
+      /* v0.8.103 二階段影片開始時換姿態（第 3 關：雙劍→玄鐵重劍）；招式進行中先收回待機，避免新姿態沒有那格圖 */
+      function applyP2Stance(stage) {
+        Boss._p2MoviePending = false;
+        if (!stage || !stage.stanceByPhase || !stage.stanceByPhase[2] || Boss.stance === stage.stanceByPhase[2]) return;
+        if (Boss.state === "windup" || Boss.state === "active" || Boss.state === "recover") { Boss.state = "idle"; Boss.stateTimer = 0; Boss.vx = 0; Boss.moveType = null; Boss.aiCooldown = Math.max(Boss.aiCooldown || 0, 0.8); }
+        Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
       }
       /* v0.8.0 讀玩家打法：近 8 秒的招架／瞬步／跳躍／攻擊次數＋貼身比例；Boss 招式池依此調整權重 */
       const Reader = { parry: [], dash: [], jump: [], atk: [], nearAvg: 0,
@@ -724,7 +732,7 @@
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
         if (stage.mirror) { mirrorAI(dt, dist); return; }
-        if (stage.phaseSwitchMove && Config.bossPhase === 2 && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2] && Boss.aiCooldown <= 0) { triggerBossMove(stage.phaseSwitchMove); return; } /* 拔劍被打斷時，下一個出招機會補播 */
+        if (stage.phaseSwitchMove && !Boss._p2MoviePending && Config.bossPhase === 2 && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2] && Boss.aiCooldown <= 0) { triggerBossMove(stage.phaseSwitchMove); return; } /* 拔劍被打斷時，下一個出招機會補播 */
         if (Boss._splitPending && Boss.aiCooldown <= 0 && stage.splitMove) { Boss._splitPending = false; triggerBossMove(stage.splitMove); return; }
         if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;

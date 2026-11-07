@@ -2077,7 +2077,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.102";
+      const ASSET_VER = "0.8.103";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2973,7 +2973,7 @@
         ];
         S3.introName = "assets/boss3/name.webp"; /* v0.8.63 書法名牌「莫寒川」 */
         /* v0.8.101 第 3 關改影片過場（日式賽璐璐風）：登場「竹林拔劍」；舊的剪影＋飛劍聚合登場停用（二階段影片待接） */
-        S3.introMovie = "assets/boss3/intro";
+        S3.introMovie = "assets/boss3/intro"; S3.p2Movie = "assets/boss3/p2"; /* v0.8.103 二階段影片（跪姿→竹葉→背影拔重劍→白光→全身定格） */
         /* v0.8.68 Boss 專屬音效（ElevenLabs b3_*）：招式 sfx {w 前搖, a 出招, h 連擊每下}；zone＝戒律陣紋生成時的低鳴 */
         S3.sfx = { zone: ["b3_seal", 0.75], introSwirl: ["b3_spin", 0.8], introLand: ["b3_cross", 0.85] };
         [["slash1", { a: "b3_twin" }], ["exclusive_combo", { h: "b3_cross" }], ["exclusive_feint", { a: "b3_cross" }], ["slash2", { a: "b3_spin" }], ["dash_rush", { a: "b3_dash" }], ["thrust_peril", { a: "b3_dash" }], ["sweep_peril", { a: "b3_low" }], ["grab_peril", { a: "b3_rain" }],
@@ -4729,6 +4729,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       function onBossPhase2() {
         const stage = Stages[Boss.stageId];
         if (stage && !stage.transformMove && !(stage.p2Movie && !stage.parts) && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* 有二階段影片的關卡，換曲改在影片結束時 */ /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
+        if (stage && stage.p2Movie && !stage.parts && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) { Boss._p2MoviePending = true; return; } /* v0.8.103 有二階段影片：影片裡演拔劍，姿態等影片開始時才換（applyP2Stance），不播拔劍招式 */
         if (stage && stage.transformMove && stage.moves[stage.transformMove] && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) {
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;
@@ -4742,6 +4743,13 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
           spawnFloatingText(Boss.x, Boss.y - 135, Boss.stance === "B" ? "〔拔出玄鐵重劍〕" : "〔青雲雙劍〕", "#a5b4fc", 1.2);
         }
+      }
+      /* v0.8.103 二階段影片開始時換姿態（第 3 關：雙劍→玄鐵重劍）；招式進行中先收回待機，避免新姿態沒有那格圖 */
+      function applyP2Stance(stage) {
+        Boss._p2MoviePending = false;
+        if (!stage || !stage.stanceByPhase || !stage.stanceByPhase[2] || Boss.stance === stage.stanceByPhase[2]) return;
+        if (Boss.state === "windup" || Boss.state === "active" || Boss.state === "recover") { Boss.state = "idle"; Boss.stateTimer = 0; Boss.vx = 0; Boss.moveType = null; Boss.aiCooldown = Math.max(Boss.aiCooldown || 0, 0.8); }
+        Boss.stance = stage.stanceByPhase[2]; Boss.stanceCount = 0; Boss.flashFrames = 4;
       }
       /* v0.8.0 讀玩家打法：近 8 秒的招架／瞬步／跳躍／攻擊次數＋貼身比例；Boss 招式池依此調整權重 */
       const Reader = { parry: [], dash: [], jump: [], atk: [], nearAvg: 0,
@@ -5432,7 +5440,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
         if (stage.mirror) { mirrorAI(dt, dist); return; }
-        if (stage.phaseSwitchMove && Config.bossPhase === 2 && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2] && Boss.aiCooldown <= 0) { triggerBossMove(stage.phaseSwitchMove); return; } /* 拔劍被打斷時，下一個出招機會補播 */
+        if (stage.phaseSwitchMove && !Boss._p2MoviePending && Config.bossPhase === 2 && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2] && Boss.aiCooldown <= 0) { triggerBossMove(stage.phaseSwitchMove); return; } /* 拔劍被打斷時，下一個出招機會補播 */
         if (Boss._splitPending && Boss.aiCooldown <= 0 && stage.splitMove) { Boss._splitPending = false; triggerBossMove(stage.splitMove); return; }
         if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;
@@ -6073,7 +6081,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
          打到幻影：鏡碎，0.3 秒後鏡片反噬（範圍內可招架）。打到真身或真身破勢：幻影全散（看破）。最多存在 ILLU.life 秒。 */
       const ILLU = { life: 14, dmgK: 0.5, counterDmg: 90, counterR: 240, counterDelay: 0.3, minGap: 150 };
       function illusionsAlive() { return Game.illusions && Game.illusions.some(il => !il.dead); }
-      function illusionReset() { Game.illusions = []; Game.illuCounters = []; Boss._splitPending = false; }
+      function illusionReset() { Game.illusions = []; Game.illuCounters = []; Boss._splitPending = false; Boss._p2MoviePending = false; }
       function illusionSplit() {
         const W = Config.worldWidth, px = Player.x;
         const side = px < W / 2 ? 1 : -1; /* 往空間大的一側多放一個 */
@@ -10810,6 +10818,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (stP && stP.p2Movie && !stP.parts) setTimeout(() => bossPhase2Movie(stP), 850); /* v0.8.99 一般關卡二階段影片：等閃白與慢動作演完再切黑場播影片 */
       }
       function bossPhase2Movie(st) {
+        if (Boss._p2MoviePending) applyP2Stance(st); /* v0.8.103 影片一開始就換姿態（影片沒播成也要換，否則會卡在雙劍） */
         if (Game.mode !== "battle" || Game.cine || Game.defeated || Boss.hp <= 0 || Player.hp <= 0 || Config.bossPhase !== 2) { if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); return; }
         const v = getCineVideo(st.p2Movie), dur = (v.duration && isFinite(v.duration)) ? v.duration : 8;
         const ok = playMovie(st.p2Movie, { audio: true, onEnd: () => {
