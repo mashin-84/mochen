@@ -23,16 +23,18 @@
             aura: { sheet: "dir2", row: 0, w: 400, at: 0.15, fps: 9, dy: 8, alpha: 0.4 }, gather: { sheet: "dir2", row: 3, w: 460, at: 0.1, dy: -120, alpha: 0.4 }, ring: { sheet: "dir2", row: 1, w: 1100, dur: 0.9, alpha: 0.55 },
             pillar: { sheet: "dir2", row: 2, w: 440, dur: 1.0, alpha: 0.32 }, flashK: 0.4, /* v0.8.128 二階段光太亮 → 各元素與閃白調透明 */ title: ["真假難辨", "二　階　段", "#c4b5fd"], sfx: [["peril", 0.9, 0.9], ["b2_shatter", 1.0, 1], ["b2_split", 0.8, 1]] }
         },
-        3: { /* 莫寒川：跪地、劍氣聚攏 → 拔出玄鐵重劍（影片時代改回戰場上拔劍） */
-          intro: { dur: 2.5, burstAt: 1.2, poses: [[0, "17_kneel"], [1.2, "14_cast"], [1.9, "07_windup"]], tint: "30,41,70", tintA: 0.3,
-            aura: { sheet: "boss3fx", row: 1, w: 460, at: 0.3, fps: 8, dy: 4 }, ring: { sheet: "boss3bfx", row: 1, w: 760, dur: 0.7 }, name: true,
-            sfx: [["execution", 0.7, 0.9]] },
-          phase: { dur: 2.7, burstAt: 1.2, stance: true, poses: [[0, "17_kneel"], [1.2, "14_cast"], [2.0, "07_windup"]], tint: "20,30,60", tintA: 0.45,
-            aura: { sheet: "boss3bfx", row: 2, w: 640, at: 0.25, fps: 8, dy: 4 }, pillar: { sheet: "boss3bfx", row: 3, w: 400, dur: 0.7 }, title: ["拔劍・玄鐵", "二　階　段", "#a5b4fc"],
-            sfx: [["peril", 0.9, 0.8], ["execution", 0.9, 0.7]] }
+        3: { /* 莫寒川：登場「疾風入場」（暗下→劍光橫貫畫面、竹葉切開→疾衝滑入煞停、雙劍交叉震水環→名牌）；二階段「拔劍・玄鐵」（跪姿→拔劍→重劍插地陣紋＋震飛，不放大，暗紅橙重劍氣常駐） */
+          intro: { kind: "dash", dur: 5.0, slashAt: 0.6, dashAt: 1.05, landAt: 1.75, plate: { tin: 0.22, hold: 1.7, tout: 0.3 }, sub: "第三難", tint: "14,22,44", tintA: 0.5, dashFrom: 1500,
+            sfxT: [[0.55, "b3_dash", 0.9, 1.15], [1.0, "b3_dash", 0.8, 0.95], [1.75, "b3_cross", 1.0, 1], [1.8, "b3_seal", 0.6, 1]] },
+          phase: { dur: 3.0, burstAt: 1.3, stance: true, poses: [[0, "17_kneel"], [1.3, "14_cast"], [2.0, "07_windup"]], tint: "20,20,34", tintA: 0.42, blast: true, flashK: 0.6,
+            aura: { sheet: "dir3", row: 0, w: 460, at: 0.15, fps: 7, dy: 4, alpha: 0.7 }, gather: { sheet: "dir3", row: 3, w: 520, at: 0.1, dy: -110, alpha: 0.75 }, ring: { sheet: "dir3", row: 1, w: 1050, dur: 0.9, alpha: 0.85 },
+            pillar: { sheet: "dir3", row: 2, w: 430, dur: 0.9, alpha: 0.6 }, title: ["拔劍・玄鐵", "二　階　段", "#fca5a5"],
+            sfx: [["peril", 0.9, 0.8], ["b3_draw", 1.0, 1], ["b3_plunge", 1.0, 0.9]] }
         }
       };
       if (Stages[1]) Stages[1].fxSheets = (Stages[1].fxSheets || []).concat(["land", "ult", "boss2", "dir1"]); /* 階段轉換用的衝擊波環、光柱、氣焰 */
+      DIR_CFG[3].p2Aura = { sheet: "dir3", row: 0, w: 380, fps: 7, dy: 4, alpha: 0.5 }; /* 二階段全程暗紅橙重劍氣（不放大） */
+      if (Stages[3]) Stages[3].fxSheets = (Stages[3].fxSheets || []).concat(["boss3intro", "dir3"]);
       DIR_CFG[2].p2Aura = { sheet: "dir2", row: 0, w: 340, fps: 9, dy: 6, alpha: 0.32 }; /* 二階段全程翠綠靈霧（詭譎，不放大） */
       if (Stages[2]) Stages[2].fxSheets = (Stages[2].fxSheets || []).concat(["boss2intro", "dir2"]);
       DIR_CFG[1].p2Aura = { sheet: "dir1", row: 0, w: 330, fps: 9, dy: 6, alpha: 0.85 }; /* 二階段全程紅焰（跟著 Boss，隨放大倍率） */
@@ -50,9 +52,10 @@
         Game.dir = { kind, st, c, t: 0, burst: false, a: 0, push: 0, aura: false };
         Boss.facing = Player.x >= Boss.x ? 1 : -1; Boss.vx = 0; Boss.vy = 0; Boss.y = Config.groundY;
         Boss._cineImg = c.poses ? dirPoseAt(c, 0) : "01_idle1";
-        if (c.kind === "mirror") Boss._introHide = true; /* 鏡花水月：鏡子炸碎前 Boss 不在場 */
+        if (c.kind === "mirror" || c.kind === "dash") Boss._introHide = true; /* 鏡花水月：鏡子炸碎前 Boss 不在場 */
         Game.introT = 0; Boss.isPerilous = false;
         Music.duck(0.12, (c.burstAt || c.zoomAt) + 0.3);
+        if (c.kind === "dash") { const Dm = Game.dir; Dm.camNow = { zoom: Game.camera.targetZoom + 0.2, y: 0, rate: 8 }; Dm.focusX = Boss.x; }
         if (c.kind === "mirror") { const Dm = Game.dir; Dm.camNow = { zoom: Game.camera.targetZoom + 0.2, y: 0, rate: 8 }; Dm.focusX = Boss.x; }
         if (kind === "phase") { screenFlash("rgba(255,255,255,0.7)", 0.6 * (c.flashK == null ? 1 : c.flashK), 0.4); triggerHitstopMs(90); addTrauma(0.35); hapticBuzz([40, 30, 80]); }
         return true;
@@ -110,6 +113,7 @@
         const D = Game.dir; if (!D) return;
         const c = D.c; D.t += dt;
         if (c.kind === "assist") { assistStep(D, dt); return; } /* v0.8.115 玄天珠演出：世界暫停（不更新特效／粒子） */
+        if (c.kind === "dash") { dashStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; } /* v0.8.130 疾風入場 */
         if (c.kind === "mirror") { mirrorStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; } /* v0.8.127 鏡花水月 */
         if (c.kind === "drop") { dropStep(D, dt); if (!D.freeze) updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
         Boss._cineImg = dirPoseAt(c, D.t);
@@ -393,4 +397,45 @@
           ctx.save(); ctx.globalAlpha = 0.62 * (1 - u) * (u < 0.12 ? u / 0.12 : 1);
           ctx.translate(Boss.x + o * (1 - 0.85 * e), Boss.y + GROUND_SINK); ctx.scale((i % 2 ? 1 : -1) * k, k); ctx.drawImage(img, -450, -560); ctx.restore();
         });
+      }
+
+      /* ====================== v0.8.130 第 3 關登場「疾風入場」（boss3intro 生圖：列 0 橫貫斬線、1 竹葉切開、2 水環、3 雙劍交叉） ======================
+       * 0.6 暗下＋劍光橫貫畫面（Boss 還沒出現）、竹葉被切開 → 1.05 起 Boss 從畫面外疾衝滑入（殘影、`01_idle1`），1.75 煞停：雙劍交叉閃光＋水環
+       * → 2.0 名牌滑入（斬線閃光起手）＋鏡頭瞬間拉近＋開始關卡曲 → 名牌飛走鏡頭拉回 → 結束。 */
+      function dashStep(D, dt) {
+        const c = D.c, t = D.t, G = Config.groundY, cam = Game.camera, P = c.plate, z0 = cam.targetZoom + 0.2;
+        if (D.tx == null) { D.tx = Boss.x; D.dir = Player.x >= Boss.x ? -1 : 1; }
+        const tPlate = c.landAt + 0.25, tHold = tPlate + P.tin + P.hold, tEnd = tHold + P.tout;
+        (c.sfxT || []).forEach((s, i) => { if (!D["s" + i] && t >= s[0]) { D["s" + i] = true; Sound.play(s[1], s[2], s[3]); } });
+        const camX = cam.x + Config.baseWidth * 0.5; /* 畫面中心（世界座標） */
+        if (!D.slash && t >= c.slashAt && fxReady("boss3intro")) {
+          D.slash = true; D.slashX = camX;
+          spawnFx("boss3intro", 0, camX, G - 190, { w: 1500, h: 300, dur: 0.55, alpha: 0.7 }); /* 橫貫畫面的斬線（一格 256 寬拉成 1500） */
+          spawnFx("boss3intro", 1, camX - 80, G - 170, { w: 380, dur: 0.7, alpha: 0.75 }); spawnFx("boss3intro", 1, camX + 140, G - 150, { w: 320, dur: 0.7, facing: -1, alpha: 0.75 });
+          screenFlash("rgba(235,245,255,0.5)", 0.25, 0.3); addTrauma(0.35); hapticBuzz([25, 15, 40]);
+        }
+        const tD = c.landAt - c.dashAt;
+        if (t >= c.dashAt && t < c.landAt + 0.01) { /* 疾衝滑入：由畫面外沿地面衝到站位，ease-out */
+          const u = Math.min(1, (t - c.dashAt) / tD), e = 1 - Math.pow(1 - u, 3);
+          Boss._introHide = false; Boss.facing = -D.dir; Boss.x = D.tx + D.dir * (c.dashFrom || 1500) * (1 - e); Boss.y = G;
+          Boss._cineImg = u < 0.8 ? "03_walk1" : "01_idle1";
+          if (!D.trailOk) D.trailOk = 0;
+          D.trailOk += dt; if (D.trailOk > 0.05) { D.trailOk = 0; emitDust(Boss.x - D.dir * -60, G, -D.dir, 2, 1.2); }
+        }
+        if (!D.landed && t >= c.landAt) {
+          D.landed = true; Boss.x = D.tx; Boss._cineImg = "01_idle1";
+          if (fxReady("boss3intro")) { spawnFx("boss3intro", 3, Boss.x, G - 150, { w: 520, dur: 0.55 }); spawnFx("boss3intro", 2, Boss.x, G - 6, { anchor: "b", w: 900, h: 340, dur: 1.2 }); }
+          emitDust(Boss.x, G, 1, 6, 1.6); emitDust(Boss.x, G, -1, 6, 1.6);
+          screenFlash("rgba(235,245,255,0.6)", 0.5, 0.3); addTrauma(0.75); triggerHitstopMs(90); hapticBuzz([50, 30, 80]);
+        }
+        if (!D.zoomed && t >= tPlate) {
+          D.zoomed = true; D.zoomT0 = t; D.camNow = { zoom: z0 + 0.6, y: -30, rate: 40 };
+          Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
+          bossNameCard(D.st, { slide: true, sub: c.sub, tin: P.tin, hold: P.hold, tout: P.tout });
+        }
+        if (D.zoomed && !D.out && t >= tHold) { D.out = true; D.camNow = { zoom: cam.targetZoom, y: 0, rate: 7 }; }
+        D.focusX = D.landed ? Boss.x : camX;
+        const up = Math.min(1, t / 0.5), down = t > tHold ? Math.max(0, 1 - (t - tHold) / 0.5) : 1;
+        D.a = (c.tintA || 0.4) * up * down; D.dim = 0;
+        c.dur = Math.max(c.dur, tEnd + 0.05);
       }

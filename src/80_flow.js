@@ -43,7 +43,7 @@
         Boss.aerialShotTimer = 0;
         Boss.groundedTimer = 0;
         Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0; Boss._scaleMul = 1; applyBossBody(stage); Player.blast = null;
-        { const iD = stage.dir && stage.dir.intro; Boss._introHide = !!(opts && opts.hub && stage.dirMode && iD && (iD.kind === "drop" || iD.kind === "mirror")); /* 只在「營地載入→走進戰場」時藏；直接進戰鬥／敗北重打都不藏（沒有 beginBattleIntro 解除就會看不到 Boss） */ } /* 有「從天而降」登場的關卡：進場前先藏起來 */
+        { const iD = stage.dir && stage.dir.intro; Boss._introHide = !!(opts && opts.hub && stage.dirMode && iD && (iD.kind === "drop" || iD.kind === "mirror" || iD.kind === "dash")); /* 只在「營地載入→走進戰場」時藏；直接進戰鬥／敗北重打都不藏（沒有 beginBattleIntro 解除就會看不到 Boss） */ } /* 有「從天而降」登場的關卡：進場前先藏起來 */
         Boss.rage = 0; Boss.lastHp = stage.maxHp; Boss.landedHit = false; Reader.reset();
         Config.bossPhase = 1;
 
