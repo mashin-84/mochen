@@ -75,15 +75,15 @@
       }
       /* v0.8.117 營地選擇玄天珠之力（跟師妹說話後詢問；選擇存在 localStorage qingyun_assist） */
       const ASSIST_OPTS = [
-        { key: "lingguang", name: "太初靈光", tag: "打斷", desc: "珠子命中時強制打斷敵人出招，並削 22 點架勢。" },
-        { key: "fuzhen", name: "符陣定身", tag: "控制", desc: "珠子命中後定身敵人 2 秒，並削 30% 架勢。" },
-        { key: "tishen", name: "太初替身", tag: "護身", desc: "珠子融入身體：2.2 秒無敵、回復氣血，並抵擋一次致命傷。" }
+        { key: "lingguang", name: "太初靈光", tag: "攻・打斷", desc: "珠子命中時打斷敵人當下的招式（含危招），並削 22 點架勢。救場用，不附僵直。" },
+        { key: "tishen", name: "太初替身", tag: "守・護魂", desc: "施放：1.2 秒無敵、回復 200 氣血，護罩待命；之後擋下一次致命傷（僅剩 100 氣血）。" }
       ];
       function loadAssistChoice() {
         try { const v = localStorage.getItem("qingyun_assist"); if (v && ASSIST_OPTS.some(o => o.key === v)) Player.selectedAssist = v; } catch (e) { }
         document.querySelectorAll(".assist-seal-btn").forEach(b => b.classList.toggle("selected", b.getAttribute("data-assist") === Player.selectedAssist));
       }
       function showAssistPicker() {
+        if (Player.selectedAssist === "fuzhen") Player.selectedAssist = "lingguang";
         let el = document.getElementById("assist-picker");
         if (!el) {
           el = document.createElement("div"); el.id = "assist-picker";

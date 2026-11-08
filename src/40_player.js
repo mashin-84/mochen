@@ -738,39 +738,27 @@
       function applyAssistEffect(sel) {
         Game.flashWhiteOverlay = 0.5;
 
-        if (sel === "lingguang") {
+        if (sel !== "tishen") { /* 太初靈光（符陣定身已併入，舊存檔的 fuzhen 視為靈光） */
           Boss.isPerilous = false;
           Boss.state = "hurt";
-          Boss.stateTimer = 0.95;
-          Boss.vx = -Boss.facing * 230;
+          Boss.stateTimer = 0.3; /* v0.8.121 只打斷招式，不給白打時間（原 0.95 秒僵直） */
+          Boss.vx = -Boss.facing * 120;
           Boss.flashFrames = 3;
           triggerHitstop(5);
           triggerShake(Player.facing, 0, 18, 0.25);
           spawnSparks(Boss.x, Boss.y - 68, "mikiri", Player.facing);
           damageBossPosture(22, "太初靈光強制破招！");
-          spawnFloatingText(Boss.x, Boss.y - 135, "【太初靈光】強制打斷殺招！", "#60a5fa", 1.25);
+          spawnFloatingText(Boss.x, Boss.y - 135, "【太初靈光】打斷殺招！", "#60a5fa", 1.25);
           setTelemetry("✦ 師弟妹催動玄天珠【太初靈光】：強制中斷大招！");
         } else if (sel === "tishen") {
           Player.tishenActive = true; Player._shieldT0 = performance.now();
-          let tishenDuration = 2.2;
-          if (Progress.equippedSeals.includes("bumie")) tishenDuration = 3.5;
+          let tishenDuration = 1.2; /* v0.8.121 無敵 2.2→1.2 秒 */
+          if (Progress.equippedSeals.includes("bumie")) tishenDuration = 2.0;
           Player.invulnTimer = tishenDuration;
-          Player.hp = Math.min(Player.maxHp, Player.hp + 300);
+          Player.hp = Math.min(Player.maxHp, Player.hp + 200);
           spawnSparks(Player.x, Player.y - 50, "parry", Player.facing);
-          spawnFloatingText(Player.x, Player.y - 125, `【太初替身】${tishenDuration}秒無敵＋免死護魂！`, "#60a5fa", 1.22);
+          spawnFloatingText(Player.x, Player.y - 125, `【太初替身】${tishenDuration}秒無敵＋護魂待命！`, "#60a5fa", 1.22);
           setTelemetry("✦ 師弟妹賦予【太初替身】：護佑墨塵元神，無敵時隙！");
-        } else if (sel === "fuzhen") {
-          Boss.isPerilous = false;
-          Boss.state = "frozen";
-          Boss.frozenTimer = 2.0;
-          Boss.vx = 0;
-          Boss.flashFrames = 3;
-          triggerHitstop(6);
-          triggerShake(0, 1, 22, 0.28);
-          spawnSparks(Boss.x, Boss.y - 60, "mikiri", 0);
-          damageBossPosture(Math.round(Boss.maxPosture * 0.3), "符陣定身！架勢 +30%", null, true); /* v0.8.120 原 50 點×問心封印 2 倍＝一發直接滿架勢 → 改為上限的 30%、不吃封印 */
-          spawnFloatingText(Boss.x, Boss.y - 140, "【符陣定身】禁錮 2 秒＋削 30% 架勢！", "#60a5fa", 1.28);
-          setTelemetry("✦ 師弟妹施展【符陣定身】：敵方受困定身並大損架勢！");
         }
         syncAssistUI();
       }
@@ -938,8 +926,8 @@
         if (Player.hp - dmg <= 0 && (Player.tishenActive || (Player.selectedAssist === "tishen" && Player.assistAvailable))) {
           Player.assistAvailable = false;
           Player.tishenActive = false; if (fxReady("xtz_shield")) spawnFx("xtz_shield", 3, Player.x, Player.y - 125, { w: 310, dur: 0.6 }); else if (fxReady("xtz")) spawnFx("xtz", 3, Player.x, Player.y - 75, { w: 340, dur: 0.45 }); /* 護魂消耗：護罩破碎 */
-          Player.hp = Math.round(Player.maxHp * 0.45);
-          Player.invulnTimer = Progress.equippedSeals.includes("bumie") ? 3.5 : 2.0;
+          Player.hp = 100; /* v0.8.121 護魂擋致命傷：只剩 100 血、不再給長無敵（原回 45% 並無敵 2 秒） */
+          Player.invulnTimer = 0.4; Player.hurtInv = 0.7;
           Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Player.x + dir * 230));
           Sound.play("assist", 1.0, 1.1);
           triggerHitstopMs(80);
