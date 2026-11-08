@@ -258,6 +258,7 @@
           let imgKey = "01_idle1";
           let bossImg = null;
           let isWalkFrame = false;
+          Boss._walkBob = 0; /* v0.8.131 每幀歸零，走路分支才會設 */
           if (Boss.state === "hurt") {
             imgKey = "15_hurt";
           } else if (Boss.state === "staggered" || Boss.state === "frozen") {
@@ -281,6 +282,7 @@
             if (stnD && stnD.walkSeq) {
               /* v0.7.6 姿態可指定用動作表內的格子循環走路（影片抽幀畫風和動作表差太多時用） */
               imgKey = stnD.walkSeq[Math.floor(SP.phase * stnD.walkSeq.length) % stnD.walkSeq.length];
+              if (stnD.walkBob) Boss._walkBob = Math.abs(Math.sin(SP.phase * Math.PI * 2 * stnD.walkSeq.length * 0.5)) * stnD.walkBob; /* 重步上下起伏（落腳最低） */
             } else if (SP.walkReady === 12) {
               bossImg = SP.walk[Math.floor(SP.phase * 12) % 12];
               isWalkFrame = true;
@@ -348,7 +350,7 @@
           else if (Boss.state === "frozen") ctx.filter = "hue-rotate(160deg) brightness(1.1)";
           else if (Boss.isPerilous && !fxReady("peril_aura")) ctx.filter = "drop-shadow(0 0 10px #ef4444)"; /* v0.8.125 有 peril_aura 生圖就不用濾鏡光暈 */
 
-          ctx.translate(Boss.x, Boss.y + GROUND_SINK);
+          ctx.translate(Boss.x, Boss.y + GROUND_SINK - (Boss._walkBob || 0));
           if (deathRot) ctx.rotate(-Boss.facing * deathRot);
           const dfm = deathRot ? null : bossDeform(moveData);
           if (dfm) { ctx.translate(Boss.facing * dfm.ox, dfm.oy); ctx.rotate(Boss.facing * dfm.rot); ctx.scale(dfm.sx, dfm.sy); }

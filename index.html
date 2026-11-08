@@ -2079,7 +2079,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.130";
+      const ASSET_VER = "0.8.131";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2975,7 +2975,7 @@
           A: { sprite: "boss3", stride: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], remap: { "12_thrust_rec": "10_slash_rec" }, /* 雙劍表第 12 格只畫了手、沒有劍，突刺收招改用第 10 格 */
             pool: [["slash1", 26], ["exclusive_combo", 22], ["exclusive_feint", 20], ["slash2", 10], ["dash_rush", 8], ["thrust_peril", 7], ["sweep_peril", 7]],
             far: ["dash_rush"], farP2: [] },
-          B: { sprite: "boss3b", stride: 200, walkSeq: ["03_walk1", "01_idle1", "03_walk1", "02_idle2"], alias: { thrust_peril: "heavy_thrust", sweep_peril: "heavy_sweep" }, /* v0.8.60 低掃在重劍姿態也換成千鈞橫江斬（否則會找雙劍圖） */
+          B: { sprite: "boss3b", stride: 300, walkSeq: ["03_walk1", "01_idle1"], walkBob: 7, /* v0.8.131 重劍走路：只有 03 有劍的跨步格，改成跨步／收腳兩格慢速交替＋上下起伏（原 4 格輪播且步幅 200，像滑行） */ alias: { thrust_peril: "heavy_thrust", sweep_peril: "heavy_sweep" }, /* v0.8.60 低掃在重劍姿態也換成千鈞橫江斬（否則會找雙劍圖） */
             pool: [["heavy_slam", 30], ["heavy_slash", 22], ["heavy_zone", 18], ["heavy_thrust", 15], ["heavy_sweep", 15]],
             poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 18], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
             far: [], farP2: ["heavy_zone"] }
@@ -9294,6 +9294,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           let imgKey = "01_idle1";
           let bossImg = null;
           let isWalkFrame = false;
+          Boss._walkBob = 0; /* v0.8.131 每幀歸零，走路分支才會設 */
           if (Boss.state === "hurt") {
             imgKey = "15_hurt";
           } else if (Boss.state === "staggered" || Boss.state === "frozen") {
@@ -9317,6 +9318,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             if (stnD && stnD.walkSeq) {
               /* v0.7.6 姿態可指定用動作表內的格子循環走路（影片抽幀畫風和動作表差太多時用） */
               imgKey = stnD.walkSeq[Math.floor(SP.phase * stnD.walkSeq.length) % stnD.walkSeq.length];
+              if (stnD.walkBob) Boss._walkBob = Math.abs(Math.sin(SP.phase * Math.PI * 2 * stnD.walkSeq.length * 0.5)) * stnD.walkBob; /* 重步上下起伏（落腳最低） */
             } else if (SP.walkReady === 12) {
               bossImg = SP.walk[Math.floor(SP.phase * 12) % 12];
               isWalkFrame = true;
@@ -9384,7 +9386,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           else if (Boss.state === "frozen") ctx.filter = "hue-rotate(160deg) brightness(1.1)";
           else if (Boss.isPerilous && !fxReady("peril_aura")) ctx.filter = "drop-shadow(0 0 10px #ef4444)"; /* v0.8.125 有 peril_aura 生圖就不用濾鏡光暈 */
 
-          ctx.translate(Boss.x, Boss.y + GROUND_SINK);
+          ctx.translate(Boss.x, Boss.y + GROUND_SINK - (Boss._walkBob || 0));
           if (deathRot) ctx.rotate(-Boss.facing * deathRot);
           const dfm = deathRot ? null : bossDeform(moveData);
           if (dfm) { ctx.translate(Boss.facing * dfm.ox, dfm.oy); ctx.rotate(Boss.facing * dfm.rot); ctx.scale(dfm.sx, dfm.sy); }
