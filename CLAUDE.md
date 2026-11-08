@@ -9,9 +9,9 @@
 - 討論型問題先評估、提方案；使用者說「做」或明確同意才動手。
 - 版面類改動先截圖確認再推送。不要整份輸出程式碼。
 - 節省額度：輕量驗證（語法檢查＋針對性測試）；動到存檔結構、關卡流程才做完整流程測試。
-- 每次改版：改 `src/` → 遞增版本號（`src/10_boot.js` 的 `ASSET_VER` 與 `HANDOFF.md` 標題）→ `python3 tools/build.py` → `python3 tools/build.py --check` → 跑 `tools/check.js` → 動到戰鬥／流程時跑 `tools/smoke.js` → commit → `git push origin HEAD:main`；commit 訊息尾端加系統提醒給的 Co-Authored-By 與 Session 行。推送後約 1～2 分鐘網站更新。
+- 每次改版：改 `src/` → 遞增版本號（只改 `HANDOFF.md` 標題；`ASSET_VER` 自 v0.8.135 起由 `tools/build.py` 依 assets/ 內容雜湊自動填入，**不用手動遞增**）→ `python3 tools/build.py` → `python3 tools/build.py --check` → 跑 `tools/check.js` → 動到戰鬥／流程時跑 `tools/smoke.js` → commit → `git push origin HEAD:main`；commit 訊息尾端加系統提醒給的 Co-Authored-By 與 Session 行。推送後約 1～2 分鐘網站更新。
 - 本機看不到音效；音效、手感、手機震動要請使用者實測。
-- 新增或更新任何 `assets/` 圖片都要遞增 `ASSET_VER`（圖片網址自動加 `?v=`），否則手機會讀到舊快取。
+- 圖片／音檔網址自動加 `?v=<assets 內容雜湊>`（`build.py` 產生）：assets 有任何變動網址就換，沒變動就走手機快取（不要再手動改 `ASSET_VER`；新增 assets 後記得重跑 `python3 tools/build.py`）。
 
 ## 工作偏好（使用者 2026-11-07 定案，每個 session 都遵守）
 1. **音效不用程式合成**：給英文搜尋關鍵字讓使用者找真實音檔，或給 ElevenLabs 提示詞（每條寫明秒數）；拿到檔案後由 Claude 裁切、正規化、接入。

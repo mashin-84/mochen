@@ -1667,6 +1667,12 @@
     <div style="font-size:24px;letter-spacing:.5em;color:#fde68a;text-indent:.5em;">墨　塵　傳</div>
     <div style="margin-top:16px;font-size:13px;letter-spacing:.3em;opacity:.7;">載入中…</div>
     <div style="margin-top:16px;width:180px;height:3px;background:#1e293b;border-radius:2px;overflow:hidden;"><div id="boot-bar" style="height:100%;width:6%;background:#7dd3fc;transition:width .3s;"></div></div>
+    <button id="boot-skip" type="button" style="display:none;margin-top:18px;padding:8px 22px;border-radius:999px;border:1px solid #475569;background:rgba(30,41,59,.9);color:#e2e8f0;font:inherit;font-size:13px;letter-spacing:.2em;cursor:pointer;">網路較慢・先進入</button>
+    <script>/* v0.8.135 保險計時器：從網頁開始就跑，不等 window.onload（網路慢時 onload 本身會很晚）。3.5 秒出現「先進入」鈕，9 秒強制揭開 */
+      (function () { var el = document.getElementById("boot-loading"), sk = document.getElementById("boot-skip");
+        function rev() { if (!el || !el.parentNode) return; el.style.opacity = "0"; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 500); }
+        if (sk) sk.addEventListener("click", rev);
+        setTimeout(function () { if (sk && el && el.parentNode) sk.style.display = "block"; }, 3500); setTimeout(rev, 9000); })();</script>
   </div>
   <div id="game-container">
     <canvas id="battle-canvas"></canvas>
@@ -2079,7 +2085,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.134";
+      const ASSET_VER = "170837aa"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -10563,7 +10569,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (stage.introVideo) getCineVideo(stage.introVideo);
         if (stMovie(stage, "introMovie")) getCineVideo(stage.introMovie);
         if (stMovie(stage, "p2Movie")) getCineVideo(stage.p2Movie);
-        if (stage.formMovie) getCineVideo(stage.formMovie);
+        if (stage.formMovie && !stage.dirMode) getCineVideo(stage.formMovie); /* v0.8.135 戰場演出關卡不預載影片 */
         applyStageSfxClass(stage); /* v0.8.122 武器類別音效自動配對 */
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite, st.extras));
         (stage.fxSheets || []).forEach(k => fxSheet(k));
@@ -12185,11 +12191,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       function bootGate() {
         const el = document.getElementById("boot-loading"), bar = document.getElementById("boot-bar"), t0 = performance.now();
         if (!el) return;
+        const reveal = () => { el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); }; /* 「先進入」鈕與 9 秒保險在 02_body 的內嵌計時器 */
         const tick = () => {
           const okK = BOOT_KEYS.filter(k => BG_ART[k] && (BG_ART[k].ok || BG_ART[k].fail)).length;
           const pend = Object.values(BG_ART).filter(a => a.img && a.img.src && !a.ok && !a.fail).length; /* 預設的 camp／s1 空殼沒有 src，不算 */
           if (bar) bar.style.width = Math.min(100, Math.round(100 * (Math.min(MC_READY, 16) + okK) / (16 + BOOT_KEYS.length))) + "%";
-          if ((MC_READY >= 16 && okK === BOOT_KEYS.length && pend === 0) || performance.now() - t0 > 9000) { el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); return; }
+          if ((MC_READY >= 16 && okK === BOOT_KEYS.length && pend === 0) || performance.now() - t0 > 7000) { reveal(); return; }
           setTimeout(tick, 100);
         };
         tick();

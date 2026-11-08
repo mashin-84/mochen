@@ -188,11 +188,12 @@
       function bootGate() {
         const el = document.getElementById("boot-loading"), bar = document.getElementById("boot-bar"), t0 = performance.now();
         if (!el) return;
+        const reveal = () => { el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); }; /* 「先進入」鈕與 9 秒保險在 02_body 的內嵌計時器 */
         const tick = () => {
           const okK = BOOT_KEYS.filter(k => BG_ART[k] && (BG_ART[k].ok || BG_ART[k].fail)).length;
           const pend = Object.values(BG_ART).filter(a => a.img && a.img.src && !a.ok && !a.fail).length; /* 預設的 camp／s1 空殼沒有 src，不算 */
           if (bar) bar.style.width = Math.min(100, Math.round(100 * (Math.min(MC_READY, 16) + okK) / (16 + BOOT_KEYS.length))) + "%";
-          if ((MC_READY >= 16 && okK === BOOT_KEYS.length && pend === 0) || performance.now() - t0 > 9000) { el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); return; }
+          if ((MC_READY >= 16 && okK === BOOT_KEYS.length && pend === 0) || performance.now() - t0 > 7000) { reveal(); return; }
           setTimeout(tick, 100);
         };
         tick();

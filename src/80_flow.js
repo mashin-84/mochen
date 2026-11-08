@@ -19,7 +19,7 @@
         if (stage.introVideo) getCineVideo(stage.introVideo);
         if (stMovie(stage, "introMovie")) getCineVideo(stage.introMovie);
         if (stMovie(stage, "p2Movie")) getCineVideo(stage.p2Movie);
-        if (stage.formMovie) getCineVideo(stage.formMovie);
+        if (stage.formMovie && !stage.dirMode) getCineVideo(stage.formMovie); /* v0.8.135 戰場演出關卡不預載影片 */
         applyStageSfxClass(stage); /* v0.8.122 武器類別音效自動配對 */
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite, st.extras));
         (stage.fxSheets || []).forEach(k => fxSheet(k));

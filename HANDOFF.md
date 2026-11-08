@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.134（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.135（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.135 載入「好久／沒反應」修正（使用者回報）**：量測開機 **186 個請求、約 9.9 MB**（boss1 68 檔 2.6 MB、mc 77 檔 2.2 MB、fx 22 檔 1.5 MB、營地配樂 1.5 MB…）。成因與修法：①**每發一版全部圖片網址都換**（`?v=ASSET_VER` 我每版都遞增）→ 手機每次更新要重載約 10 MB。改為 `ASSET_VER = "@ASSET_HASH@"`，`tools/build.py` 依 `assets/` 全部檔案內容的 sha1 取前 8 碼自動填入：只有圖片／音檔真的變了網址才換，純程式更新走快取（實測第二次載入 185 個請求全走快取；之後**不用手動遞增 ASSET_VER**，`CLAUDE.md` 已更新）。②載入畫面的「保險」原本在 `window.onload` 之後才開始計時，網路慢時 onload 本身就很晚 → 畫面卡住也沒按鈕（「沒反應」）。改為 `02_body.html` 內嵌計時器（網頁一開始就跑）：3.5 秒出現「網路較慢・先進入」鈕（圖會陸續補上）、9 秒強制揭開。③`80_flow` 不再預載 `dirMode` 關卡的 `formMovie`（第 4 關約 1.1 MB 影片不會播卻被載）。驗證：極慢網路（每檔 1.8 秒）模擬：3.5 秒出現鈕、按下後進入；check／smoke ok。**未做（可再省）**：營地配樂 1.5 MB 與 mc 待機 24 格可延後載入、boss 走路格改按需載入；若仍慢再做。
 
 **v0.8.133～134 第 4 關三段演出改戰場上（取代三支影片；設計卡已同意）**：①`assets/fx/boss4intro.webp`（Gemini 黑底 4×4：列 0 地裂＋光升＋霧、1 三道金環逐一亮起、2 半透明巨手握劍、3 地面震環）、`assets/fx/dir4.webp`（列 0 冰藍白劍刃氣焰、1 劍紋陣環、2 白藍光柱、3 劍刃碎光聚攏）。②`DIR_CFG[4]`（`54_director.js`）三段：**登場 `kind:"graveyard"`**（`graveStep`）：霧中殘劍暗下 → 0.7 地裂 → 1.5 巨劍升起（`sw1` 圖，`drawJadeSword`）→ 鏡頭抬起 → 2.6 三道金環亮起 → 3.2 巨手落下握柄 → 3.9 拔劍高舉＋震環＋名牌「蓋章壓下」（`bossNameCard slam`，小字「第四難」）→ 拉回，結束時巨劍回 `hover`（`dirEnd`）；`Boss._pp._hide`（`53_parts` `drawPartsFront` 開頭跳過）在營地載入／登場開始時藏起巨劍與巨手。**一→二階段 `kind:"formtrans"`**（`formationStart` 結尾 120ms 後 `dirStart("form")`，取代 `formMovie`）：巨劍崩裂、碎片飛散（導演期間 `dirShards` 讓碎片照常飛，否則世界暫停會凍成白方塊）、約 2.2 秒、結束後劍陣冷卻≥1.6 秒。**二→三階段 `kind:"descend"`**（`partsToPhase2` 觸發）：`dir4` 聚氣→光柱＋陣環（alpha 0.7～0.8）→進三階段。影片檔與設定保留（`dirMode` 優先；`formMovieStart`／`p2Movie` 分支留作備案）。③音效：部位引擎的聲音由通用音改成現有專屬音（天劍斬落 `b3_heavy`、掌壓／插地 `b3_plunge`、橫掃 `b3_sweep`、劍氣 `b2_sword_cast`、劍雨 `b2_sword_rain`、飛劍 `b2_sword_fly`）；`S4.sfxClass="light"` 給三階段人形招式。導演音效時序 `sfxT`（`b3_seal`／`b3_plunge`／`b3_draw`／`b2_shatter`／`b2_appear`）。④驗證：登場逐段截圖（地裂光柱、巨劍升起、金環、巨手握柄、震環＋名牌壓下、拉回）、兩段轉場截圖與狀態（劍陣進入、三階段進入）、smoke 第 4 關 ok；`audit_fx` 的部位 Boss 盲點是檢查工具用非部位模式觸發造成的誤報（特效實測都有掛）。待手機實測：登場 6.2 秒是否過長、金環位置（`d.tip-548`）、巨手大小、名牌壓下、轉場時長、新音效音量。
 

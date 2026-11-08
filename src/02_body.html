@@ -5,6 +5,12 @@
     <div style="font-size:24px;letter-spacing:.5em;color:#fde68a;text-indent:.5em;">墨　塵　傳</div>
     <div style="margin-top:16px;font-size:13px;letter-spacing:.3em;opacity:.7;">載入中…</div>
     <div style="margin-top:16px;width:180px;height:3px;background:#1e293b;border-radius:2px;overflow:hidden;"><div id="boot-bar" style="height:100%;width:6%;background:#7dd3fc;transition:width .3s;"></div></div>
+    <button id="boot-skip" type="button" style="display:none;margin-top:18px;padding:8px 22px;border-radius:999px;border:1px solid #475569;background:rgba(30,41,59,.9);color:#e2e8f0;font:inherit;font-size:13px;letter-spacing:.2em;cursor:pointer;">網路較慢・先進入</button>
+    <script>/* v0.8.135 保險計時器：從網頁開始就跑，不等 window.onload（網路慢時 onload 本身會很晚）。3.5 秒出現「先進入」鈕，9 秒強制揭開 */
+      (function () { var el = document.getElementById("boot-loading"), sk = document.getElementById("boot-skip");
+        function rev() { if (!el || !el.parentNode) return; el.style.opacity = "0"; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 500); }
+        if (sk) sk.addEventListener("click", rev);
+        setTimeout(function () { if (sk && el && el.parentNode) sk.style.display = "block"; }, 3500); setTimeout(rev, 9000); })();</script>
   </div>
   <div id="game-container">
     <canvas id="battle-canvas"></canvas>

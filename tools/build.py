@@ -8,6 +8,16 @@ src = os.path.join(root, "src")
 names = [n.strip() for n in open(os.path.join(src, "manifest.txt"), encoding="utf-8") if n.strip() and not n.startswith("#")]
 parts = [open(os.path.join(src, n), encoding="utf-8", newline="").read() for n in names]
 out = "\n".join(parts)
+import hashlib
+def asset_hash():
+    h = hashlib.sha1()
+    for dp, dn, fn in sorted(os.walk(os.path.join(root, "assets"))):
+        dn.sort()
+        for f in sorted(fn):
+            if f.startswith("."): continue
+            p = os.path.join(dp, f); h.update(os.path.relpath(p, root).encode()); h.update(hashlib.sha1(open(p, "rb").read()).digest())
+    return h.hexdigest()[:8]
+out = out.replace("@ASSET_HASH@", asset_hash()) # v0.8.135 ASSET_VER＝assets 內容雜湊
 target = os.path.join(root, "index.html")
 if "--check" in sys.argv:
     cur = open(target, encoding="utf-8", newline="").read()
