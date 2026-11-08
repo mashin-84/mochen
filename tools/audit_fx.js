@@ -25,7 +25,7 @@ const fs = require('fs'), http = require('http'), path = require('path');
         __G.cutsceneActive = false; __G.dlgFocus = false; __G.pendingPre = false; document.querySelectorAll('[id^=dlg]').forEach(e => e.style.display = 'none');
         __B.state = 'idle'; __B.stateTimer = 0; __B.aiCooldown = 99; __B.x = 1500; __P.x = 1280; __P.invulnTimer = 99; __P.hp = 1000; __G.slashArcs = []; __G.fxList = [];
         const m = __S[__B.stageId].moves[k]; __T(k);
-        return { dmg: !!(m.damage || m.isCombo || m.isRanged || m.isZone), ranged: !!m.isRanged, kind: m.bulletKind || null, tele: !!m.isTeleport, mob: !!m.isMobility, sfx: !!m.sfx, sfxInfo: m.sfx ? (m.sfx.auto ? '類別自動:' + (m.sfx.a || m.sfx.h) : '專屬:' + (m.sfx.a || m.sfx.h || m.sfx.w)) : '', fxAct: !!(m.fxAct || m.fxHit), vanish: !!(m.fxVanish && m.fxAppear), name: m.name };
+        return { dmg: !!(m.damage || m.isCombo || m.isRanged || m.isZone), ranged: !!m.isRanged, kind: m.bulletKind || null, tele: !!m.isTeleport, mob: !!m.isMobility, sfx: !!m.sfx, sfxInfo: m.sfx ? (m.sfx.auto ? '類別自動:' + (m.sfx.a || m.sfx.h) : '專屬:' + (m.sfx.a || m.sfx.h || m.sfx.w)) : '', fxAct: !!(m.fxAct || m.fxHit), vanish: !!((m.fxVanish && m.fxAppear) || m.tpFx), name: m.name };
       }, k);
       const res = await pg.evaluate(() => new Promise(r => { const o = { arcNo: 0, arcArt: 0, fx: {}, proj: {} }; let n = 0; const iv = setInterval(() => { (__G.slashArcs || []).forEach(a => a.art ? o.arcArt++ : o.arcNo++); (__G.fxList || []).forEach(f => o.fx[(f.sheet.name || f.sheet) + ':' + f.row] = 1); (__G.flyingSwords || []).forEach(s => o.proj[s.kind || 'sword'] = 1); if (++n > 80) { clearInterval(iv); r(o); } }, 25); }));
       const w = [];
