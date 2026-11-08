@@ -237,6 +237,11 @@
       }
 
       function emitDust(x, y, dir, n, power) {
+        if (fxReady("scene")) { /* v0.8.124 灰塵改用 scene 列 3 的煙團（4 種外形隨機，往上飄散淡出） */
+          for (let i = 0; i < n; i++) spawnFx("scene", 3, x + (Math.random() - 0.5) * 14, y + 2, { anchor: "b", w: (38 + Math.random() * 30) * Math.max(0.7, power), col: Math.floor(Math.random() * 4), dur: 0.45 + Math.random() * 0.25, grow: 0.7, add: false, alpha: 0.7, back: true,
+            vx: dir * (40 + Math.random() * 110) * power + (Math.random() - 0.5) * 50, vy: -(12 + Math.random() * 50) * power });
+          return;
+        }
         for (let i = 0; i < n; i++) {
           Game.hitFx.push({
             type: "dust", x: x + (Math.random() - 0.5) * 14, y: y - 2,
@@ -289,11 +294,12 @@
         const slashLen = (heavy ? 190 : guard ? 90 : 135) * CHAR_K;
         const tierColor = cc >= 8 ? "#fb923c" : cc >= 5 ? "#fde047" : cc >= 3 ? "#67e8f9" : "#e0f2fe";
         const color = guard ? "#cbd5e1" : heavy ? (cc >= 8 ? "#fb923c" : "#fde047") : tierColor;
-        Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: baseAng, len: slashLen, life: heavy ? 0.16 : 0.11, maxLife: heavy ? 0.16 : 0.11, w: heavy ? 7 : 4.5, color });
-        if (heavy) Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: -baseAng, len: slashLen * 0.85, life: 0.16, maxLife: 0.16, w: 5.5, color });
+        const hitArt = fxReady("spark"); /* v0.8.124 有生圖就不畫程式的斬線與火星 */
+        if (!hitArt) Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: baseAng, len: slashLen, life: heavy ? 0.16 : 0.11, maxLife: heavy ? 0.16 : 0.11, w: heavy ? 7 : 4.5, color });
+        if (heavy && !hitArt) Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: -baseAng, len: slashLen * 0.85, life: 0.16, maxLife: 0.16, w: 5.5, color });
 
         if (fxReady("spark")) spawnFx("spark", guard ? 1 : 0, hx, hy, { w: heavy ? 250 : guard ? 160 : 180, dur: heavy ? 0.28 : 0.22, facing: dir, alpha: 0.85 });
-        const n = heavy ? 12 : guard ? 6 : 8;
+        const n = hitArt ? 0 : heavy ? 12 : guard ? 6 : 8;
         for (let i = 0; i < n; i++) {
           const sp = (heavy ? 520 : 400) * (0.5 + Math.random() * 0.7);
           const a = (Math.random() - 0.5) * 1.5;
@@ -314,7 +320,17 @@
         Sound.play("hit", guard ? 0.3 : 0.55, 0.78 + 0.1 * step + (guard ? 0 : Math.min(0.45, Game.comboCount * 0.035)));
       }
 
+      /* v0.8.124 命中火花／衝擊波圈／灰塵改用生圖（spark／air／scene）：有圖就只畫圖，不再畫程式的圓環與粒子；圖沒載到才退回程式畫 */
       function spawnSparks(x, y, type, dirX = 1) {
+        if (fxReady("spark") && fxReady("air")) {
+          const f = dirX >= 0 ? 1 : -1;
+          if (type === "parry") { spawnFx("spark", 1, x, y, { w: 360, dur: 0.38 }); spawnFx("air", 2, x, y, { w: 280, dur: 0.34 }); }
+          else if (type === "mikiri") { spawnFx("spark", 2, x, y, { w: 340, dur: 0.4 }); spawnFx("air", 2, x, y, { w: 200, dur: 0.3, alpha: 0.8 }); }
+          else if (type === "execution") { spawnFx("spark", 3, x, y, { w: 560, dur: 0.5 }); spawnFx("spark", 1, x, y, { w: 460, dur: 0.5 }); }
+          else if (type === "block") spawnFx("spark", 1, x, y, { w: 170, dur: 0.26, facing: f });
+          else spawnFx("spark", 0, x, y, { w: 200, dur: 0.24, facing: f });
+          return;
+        }
         const isBig = type === "parry" || type === "mikiri" || type === "execution";
         Game.shockwaves.push({
           x, y, r: 6,

@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.123（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.124（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.124 全遊戲共用的命中火花／衝擊波圈／灰塵改生圖（使用者：基本目標是全部生圖、不用程式寫）**：不需要新生圖——現有 `spark`（列 0 命中、1 格擋金環、2 霸體藍環、3 破勢紅爆）、`air`（列 2 招架星芒）、`scene`（列 3 煙團、列 2 碎石）已足夠。`spawnSparks`（`30_state.js`）：`parry`＝spark 列 1 金環＋air 星芒、`mikiri`＝spark 列 2 藍環＋星芒、`execution`＝spark 列 3＋列 1 大環、`block`＝列 1、`hit`＝列 0；**有圖就只畫圖，不再畫 `Game.shockwaves` 圓環與 `Game.particles` 粒子**（圖沒載到才退回程式畫）。`emitDust`：改成 `scene` 列 3 煙團（隨機 4 種、往上飄散、grow 0.7、淡出、畫在 Boss 後面），`fxList` 上限 60→140。`bossHitFx`：有 `spark` 圖時不再產生程式斬線（`hitFx` slash）與火星粒子。第 4 關插地衝擊環（`53_parts.js`）改 spark 列 2（壓扁成 340×170 橢圓）。無頭驗證：五種火花與灰塵一次觸發截圖正常、`Game.shockwaves／particles／hitFx` 皆為 0；smoke 第 1、4 關 ok。**全遊戲仍是程式畫的東西（待辦清單）**：①回生酒回血青綠光點（`40_player.js` `Game.particles`）需新圖；②主角圍巾（`Player.scarfNodes` 線條）；③各種程式陰影橢圓／背景星月（`drawDynamicBackground` 無背景圖的舊關）；④`drawArcs` 程式刀弧備案（第 5～9 關若沒專屬刀弧圖就會用）、`drawThreatMarker`／投射物／陣法的備案；⑤Boss 危招紅光（`ctx.filter` drop-shadow）；⑥`drawMist`（薄霧）、`drawLeaves` 已是圖。
 
 **v0.8.123 第 1 關雕琢②：武器類別音效庫＋擲戈／影遁專屬圖**：①**武器類別音效庫**（`11_audio.js`）：使用者擔心每招都專屬音效工程量太大→改成「類別 × 招式型態」自動配對。`Stages[n].sfxClass = "heavy"｜"light"`（`SFX_CLASS` 表）、`Stages[n].sfxPitch`（音高倍率）；`applyStageSfxClass(stage)`（`loadStage` 時呼叫一次）依招式標記（`sfxArchetype`：mobility／rage／leap／charge／throw／zone／sweep／thrust／push→slam／combo／swing）為**沒有 `move.sfx` 的招**填 `{a|h, w, land, p, v, auto}`；專屬 `move.sfx`／`Stages[n].sfx` 永遠優先。檔案全用現有的 `b2_`／`b3_`／`m_` 音效：heavy＝swing／combo `b3_heavy`、thrust／leap／mobility `b3_dash`、sweep `b3_sweep`、slam／躍斬落地 `b3_plunge`、charge `b3_charge`、throw `b2_sword_fly`、rage 前搖 `m_roar`＋`b3_heavy`、zone `b3_seal`；light 同理對應雙劍組。瞬移用 `SFX_SHARED`（`b2_vanish`／`b2_appear`，`bsfx` 在有 `sfxClass` 的關卡自動回退）；位移招音量 ×0.45（`sfx.v`）；躍斬落地音 `sfx.land`（`50_boss_ai` 落地處）。**第 1 關套用 heavy、音高 0.94 → 新生音效 0 個**。同音已有 ±4% 隨機音高。待手機實測：長戈用重劍音是否合適、哪些要換專屬音。②**`assets/fx/boss1fx2.webp`**（Gemini 黑底 4×4，原圖 2048→1024、扣黑底 18、格邊淡出）：列 0 擲戈飛行（`Stages[1].bulletArts.halberd`：fps 12、w 290、tipX 234、tipY 129）、列 1 擲戈命中（`hitRow`／`hitW`：以投射物位置為中心；`swordImpactFx` 新增 `hitRow` 欄位）、列 2 影遁消失（`fxVanish`，w 470、oy -165）、列 3 影遁現身（`fxAppear`，oy -180）；`Stages[1].fxSheets` 預載。③`tools/audit_fx.js` 更新：顯示每招音效來源（類別自動／專屬）、瞬移走共用音、投射物有圖算有特效；**第 1 關 audit 盲點 0 個**。命中火花／衝擊波圈（全遊戲共用程式畫粒子）仍待評估。待手機實測：擲戈大小與紅光亮度、影遁特效時機、音效配對。
 

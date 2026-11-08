@@ -53,7 +53,7 @@
           vx: o.vx || 0, vy: o.vy || 0, grav: o.grav || 0, grow: o.grow || 0,
           col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back, c0: o.c0 || 0, nf: o.nf || 4 /* v0.8.94 只播該列的第 c0 起 nf 格（2 格一組的特效） */
         });
-        if (Game.fxList.length > 60) Game.fxList.shift();
+        if (Game.fxList.length > 140) Game.fxList.shift(); /* v0.8.124 灰塵也走 fxList，上限 60→140 */
       }
       function updateFx(dt) {
         const L = Game.fxList;

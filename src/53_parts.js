@@ -342,7 +342,7 @@
               addTrauma(k === "sky" ? 0.5 : 0.35); hapticBuzz(30);
               Sound.play("hit", 1.0, 0.45); Sound.play("block", 0.8, 0.5);
               emitDust(a.x, G, 1, 6, 1.5); emitDust(a.x, G, -1, 6, 1.5);
-              Game.shockwaves.push({ x: a.x, y: G - 10, r: 10, maxR: 170, alpha: 0.9, color: "#bae6fd" });
+              if (fxReady("spark")) spawnFx("spark", 2, a.x, G - 14, { w: 340, h: 170, dur: 0.45 }); else Game.shockwaves.push({ x: a.x, y: G - 10, r: 10, maxR: 170, alpha: 0.9, color: "#bae6fd" }); /* v0.8.124 衝擊環改生圖（壓扁成地面橢圓） */
               if (fxReady("boss4fx2")) spawnFx("boss4fx2", 0, a.x, G - 110, { w: 420, dur: 0.7 });
               if (k === "sky" && Math.abs(Player.x - a.x) <= m.w * 0.5 + 26 && Player.y > G - 260) partHitPlayer(a.x, m, "天劍斬落！");
               hintOnce("p4_seal", "巨劍插地露出封印！按住攻擊 0.45 秒放【蓄力斬】斬斷它");
