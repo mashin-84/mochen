@@ -1,7 +1,10 @@
-# 單關製作標準流程（第 1 關定案版，v0.8.125）
+# 單關製作標準流程（第 1 關定案版，v0.8.126）
 
 > 第 2～9 關照這份做。目標：**全部生圖／真實音檔，不用程式畫**；每關用 `tools/audit_fx.js` 驗收到 0 個盲點。
-> 風格聖經（每份生圖提示詞開頭都要貼）在 `CLAUDE.md`「生圖提示詞規則」。下面的提示詞模板用 `[STYLE BIBLE]` 代替，使用時整段貼上。
+> **提示詞交出前三條硬規則（v0.8.126，使用者要求）**
+> 1. 風格聖經**直接寫在提示詞裡**（下面的模板已內含完整一段），不可用佔位符叫使用者自己貼。
+> 2. 模板裡只有「主題欄位」用 `[ ]`（`[COLOR THEME …]`、`[WEAPON]`、`[PROJECTILE …]`、`[ENERGY TYPE]`）；**交出前必須全部填好，交出的文字不得再有任何 `[ ]`**。
+> 3. 交出前先把提示詞存成文字檔，跑 `python3 tools/check_prompt.py 檔名.txt`（或從 stdin 餵）：檢查開頭是完整風格聖經、有 EXACTLY N、底色寫明、沒有殘留 `[ ]`、沒有三個反引號、有「不畫人物」或參考圖說明。
 
 ## 一、總流程（誰做什麼）
 
@@ -41,7 +44,7 @@
 ### T2 刀弧模板（`bossN.webp`）
 列：0 主要弧斬、1 突刺光束、2 地面橫掃、3 落地衝擊。用法：`arcArt`／`fxAct`／`fxHit`／`fxLand` 指到列。
 ```
-[STYLE BIBLE]
+Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
 
 Create ONE square image: a visual-effects sprite sheet of EXACTLY 16 cells in a 4 columns x 4 rows grid, each cell the same size, with generous empty margin inside each cell so no effect touches the cell edge. Background: pure solid black #000000 everywhere, no gradient, no grid lines, no borders, no text, no characters. Glowing weapon-attack effects (added onto the game with additive blending), clean anime cel style. Theme for this enemy: [COLOR THEME, e.g. "violet-purple moon energy with silver sparks"], weapon: [WEAPON]. All effects face RIGHT.
 
@@ -54,7 +57,7 @@ Row 4 (4 cells, one animation): a landing impact centered at the bottom of the c
 ### T3 投射物＋影遁（`bossNfx2.webp`）
 列：0 投射物飛行（尖端朝右，約佔格寬 85%）、1 投射物命中、2 瞬移消失（無臉剪影化霧）、3 瞬移現身（紅環＋閃光）。用法：`Stages[n].bulletArts[bulletKind]`（`tipX`／`tipY` 以格內像素量、`hitRow`／`hitW`）、`move.fxVanish`／`move.fxAppear`。
 ```
-[STYLE BIBLE]
+Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
 
 Create ONE square image: a visual-effects sprite sheet of EXACTLY 16 cells in a 4 columns x 4 rows grid, each cell the same size, with generous empty margin inside each cell. Background: pure solid black #000000 everywhere, no gradient, no grid lines, no borders, no text, no characters, no people. Glowing effects (additive blending). Color theme: [COLOR THEME, e.g. "blood-red and dark crimson with ember-gold sparks"].
 
@@ -67,7 +70,7 @@ Row 4 (4 cells, one animation): a shadow-appear: frame 1 a ring of embers on the
 ### T4 階段轉換專屬圖（`dirN.webp`）
 列：0 氣焰循環（底部中央往上，約佔格高 85%）、1 地面正圓環（由上往下看，會被壓扁成橢圓）、2 光柱（由下往上）、3 聚氣（光點向中心匯聚）。用法：`DIR_CFG[n].phase`／`intro` 的 `aura`／`ring`／`pillar`／`gather`，及 `p2Aura`（二階段全程氣焰）。
 ```
-[STYLE BIBLE]
+Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
 
 Create ONE square image: a visual-effects sprite sheet of EXACTLY 16 cells in a 4 columns x 4 rows grid, each cell the same size, with generous empty margin inside each cell. Background: pure solid black #000000 everywhere, no gradient, no grid lines, no borders, no text, no characters. Glowing energy effects (additive blending), clean anime cel style with soft glow, color theme: [COLOR THEME].
 
