@@ -2079,7 +2079,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.127";
+      const ASSET_VER = "0.8.128";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -7242,8 +7242,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           intro: { kind: "mirror", dur: 5.5, ringAt: 0.15, mirrorAt: 1.45, burstAt: 3.0, plate: { tin: 0.22, hold: 1.7, tout: 0.3 }, sub: "第二難", tint: "96,70,170", tintA: 0.34,
             sfxT: [[0.15, "b2_vanish", 0.85, 0.9], [1.45, "b2_appear", 0.8, 0.85], [2.95, "b2_shatter", 1.0, 1], [3.05, "b2_split", 0.8, 1]] },
           phase: { dur: 2.8, burstAt: 1.3, poses: [[0, "17_kneel"], [1.3, "14_cast"], [2.0, "07_windup"]], tint: "76,50,150", tintA: 0.4, blast: true,
-            aura: { sheet: "dir2", row: 0, w: 420, at: 0.15, fps: 9, dy: 8 }, gather: { sheet: "dir2", row: 3, w: 540, at: 0.1, dy: -120 }, ring: { sheet: "dir2", row: 1, w: 1100, dur: 0.9 },
-            pillar: { sheet: "dir2", row: 2, w: 470, dur: 1.0 }, title: ["真假難辨", "二　階　段", "#c4b5fd"], sfx: [["peril", 0.9, 0.9], ["b2_shatter", 1.0, 1], ["b2_split", 0.8, 1]] }
+            aura: { sheet: "dir2", row: 0, w: 400, at: 0.15, fps: 9, dy: 8, alpha: 0.4 }, gather: { sheet: "dir2", row: 3, w: 460, at: 0.1, dy: -120, alpha: 0.4 }, ring: { sheet: "dir2", row: 1, w: 1100, dur: 0.9, alpha: 0.55 },
+            pillar: { sheet: "dir2", row: 2, w: 440, dur: 1.0, alpha: 0.32 }, flashK: 0.4, /* v0.8.128 二階段光太亮 → 各元素與閃白調透明 */ title: ["真假難辨", "二　階　段", "#c4b5fd"], sfx: [["peril", 0.9, 0.9], ["b2_shatter", 1.0, 1], ["b2_split", 0.8, 1]] }
         },
         3: { /* 莫寒川：跪地、劍氣聚攏 → 拔出玄鐵重劍（影片時代改回戰場上拔劍） */
           intro: { dur: 2.5, burstAt: 1.2, poses: [[0, "17_kneel"], [1.2, "14_cast"], [1.9, "07_windup"]], tint: "30,41,70", tintA: 0.3,
@@ -7255,7 +7255,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
       };
       if (Stages[1]) Stages[1].fxSheets = (Stages[1].fxSheets || []).concat(["land", "ult", "boss2", "dir1"]); /* 階段轉換用的衝擊波環、光柱、氣焰 */
-      DIR_CFG[2].p2Aura = { sheet: "dir2", row: 0, w: 360, fps: 9, dy: 6, alpha: 0.75 }; /* 二階段全程翠綠靈霧（詭譎，不放大） */
+      DIR_CFG[2].p2Aura = { sheet: "dir2", row: 0, w: 340, fps: 9, dy: 6, alpha: 0.32 }; /* 二階段全程翠綠靈霧（詭譎，不放大） */
       if (Stages[2]) Stages[2].fxSheets = (Stages[2].fxSheets || []).concat(["boss2intro", "dir2"]);
       DIR_CFG[1].p2Aura = { sheet: "dir1", row: 0, w: 330, fps: 9, dy: 6, alpha: 0.85 }; /* 二階段全程紅焰（跟著 Boss，隨放大倍率） */
       Object.keys(DIR_CFG).forEach(k => { const st = Stages[k]; if (st) { st.dir = DIR_CFG[k]; st.dirMode = true; } });
@@ -7276,7 +7276,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Game.introT = 0; Boss.isPerilous = false;
         Music.duck(0.12, (c.burstAt || c.zoomAt) + 0.3);
         if (c.kind === "mirror") { const Dm = Game.dir; Dm.camNow = { zoom: Game.camera.targetZoom + 0.2, y: 0, rate: 8 }; Dm.focusX = Boss.x; }
-        if (kind === "phase") { screenFlash("rgba(255,255,255,0.7)", 0.6, 0.4); triggerHitstopMs(90); addTrauma(0.35); hapticBuzz([40, 30, 80]); }
+        if (kind === "phase") { screenFlash("rgba(255,255,255,0.7)", 0.6 * (c.flashK == null ? 1 : c.flashK), 0.4); triggerHitstopMs(90); addTrauma(0.35); hapticBuzz([40, 30, 80]); }
         return true;
       }
       function dirBurst(D) {
@@ -7289,9 +7289,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
         } else if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
         (c.sfx || []).forEach(s => Sound.play(s[0], s[1], s[2]));
-        if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 });
-        if (c.pillar && fxReady(c.pillar.sheet)) spawnFx(c.pillar.sheet, c.pillar.row, Boss.x, G, { anchor: "b", w: c.pillar.w, h: c.pillar.w * 1.6, dur: c.pillar.dur || 0.8 });
-        screenFlash("rgba(255,255,255,0.8)", D.kind === "phase" ? 0.5 : 0.35, 0.5);
+        if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7, alpha: c.ring.alpha == null ? 1 : c.ring.alpha });
+        if (c.pillar && fxReady(c.pillar.sheet)) spawnFx(c.pillar.sheet, c.pillar.row, Boss.x, G, { anchor: "b", w: c.pillar.w, h: c.pillar.w * 1.6, dur: c.pillar.dur || 0.8, alpha: c.pillar.alpha == null ? 1 : c.pillar.alpha });
+        screenFlash("rgba(255,255,255,0.8)", (D.kind === "phase" ? 0.5 : 0.35) * (c.flashK == null ? 1 : c.flashK), 0.5); /* flashK：該關閃白強度倍率（亮背景的關卡調低） */
         addTrauma(D.kind === "phase" ? 0.8 : 0.45); triggerHitstopMs(D.kind === "phase" ? 100 : 60);
         hapticBuzz(D.kind === "phase" ? [60, 40, 120] : [30, 20, 60]);
         if (c.title) showBanner(c.title[0], c.title[1], 1500, c.title[2]);
@@ -7337,11 +7337,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Boss._cineImg = dirPoseAt(c, D.t);
         if (!D.aura && c.aura && D.t >= (c.aura.at || 0) && fxReady(c.aura.sheet)) {
           D.aura = true; const A = c.aura, dy = A.dy || 0;
-          spawnFx(A.sheet, A.row, Boss.x, Boss.y + dy, { anchor: A.anchor || "b", w: A.w, dur: Math.max(0.5, c.dur - D.t + 0.2), loop: true, fps: A.fps || 10, follow: () => ({ x: Boss.x, y: Boss.y + dy }) });
+          spawnFx(A.sheet, A.row, Boss.x, Boss.y + dy, { anchor: A.anchor || "b", w: A.w, dur: Math.max(0.5, c.dur - D.t + 0.2), loop: true, fps: A.fps || 10, alpha: A.alpha == null ? 1 : A.alpha, follow: () => ({ x: Boss.x, y: Boss.y + dy }) });
         }
         if (!D.gather && c.gather && D.t >= (c.gather.at || 0) && fxReady(c.gather.sheet)) { /* 蓄勢：光點向 Boss 匯聚（整段蓄勢時間播完 4 格） */
           D.gather = true; const g = c.gather, gy = g.dy || -100;
-          spawnFx(g.sheet, g.row, Boss.x, Boss.y + gy, { anchor: "c", w: g.w, dur: Math.max(0.4, c.burstAt - D.t), follow: () => ({ x: Boss.x, y: Boss.y + gy }) });
+          spawnFx(g.sheet, g.row, Boss.x, Boss.y + gy, { anchor: "c", alpha: g.alpha == null ? 1 : g.alpha, w: g.w, dur: Math.max(0.4, c.burstAt - D.t), follow: () => ({ x: Boss.x, y: Boss.y + gy }) });
         }
         if (!D.burst && D.t >= c.burstAt) dirBurst(D);
         if (c.grow && D.burst) { const k = Math.min(1, (D.t - c.burstAt) / 0.5); Boss._scaleMul = 1 + (c.grow - 1) * (1 - (1 - k) * (1 - k)); } /* 二階段放大 */
