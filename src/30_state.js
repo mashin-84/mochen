@@ -367,8 +367,10 @@
 
       /* M2 浮字規則（空洞騎士式減法）：傷害數字預設關閉（localStorage qingyun_dmgnum="1" 才顯示）；
          處決時畫面中央已有書法大字，「一劍青雲」系列浮字一律不再疊；同一位置 0.25 秒內不重複堆字 */
-      const FT_RULE = { dmg: (() => { try { return localStorage.getItem("qingyun_dmgnum") === "1"; } catch (e) { return false; } })() };
+      /* v0.8.129 戰鬥浮字（【完美閃避】、連段招架×N、替身、各種提示小字…）全部關閉：使用者覺得看不清楚；要恢復在瀏覽器 localStorage 設 qingyun_floattext=1 */
+      const FT_RULE = { text: (() => { try { return localStorage.getItem("qingyun_floattext") === "1"; } catch (e) { return false; } })(), dmg: (() => { try { return localStorage.getItem("qingyun_dmgnum") === "1"; } catch (e) { return false; } })() };
       function spawnFloatingText(x, y, text, color = "#fef08a", scale = 1.0) {
+        if (!FT_RULE.text) return;
         text = String(text);
         if (/一劍青雲/.test(text)) return;
         if (!FT_RULE.dmg) { text = text.replace(/\s*[-+]\s*\d+(\.\d+)?%?/g, "").replace(/^\s*\d+\s*$/, "").trim(); if (!text) return; }
