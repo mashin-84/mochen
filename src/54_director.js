@@ -38,6 +38,14 @@
       DIR_CFG[2].p2Aura = { sheet: "dir2", row: 0, w: 340, fps: 9, dy: 6, alpha: 0.32 }; /* 二階段全程翠綠靈霧（詭譎，不放大） */
       if (Stages[2]) Stages[2].fxSheets = (Stages[2].fxSheets || []).concat(["boss2intro", "dir2"]);
       DIR_CFG[1].p2Aura = { sheet: "dir1", row: 0, w: 330, fps: 9, dy: 6, alpha: 0.85 }; /* 二階段全程紅焰（跟著 Boss，隨放大倍率） */
+      /* v0.8.133 第 4 關（部位 Boss）：登場「劍塚甦醒」`kind:"graveyard"`；一→二階段 `Stages[4].dir.form`（巨劍崩解成六劍）；二→三階段 `Stages[4].dir.phase3`（古靈降臨） */
+      DIR_CFG[4] = {
+        intro: { kind: "graveyard", dur: 6.2, crackAt: 0.7, riseAt: 1.5, ringsAt: 2.6, handAt: 3.2, pullAt: 3.9, plate: { tin: 0.35, hold: 1.6, tout: 0.35 }, sub: "第四難", tint: "40,60,80", tintA: 0.4,
+          sfxT: [[0.1, "b3_seal", 0.7, 0.6], [0.7, "b3_plunge", 0.9, 0.7], [1.5, "b3_heavy", 0.7, 0.6], [2.6, "b3_seal", 0.8, 1.2], [3.9, "b3_draw", 1.0, 0.8], [4.0, "b3_plunge", 1.0, 0.7]] },
+        form: { kind: "formtrans", dur: 2.2, tint: "40,60,90", tintA: 0.35, sfxT: [[0.05, "b2_shatter", 1.0, 0.8], [0.6, "b2_shatter", 0.9, 1.1], [1.1, "b2_sword_fly", 0.9, 1], [1.8, "b3_plunge", 0.9, 1]] },
+        phase3: { kind: "descend", dur: 3.6, tint: "40,60,100", tintA: 0.35, sfxT: [[0.2, "b2_appear", 0.8, 0.8], [1.4, "b2_appear", 0.9, 1.1], [2.4, "b2_shatter", 1.0, 0.7]] }
+      };
+      if (Stages[4]) Stages[4].fxSheets = (Stages[4].fxSheets || []).concat(["boss4intro", "dir4"]);
       Object.keys(DIR_CFG).forEach(k => { const st = Stages[k]; if (st) { st.dir = DIR_CFG[k]; st.dirMode = true; } });
 
       function dirPoseAt(c, t) { let k = c.poses[0][1]; for (const p of c.poses) if (t >= p[0]) k = p[1]; return k; }
@@ -52,7 +60,9 @@
         Game.dir = { kind, st, c, t: 0, burst: false, a: 0, push: 0, aura: false };
         Boss.facing = Player.x >= Boss.x ? 1 : -1; Boss.vx = 0; Boss.vy = 0; Boss.y = Config.groundY;
         Boss._cineImg = c.poses ? dirPoseAt(c, 0) : "01_idle1";
-        if (c.kind === "mirror" || c.kind === "dash") Boss._introHide = true; /* 鏡花水月：鏡子炸碎前 Boss 不在場 */
+        if (c.kind === "mirror" || c.kind === "dash") Boss._introHide = true;
+        if (c.kind === "graveyard" && Boss._pp) { Boss._pp._hide = true; Boss._pp.sword.mode = "gone"; } /* 巨劍與巨手登場前不在場 */
+        if (c.kind === "graveyard" || c.kind === "formtrans" || c.kind === "descend") { const Dg = Game.dir; Dg.camNow = { zoom: Game.camera.targetZoom + (c.kind === "graveyard" ? 0.1 : 0.05), y: 0, rate: 6 }; Dg.focusX = Boss._pp ? Boss._pp.spiritX : Boss.x; } /* 鏡花水月：鏡子炸碎前 Boss 不在場 */
         Game.introT = 0; Boss.isPerilous = false;
         Music.duck(0.12, (c.burstAt || c.zoomAt) + 0.3);
         if (c.kind === "dash") { const Dm = Game.dir; Dm.camNow = { zoom: Game.camera.targetZoom + 0.2, y: 0, rate: 8 }; Dm.focusX = Boss.x; }
@@ -113,6 +123,10 @@
         const D = Game.dir; if (!D) return;
         const c = D.c; D.t += dt;
         if (c.kind === "assist") { assistStep(D, dt); return; } /* v0.8.115 玄天珠演出：世界暫停（不更新特效／粒子） */
+        if (c.kind === "graveyard") { graveStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
+        D._dtLast = dt;
+        if (c.kind === "formtrans") { formTransStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
+        if (c.kind === "descend") { descendStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
         if (c.kind === "dash") { dashStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; } /* v0.8.130 疾風入場 */
         if (c.kind === "mirror") { mirrorStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; } /* v0.8.127 鏡花水月 */
         if (c.kind === "drop") { dropStep(D, dt); if (!D.freeze) updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
@@ -156,6 +170,7 @@
         Game._p2AuraFx = Game.fxList[Game.fxList.length - 1];
       }
       function dirEnd(D) {
+        if (Boss._pp) { Boss._pp._hide = false; if (D.c.kind === "graveyard") { const sw = Boss._pp.sword; sw.mode = "hover"; sw.x = D.sx + 280; sw.tip = Config.groundY - 120; sw.tx = sw.x; sw.ttip = sw.tip; Boss._pp.cd = 1.4; } if (D.c.kind === "formtrans" && Boss._pp.form) Boss._pp.cd = Math.max(Boss._pp.cd || 0, 1.6); }
         if (D.c.grow) { Boss._scaleMul = D.c.grow; applyBossBody(D.st); Boss.w *= D.c.grow; Boss.h *= D.c.grow; } /* 放大後受擊範圍同步 */
         Game.dir = null; Boss._cineImg = null; Game.hitstopT = 0; Game.camera.shakeRate = 1;
         Music.duckUntil = 0; Music.duckLvl = 1; Boss.y = Config.groundY;
@@ -438,4 +453,86 @@
         const up = Math.min(1, t / 0.5), down = t > tHold ? Math.max(0, 1 - (t - tHold) / 0.5) : 1;
         D.a = (c.tintA || 0.4) * up * down; D.dim = 0;
         c.dur = Math.max(c.dur, tEnd + 0.05);
+      }
+
+      /* ====================== v0.8.133 第 4 關三段演出（部位 Boss：巨劍＝`Boss._pp.sword`、巨手＝`_pp.hands`） ====================== */
+      function dirShards(dt) { const P = Boss._pp, G = Config.groundY; if (!P) return; for (let i = P.shards.length - 1; i >= 0; i--) { const s = P.shards[i]; if (s.fly) { s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 1400 * dt; if (s.y > G) { s.y = G; s.vy *= -0.3; s.vx *= 0.5; } } s.t -= dt; if (s.t <= 0) P.shards.splice(i, 1); } } /* 導演期間碎片照常飛（世界暫停時不會有人更新它們） */
+      function dirSfxT(D) { dirShards(D._dtLast || 0.016); (D.c.sfxT || []).forEach((s, i) => { if (!D["s" + i] && D.t >= s[0]) { D["s" + i] = true; Sound.play(s[1], s[2], s[3]); } }); }
+      function drawJadeSword(x, tipY, alpha, glow) { /* 畫巨劍（劍尖在 tipY、直立朝下），沿用部位引擎的 sw1 圖與 swK／swTip */
+        const A = partsDef().art, img = A && partImg("sw1"); if (!img) return;
+        const K = A.swK, tp = A.swTip[0];
+        ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, tipY);
+        if (glow) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha * glow; ctx.filter = "brightness(1.7)"; }
+        ctx.drawImage(img, -tp[0] * K, -tp[1] * K, img.naturalWidth * K, img.naturalHeight * K); ctx.restore();
+      }
+      /* 登場：霧中殘劍輕顫 → 0.7 地裂 → 1.5 巨劍升起 → 2.6 三道金環逐一亮起 → 3.2 巨手落下握柄 → 3.9 拔劍高舉＋震環＋名牌「壓下」→ 拉回 */
+      function graveStep(D, dt) {
+        const c = D.c, t = D.t, G = Config.groundY, P = Boss._pp, cam = Game.camera, sx = P.spiritX, Pl = c.plate;
+        dirSfxT(D); const tPlate = c.pullAt + 0.55, tHold = tPlate + Pl.tin + Pl.hold, tEnd = tHold + Pl.tout;
+        D.sx = D.sx == null ? sx : D.sx; const x = D.sx + 280;
+        if (!D.crack && t >= c.crackAt && fxReady("boss4intro")) { D.crack = true; spawnFx("boss4intro", 0, x, G + 10, { anchor: "b", w: 520, h: 520, dur: 1.2, col: -1, nf: 4 }); addTrauma(0.6); hapticBuzz([40, 25, 60]); }
+        const ru = t < c.riseAt ? 0 : Math.min(1, (t - c.riseAt) / 1.1), e = 1 - Math.pow(1 - ru, 3);
+        D.tip = (G + 256) + (-376) * e;                                  // 升到 G-120（hover 位）
+        if (ru > 0) drawJadeSwordDeferred(D, x, ru);
+        D.ringsOn = t >= c.ringsAt;
+        if (t >= c.riseAt + 0.6 && t < tPlate && !D.lookUp) { D.lookUp = true; D.camNow = { zoom: cam.targetZoom + 0.0, y: -330, rate: 4 }; } /* 巨劍升起後鏡頭抬起，看劍柄的三道金環與巨手 */
+        const lift = t < c.pullAt ? 0 : Math.min(1, (t - c.pullAt) / 0.5); D.tip -= lift * 150; // 拔劍高舉
+        if (!D.hand && t >= c.handAt && fxReady("boss4intro")) { D.hand = true; D.handT0 = t; }
+        if (!D.pulled && t >= c.pullAt) {
+          D.pulled = true; addTrauma(0.9); triggerHitstopMs(110); screenFlash("rgba(230,255,245,0.55)", 0.4, 0.4); hapticBuzz([70, 40, 110]);
+          if (fxReady("boss4intro")) spawnFx("boss4intro", 3, x, G - 6, { anchor: "b", w: 1100, h: 440, dur: 1.1, alpha: 0.85 });
+        }
+        if (!D.zoomed && t >= tPlate) {
+          D.zoomed = true; D.zoomT0 = t; D.camNow = { zoom: cam.targetZoom + 0.3, y: -240, rate: 20 };
+          Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
+          bossNameCard(D.st, { slam: true, sub: c.sub, dur: (Pl.tin + Pl.hold + Pl.tout) * 1000 }); /* 蓋章壓下（巨劍從天而來，名牌也從上壓下） */
+        }
+        if (D.zoomed && !D.out && t >= tHold) { D.out = true; D.camNow = { zoom: cam.targetZoom, y: 0, rate: 6 }; }
+        const up = Math.min(1, t / 1.0), down = t > tHold ? Math.max(0, 1 - (t - tHold) / 0.6) : 1;
+        D.a = (c.tintA || 0.4) * up * down; D.dim = 0.4 * Math.min(1, t / 0.8) * down;
+        c.dur = Math.max(c.dur, tEnd + 0.05);
+        D.focusX = x;
+      }
+      function drawJadeSwordDeferred(D, x, ru) { D.draw = { x, tip: D.tip, ru }; }
+      /* 登場／轉場時畫在世界座標：劍、金環、巨手（由 drawDirWorld 在 Boss 後面呼叫） */
+      function drawDirWorld() {
+        const D = Game.dir; if (!D) return; const k = D.c.kind; if (k !== "graveyard" && k !== "formtrans" && k !== "descend") return;
+        const G = Config.groundY, now = performance.now() / 1000, P = Boss._pp;
+        if (D.dim > 0.01) { ctx.save(); ctx.fillStyle = `rgba(10,18,30,${D.dim})`; ctx.fillRect(Game.camera.x - 1600, -1600, Config.baseWidth + 3200, 4200); ctx.restore(); }
+        if (k === "graveyard" && D.draw) {
+          const d = D.draw; drawJadeSword(d.x, d.tip, Math.min(1, d.ru * 1.6), D.pulled ? 0.35 : 0);
+          if (D.ringsOn && fxReady("boss4intro")) { /* 三道金環：沿劍柄（劍尖上方 416／442／470，部位引擎 ringY）逐一亮起 → 取列 1 的 4 格（1 環→2 環→3 環→脈動） */
+            const A = fxSheet("boss4intro"), col = Math.min(3, Math.floor((D.t - D.c.ringsAt) / 0.28) + (D.t - D.c.ringsAt > 1.0 ? Math.floor(now * 6) % 2 : 0));
+            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.drawImage(A.img, Math.min(3, col) * 256, 256, 256, 256, d.x - 105, d.tip - 548, 210, 210); ctx.restore();
+          }
+          if (D.hand && fxReady("boss4intro")) { /* 巨手：從上落下握住劍柄（列 2 循環）；手腕在上、手指向下，握處對準劍柄 */
+            const A = fxSheet("boss4intro"), col = Math.floor(now * 6) % 4, hu = Math.min(1, (D.t - D.handT0) / 0.7), hy = d.tip - 640 - (1 - hu) * 420;
+            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Math.min(1, hu * 1.5) * 0.9; ctx.drawImage(A.img, col * 256, 512, 256, 256, d.x - 190, hy - 60, 380, 380); ctx.restore();
+          }
+        }
+      }
+      /* 一→二階段：巨劍整把發光、封印環全亮 → 炸成光 → 光點重組六劍飛散 → 繞圈後劍尖朝下鎖陣 → 結束時呼叫 formationStart 的內容（劍陣的劍已在 formationStart 建好，只是被藏） */
+      function formTransStep(D, dt) {
+        const c = D.c, t = D.t, G = Config.groundY, P = Boss._pp, cam = Game.camera; dirSfxT(D);
+        const x = P.sword.x;
+        if (!D.glow) { D.glow = true; D.tip0 = P.sword.tip; }
+        if (!D.burst && t >= 0.02) { D.burst = true; screenFlash("rgba(230,250,255,0.7)", 0.45, 0.4); addTrauma(0.8); triggerHitstopMs(100); hapticBuzz([60, 30, 100]); if (fxReady("boss4fx2")) { spawnFx("boss4fx2", 3, x, G - 260, { w: 760, dur: 0.7, col: 1 }); } if (fxReady("spark")) spawnFx("spark", 3, x, G - 220, { w: 640, dur: 0.6, alpha: 0.8 }); }
+        const up = Math.min(1, t / 0.8), down = t > c.dur - 0.6 ? Math.max(0, (c.dur - t) / 0.6) : 1;
+        D.a = (c.tintA || 0.35) * up * down; D.dim = 0.3 * up * down; D.focusX = x;
+      }
+      function drawFormGlow(D, x) {
+        const u = D.t / 1.0, P = Boss._pp; if (!P) return;
+        D.draw = null; /* 巨劍本體仍由部位引擎畫（sw.mode）；這裡只疊光與裂紋 */
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; const tip = P.sword.tip;
+        const g = ctx.createLinearGradient(x, tip - 520, x, tip); g.addColorStop(0, `rgba(200,255,235,${0.5 * u})`); g.addColorStop(1, `rgba(120,200,255,${0.25 * u})`);
+        ctx.fillStyle = g; ctx.fillRect(x - 70, tip - 520, 140, 520); ctx.restore();
+      }
+      /* 二→三階段：六劍落地後光塵向中央聚攏 → 光柱 → 背景古靈身影收縮進光柱 → 人形現身 */
+      function descendStep(D, dt) {
+        const c = D.c, t = D.t, G = Config.groundY, P = Boss._pp, cam = Game.camera; dirSfxT(D);
+        const cx = P ? P.coreX || Boss.x : Boss.x;
+        if (!D.gather && t >= 0.1 && fxReady("dir4")) { D.gather = true; spawnFx("dir4", 3, cx, G - 150, { w: 620, dur: 1.5, alpha: 0.8 }); }
+        if (!D.pillar && t >= 1.4 && fxReady("dir4")) { D.pillar = true; spawnFx("dir4", 2, cx, G, { anchor: "b", w: 460, h: 740, dur: 1.5, alpha: 0.7 }); spawnFx("dir4", 1, cx, G - 8, { anchor: "b", w: 1000, h: 400, dur: 1.4, alpha: 0.7 }); screenFlash("rgba(225,240,255,0.5)", 0.3, 0.4); addTrauma(0.6); }
+        const up = Math.min(1, t / 0.8), down = t > c.dur - 0.6 ? Math.max(0, (c.dur - t) / 0.6) : 1;
+        D.a = (c.tintA || 0.35) * up * down; D.dim = 0.35 * up * down; D.focusX = cx;
       }

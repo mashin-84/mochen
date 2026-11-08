@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.132（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.134（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.133～134 第 4 關三段演出改戰場上（取代三支影片；設計卡已同意）**：①`assets/fx/boss4intro.webp`（Gemini 黑底 4×4：列 0 地裂＋光升＋霧、1 三道金環逐一亮起、2 半透明巨手握劍、3 地面震環）、`assets/fx/dir4.webp`（列 0 冰藍白劍刃氣焰、1 劍紋陣環、2 白藍光柱、3 劍刃碎光聚攏）。②`DIR_CFG[4]`（`54_director.js`）三段：**登場 `kind:"graveyard"`**（`graveStep`）：霧中殘劍暗下 → 0.7 地裂 → 1.5 巨劍升起（`sw1` 圖，`drawJadeSword`）→ 鏡頭抬起 → 2.6 三道金環亮起 → 3.2 巨手落下握柄 → 3.9 拔劍高舉＋震環＋名牌「蓋章壓下」（`bossNameCard slam`，小字「第四難」）→ 拉回，結束時巨劍回 `hover`（`dirEnd`）；`Boss._pp._hide`（`53_parts` `drawPartsFront` 開頭跳過）在營地載入／登場開始時藏起巨劍與巨手。**一→二階段 `kind:"formtrans"`**（`formationStart` 結尾 120ms 後 `dirStart("form")`，取代 `formMovie`）：巨劍崩裂、碎片飛散（導演期間 `dirShards` 讓碎片照常飛，否則世界暫停會凍成白方塊）、約 2.2 秒、結束後劍陣冷卻≥1.6 秒。**二→三階段 `kind:"descend"`**（`partsToPhase2` 觸發）：`dir4` 聚氣→光柱＋陣環（alpha 0.7～0.8）→進三階段。影片檔與設定保留（`dirMode` 優先；`formMovieStart`／`p2Movie` 分支留作備案）。③音效：部位引擎的聲音由通用音改成現有專屬音（天劍斬落 `b3_heavy`、掌壓／插地 `b3_plunge`、橫掃 `b3_sweep`、劍氣 `b2_sword_cast`、劍雨 `b2_sword_rain`、飛劍 `b2_sword_fly`）；`S4.sfxClass="light"` 給三階段人形招式。導演音效時序 `sfxT`（`b3_seal`／`b3_plunge`／`b3_draw`／`b2_shatter`／`b2_appear`）。④驗證：登場逐段截圖（地裂光柱、巨劍升起、金環、巨手握柄、震環＋名牌壓下、拉回）、兩段轉場截圖與狀態（劍陣進入、三階段進入）、smoke 第 4 關 ok；`audit_fx` 的部位 Boss 盲點是檢查工具用非部位模式觸發造成的誤報（特效實測都有掛）。待手機實測：登場 6.2 秒是否過長、金環位置（`d.tip-548`）、巨手大小、名牌壓下、轉場時長、新音效音量。
 
 **v0.8.132 莫寒川重劍走路改用影片抽幀（使用者決定「還是用影片好了」）**：Gemini 圖生影片（附 `ref_b3b_walk` 綠幕參考圖、單一固定鏡頭、4 秒 24fps、原地走路；影片全程無漂移：重劍與雙劍都在、步伐均勻、綠幕乾淨）。`tools/proc.py`（`process(d,P,t0,N,refpath,W,H,AX,BY,outdir,prefix,refH)`）：自相關找週期 **35 幀**（一個完整左右兩步），起點第 18 幀，取 12 幀；以「身體高度」對齊動作表（`refH=491`、腳底 `BY=559`、`AX=450`，縮放 0.844；腳底在 550～559 間浮動是抬腳的自然起伏，不拉平）→ `assets/boss3b/walk_01～12.webp`（覆蓋舊的一組）。`stances.B` 移除 `walkSeq`／`walkBob`，改用引擎的 12 幀走路（`SP.walk`，`stride` 260；`getWalkNorm` 依 idle／走路高度比自動校正，實測比值 1.008）。`walkBob` 機制（`64_draw_boss`）保留給之後的姿態用。無頭截圖：左右腳交替、重劍雙劍穩定、與主角大小一致、顏色與動作表一致；smoke 第 3 關 ok。待手機實測：步幅是否貼地（`stride` 260 太快／慢可調）。
 

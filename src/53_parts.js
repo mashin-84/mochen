@@ -219,7 +219,8 @@
         setTelemetry("★ 三道封印盡斷！主劍分作六劍——等劍插地，以蓄力斬一一擊落！");
         hintOnce("form_intro", "六劍陣：劍出招後會插地片刻，這時用【蓄力斬】把它打落");
         const stF = Stages[Boss.stageId];
-        if (stF && stF.formMovie) setTimeout(() => formMovieStart(stF), 850); /* v0.8.104 巨劍崩成六劍的影片：等閃白與命中停頓演完再切黑場 */
+        if (stF && stF.dirMode && stF.dir && stF.dir.form) setTimeout(() => { if (Boss._pp && Boss._pp.form && !Game.dir) dirStart("form", stF); }, 120); /* v0.8.133 巨劍崩成六劍：戰場演出（取代影片） */
+        else if (stF && stF.formMovie) setTimeout(() => formMovieStart(stF), 850); /* v0.8.104 影片版（dirMode 時不用） */
       }
       function formMovieStart(st) {
         const Q = Boss._pp;
@@ -311,11 +312,11 @@
           Sound.play("peril", 0.9, 1.0);
           const hint = key === "pincer" ? "【危・合圍】雙劍貼地夾擊：按 [跳躍] 跳過！" : m.perilType === "sweep" ? "【危・橫掃】巨劍貼地掃來：按 [跳躍] 跳過！" : "【危・劍陣橫穿】副劍貼地穿來：按 [瞬步] 側閃！";
           setTelemetry(hint); hintOnce("p4_" + key, hint);
-        } else if (key === "sky") { Sound.play("slash", 0.6, 0.6); setTelemetry("〔天劍斬落：看地上紅線，閃開！巨劍插地後蓄力斬封印〕"); hintOnce("p4_sky", "巨劍高舉：看地上紅線閃開；插地後按住攻擊放【蓄力斬】斬封印"); }
-        else if (key === "palm") { Sound.play("block", 0.5, 0.5); hintOnce("p4_palm", "劍懸頭上＝劍落：走出紅圈；劍插地後用【蓄力斬】打落"); }
-        else if (key === "finger") { Sound.play("flysword", 0.5, 0.8); hintOnce("p4_finger", "劍尖指向你＝劍氣三連：逐一招架；發完會插地，用【蓄力斬】打落"); }
-        else if (key === "rain" || key === "rain2") { Sound.play("peril", 0.6, 1.4); hintOnce("p4_rain", "萬劍歸宗：地上紅圈是落點，走位避開"); }
-        else if (key === "plant") { Sound.play("block", 0.8, 0.6); }
+        } else if (key === "sky") { Sound.play("b3_heavy", 0.9, 0.7); setTelemetry("〔天劍斬落：看地上紅線，閃開！巨劍插地後蓄力斬封印〕"); hintOnce("p4_sky", "巨劍高舉：看地上紅線閃開；插地後按住攻擊放【蓄力斬】斬封印"); }
+        else if (key === "palm") { Sound.play("b3_plunge", 0.8, 0.8); hintOnce("p4_palm", "劍懸頭上＝劍落：走出紅圈；劍插地後用【蓄力斬】打落"); }
+        else if (key === "finger") { Sound.play("b2_sword_cast", 0.8, 1); hintOnce("p4_finger", "劍尖指向你＝劍氣三連：逐一招架；發完會插地，用【蓄力斬】打落"); }
+        else if (key === "rain" || key === "rain2") { Sound.play("b2_sword_rain", 0.9, 1); hintOnce("p4_rain", "萬劍歸宗：地上紅圈是落點，走位避開"); }
+        else if (key === "plant") { Sound.play("b3_plunge", 0.9, 0.9); }
         return a;
       }
       function actCancel(a) {
@@ -340,7 +341,7 @@
             if (a.t >= m.active) {
               sw.tip = G + 256; sw.mode = "stuck";
               addTrauma(k === "sky" ? 0.5 : 0.35); hapticBuzz(30);
-              Sound.play("hit", 1.0, 0.45); Sound.play("block", 0.8, 0.5);
+              Sound.play("b3_plunge", 1.0, 0.8); Sound.play("hit", 0.6, 0.45); /* 插地 */
               emitDust(a.x, G, 1, 6, 1.5); emitDust(a.x, G, -1, 6, 1.5);
               if (fxReady("spark")) spawnFx("spark", 2, a.x, G - 14, { w: 340, h: 170, dur: 0.45 }); else Game.shockwaves.push({ x: a.x, y: G - 10, r: 10, maxR: 170, alpha: 0.9, color: "#bae6fd" }); /* v0.8.124 衝擊環改生圖（壓扁成地面橢圓） */
               if (fxReady("boss4fx2")) spawnFx("boss4fx2", 0, a.x, G - 110, { w: 420, dur: 0.7 });
@@ -360,7 +361,7 @@
         if (k === "sweep") {
           if (a.st === "windup") {
             sw.mode = "sweepw"; sw.ang = Math.PI / 2 * a.s; sw.tx = a.x0 + a.s * 60 * Math.min(1, a.t / m.windup); sw.ttip = G - 30;
-            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("slash", 1.0, 0.55); addTrauma(0.2);
+            if (a.t >= m.windup) { a.st = "active"; a.t = 0; Sound.play("b3_sweep", 1.0, 0.8); addTrauma(0.2);
               if (fxReady("boss4fx2")) { const s0 = a.s; spawnFx("boss4fx2", 1, sw.x + s0 * 200, G - 85, { w: 560, h: 230, dur: m.active + 0.35, facing: s0, follow: () => ({ x: sw.x + s0 * 200, y: G - 85 }) }); } }
           } else if (a.st === "active") {
             sw.mode = "sweep"; sw.ttip = G - 30;
@@ -410,7 +411,7 @@
             while (a.shots < m.count && a.t >= a.shots * m.gap) {
               const dir = Player.x >= h.x ? 1 : -1;
               Game.flyingSwords.push({ x: h.x + dir * 30, y: G - 125, vx: dir * m.speed, vy: 0, dir, damage: m.damage, reflected: false, life: 2.4, color: "#7dd3fc", trajectory: "linear", kind: null });
-              Sound.play("flysword", 0.75, 1.0 + a.shots * 0.08);
+              Sound.play("b2_sword_fly", 0.8, 1.0 + a.shots * 0.06);
               h.flash = 1; a.shots++;
             }
             if (a.t >= (m.count - 1) * m.gap + 0.12) { a.st = "rest"; a.t = 0; }
@@ -582,7 +583,8 @@
         triggerHitstopMs(120); addTrauma(0.85); hapticBuzz([60, 40, 120]);
         Game.slowT = 0.8; Game.slowScale = 0.3;
         const st4 = Stages[Boss.stageId];
-        if (st4.p2Movie && playMovie(st4.p2Movie, { onEnd: () => { /* 影片已演完崩碎與降臨：直接跳到轉場尾段 */
+        if (st4.dirMode && st4.dir && st4.dir.phase3) { setTimeout(() => { if (Boss._pp && Boss._pp.phase === "t" && !Game.dir) dirStart("phase3", st4); }, 100); }
+        else if (st4.p2Movie && playMovie(st4.p2Movie, { onEnd: () => { /* 影片已演完崩碎與降臨：直接跳到轉場尾段 */
           const Q = Boss._pp; if (!Q || Q.phase !== "t") return;
           Q._shattered = true; Q._roar = true; Q.sword.mode = "gone"; Q.tt = Math.max(Q.tt, 2.4);
           Game.slowT = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 1.0);
@@ -786,6 +788,7 @@
       function drawPartsFront() {
         const P = Boss._pp, G = Config.groundY, now = performance.now() / 1000;
         const sw = P.sword;
+        if (P._hide) return; /* v0.8.133 登場演出期間：巨劍與巨手由導演自己畫／藏 */
         /* 巨劍：tip＝劍尖，ang 0＝劍尖朝下直立；長 480（劍身 370＋劍柄 110） */
         if (sw.mode !== "gone") {
           ctx.save();

@@ -142,6 +142,7 @@
         drawFlyingSwords();
         drawCineTrail();
         drawIllusions();
+        drawDirWorld(); /* v0.8.133 第 4 關三段演出：劍、金環、巨手、暗層 */
         drawIntroGhosts(); /* v0.8.127 鏡花水月：分身殘影（畫在 Boss 後面） */
         drawBossAura(); /* v0.8.125 危招／霸體光暈（畫在 Boss 後面） */
         drawBossEntity();
