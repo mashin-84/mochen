@@ -124,7 +124,7 @@
           A: { sprite: "boss3", stride: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], remap: { "12_thrust_rec": "10_slash_rec" }, /* 雙劍表第 12 格只畫了手、沒有劍，突刺收招改用第 10 格 */
             pool: [["slash1", 26], ["exclusive_combo", 22], ["exclusive_feint", 20], ["slash2", 10], ["dash_rush", 8], ["thrust_peril", 7], ["sweep_peril", 7]],
             far: ["dash_rush"], farP2: [] },
-          B: { sprite: "boss3b", stride: 300, walkSeq: ["03_walk1", "01_idle1"], walkBob: 7, /* v0.8.131 重劍走路：只有 03 有劍的跨步格，改成跨步／收腳兩格慢速交替＋上下起伏（原 4 格輪播且步幅 200，像滑行） */ alias: { thrust_peril: "heavy_thrust", sweep_peril: "heavy_sweep" }, /* v0.8.60 低掃在重劍姿態也換成千鈞橫江斬（否則會找雙劍圖） */
+          B: { sprite: "boss3b", stride: 260, /* v0.8.132 重劍走路改用 Gemini 走路影片抽幀 walk_01～12（綠幕、35 幀週期；原 walkSeq 兩格交替為過渡方案） */ alias: { thrust_peril: "heavy_thrust", sweep_peril: "heavy_sweep" }, /* v0.8.60 低掃在重劍姿態也換成千鈞橫江斬（否則會找雙劍圖） */
             pool: [["heavy_slam", 30], ["heavy_slash", 22], ["heavy_zone", 18], ["heavy_thrust", 15], ["heavy_sweep", 15]],
             poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 18], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
             far: [], farP2: ["heavy_zone"] }
