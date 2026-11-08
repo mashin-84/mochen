@@ -69,6 +69,7 @@
         /* v0.8.100 第 2 關改影片過場（日式賽璐璐風）：登場「千鏡一影」、二階段「真假難辨」；舊的剪影＋鏡片聚合演出停用 */
         S2.introMovie = "assets/boss2/intro"; S2.p2Movie = "assets/boss2/p2";
         /* v0.8.67 Boss 專屬音效（ElevenLabs）：招式 sfx {w 前搖, a 出招}；其他事件見 bsfx */
+        S2.sfxClass = "light"; /* v0.8.127 沒專屬音效的招（罡風陣、雷劫陣）走輕武器類別音效庫 */
         S2.sfx = { tpOut: ["b2_vanish", 0.85], tpIn: ["b2_appear", 0.9], split: ["b2_split", 0.9], ilBreak: ["b2_shatter", 0.8], ilShard: ["b2_shard_hit", 0.85], swordFly: ["b2_sword_fly", 0.55], swordRain: ["b2_sword_rain", 0.85], introSwirl: ["b2_vortex", 0.8], introLand: ["b2_shatter", 0.85] };
         [["slash1", { a: "b2_fan" }], ["thrust_peril", { a: "b2_thrust" }], ["sweep_peril", { a: "b2_vortex" }], ["flyswords", { w: "b2_sword_cast" }], ["sky_swords", { w: "b2_sword_cast" }]].forEach(([k, s]) => { if (M[k]) M[k].sfx = s; });
         /* v0.8.56 五招三拍關鍵格（生圖 3×5，縮放 1.06、腳底 y=560、x=450）＋分層場景（迷蹤陣台地面帶＋前景石欄松枝） */

@@ -16,13 +16,12 @@
             pillar: { sheet: "dir1", row: 2, w: 430, dur: 0.9 }, title: ["煞氣暴走", "二　階　段", "#f87171"], blast: true, grow: 1.18,
             sfx: [["peril", 1.0, 0.6], ["execution", 0.9, 0.7]] }
         },
-        2: { /* 千幻長老・顧天風：蹲伏、八卦風起 → 舉扇，陣紋大亮 */
-          intro: { dur: 2.5, burstAt: 1.2, poses: [[0, "17_kneel"], [1.2, "14_cast"], [1.9, "07_windup"]], tint: "70,50,140", tintA: 0.3,
-            aura: { sheet: "boss2fx", row: 2, w: 520, at: 0.3, fps: 8, dy: -80, anchor: "c" }, ring: { sheet: "exec2", row: 3, w: 800, dur: 0.8 }, name: true,
-            sfx: [["execution", 0.7, 1.1]] },
-          phase: { dur: 2.6, burstAt: 1.15, poses: [[0, "17_kneel"], [1.15, "14_cast"], [1.95, "07_windup"]], tint: "76,50,150", tintA: 0.42,
-            aura: { sheet: "boss2fx", row: 2, w: 640, at: 0.2, fps: 9, dy: -80, anchor: "c" }, ring: { sheet: "exec2", row: 3, w: 1100, dur: 0.9 },
-            title: ["真假難辨", "二　階　段", "#c4b5fd"], sfx: [["peril", 0.9, 0.9], ["execution", 0.8, 1.1]] }
+        2: { /* 千幻長老・顧天風：登場「鏡花水月」（鏡片環繞→鏡面映影→炸碎現身＋分身一圈閃現→八卦陣紋→名牌滑入）；二階段「真假難辨」（跪姿→扇裂→靈霧升騰→光柱鏡片風暴→震飛主角，不放大，靈霧常駐） */
+          intro: { kind: "mirror", dur: 5.5, ringAt: 0.15, mirrorAt: 1.45, burstAt: 3.0, plate: { tin: 0.22, hold: 1.7, tout: 0.3 }, sub: "第二難", tint: "96,70,170", tintA: 0.34,
+            sfxT: [[0.15, "b2_vanish", 0.85, 0.9], [1.45, "b2_appear", 0.8, 0.85], [2.95, "b2_shatter", 1.0, 1], [3.05, "b2_split", 0.8, 1]] },
+          phase: { dur: 2.8, burstAt: 1.3, poses: [[0, "17_kneel"], [1.3, "14_cast"], [2.0, "07_windup"]], tint: "76,50,150", tintA: 0.4, blast: true,
+            aura: { sheet: "dir2", row: 0, w: 420, at: 0.15, fps: 9, dy: 8 }, gather: { sheet: "dir2", row: 3, w: 540, at: 0.1, dy: -120 }, ring: { sheet: "dir2", row: 1, w: 1100, dur: 0.9 },
+            pillar: { sheet: "dir2", row: 2, w: 470, dur: 1.0 }, title: ["真假難辨", "二　階　段", "#c4b5fd"], sfx: [["peril", 0.9, 0.9], ["b2_shatter", 1.0, 1], ["b2_split", 0.8, 1]] }
         },
         3: { /* 莫寒川：跪地、劍氣聚攏 → 拔出玄鐵重劍（影片時代改回戰場上拔劍） */
           intro: { dur: 2.5, burstAt: 1.2, poses: [[0, "17_kneel"], [1.2, "14_cast"], [1.9, "07_windup"]], tint: "30,41,70", tintA: 0.3,
@@ -34,6 +33,8 @@
         }
       };
       if (Stages[1]) Stages[1].fxSheets = (Stages[1].fxSheets || []).concat(["land", "ult", "boss2", "dir1"]); /* 階段轉換用的衝擊波環、光柱、氣焰 */
+      DIR_CFG[2].p2Aura = { sheet: "dir2", row: 0, w: 360, fps: 9, dy: 6, alpha: 0.75 }; /* 二階段全程翠綠靈霧（詭譎，不放大） */
+      if (Stages[2]) Stages[2].fxSheets = (Stages[2].fxSheets || []).concat(["boss2intro", "dir2"]);
       DIR_CFG[1].p2Aura = { sheet: "dir1", row: 0, w: 330, fps: 9, dy: 6, alpha: 0.85 }; /* 二階段全程紅焰（跟著 Boss，隨放大倍率） */
       Object.keys(DIR_CFG).forEach(k => { const st = Stages[k]; if (st) { st.dir = DIR_CFG[k]; st.dirMode = true; } });
 
@@ -48,9 +49,11 @@
         }
         Game.dir = { kind, st, c, t: 0, burst: false, a: 0, push: 0, aura: false };
         Boss.facing = Player.x >= Boss.x ? 1 : -1; Boss.vx = 0; Boss.vy = 0; Boss.y = Config.groundY;
-        Boss._cineImg = dirPoseAt(c, 0);
+        Boss._cineImg = c.poses ? dirPoseAt(c, 0) : "01_idle1";
+        if (c.kind === "mirror") Boss._introHide = true; /* 鏡花水月：鏡子炸碎前 Boss 不在場 */
         Game.introT = 0; Boss.isPerilous = false;
         Music.duck(0.12, (c.burstAt || c.zoomAt) + 0.3);
+        if (c.kind === "mirror") { const Dm = Game.dir; Dm.camNow = { zoom: Game.camera.targetZoom + 0.2, y: 0, rate: 8 }; Dm.focusX = Boss.x; }
         if (kind === "phase") { screenFlash("rgba(255,255,255,0.7)", 0.6, 0.4); triggerHitstopMs(90); addTrauma(0.35); hapticBuzz([40, 30, 80]); }
         return true;
       }
@@ -107,6 +110,7 @@
         const D = Game.dir; if (!D) return;
         const c = D.c; D.t += dt;
         if (c.kind === "assist") { assistStep(D, dt); return; } /* v0.8.115 玄天珠演出：世界暫停（不更新特效／粒子） */
+        if (c.kind === "mirror") { mirrorStep(D, dt); updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; } /* v0.8.127 鏡花水月 */
         if (c.kind === "drop") { dropStep(D, dt); if (!D.freeze) updateHitParticles(dt); if (D.t >= c.dur) dirEnd(D); return; }
         Boss._cineImg = dirPoseAt(c, D.t);
         if (!D.aura && c.aura && D.t >= (c.aura.at || 0) && fxReady(c.aura.sheet)) {
@@ -348,4 +352,45 @@
         ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Boss.state === "windup" ? 0.45 + 0.55 * Math.min(1, p * 1.6) : 1;
         ctx.drawImage(A.img, col * 256, kind * 256, 256, 256, cx - cell / 2, cy - cell / 2, cell, cell);
         ctx.restore();
+      }
+
+      /* ====================== v0.8.127 第 2 關登場「鏡花水月」（boss2intro 生圖：列 0 鏡片環、1 鏡面映影、2 炸碎、3 八卦陣紋） ======================
+       * 0.15 鏡片環繞（越轉越小）→ 1.45 鏡面浮現映出剪影 → 3.0 炸碎：顧天風現身、8 個分身殘影一圈閃現後收攏消散、地面八卦陣紋脈動
+       * → 3.25 名牌滑入＋鏡頭瞬間拉近＋開始配樂 → 名牌飛走、鏡頭縮回 → 結束。 */
+      function mirrorStep(D, dt) {
+        const c = D.c, t = D.t, G = Config.groundY, cam = Game.camera, P = c.plate, cx = Boss.x, cy = G - 170, z0 = cam.targetZoom + 0.2;
+        const tPlate = c.burstAt + 0.25, tHold = tPlate + P.tin + P.hold, tEnd = tHold + P.tout;
+        (c.sfxT || []).forEach((s, i) => { if (!D["s" + i] && t >= s[0]) { D["s" + i] = true; Sound.play(s[1], s[2], s[3]); } });
+        if (!D.ring && t >= c.ringAt && fxReady("boss2intro")) { D.ring = true; spawnFx("boss2intro", 0, cx, cy, { w: 560, dur: c.mirrorAt + 0.8 - c.ringAt, loop: true, fps: 8, grow: -0.5, alpha: 0.9 }); }
+        if (!D.mir && t >= c.mirrorAt && fxReady("boss2intro")) { D.mir = true; spawnFx("boss2intro", 1, cx, cy, { w: 420, dur: c.burstAt - c.mirrorAt }); }
+        if (!D.burst && t >= c.burstAt) {
+          D.burst = true; Boss._introHide = false; D.ghostT0 = t;
+          if (fxReady("boss2intro")) { spawnFx("boss2intro", 2, cx, cy, { w: 560, dur: 0.6 }); spawnFx("boss2intro", 3, cx, G - 4, { anchor: "b", w: 820, h: 330, dur: 1.6 }); }
+          screenFlash("rgba(230,255,245,0.8)", 0.65, 0.4); addTrauma(0.7); triggerHitstopMs(100); hapticBuzz([50, 30, 90]);
+        }
+        if (!D.zoomed && t >= tPlate) {
+          D.zoomed = true; D.zoomT0 = t; D.camNow = { zoom: z0 + 0.6, y: -30, rate: 40 };
+          Music.duckUntil = 0; Music.duckLvl = 1; if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
+          bossNameCard(D.st, { slide: true, sub: c.sub, tin: P.tin, hold: P.hold, tout: P.tout });
+        }
+        if (D.zoomed && !D.out && t >= tHold) { D.out = true; D.camNow = { zoom: cam.targetZoom, y: 0, rate: 7 }; }
+        const up = Math.min(1, t / 1.2), down = t > tHold ? Math.max(0, 1 - (t - tHold) / 0.5) : 1;
+        D.a = (c.tintA || 0.34) * up * down;
+        D.dim = 0.62 * Math.min(1, t / 0.7) * (t < c.burstAt ? 1 : Math.max(0, 1 - (t - c.burstAt) / 1.4)); /* 背景暗化（鏡片是加亮疊色，亮背景上會變純白） */
+        if (t >= c.burstAt - 0.001 && t < tEnd) Boss._cineImg = "01_idle1";
+        c.dur = Math.max(c.dur, tEnd + 0.05);
+      }
+      /* 分身殘影：8 個半透明顧天風在地面排成一圈，0.9 秒內向本體收攏並淡出（用 01_idle1 立繪，畫在本體後面） */
+      function drawIntroGhosts() {
+        const D = Game.dir; if (!D || !D.c || D.c.kind !== "mirror") return;
+        if (D.dim > 0.01) { ctx.save(); ctx.fillStyle = `rgba(12,8,38,${D.dim})`; ctx.fillRect(Game.camera.x - 1600, -1600, Config.baseWidth + 3200, 4200); ctx.restore(); } /* 世界座標的暗層：只暗背景，鏡片與 Boss 畫在它之後 */
+        if (D.ghostT0 == null) return;
+        const u = (D.t - D.ghostT0) / 1.0; if (u < 0 || u > 1) return;
+        const SP = Stages[Boss.stageId].sprite ? getBossSprite(Stages[Boss.stageId].sprite) : null, img = SP && SP.imgs["01_idle1"];
+        if (!img || !img.complete || !img.naturalWidth) return;
+        const k = bossVis(Stages[Boss.stageId]).k, offs = [-430, -310, -200, -105, 105, 200, 310, 430], e = u * u * (3 - 2 * u);
+        offs.forEach((o, i) => {
+          ctx.save(); ctx.globalAlpha = 0.62 * (1 - u) * (u < 0.12 ? u / 0.12 : 1);
+          ctx.translate(Boss.x + o * (1 - 0.85 * e), Boss.y + GROUND_SINK); ctx.scale((i % 2 ? 1 : -1) * k, k); ctx.drawImage(img, -450, -560); ctx.restore();
+        });
       }
