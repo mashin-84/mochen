@@ -277,6 +277,7 @@
         Player.vy += Config.gravity * dt;
         Game._vyBefore = Player.vy;
         Player.y += Player.vy * dt;
+        if (Player.y < Config.groundY - 22) Player._airMs = performance.now(); /* v0.8.138 落地寬限：離地 22px 以上的最後時刻（第 4 關合圍用） */
 
         if (Player.y >= Config.groundY) {
           Player.y = Config.groundY;

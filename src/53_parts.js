@@ -310,7 +310,7 @@
         /* 預警：危招紅＋出招聲＋提示；其餘也有起手聲 */
         if (m.isPerilous) {
           Sound.play("peril", 0.9, 1.0);
-          const hint = key === "pincer" ? "【危・合圍】雙劍貼地夾擊：按 [跳躍] 跳過！" : m.perilType === "sweep" ? "【危・橫掃】巨劍貼地掃來：按 [跳躍] 跳過！" : "【危・劍陣橫穿】副劍貼地穿來：按 [瞬步] 側閃！";
+          const hint = key === "pincer" ? "【危・合圍】雙劍貼地夾擊：劍收攏前就要先跳！（不能招架）" : m.perilType === "sweep" ? "【危・橫掃】巨劍貼地掃來：按 [跳躍] 跳過！" : "【危・劍陣橫穿】副劍貼地穿來：按 [瞬步] 側閃！";
           setTelemetry(hint); hintOnce("p4_" + key, hint);
         } else if (key === "sky") { Sound.play("b3_heavy", 0.9, 0.7); setTelemetry("〔天劍斬落：看地上紅線，閃開！巨劍插地後蓄力斬封印〕"); hintOnce("p4_sky", "巨劍高舉：看地上紅線閃開；插地後按住攻擊放【蓄力斬】斬封印"); }
         else if (key === "palm") { Sound.play("b3_plunge", 0.8, 0.8); hintOnce("p4_palm", "劍懸頭上＝劍落：走出紅圈；劍插地後用【蓄力斬】打落"); }
@@ -435,7 +435,7 @@
           } else if (a.st === "active") {
             const p = Math.min(1, a.t / m.active);
             h.x = h.tx = a.x0 + (a.x1 - a.x0) * p; h.y = h.ty = gy;
-            if (!a.hit && Math.abs(Player.x - h.x) <= 110 && Player.y >= G - 230) { a.hit = true; partStrike(h.x + a.s * 80, m); }
+            if (!a.hit && Math.abs(Player.x - h.x) <= 110 && Player.y >= G - (k === "pincer" ? 22 : 230) && !(k === "pincer" && performance.now() - (Player._airMs || 0) < 130)) { /* v0.8.138 合圍：離地超過 22px 就算跳過（原 38px，跳得低也被打） */ a.hit = true; partStrike(h.x + a.s * 80, m); }
             if (a.t >= m.active) { a.st = "rest"; a.t = 0; }
           } else if (a.st === "rest") { /* v0.8.92 穿過後插地，可擊落 */
             if (!a._rip) { a._rip = 1; plantFx(h.x); }

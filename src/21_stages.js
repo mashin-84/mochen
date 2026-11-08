@@ -336,7 +336,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             finger: { name: "劍氣三連", windup: 0.6, count: 3, gap: 0.4, speed: 820, rest: 1.4, recover: 0.45, damage: 110 },
             rain:   { name: "萬劍歸宗", windup: 0.6, waves: 3, per: 5, gap: 0.75, warn: 0.8, r: 62, recover: 0.5, damage: 140, unblockable: true },
             grab:   { name: "【危】劍陣橫穿", windup: 0.85, active: 0.38, span: 1300, rest: 1.4, lift: 0.4, damage: 300, isPerilous: true, perilType: "grab" },
-            pincer: { name: "【危】雙劍合圍", windup: 0.9, active: 0.42, span: 1280, rest: 1.4, lift: 0.4, damage: 260, isPerilous: true, perilType: "sweep" },
+            pincer: { name: "【危】雙劍合圍", windup: 0.9, active: 0.8, span: 1280, /* v0.8.138 active 0.42→0.8：劍飛過的速度約 3000→1600px/s，劍從場邊飛到你身上約 0.4 秒（原 0.21 秒，看到才跳來不及）；另有落地寬限 0.13 秒 */ rest: 1.4, lift: 0.4, damage: 260, isPerilous: true, perilType: "sweep" },
             plant:  { name: "古靈失衡", windup: 0.5, active: 0.12, stuck: 3.0, pull: 0.45, w: 150, damage: 0 }
           },
           pool: [["sky", 44], ["sweep", 34], ["rain", 22]], /* v0.8.92 一階：只有主劍 */
