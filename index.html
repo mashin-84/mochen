@@ -2083,7 +2083,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.119";
+      const ASSET_VER = "0.8.120";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -4453,20 +4453,22 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           triggerHitstop(6);
           triggerShake(0, 1, 22, 0.28);
           spawnSparks(Boss.x, Boss.y - 60, "mikiri", 0);
-          damageBossPosture(50, "符陣定身！架勢 +50%");
-          spawnFloatingText(Boss.x, Boss.y - 140, "【符陣定身】禁錮 2 秒＋削 50% 架勢！", "#60a5fa", 1.28);
+          damageBossPosture(Math.round(Boss.maxPosture * 0.3), "符陣定身！架勢 +30%", null, true); /* v0.8.120 原 50 點×問心封印 2 倍＝一發直接滿架勢 → 改為上限的 30%、不吃封印 */
+          spawnFloatingText(Boss.x, Boss.y - 140, "【符陣定身】禁錮 2 秒＋削 30% 架勢！", "#60a5fa", 1.28);
           setTelemetry("✦ 師弟妹施展【符陣定身】：敵方受困定身並大損架勢！");
         }
         syncAssistUI();
       }
 
-      function damageBossPosture(amount, label, cap) {
+      function damageBossPosture(amount, label, cap, noSeal) {
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
         
         let postureGain = amount;
+        if (!noSeal) { /* v0.8.120 協助技（符陣定身）不吃封印倍率 */
         if (Progress.equippedSeals.includes("wenxin")) postureGain *= 2.0;
         if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) postureGain *= 1.8;
+        }
 
         if (cap) Boss.posture = Math.max(Boss.posture, Math.min(cap, Boss.posture + postureGain));
         else Boss.posture = Math.min(Boss.maxPosture, Boss.posture + postureGain);
@@ -8303,7 +8305,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       /* v0.8.117 營地選擇玄天珠之力（跟師妹說話後詢問；選擇存在 localStorage qingyun_assist） */
       const ASSIST_OPTS = [
         { key: "lingguang", name: "太初靈光", tag: "打斷", desc: "珠子命中時強制打斷敵人出招，並削 22 點架勢。" },
-        { key: "fuzhen", name: "符陣定身", tag: "控制", desc: "珠子命中後定身敵人 2 秒，並削 50% 架勢。" },
+        { key: "fuzhen", name: "符陣定身", tag: "控制", desc: "珠子命中後定身敵人 2 秒，並削 30% 架勢。" },
         { key: "tishen", name: "太初替身", tag: "護身", desc: "珠子融入身體：2.2 秒無敵、回復氣血，並抵擋一次致命傷。" }
       ];
       function loadAssistChoice() {

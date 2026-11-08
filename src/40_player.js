@@ -768,20 +768,22 @@
           triggerHitstop(6);
           triggerShake(0, 1, 22, 0.28);
           spawnSparks(Boss.x, Boss.y - 60, "mikiri", 0);
-          damageBossPosture(50, "符陣定身！架勢 +50%");
-          spawnFloatingText(Boss.x, Boss.y - 140, "【符陣定身】禁錮 2 秒＋削 50% 架勢！", "#60a5fa", 1.28);
+          damageBossPosture(Math.round(Boss.maxPosture * 0.3), "符陣定身！架勢 +30%", null, true); /* v0.8.120 原 50 點×問心封印 2 倍＝一發直接滿架勢 → 改為上限的 30%、不吃封印 */
+          spawnFloatingText(Boss.x, Boss.y - 140, "【符陣定身】禁錮 2 秒＋削 30% 架勢！", "#60a5fa", 1.28);
           setTelemetry("✦ 師弟妹施展【符陣定身】：敵方受困定身並大損架勢！");
         }
         syncAssistUI();
       }
 
-      function damageBossPosture(amount, label, cap) {
+      function damageBossPosture(amount, label, cap, noSeal) {
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
         
         let postureGain = amount;
+        if (!noSeal) { /* v0.8.120 協助技（符陣定身）不吃封印倍率 */
         if (Progress.equippedSeals.includes("wenxin")) postureGain *= 2.0;
         if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) postureGain *= 1.8;
+        }
 
         if (cap) Boss.posture = Math.max(Boss.posture, Math.min(cap, Boss.posture + postureGain));
         else Boss.posture = Math.min(Boss.maxPosture, Boss.posture + postureGain);

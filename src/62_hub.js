@@ -76,7 +76,7 @@
       /* v0.8.117 營地選擇玄天珠之力（跟師妹說話後詢問；選擇存在 localStorage qingyun_assist） */
       const ASSIST_OPTS = [
         { key: "lingguang", name: "太初靈光", tag: "打斷", desc: "珠子命中時強制打斷敵人出招，並削 22 點架勢。" },
-        { key: "fuzhen", name: "符陣定身", tag: "控制", desc: "珠子命中後定身敵人 2 秒，並削 50% 架勢。" },
+        { key: "fuzhen", name: "符陣定身", tag: "控制", desc: "珠子命中後定身敵人 2 秒，並削 30% 架勢。" },
         { key: "tishen", name: "太初替身", tag: "護身", desc: "珠子融入身體：2.2 秒無敵、回復氣血，並抵擋一次致命傷。" }
       ];
       function loadAssistChoice() {
