@@ -269,6 +269,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         M.shock_push.frames = F1("48_sp_wind", "49_sp_hit", "50_sp_rec");
         M.charge_rush.frames = F1("51_ch_wind", "52_ch_run", "53_ch_stop");
         M.shadow_strike.frames = F1("54_sh_vanish", "55_sh_strike", "42_cb_rec");
+        /* v0.8.122 第 1 關位移／瞬移招掛生圖（暫用同關 land 特效圖：列 0 紅環、列 1 煙塵；之後可換 Gemini 專屬圖，只改這裡的 sheet／row） */
+        M.dash_in.fxAct = { sheet: "land", row: 1, ox: -30, oy: 8, w: 300, dur: 0.5, anchor: "b" };
+        M.backstep.fxAct = { sheet: "land", row: 1, ox: 0, oy: 8, w: 300, dur: 0.5, anchor: "b" };
+        M.shadow_strike.fxVanish = { sheet: "land", row: 1, ox: 0, oy: 8, w: 340, dur: 0.55, anchor: "b" };
+        M.shadow_strike.fxAppear = { sheet: "land", row: 0, ox: 0, oy: 10, w: 420, h: 170, dur: 0.5, anchor: "b" };
         Stages[1].pool = [
           ["slash1", 14, "break"], ["slash2", 9], ["exclusive_combo", 11], ["combo_delay", 11], ["thrust_peril", 9], ["sweep_peril", 8],
           ["leap_slam", 16, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],

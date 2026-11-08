@@ -251,10 +251,11 @@
       }
 
           function drawFlyingSwords() {
-            const fsa = Stages[Boss.stageId] && Stages[Boss.stageId].flySwordArt; /* v0.8.65 飛劍改畫生圖：{sheet, row, frames, fps, w, tip} */
-            const fsImg = fsa && fxReady(fsa.sheet) ? fxSheet(fsa.sheet).img : null;
+            const stBA = Stages[Boss.stageId] || {}; /* v0.8.65 飛劍改畫生圖：{sheet, row, frames, fps, w, tip}；v0.8.122 投射物資料化：Stages[n].bulletArts[bulletKind] 同格式（戈、箭…），沒圖才退回程式畫 */
             for (const sw of Game.flyingSwords) {
-              if (fsImg && !sw.kind) {
+              const fsa = sw.kind ? (stBA.bulletArts && stBA.bulletArts[sw.kind]) : stBA.flySwordArt;
+              const fsImg = fsa && fxReady(fsa.sheet) ? fxSheet(fsa.sheet).img : null;
+              if (fsImg) {
                 const fr = fsa.frames || [1, 2], f = fr[Math.floor(performance.now() / 1000 * (fsa.fps || 12)) % fr.length], w = fsa.w || 150, k = w / 256;
                 ctx.save();
                 ctx.translate(sw.x, sw.y);

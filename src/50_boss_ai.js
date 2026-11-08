@@ -413,8 +413,10 @@
                 bsfx("tpOut");
               }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
+              if (move.fxVanish) spawnMoveFx(move.fxVanish); /* v0.8.122 瞬移消失特效（資料化，每招自己掛圖；位置＝消失前的 Boss） */
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
+              if (move.fxAppear) spawnMoveFx(move.fxAppear); /* 現身特效 */
               Boss.flashFrames = 3;
               if (move.tpFx) { if (fxReady("boss2fx")) spawnFx("boss2fx", 2, Boss.x, Config.groundY - 20, { w: 360, h: 360, dur: 0.4 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
               if (!bsfx("tpIn")) Sound.play("assist", 0.85, 1.45);

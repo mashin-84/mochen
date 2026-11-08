@@ -169,8 +169,8 @@
         setTimeout(() => spawnFx("exec2", 2, Boss.x, Config.groundY - 10, { anchor: "b", w: 460, dur: 2.8, loop: true, fps: 5, follow: () => ({ x: Boss.x, y: Config.groundY - 10 }) }), 500);
       }
       function swordImpactFx(sw) {
-        if (sw && sw.kind === "halberd") spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 });
-        const fsa = sw && !sw.kind && Stages[Boss.stageId] && Stages[Boss.stageId].flySwordArt; /* v0.8.66 飛劍命中／落地的碎裂圖 */
+        const stIF = Stages[Boss.stageId] || {}, fsa = sw && (sw.kind ? (stIF.bulletArts && stIF.bulletArts[sw.kind]) : stIF.flySwordArt);
+        if (sw && sw.kind === "halberd" && !(fsa && fxReady(fsa.sheet) && fsa.breakRow != null)) spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 }); /* v0.8.66 飛劍命中／落地的碎裂圖 */
         if (!fsa || !fxReady(fsa.sheet)) return;
         const w = fsa.w || 150, k = w / 256;
         if (sw.trajectory === "vertical" && sw.y >= Config.groundY - 40 && fsa.groundRow != null) {

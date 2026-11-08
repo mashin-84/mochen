@@ -2079,7 +2079,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.121";
+      const ASSET_VER = "0.8.122";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3083,6 +3083,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         M.shock_push.frames = F1("48_sp_wind", "49_sp_hit", "50_sp_rec");
         M.charge_rush.frames = F1("51_ch_wind", "52_ch_run", "53_ch_stop");
         M.shadow_strike.frames = F1("54_sh_vanish", "55_sh_strike", "42_cb_rec");
+        /* v0.8.122 第 1 關位移／瞬移招掛生圖（暫用同關 land 特效圖：列 0 紅環、列 1 煙塵；之後可換 Gemini 專屬圖，只改這裡的 sheet／row） */
+        M.dash_in.fxAct = { sheet: "land", row: 1, ox: -30, oy: 8, w: 300, dur: 0.5, anchor: "b" };
+        M.backstep.fxAct = { sheet: "land", row: 1, ox: 0, oy: 8, w: 300, dur: 0.5, anchor: "b" };
+        M.shadow_strike.fxVanish = { sheet: "land", row: 1, ox: 0, oy: 8, w: 340, dur: 0.55, anchor: "b" };
+        M.shadow_strike.fxAppear = { sheet: "land", row: 0, ox: 0, oy: 10, w: 420, h: 170, dur: 0.5, anchor: "b" };
         Stages[1].pool = [
           ["slash1", 14, "break"], ["slash2", 9], ["exclusive_combo", 11], ["combo_delay", 11], ["thrust_peril", 9], ["sweep_peril", 8],
           ["leap_slam", 16, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],
@@ -5118,8 +5123,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                 bsfx("tpOut");
               }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
+              if (move.fxVanish) spawnMoveFx(move.fxVanish); /* v0.8.122 瞬移消失特效（資料化，每招自己掛圖；位置＝消失前的 Boss） */
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
+              if (move.fxAppear) spawnMoveFx(move.fxAppear); /* 現身特效 */
               Boss.flashFrames = 3;
               if (move.tpFx) { if (fxReady("boss2fx")) spawnFx("boss2fx", 2, Boss.x, Config.groundY - 20, { w: 360, h: 360, dur: 0.4 }); emitDust(Boss.x, Config.groundY, -Boss.facing, 4, 1.0); }
               if (!bsfx("tpIn")) Sound.play("assist", 0.85, 1.45);
@@ -8804,10 +8811,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
 
           function drawFlyingSwords() {
-            const fsa = Stages[Boss.stageId] && Stages[Boss.stageId].flySwordArt; /* v0.8.65 飛劍改畫生圖：{sheet, row, frames, fps, w, tip} */
-            const fsImg = fsa && fxReady(fsa.sheet) ? fxSheet(fsa.sheet).img : null;
+            const stBA = Stages[Boss.stageId] || {}; /* v0.8.65 飛劍改畫生圖：{sheet, row, frames, fps, w, tip}；v0.8.122 投射物資料化：Stages[n].bulletArts[bulletKind] 同格式（戈、箭…），沒圖才退回程式畫 */
             for (const sw of Game.flyingSwords) {
-              if (fsImg && !sw.kind) {
+              const fsa = sw.kind ? (stBA.bulletArts && stBA.bulletArts[sw.kind]) : stBA.flySwordArt;
+              const fsImg = fsa && fxReady(fsa.sheet) ? fxSheet(fsa.sheet).img : null;
+              if (fsImg) {
                 const fr = fsa.frames || [1, 2], f = fr[Math.floor(performance.now() / 1000 * (fsa.fps || 12)) % fr.length], w = fsa.w || 150, k = w / 256;
                 ctx.save();
                 ctx.translate(sw.x, sw.y);
@@ -10061,8 +10069,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         setTimeout(() => spawnFx("exec2", 2, Boss.x, Config.groundY - 10, { anchor: "b", w: 460, dur: 2.8, loop: true, fps: 5, follow: () => ({ x: Boss.x, y: Config.groundY - 10 }) }), 500);
       }
       function swordImpactFx(sw) {
-        if (sw && sw.kind === "halberd") spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 });
-        const fsa = sw && !sw.kind && Stages[Boss.stageId] && Stages[Boss.stageId].flySwordArt; /* v0.8.66 飛劍命中／落地的碎裂圖 */
+        const stIF = Stages[Boss.stageId] || {}, fsa = sw && (sw.kind ? (stIF.bulletArts && stIF.bulletArts[sw.kind]) : stIF.flySwordArt);
+        if (sw && sw.kind === "halberd" && !(fsa && fxReady(fsa.sheet) && fsa.breakRow != null)) spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 }); /* v0.8.66 飛劍命中／落地的碎裂圖 */
         if (!fsa || !fxReady(fsa.sheet)) return;
         const w = fsa.w || 150, k = w / 256;
         if (sw.trajectory === "vertical" && sw.y >= Config.groundY - 40 && fsa.groundRow != null) {
