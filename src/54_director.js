@@ -326,3 +326,26 @@
         }
         ctx.restore();
       }
+
+      /* ====================== v0.8.125 Boss 光暈（peril_aura 生圖，取代危招紅色濾鏡） ======================
+       * 列 0 危招紅焰（isPerilous，循環）、列 1 霸體藍殼（armor 招的前搖～出手，循環）、列 2 啟動閃現（一次）、列 3 架勢崩潰碎裂（一次）。
+       * 光暈是直立橢圓（寬 60%、高 92%），中心對準 Boss 身體；高度以 Boss 精靈高度估計（bossVis.k × 480）。畫在 Boss 後面。 */
+      function drawBossAura() {
+        if (Game.mode !== "battle" || Boss.hp <= 0 || !fxReady("peril_aura")) return;
+        if (Boss._pp && Boss._pp.phase !== 2) return; /* 部位 Boss 一階段沒有本體 */
+        const stage = Stages[Boss.stageId], m = stage && stage.moves ? stage.moves[Boss.moveType] : null;
+        const act = Boss.state === "windup" || Boss.state === "active";
+        const peril = !!Boss.isPerilous && act, armor = !!(m && m.armor) && act && !peril;
+        const H = Math.max(180, bossVis(stage).k * 480), cell = H / 0.92, cx = Boss.x, cy = Boss.y - H * 0.5 - 6, now = performance.now() / 1000;
+        const kind = peril ? 0 : armor ? 1 : -1;
+        if (kind === 0 && Boss._auraKind !== 0) { /* 危招剛啟動：閃現一次 */
+          Boss._auraKind = 0; spawnFx("peril_aura", 2, cx, cy, { w: cell * 1.25, dur: 0.4, follow: () => ({ x: Boss.x, y: Boss.y - H * 0.5 - 6 }) });
+        } else if (kind !== 0) Boss._auraKind = kind;
+        if (Boss.state === "staggered" && !Boss._auraBroke) { Boss._auraBroke = true; spawnFx("peril_aura", 3, cx, cy, { w: cell * 1.1, dur: 0.6 }); }
+        if (Boss.state !== "staggered") Boss._auraBroke = false;
+        if (kind < 0) return;
+        const A = fxSheet("peril_aura"), col = Math.floor(now * 9) % 4, p = Boss.stateDur ? 1 - Boss.stateTimer / Boss.stateDur : 1;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Boss.state === "windup" ? 0.45 + 0.55 * Math.min(1, p * 1.6) : 1;
+        ctx.drawImage(A.img, col * 256, kind * 256, 256, 256, cx - cell / 2, cy - cell / 2, cell, cell);
+        ctx.restore();
+      }

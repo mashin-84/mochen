@@ -2,7 +2,7 @@
 
 橫版動作 RPG（Boss Rush，隻狼式彈刀與架勢），上線檔是單檔 `index.html`（Canvas 2D、Web Audio、無外部依賴）＋ `assets/` 圖片；**原始碼在 `src/`（v0.8.37 起分檔），`index.html` 由 `tools/build.py` 組出，不要直接改 `index.html`**。使用者在手機（Android Chrome，橫向）測試。
 網址：https://mashin-84.github.io/mochen/（GitHub Pages，main 分支根目錄）。
-詳細版本紀錄與設計決定看 `HANDOFF.md`；劇情來源是 `mashin-84/Cultivation` 的 `source` 分支。
+詳細版本紀錄與設計決定看 `HANDOFF.md`；**做新關卡先讀 `STAGE_PIPELINE.md`（單關標準流程、提示詞模板、驗收清單）**；劇情來源是 `mashin-84/Cultivation` 的 `source` 分支。
 
 ## 與使用者合作的規則
 - 回覆要短、先給結論，手機閱讀，每段一個螢幕內。繁體中文。

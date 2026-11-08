@@ -346,7 +346,7 @@
           if (deathAlpha < 1) ctx.globalAlpha = deathAlpha;
           if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
           else if (Boss.state === "frozen") ctx.filter = "hue-rotate(160deg) brightness(1.1)";
-          else if (Boss.isPerilous) ctx.filter = "drop-shadow(0 0 10px #ef4444)";
+          else if (Boss.isPerilous && !fxReady("peril_aura")) ctx.filter = "drop-shadow(0 0 10px #ef4444)"; /* v0.8.125 有 peril_aura 生圖就不用濾鏡光暈 */
 
           ctx.translate(Boss.x, Boss.y + GROUND_SINK);
           if (deathRot) ctx.rotate(-Boss.facing * deathRot);

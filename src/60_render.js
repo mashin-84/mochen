@@ -142,6 +142,7 @@
         drawFlyingSwords();
         drawCineTrail();
         drawIllusions();
+        drawBossAura(); /* v0.8.125 危招／霸體光暈（畫在 Boss 後面） */
         drawBossEntity();
         drawAssistDark(); /* v0.8.115 玄天珠演出的聚光暗角（暗化場景與敵人，主角與珠子在上） */
         drawTishenAura(false);

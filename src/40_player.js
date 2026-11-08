@@ -460,6 +460,13 @@
 
         Player.hp = Math.min(Player.maxHp, Player.hp + healAmount);
         spawnFloatingText(Player.x, Player.y - 120, `飲【青雲仙釀】+${healAmount} 氣血`, "#34d399", 1.2);
+        if (fxReady("heal_fx")) { /* v0.8.125 回血特效改生圖 heal_fx：酒氣升騰→綠色光環＋光粒上升→光粒歸入身體（取代程式粒子） */
+          const px = Player.x, py = Player.y;
+          spawnFx("heal_fx", 1, px, py - 105, { w: 170, dur: 0.55 });
+          spawnFx("heal_fx", 2, px, py - 125, { w: 310, dur: drinkDuration * 0.9, follow: () => ({ x: Player.x, y: Player.y - 125 }) });
+          spawnFx("heal_fx", 0, px, py + 6, { anchor: "b", w: 230, dur: drinkDuration + 0.25, loop: true, fps: 8, follow: () => ({ x: Player.x, y: Player.y + 6 }) });
+          setTimeout(() => spawnFx("heal_fx", 3, Player.x, Player.y - 90, { w: 280, dur: 0.5, follow: () => ({ x: Player.x, y: Player.y - 90 }) }), Math.max(150, drinkDuration * 650));
+        } else {
         for (let i = 0; i < 20; i++) {
           Game.particles.push({
             x: Player.x + (Math.random() - 0.5) * 40,
@@ -468,6 +475,7 @@
             vy: -80 - Math.random() * 120,
             size: 3, life: 0.5, maxLife: 0.5, color: "#34d399", gravity: -100
           });
+        }
         }
         updateGourdUI();
         setTelemetry("〔提示：飲用回生酒恢復氣血，謹防 Boss 突襲〕");
