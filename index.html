@@ -2079,7 +2079,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "0.8.122";
+      const ASSET_VER = "0.8.123";
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -2281,10 +2281,47 @@
       };
 
 
+      /* v0.8.122 武器類別音效庫：Stages[n].sfxClass = "heavy"｜"light"，引擎依招式標記自動配對「類別 × 招式型態」，只有特殊招式才需要專屬音效（move.sfx 或 Stages[n].sfx 事件優先）。
+         型態：swing 普通揮擊、combo 連擊每下、thrust 突刺、sweep 橫掃、slam 砸地／震退、charge 衝鋒、leap 躍起、leapLand 躍斬落地、throw 投擲、rage 怒氣、zone 陣法、mobility 位移。
+         另可用 Stages[n].sfxPitch（音高倍率，體型大壓低）。檔案都是 assets/sfx/ 現有的 b2_／b3_／m_ 音效（見 Sound.bossSfx／extSfx）。 */
+      const SFX_CLASS = {
+        heavy: { swing: "b3_heavy", combo: "b3_heavy", thrust: "b3_dash", sweep: "b3_sweep", slam: "b3_plunge", charge: "b3_charge", leap: "b3_dash", leapLand: "b3_plunge", throw: "b2_sword_fly", rage: "b3_heavy", rageW: "m_roar", zone: "b3_seal", mobility: "b3_dash" },
+        light: { swing: "b3_twin", combo: "b3_cross", thrust: "b3_dash", sweep: "b3_low", slam: "b3_plunge", charge: "b3_dash", leap: "b3_spin", leapLand: "b3_low", throw: "b2_sword_fly", rage: "b3_rain", rageW: "b3_draw", zone: "b3_seal", mobility: "b3_dash" }
+      };
+      const SFX_SHARED = { tpOut: ["b2_vanish", 0.85], tpIn: ["b2_appear", 0.9] }; /* 瞬移沒有關卡專屬音時的共用音 */
+      function sfxArchetype(m) {
+        if (m.isMobility) return "mobility";
+        if (m.isTeleport) return null; /* 瞬移走 bsfx tpOut／tpIn */
+        if (m.isRage) return "rage";
+        if (m.isLeap) return "leap";
+        if (m.isCharge) return "charge";
+        if (m.isRanged) return "throw";
+        if (m.isZone || m.ultimate || m.perilType === "grab") return "zone";
+        if (m.perilType === "sweep") return "sweep";
+        if (m.perilType === "thrust") return "thrust";
+        if (m.pushback) return "slam";
+        if (m.isCombo) return "combo";
+        return m.damage || m.isCombo ? "swing" : null;
+      }
+      function applyStageSfxClass(stage) {
+        if (!stage || !stage.sfxClass || stage._sfxClassDone || !stage.moves) return;
+        const tbl = SFX_CLASS[stage.sfxClass]; if (!tbl) return;
+        stage._sfxClassDone = true;
+        Object.keys(stage.moves).forEach(k => {
+          const m = stage.moves[k]; if (m.sfx) return;
+          const t = sfxArchetype(m); if (!t || !tbl[t]) return;
+          const p = stage.sfxPitch || 1, s = { p, auto: t };
+          if (t === "combo") s.h = tbl[t]; else s.a = tbl[t];
+          if (t === "rage") s.w = tbl.rageW;
+          if (t === "leap") s.land = tbl.leapLand;
+          if (t === "mobility") s.v = 0.45;
+          m.sfx = s;
+        });
+      }
       /* v0.8.67 關卡事件音效：Stages[目前關].sfx[事件] = [檔名, 音量, 音高]；有設定且已載入就播並回傳 true，否則回傳 false（呼叫端播原本的通用音效）。
          事件：tpOut 瞬移消失、tpIn 瞬移現身、split 分身、ilBreak 幻影碎裂、ilShard 鏡片反噬、swordFly 每把飛劍、swordRain 垂落飛劍、introSwirl／introLand 登場聚合與現形、zone 地面區域生成 */
       function bsfx(key) {
-        const st = typeof Stages !== "undefined" && Stages[Boss.stageId], e = st && st.sfx && st.sfx[key];
+        const st = typeof Stages !== "undefined" && Stages[Boss.stageId], e = (st && st.sfx && st.sfx[key]) || (st && st.sfxClass && SFX_SHARED[key]);
         if (!e || !Sound.buffers[e[0]]) return false;
         Sound.play(e[0], e[1] == null ? 0.9 : e[1], e[2] || 1);
         return true;
@@ -3086,8 +3123,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         /* v0.8.122 第 1 關位移／瞬移招掛生圖（暫用同關 land 特效圖：列 0 紅環、列 1 煙塵；之後可換 Gemini 專屬圖，只改這裡的 sheet／row） */
         M.dash_in.fxAct = { sheet: "land", row: 1, ox: -30, oy: 8, w: 300, dur: 0.5, anchor: "b" };
         M.backstep.fxAct = { sheet: "land", row: 1, ox: 0, oy: 8, w: 300, dur: 0.5, anchor: "b" };
-        M.shadow_strike.fxVanish = { sheet: "land", row: 1, ox: 0, oy: 8, w: 340, dur: 0.55, anchor: "b" };
-        M.shadow_strike.fxAppear = { sheet: "land", row: 0, ox: 0, oy: 10, w: 420, h: 170, dur: 0.5, anchor: "b" };
+        M.shadow_strike.fxVanish = { sheet: "boss1fx2", row: 2, ox: 0, oy: -165, w: 470, dur: 0.55 }; /* v0.8.123 Gemini 專屬圖 boss1fx2：列 0 擲戈飛行、列 1 擲戈命中、列 2 影遁消失、列 3 影遁現身 */
+        M.shadow_strike.fxAppear = { sheet: "boss1fx2", row: 3, ox: 0, oy: -180, w: 470, dur: 0.55 };
+        Stages[1].bulletArts = { halberd: { sheet: "boss1fx2", row: 0, frames: [0, 1, 2, 3], fps: 12, w: 290, tipX: 234, tipY: 129, hitRow: 1, hitW: 320 } };
+        Stages[1].fxSheets = (Stages[1].fxSheets || []).concat(["boss1fx2"]);
+        Stages[1].sfxClass = "heavy"; Stages[1].sfxPitch = 0.94; /* v0.8.123 武器類別音效：長戈＝重武器，音高略壓低 */
         Stages[1].pool = [
           ["slash1", 14, "break"], ["slash2", 9], ["exclusive_combo", 11], ["combo_delay", 11], ["thrust_peril", 9], ["sweep_peril", 8],
           ["leap_slam", 16, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],
@@ -4896,7 +4936,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (stage.stances && !m.isSwitch) Boss.stanceCount++;
         if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫寒川拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
-        if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
+        if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, m.sfx.p || 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
@@ -5123,7 +5163,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                 bsfx("tpOut");
               }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
-              if (move.fxVanish) spawnMoveFx(move.fxVanish); /* v0.8.122 瞬移消失特效（資料化，每招自己掛圖；位置＝消失前的 Boss） */
+              if (move.fxVanish) { spawnMoveFx(move.fxVanish); bsfx("tpOut"); } /* v0.8.122 瞬移消失特效（資料化，每招自己掛圖；位置＝消失前的 Boss） */
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
               if (move.fxAppear) spawnMoveFx(move.fxAppear); /* 現身特效 */
@@ -5156,7 +5196,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             if (move.partsCall) partsCall(move.partsCall); /* v0.8.83 交給部位引擎的招（第 4 關二階段劍雨） */
             if (move.isRanged) illusionShoot(move);
             const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
-            if (sfxA) Sound.play(sfxA, 0.9, 1);
+            if (sfxA) Sound.play(sfxA, 0.9 * (move.sfx.v || 1), move.sfx.p || 1);
             if (move.kick) addTrauma(move.kick);
             if (move.isCharge && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 2, Boss.x, Boss.y - 120, { w: 440, dur: Math.max(0.4, move.active), loop: true, fps: 11, facing: Boss.facing, follow: () => ({ x: Boss.x - Boss.facing * 90, y: Boss.y - 120 }) });
             if (move.swordRain) {
@@ -5321,7 +5361,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               if (Boss.comboHitsLeft === 1 && move.comboLastDelay) Boss.comboHitTimer = move.comboLastDelay; /* 補刀延遲：逼玩家不要連按招架 */
               Boss.hitRegistered = false;
 
-              if (move.sfx && move.sfx.h && Sound.buffers[move.sfx.h]) Sound.play(move.sfx.h, 0.85, 0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
+              if (move.sfx && move.sfx.h && Sound.buffers[move.sfx.h]) Sound.play(move.sfx.h, 0.85, (move.sfx.p || 1) * (0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05)); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
               spawnMoveFx(move.fxHit);
               if (move.kickHit) addTrauma(move.kickHit);
               const bType = Stages[Boss.stageId].bodyType || "human";
@@ -5395,6 +5435,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             if (move.isLeap) {
               /* 躍擊落地：砸地塵土＋震動；落點範圍內且在地面才命中（跳起可躲，空中按跳躍可踩頭） */
               Boss.x = Boss.leapLandX; Boss.y = Config.groundY;
+              if (move.sfx && move.sfx.land && Sound.buffers[move.sfx.land]) Sound.play(move.sfx.land, 0.9, move.sfx.p || 1); /* v0.8.122 躍斬落地音 */
               for (let k = -1; k <= 1; k++) emitDust(Boss.x + k * 70, Config.groundY, k || 1, 3, 1.0);
               if (Boss.stageId === 1 && fxReady("boss1")) { const lw = move.range * 2.8; spawnFx("boss1", 3, Boss.x, Config.groundY - lw * 0.26, { w: lw, dur: 0.5 }); landingFx(Boss.x, 1.7, 5); }
               const LA = Stages[Boss.stageId] && Stages[Boss.stageId].landArt; /* v0.8.82 關卡專屬落地衝擊圖 [sheet, row] */
@@ -10070,6 +10111,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
       function swordImpactFx(sw) {
         const stIF = Stages[Boss.stageId] || {}, fsa = sw && (sw.kind ? (stIF.bulletArts && stIF.bulletArts[sw.kind]) : stIF.flySwordArt);
+        if (fsa && fsa.hitRow != null && fxReady(fsa.sheet)) { spawnFx(fsa.sheet, fsa.hitRow, sw.x + (sw.dir || 1) * 30, sw.y, { w: fsa.hitW || 260, dur: 0.45 }); return; } /* v0.8.123 投射物命中圖（以投射物位置為中心）*/
         if (sw && sw.kind === "halberd" && !(fsa && fxReady(fsa.sheet) && fsa.breakRow != null)) spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 }); /* v0.8.66 飛劍命中／落地的碎裂圖 */
         if (!fsa || !fxReady(fsa.sheet)) return;
         const w = fsa.w || 150, k = w / 256;
@@ -10276,6 +10318,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         if (stMovie(stage, "introMovie")) getCineVideo(stage.introMovie);
         if (stMovie(stage, "p2Movie")) getCineVideo(stage.p2Movie);
         if (stage.formMovie) getCineVideo(stage.formMovie);
+        applyStageSfxClass(stage); /* v0.8.122 武器類別音效自動配對 */
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite, st.extras));
         (stage.fxSheets || []).forEach(k => fxSheet(k));
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");

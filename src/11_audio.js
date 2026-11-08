@@ -190,10 +190,47 @@
       };
 
 
+      /* v0.8.122 武器類別音效庫：Stages[n].sfxClass = "heavy"｜"light"，引擎依招式標記自動配對「類別 × 招式型態」，只有特殊招式才需要專屬音效（move.sfx 或 Stages[n].sfx 事件優先）。
+         型態：swing 普通揮擊、combo 連擊每下、thrust 突刺、sweep 橫掃、slam 砸地／震退、charge 衝鋒、leap 躍起、leapLand 躍斬落地、throw 投擲、rage 怒氣、zone 陣法、mobility 位移。
+         另可用 Stages[n].sfxPitch（音高倍率，體型大壓低）。檔案都是 assets/sfx/ 現有的 b2_／b3_／m_ 音效（見 Sound.bossSfx／extSfx）。 */
+      const SFX_CLASS = {
+        heavy: { swing: "b3_heavy", combo: "b3_heavy", thrust: "b3_dash", sweep: "b3_sweep", slam: "b3_plunge", charge: "b3_charge", leap: "b3_dash", leapLand: "b3_plunge", throw: "b2_sword_fly", rage: "b3_heavy", rageW: "m_roar", zone: "b3_seal", mobility: "b3_dash" },
+        light: { swing: "b3_twin", combo: "b3_cross", thrust: "b3_dash", sweep: "b3_low", slam: "b3_plunge", charge: "b3_dash", leap: "b3_spin", leapLand: "b3_low", throw: "b2_sword_fly", rage: "b3_rain", rageW: "b3_draw", zone: "b3_seal", mobility: "b3_dash" }
+      };
+      const SFX_SHARED = { tpOut: ["b2_vanish", 0.85], tpIn: ["b2_appear", 0.9] }; /* 瞬移沒有關卡專屬音時的共用音 */
+      function sfxArchetype(m) {
+        if (m.isMobility) return "mobility";
+        if (m.isTeleport) return null; /* 瞬移走 bsfx tpOut／tpIn */
+        if (m.isRage) return "rage";
+        if (m.isLeap) return "leap";
+        if (m.isCharge) return "charge";
+        if (m.isRanged) return "throw";
+        if (m.isZone || m.ultimate || m.perilType === "grab") return "zone";
+        if (m.perilType === "sweep") return "sweep";
+        if (m.perilType === "thrust") return "thrust";
+        if (m.pushback) return "slam";
+        if (m.isCombo) return "combo";
+        return m.damage || m.isCombo ? "swing" : null;
+      }
+      function applyStageSfxClass(stage) {
+        if (!stage || !stage.sfxClass || stage._sfxClassDone || !stage.moves) return;
+        const tbl = SFX_CLASS[stage.sfxClass]; if (!tbl) return;
+        stage._sfxClassDone = true;
+        Object.keys(stage.moves).forEach(k => {
+          const m = stage.moves[k]; if (m.sfx) return;
+          const t = sfxArchetype(m); if (!t || !tbl[t]) return;
+          const p = stage.sfxPitch || 1, s = { p, auto: t };
+          if (t === "combo") s.h = tbl[t]; else s.a = tbl[t];
+          if (t === "rage") s.w = tbl.rageW;
+          if (t === "leap") s.land = tbl.leapLand;
+          if (t === "mobility") s.v = 0.45;
+          m.sfx = s;
+        });
+      }
       /* v0.8.67 關卡事件音效：Stages[目前關].sfx[事件] = [檔名, 音量, 音高]；有設定且已載入就播並回傳 true，否則回傳 false（呼叫端播原本的通用音效）。
          事件：tpOut 瞬移消失、tpIn 瞬移現身、split 分身、ilBreak 幻影碎裂、ilShard 鏡片反噬、swordFly 每把飛劍、swordRain 垂落飛劍、introSwirl／introLand 登場聚合與現形、zone 地面區域生成 */
       function bsfx(key) {
-        const st = typeof Stages !== "undefined" && Stages[Boss.stageId], e = st && st.sfx && st.sfx[key];
+        const st = typeof Stages !== "undefined" && Stages[Boss.stageId], e = (st && st.sfx && st.sfx[key]) || (st && st.sfxClass && SFX_SHARED[key]);
         if (!e || !Sound.buffers[e[0]]) return false;
         Sound.play(e[0], e[1] == null ? 0.9 : e[1], e[2] || 1);
         return true;

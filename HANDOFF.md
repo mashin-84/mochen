@@ -1,4 +1,4 @@
-# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.122（M2 進行中；M0 分檔＋M1 聲音第一批））
+# 《一念飛仙外傳-墨塵傳》交接文件（對應版本 v0.8.123（M2 進行中；M0 分檔＋M1 聲音第一批））
 
 > 新對話開始時：上傳這份文件，第一句話寫「請先讀交接文件，照文件的流程繼續」。
 > Claude 要先把倉庫掛進工作階段（add_repo：mashin-84/mochen，push 權限）、clone，再讀 `index.html` 的關鍵段落。
@@ -611,6 +611,8 @@
 - 全部 canvas 字型（浮字、危、決、煞氣預警、處決大字備用、開場字、舊劇情）改用實際字型名 `'Noto Serif TC', 'Songti TC', 'PMingLiU', serif`，字回到原設定大小（字級數字未改）。HTML 裡的 `var(--font-serif)` 不受影響。
 - 「危」字：有動作表的 Boss 改放在圖上頭頂上方 28px（`opaqueTop` 掃當格最上緣不透明列、快取在圖上；`Boss._headY` 平滑避免換格跳動，`loadStage` 清空）；沒有動作表的 Boss 維持原位置。
 - 待觀察：浮字變清楚後畫面字變多，若覺得吵再減量。
+
+**v0.8.123 第 1 關雕琢②：武器類別音效庫＋擲戈／影遁專屬圖**：①**武器類別音效庫**（`11_audio.js`）：使用者擔心每招都專屬音效工程量太大→改成「類別 × 招式型態」自動配對。`Stages[n].sfxClass = "heavy"｜"light"`（`SFX_CLASS` 表）、`Stages[n].sfxPitch`（音高倍率）；`applyStageSfxClass(stage)`（`loadStage` 時呼叫一次）依招式標記（`sfxArchetype`：mobility／rage／leap／charge／throw／zone／sweep／thrust／push→slam／combo／swing）為**沒有 `move.sfx` 的招**填 `{a|h, w, land, p, v, auto}`；專屬 `move.sfx`／`Stages[n].sfx` 永遠優先。檔案全用現有的 `b2_`／`b3_`／`m_` 音效：heavy＝swing／combo `b3_heavy`、thrust／leap／mobility `b3_dash`、sweep `b3_sweep`、slam／躍斬落地 `b3_plunge`、charge `b3_charge`、throw `b2_sword_fly`、rage 前搖 `m_roar`＋`b3_heavy`、zone `b3_seal`；light 同理對應雙劍組。瞬移用 `SFX_SHARED`（`b2_vanish`／`b2_appear`，`bsfx` 在有 `sfxClass` 的關卡自動回退）；位移招音量 ×0.45（`sfx.v`）；躍斬落地音 `sfx.land`（`50_boss_ai` 落地處）。**第 1 關套用 heavy、音高 0.94 → 新生音效 0 個**。同音已有 ±4% 隨機音高。待手機實測：長戈用重劍音是否合適、哪些要換專屬音。②**`assets/fx/boss1fx2.webp`**（Gemini 黑底 4×4，原圖 2048→1024、扣黑底 18、格邊淡出）：列 0 擲戈飛行（`Stages[1].bulletArts.halberd`：fps 12、w 290、tipX 234、tipY 129）、列 1 擲戈命中（`hitRow`／`hitW`：以投射物位置為中心；`swordImpactFx` 新增 `hitRow` 欄位）、列 2 影遁消失（`fxVanish`，w 470、oy -165）、列 3 影遁現身（`fxAppear`，oy -180）；`Stages[1].fxSheets` 預載。③`tools/audit_fx.js` 更新：顯示每招音效來源（類別自動／專屬）、瞬移走共用音、投射物有圖算有特效；**第 1 關 audit 盲點 0 個**。命中火花／衝擊波圈（全遊戲共用程式畫粒子）仍待評估。待手機實測：擲戈大小與紅光亮度、影遁特效時機、音效配對。
 
 **v0.8.122 第 1 關雕琢①：可重用技巧（工程部分）**：使用者問「第 1 關還有哪些程式畫的特效／能否變成可重用技巧」→ 盤點後做三件事。①**`tools/audit_fx.js`**（特效／音效盲點檢查）：`NODE_PATH=$(npm root -g) node tools/audit_fx.js index.html 1,2,3`，每一招重新載入關卡後觸發、取樣 2 秒，報告用了哪些生圖特效（`sheet:row`）、有無程式畫刀弧、投射物有無圖、瞬移有無 `fxVanish／fxAppear`、位移招有無 `fxAct`、有無專屬音效；標 ⚠ 的就是盲點。**每關完成定義：audit 清零**。第 1 關現況 14 個盲點：擲戈本體程式畫＋13 招沒有專屬音效（影遁斬現身／消失、衝步、後撤已補）。②**投射物資料化**：`Stages[n].bulletArts[bulletKind] = {sheet,row,frames,fps,w,tipX,tipY,rot,breakRow}`（格式同 `flySwordArt`，`drawFlyingSwords`／`swordImpactFx` 依 `sw.kind` 取用，沒圖才退回程式畫）；第 1 關待補 `bulletArts.halberd`（擲戈本體）。③**瞬移／位移特效資料化**：`move.fxVanish`（消失前位置）、`move.fxAppear`（現身後位置）格式同 `fxAct`；位移招（衝步、後撤）本來就能用 `fxAct`（可加 `follow:true`）。第 1 關暫掛同關 `land` 圖（列 1 煙塵、列 0 紅環）：衝步、後撤、影遁斬消失／現身；之後換專屬圖只改 `21_stages.js` 的 sheet／row。已驗證：`bulletArts` 以 `boss2` 圖替代測試擲戈無錯；check／smoke ok。**待辦**：第 1 關專屬音效（`b1_*`）、擲戈本體圖、影遁斬專屬圖；通用特效圖模板提示詞（投射物＋消失現身＋衝步拖尾＋命中火花＋衝擊環），之後每關沿用。命中火花／衝擊波圈（全遊戲共用的程式畫粒子）評估後再決定是否全域換圖。
 

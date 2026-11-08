@@ -272,8 +272,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         /* v0.8.122 第 1 關位移／瞬移招掛生圖（暫用同關 land 特效圖：列 0 紅環、列 1 煙塵；之後可換 Gemini 專屬圖，只改這裡的 sheet／row） */
         M.dash_in.fxAct = { sheet: "land", row: 1, ox: -30, oy: 8, w: 300, dur: 0.5, anchor: "b" };
         M.backstep.fxAct = { sheet: "land", row: 1, ox: 0, oy: 8, w: 300, dur: 0.5, anchor: "b" };
-        M.shadow_strike.fxVanish = { sheet: "land", row: 1, ox: 0, oy: 8, w: 340, dur: 0.55, anchor: "b" };
-        M.shadow_strike.fxAppear = { sheet: "land", row: 0, ox: 0, oy: 10, w: 420, h: 170, dur: 0.5, anchor: "b" };
+        M.shadow_strike.fxVanish = { sheet: "boss1fx2", row: 2, ox: 0, oy: -165, w: 470, dur: 0.55 }; /* v0.8.123 Gemini 專屬圖 boss1fx2：列 0 擲戈飛行、列 1 擲戈命中、列 2 影遁消失、列 3 影遁現身 */
+        M.shadow_strike.fxAppear = { sheet: "boss1fx2", row: 3, ox: 0, oy: -180, w: 470, dur: 0.55 };
+        Stages[1].bulletArts = { halberd: { sheet: "boss1fx2", row: 0, frames: [0, 1, 2, 3], fps: 12, w: 290, tipX: 234, tipY: 129, hitRow: 1, hitW: 320 } };
+        Stages[1].fxSheets = (Stages[1].fxSheets || []).concat(["boss1fx2"]);
+        Stages[1].sfxClass = "heavy"; Stages[1].sfxPitch = 0.94; /* v0.8.123 武器類別音效：長戈＝重武器，音高略壓低 */
         Stages[1].pool = [
           ["slash1", 14, "break"], ["slash2", 9], ["exclusive_combo", 11], ["combo_delay", 11], ["thrust_peril", 9], ["sweep_peril", 8],
           ["leap_slam", 16, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],

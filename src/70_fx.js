@@ -170,6 +170,7 @@
       }
       function swordImpactFx(sw) {
         const stIF = Stages[Boss.stageId] || {}, fsa = sw && (sw.kind ? (stIF.bulletArts && stIF.bulletArts[sw.kind]) : stIF.flySwordArt);
+        if (fsa && fsa.hitRow != null && fxReady(fsa.sheet)) { spawnFx(fsa.sheet, fsa.hitRow, sw.x + (sw.dir || 1) * 30, sw.y, { w: fsa.hitW || 260, dur: 0.45 }); return; } /* v0.8.123 投射物命中圖（以投射物位置為中心）*/
         if (sw && sw.kind === "halberd" && !(fsa && fxReady(fsa.sheet) && fsa.breakRow != null)) spawnFx("boss2", 1, sw.x, sw.y, { w: 260, dur: 0.36 }); /* v0.8.66 飛劍命中／落地的碎裂圖 */
         if (!fsa || !fxReady(fsa.sheet)) return;
         const w = fsa.w || 150, k = w / 256;

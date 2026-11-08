@@ -186,7 +186,7 @@
         if (stage.stances && !m.isSwitch) Boss.stanceCount++;
         if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫寒川拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
-        if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
+        if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, m.sfx.p || 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
@@ -413,7 +413,7 @@
                 bsfx("tpOut");
               }
               spawnSparks(Boss.x, Boss.y - 60, "hit", Boss.facing);
-              if (move.fxVanish) spawnMoveFx(move.fxVanish); /* v0.8.122 瞬移消失特效（資料化，每招自己掛圖；位置＝消失前的 Boss） */
+              if (move.fxVanish) { spawnMoveFx(move.fxVanish); bsfx("tpOut"); } /* v0.8.122 瞬移消失特效（資料化，每招自己掛圖；位置＝消失前的 Boss） */
               Boss.x = Math.max(100, Math.min(Config.worldWidth - 100, Player.x - Player.facing * 110));
               Boss.facing = Player.facing;
               if (move.fxAppear) spawnMoveFx(move.fxAppear); /* 現身特效 */
@@ -446,7 +446,7 @@
             if (move.partsCall) partsCall(move.partsCall); /* v0.8.83 交給部位引擎的招（第 4 關二階段劍雨） */
             if (move.isRanged) illusionShoot(move);
             const sfxA0 = move.sfx && (move.sfx.a || move.sfx.h), sfxA = sfxA0 && Sound.buffers[sfxA0] ? sfxA0 : null; /* v0.8.34 出招聲：有指定且檔案已載入才取代預設揮劍音 */
-            if (sfxA) Sound.play(sfxA, 0.9, 1);
+            if (sfxA) Sound.play(sfxA, 0.9 * (move.sfx.v || 1), move.sfx.p || 1);
             if (move.kick) addTrauma(move.kick);
             if (move.isCharge && Boss.stageId === 1 && fxReady("boss2")) spawnFx("boss2", 2, Boss.x, Boss.y - 120, { w: 440, dur: Math.max(0.4, move.active), loop: true, fps: 11, facing: Boss.facing, follow: () => ({ x: Boss.x - Boss.facing * 90, y: Boss.y - 120 }) });
             if (move.swordRain) {
@@ -611,7 +611,7 @@
               if (Boss.comboHitsLeft === 1 && move.comboLastDelay) Boss.comboHitTimer = move.comboLastDelay; /* 補刀延遲：逼玩家不要連按招架 */
               Boss.hitRegistered = false;
 
-              if (move.sfx && move.sfx.h && Sound.buffers[move.sfx.h]) Sound.play(move.sfx.h, 0.85, 0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
+              if (move.sfx && move.sfx.h && Sound.buffers[move.sfx.h]) Sound.play(move.sfx.h, 0.85, (move.sfx.p || 1) * (0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05)); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
               spawnMoveFx(move.fxHit);
               if (move.kickHit) addTrauma(move.kickHit);
               const bType = Stages[Boss.stageId].bodyType || "human";
@@ -685,6 +685,7 @@
             if (move.isLeap) {
               /* 躍擊落地：砸地塵土＋震動；落點範圍內且在地面才命中（跳起可躲，空中按跳躍可踩頭） */
               Boss.x = Boss.leapLandX; Boss.y = Config.groundY;
+              if (move.sfx && move.sfx.land && Sound.buffers[move.sfx.land]) Sound.play(move.sfx.land, 0.9, move.sfx.p || 1); /* v0.8.122 躍斬落地音 */
               for (let k = -1; k <= 1; k++) emitDust(Boss.x + k * 70, Config.groundY, k || 1, 3, 1.0);
               if (Boss.stageId === 1 && fxReady("boss1")) { const lw = move.range * 2.8; spawnFx("boss1", 3, Boss.x, Config.groundY - lw * 0.26, { w: lw, dur: 0.5 }); landingFx(Boss.x, 1.7, 5); }
               const LA = Stages[Boss.stageId] && Stages[Boss.stageId].landArt; /* v0.8.82 關卡專屬落地衝擊圖 [sheet, row] */
