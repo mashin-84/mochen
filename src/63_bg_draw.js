@@ -233,6 +233,13 @@
         hintOnce(key, txt);
         const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
         const cx = Boss.x, cy = Boss.y - Boss.h * 0.5;
+        const stM = Stages[Boss.stageId];
+        if (stM && stM.cueArt && fxReady("cue")) { /* v0.8.142 生圖光圈取代舊光圈（只留一個）：整段前搖由大收縮到小，色別＝黃可擋／紅危／藍霸體 */
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          ctx.drawImage(fxSheet("cue").img, Math.min(2, Math.floor(p * 3)) * 256, (key === "tg_red" ? 1 : key === "tg_blue" ? 2 : 0) * 256, 256, 256, cx - 120, cy - 120, 240, 240);
+          ctx.restore();
+          return;
+        }
         if (fxReady("mark")) {
           ctx.save();
           ctx.globalCompositeOperation = "lighter";

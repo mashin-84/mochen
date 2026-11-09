@@ -5232,9 +5232,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
-          if (stage.cueArt && !Boss._cueDone && Boss.stateTimer <= 0.17 && fxReady("cue") && !move.isMobility && !move.isTransform && !move.isZone && !move.isRanged && !move.isTeleport && !move.isSwitch && (move.damage || move.comboDamagePerHit)) { /* v0.8.141 招架時機光圈：出招前 0.17 秒在攻擊點收縮（黃＝可擋、紅＝危、藍＝霸體） */
-            Boss._cueDone = true; const cr = move.isPerilous ? 1 : (move.armor ? 2 : 0), cx = (move.isLeap || move.isCharge) ? Boss.x : Boss.x + Boss.facing * (move.range || 150) * 0.4;
-            spawnFx("cue", cr, cx, Boss.y - 100, { w: 240, dur: 0.2, alpha: 0.95 });
+          if (stage.cueArt && !Boss._cueDone && Boss.stateTimer <= 0.05 && fxReady("cue") && !move.isMobility && !move.isTransform && !move.isZone && !move.isRanged && !move.isTeleport && !move.isSwitch && (move.damage || move.comboDamagePerHit)) { /* v0.8.142 出招瞬間：收縮光圈的第 4 格（光點迸發），位置同 drawThreatMarker 的光圈 */
+            Boss._cueDone = true; const cr = move.isPerilous ? 1 : (move.armor ? 2 : 0);
+            spawnFx("cue", cr, Boss.x, Boss.y - Boss.h * 0.5, { w: 240, dur: 0.18, alpha: 0.95, c0: 3, nf: 1 });
           }
           Boss.stateTimer -= dt;
           if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
@@ -7764,7 +7764,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         }
         if (!D.landed && t >= c.landAt) {
           D.landed = true; Boss.x = D.tx; Boss._introHide = false; Boss._cineImg = "20_bite_crouch";
-          if (fxReady("boss5intro")) spawnFx("boss5intro", 3, Boss.x, Boss.y - 80, { w: 460, dur: 0.6 });
+          if (fxReady("boss5intro")) spawnFx("boss5intro", 3, Boss.x, Boss.y - 80, { w: 460, dur: 0.6, facing: Boss.facing }); /* 現身剪影也要朝向主角（圖朝右，不鏡像會一瞬間反向） */
           if (fxReady("land")) { spawnFx("land", 0, Boss.x, G - 8, { anchor: "b", w: 800, h: 320, dur: 0.7, alpha: 0.9 }); spawnFx("land", 1, Boss.x - D.dir * -60, G, { anchor: "b", w: 520, dur: 0.8, facing: -Boss.facing }); }
           emitDust(Boss.x, G, 1, 6, 1.6); emitDust(Boss.x, G, -1, 6, 1.6);
           screenFlash("rgba(255,120,120,0.5)", 0.45, 0.3); addTrauma(0.75); triggerHitstopMs(90); hapticBuzz([50, 30, 80]);
@@ -7786,9 +7786,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const c = D.c, t = D.t, G = Config.groundY, st = D.st;
         (c.sfxT || []).forEach((s, i) => { if (!D["s" + i] && t >= s[0]) { D["s" + i] = true; Sound.play(s[1], s[2], s[3]); } });
         if (t < c.burstAt) {
-          Boss._cineImg = t < 0.9 ? "59_s_howl" : (Math.floor(t * 9) % 2 ? "59_s_howl" : "07_windup");
+          Boss._cineImg = t < 0.9 ? "07_windup" : "59_s_howl"; /* 先低頭，0.9 秒抬頭後就一直抬著（不再甩頭） */
           if (t >= c.boneAt) Boss._introHide = true; /* 血肉剝盡：小狼隱去，改畫骨架 */
-          if (t < c.boneAt) { Boss._scaleMul = 1 + 0.06 * Math.sin(t * 22); }
+          if (t < c.boneAt) { const g = Math.max(0, Math.min(1, (t - 0.9) / (c.boneAt - 0.9))); Boss._scaleMul = 1 + 0.5 * g * g * (3 - 2 * g); } /* 慢慢變大 */
           addTrauma(dt * (0.3 + 0.9 * Math.min(1, t / c.burstAt)));
           if (t >= c.crackAt && Math.random() < dt * 12) emitDust(Boss.x + (Math.random() - 0.5) * 160, G, Math.random() < 0.5 ? -1 : 1, 2, 0.9);
           if (t >= c.shardAt && !D.sh1) { D.sh1 = true; if (fxReady("boss5morph")) { spawnFx("boss5morph", 1, Boss.x - 40, Boss.y - 110, { w: 560, dur: 1.5, alpha: 0.95 }); spawnFx("boss5morph", 1, Boss.x + 80, Boss.y - 90, { w: 440, dur: 1.4, alpha: 0.9, facing: -1 }); } screenFlash("rgba(255,70,50,0.4)", 0.3, 0.3); hapticBuzz([30, 20, 50]); }
@@ -7809,13 +7809,13 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       function drawWolfDirWorld(D) { /* 二階段：裂紋罩在小狼身上、骨架＋魔焰 */
         if (D.dim > 0.01) { ctx.save(); ctx.fillStyle = `rgba(${D.c.kind === "wolf" ? "34,4,10" : "24,6,36"},${D.dim})`; ctx.fillRect(Game.camera.x - 1600, -1600, Config.baseWidth + 3200, 4200); ctx.restore(); }
         if (D.c.kind !== "morph") return; const c = D.c, t = D.t, G = Config.groundY, F = fxReady("boss5morph") ? fxSheet("boss5morph") : null; if (!F || t >= c.burstAt) return;
-        const cx = Boss.x, W = 330; /* 裂紋框大小＝小狼身長（格寬 90%） */
+        const cx = Boss.x, W = 330 * (t < c.boneAt ? (Boss._scaleMul || 1) : 1); /* 裂紋框大小＝小狼身長（格寬 90%），跟著變大 */
         if (t >= c.crackAt && t < c.boneAt + 0.3) { /* 裂紋四格依序變亮，鎖在小狼身上（朝向跟 Boss） */
           const col = Math.min(3, Math.floor((t - c.crackAt) / ((c.shardAt - c.crackAt) / 4))), fade = t > c.boneAt ? Math.max(0, 1 - (t - c.boneAt) / 0.3) : 1;
           ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.95 * fade; ctx.translate(cx, G); ctx.scale(Boss.facing, 1); ctx.drawImage(F.img, col * 256, 0, 256, 256, -W / 2, -W * 0.9, W, W); ctx.restore();
         }
         if (t >= c.boneAt) { /* 骨架：四格依序、魔焰越來越旺；漸大 */
-          const u = Math.min(1, (t - c.boneAt) / (c.burstAt - c.boneAt)), col = Math.min(3, Math.floor(u * 4.4)), sc = 1 + 0.75 * u, a = Math.min(1, (t - c.boneAt) / 0.4); /* 骨架由小狼大小膨脹到大狼大小 */
+          const u = Math.min(1, (t - c.boneAt) / (c.burstAt - c.boneAt)), col = Math.min(3, Math.floor(u * 4.4)), sc = 1.5 + 0.3 * u, a = Math.min(1, (t - c.boneAt) / 0.4); /* 骨架接著由 1.5 倍膨脹到大狼大小 */
           ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a; ctx.translate(cx, G); ctx.scale(Boss.facing * sc, sc); ctx.drawImage(F.img, col * 256, 512, 256, 256, -W / 2, -W * 0.9, W, W); ctx.restore();
         }
       }
@@ -9219,6 +9219,13 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         hintOnce(key, txt);
         const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
         const cx = Boss.x, cy = Boss.y - Boss.h * 0.5;
+        const stM = Stages[Boss.stageId];
+        if (stM && stM.cueArt && fxReady("cue")) { /* v0.8.142 生圖光圈取代舊光圈（只留一個）：整段前搖由大收縮到小，色別＝黃可擋／紅危／藍霸體 */
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          ctx.drawImage(fxSheet("cue").img, Math.min(2, Math.floor(p * 3)) * 256, (key === "tg_red" ? 1 : key === "tg_blue" ? 2 : 0) * 256, 256, 256, cx - 120, cy - 120, 240, 240);
+          ctx.restore();
+          return;
+        }
         if (fxReady("mark")) {
           ctx.save();
           ctx.globalCompositeOperation = "lighter";
@@ -10728,7 +10735,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Boss.aerialShotTimer = 0;
         Boss.groundedTimer = 0;
         Boss.stance = (stage.stanceByPhase && stage.stanceByPhase[1]) || "A"; Boss.stanceCount = 0; Boss._scaleMul = 1; applyBossBody(stage); Player.blast = null;
-        { const iD = stage.dir && stage.dir.intro; Boss._introHide = !!(opts && opts.hub && stage.dirMode && iD && (iD.kind === "drop" || iD.kind === "mirror" || iD.kind === "dash"));
+        { const iD = stage.dir && stage.dir.intro; Boss._introHide = !!(opts && opts.hub && stage.dirMode && iD && (iD.kind === "drop" || iD.kind === "mirror" || iD.kind === "dash" || iD.kind === "wolf"));
         if (stage.parts && opts && opts.hub && stage.dirMode && iD && iD.kind === "graveyard" && Boss._pp) Boss._pp._hide = true; /* v0.8.133 部位 Boss：營地載入時藏起巨劍與巨手 */ /* 只在「營地載入→走進戰場」時藏；直接進戰鬥／敗北重打都不藏（沒有 beginBattleIntro 解除就會看不到 Boss） */ } /* 有「從天而降」登場的關卡：進場前先藏起來 */
         Boss.rage = 0; Boss.lastHp = stage.maxHp; Boss.landedHit = false; Reader.reset();
         Config.bossPhase = 1;

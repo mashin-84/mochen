@@ -511,7 +511,7 @@
         }
         if (!D.landed && t >= c.landAt) {
           D.landed = true; Boss.x = D.tx; Boss._introHide = false; Boss._cineImg = "20_bite_crouch";
-          if (fxReady("boss5intro")) spawnFx("boss5intro", 3, Boss.x, Boss.y - 80, { w: 460, dur: 0.6 });
+          if (fxReady("boss5intro")) spawnFx("boss5intro", 3, Boss.x, Boss.y - 80, { w: 460, dur: 0.6, facing: Boss.facing }); /* 現身剪影也要朝向主角（圖朝右，不鏡像會一瞬間反向） */
           if (fxReady("land")) { spawnFx("land", 0, Boss.x, G - 8, { anchor: "b", w: 800, h: 320, dur: 0.7, alpha: 0.9 }); spawnFx("land", 1, Boss.x - D.dir * -60, G, { anchor: "b", w: 520, dur: 0.8, facing: -Boss.facing }); }
           emitDust(Boss.x, G, 1, 6, 1.6); emitDust(Boss.x, G, -1, 6, 1.6);
           screenFlash("rgba(255,120,120,0.5)", 0.45, 0.3); addTrauma(0.75); triggerHitstopMs(90); hapticBuzz([50, 30, 80]);
@@ -533,9 +533,9 @@
         const c = D.c, t = D.t, G = Config.groundY, st = D.st;
         (c.sfxT || []).forEach((s, i) => { if (!D["s" + i] && t >= s[0]) { D["s" + i] = true; Sound.play(s[1], s[2], s[3]); } });
         if (t < c.burstAt) {
-          Boss._cineImg = t < 0.9 ? "59_s_howl" : (Math.floor(t * 9) % 2 ? "59_s_howl" : "07_windup");
+          Boss._cineImg = t < 0.9 ? "07_windup" : "59_s_howl"; /* 先低頭，0.9 秒抬頭後就一直抬著（不再甩頭） */
           if (t >= c.boneAt) Boss._introHide = true; /* 血肉剝盡：小狼隱去，改畫骨架 */
-          if (t < c.boneAt) { Boss._scaleMul = 1 + 0.06 * Math.sin(t * 22); }
+          if (t < c.boneAt) { const g = Math.max(0, Math.min(1, (t - 0.9) / (c.boneAt - 0.9))); Boss._scaleMul = 1 + 0.5 * g * g * (3 - 2 * g); } /* 慢慢變大 */
           addTrauma(dt * (0.3 + 0.9 * Math.min(1, t / c.burstAt)));
           if (t >= c.crackAt && Math.random() < dt * 12) emitDust(Boss.x + (Math.random() - 0.5) * 160, G, Math.random() < 0.5 ? -1 : 1, 2, 0.9);
           if (t >= c.shardAt && !D.sh1) { D.sh1 = true; if (fxReady("boss5morph")) { spawnFx("boss5morph", 1, Boss.x - 40, Boss.y - 110, { w: 560, dur: 1.5, alpha: 0.95 }); spawnFx("boss5morph", 1, Boss.x + 80, Boss.y - 90, { w: 440, dur: 1.4, alpha: 0.9, facing: -1 }); } screenFlash("rgba(255,70,50,0.4)", 0.3, 0.3); hapticBuzz([30, 20, 50]); }
@@ -556,13 +556,13 @@
       function drawWolfDirWorld(D) { /* 二階段：裂紋罩在小狼身上、骨架＋魔焰 */
         if (D.dim > 0.01) { ctx.save(); ctx.fillStyle = `rgba(${D.c.kind === "wolf" ? "34,4,10" : "24,6,36"},${D.dim})`; ctx.fillRect(Game.camera.x - 1600, -1600, Config.baseWidth + 3200, 4200); ctx.restore(); }
         if (D.c.kind !== "morph") return; const c = D.c, t = D.t, G = Config.groundY, F = fxReady("boss5morph") ? fxSheet("boss5morph") : null; if (!F || t >= c.burstAt) return;
-        const cx = Boss.x, W = 330; /* 裂紋框大小＝小狼身長（格寬 90%） */
+        const cx = Boss.x, W = 330 * (t < c.boneAt ? (Boss._scaleMul || 1) : 1); /* 裂紋框大小＝小狼身長（格寬 90%），跟著變大 */
         if (t >= c.crackAt && t < c.boneAt + 0.3) { /* 裂紋四格依序變亮，鎖在小狼身上（朝向跟 Boss） */
           const col = Math.min(3, Math.floor((t - c.crackAt) / ((c.shardAt - c.crackAt) / 4))), fade = t > c.boneAt ? Math.max(0, 1 - (t - c.boneAt) / 0.3) : 1;
           ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.95 * fade; ctx.translate(cx, G); ctx.scale(Boss.facing, 1); ctx.drawImage(F.img, col * 256, 0, 256, 256, -W / 2, -W * 0.9, W, W); ctx.restore();
         }
         if (t >= c.boneAt) { /* 骨架：四格依序、魔焰越來越旺；漸大 */
-          const u = Math.min(1, (t - c.boneAt) / (c.burstAt - c.boneAt)), col = Math.min(3, Math.floor(u * 4.4)), sc = 1 + 0.75 * u, a = Math.min(1, (t - c.boneAt) / 0.4); /* 骨架由小狼大小膨脹到大狼大小 */
+          const u = Math.min(1, (t - c.boneAt) / (c.burstAt - c.boneAt)), col = Math.min(3, Math.floor(u * 4.4)), sc = 1.5 + 0.3 * u, a = Math.min(1, (t - c.boneAt) / 0.4); /* 骨架接著由 1.5 倍膨脹到大狼大小 */
           ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a; ctx.translate(cx, G); ctx.scale(Boss.facing * sc, sc); ctx.drawImage(F.img, col * 256, 512, 256, 256, -W / 2, -W * 0.9, W, W); ctx.restore();
         }
       }
