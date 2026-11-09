@@ -245,6 +245,12 @@
         return arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
       }
       function updateBossAI(dt) {
+        { const SH = Stages[Boss.stageId]; /* v0.8.151 血磨到見底（普攻最低只到 1）＝自動破防，等玩家處決（一階段→進二階段、二階段→擊敗） */
+          if (SH && SH.hpSplit && !SH.parts && Boss.hp > 0 && Boss.hp <= 1 && !Game.bossDeath && !Game.dir && Player.state !== "execution" && Boss.state !== "staggered") {
+            Boss._hpOut = true; damageBossPosture(Boss.maxPosture * 2, "", null, true);
+            if (Boss.state === "staggered") { Boss.staggerTimer = 99; hintOnce("hpout", "Boss 血見底了！按【處決】收下這一條血"); }
+          }
+        }
         { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
           const chOn = Boss.state === "windup" && Boss._orbDone && Boss._orbCfg && Boss.hp > 0;
           Boss._cd = (Boss._cd || 0) + ((chOn ? 1 : 0) - (Boss._cd || 0)) * Math.min(1, dt * (chOn ? 3 : 9));

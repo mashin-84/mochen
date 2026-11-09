@@ -240,7 +240,8 @@
             elCombo.style.display = "none";
           }
         }
-        const bossHpPct = (Boss.hp / Boss.maxHp) * 100;
+        let bossHpPct = (Boss.hp / Boss.maxHp) * 100;
+        if (Boss._fillT) { const kF = Math.min(1, (performance.now() - Boss._fillT) / 1300); bossHpPct = Math.min(bossHpPct, 100 * kF * kF * (3 - 2 * kF)); if (kF >= 1) Boss._fillT = 0; } /* v0.8.151 二階段血條由空填滿 */
         elBossHpBar.style.width = `${bossHpPct}%`;
         {
           const nowT = performance.now();

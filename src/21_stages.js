@@ -13,6 +13,7 @@
         const L = LegacyStages[lid];
         const st = Object.assign({}, L, { id: nid, artId: lid, volume: vol, maxHp: hp });
         if (nm) st.name = nm;
+        if (nid !== 4) st.hpSplit = [0.4, 0.6]; /* v0.8.151 每階段一條血（使用者定案：二階段較長 4:6）；第 4 關部位 Boss 有自己的三段流程 */
         const sub = (L.chapter.split("難・")[1] || L.name);
         st.chapter = `${VOL_TAG[vol]}第${NUM_ZH[nid]}難・${sub}`;
         if (nid === 9) {

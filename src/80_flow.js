@@ -27,7 +27,9 @@
         if (stage.bg) getBgArt(stage.bg);
         if (stage.bgSky) getBgArt(stage.bgSky);
         Boss.maxHp = stage.maxHp; Boss._hpt = {}; /* 血量門檻招式重置 */
-        Boss.hp = stage.maxHp;
+        Boss.maxHp2 = 0; Boss._fillT = 0; Boss._hpOut = false; Boss._split = !!(stage.hpSplit && !stage.parts);
+        if (stage.hpSplit && !stage.parts) { Boss.maxHp = Math.round(stage.maxHp * stage.hpSplit[0]); Boss.maxHp2 = Math.round(stage.maxHp * stage.hpSplit[1]); } /* v0.8.151 一階段血條；二階段進場時補滿成 maxHp2 */
+        Boss.hp = Boss.maxHp;
         Boss._leapPity = 0;
         Game.defeated = false;
         Boss.maxPosture = stage.maxPosture;

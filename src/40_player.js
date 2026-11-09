@@ -541,6 +541,10 @@
         }
       }
 
+      function bossRefillP2() { /* v0.8.151 進二階段：換成二階段血條並補滿（血條有填滿動畫 Boss._fillT） */
+        if (!Boss.maxHp2) return;
+        Boss.maxHp = Boss.maxHp2; Boss.maxHp2 = 0; Boss.hp = Boss.maxHp; Boss.lastHp = Boss.maxHp; Boss._fillT = performance.now(); Boss._hpOut = false;
+      }
       function getExecutionDmgRatio(stageId) {
         if (stageId <= 1) return 0.20;
         if (stageId <= 3) return 0.30;
@@ -560,6 +564,8 @@
         let baseRatio = getExecutionDmgRatio(Boss.stageId);
         let execRatio = isJiVersion ? baseRatio * 1.15 : baseRatio;
         let execDmg = Math.round(Boss.maxHp * execRatio);
+        { const S2b = Stages[Boss.stageId]; if (Boss._split) { /* v0.8.151 每階段一條血：一階段處決＝直接進二階段（不扣、不會擊敗，二階段補滿）；二階段處決扣二階段血條 30%，不夠扣就擊敗 */
+          execDmg = Config.bossPhase === 2 ? Math.round(Boss.maxHp * 0.3) : 0; } }
         const ek = Stages[Boss.stageId].execKill;
         if (ek && Config.bossPhase === 2) { /* v0.8.83 第 4 關：二階段處決計次；v0.8.90 execKill＝數字時要處決該次數才擊敗（前幾次血量砍到剩一半以下） */
           Boss._ekN = (Boss._ekN || 0) + 1;
@@ -627,6 +633,7 @@
             Boss.state = "recover";
             Boss.stateTimer = 1.3;
             Config.bossPhase = 2;
+            if (!wasPhase2) bossRefillP2(); /* v0.8.151 二階段血條補滿 */
 
             Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Boss.x - Boss.facing * 250));
             Player.vx = -Boss.facing * 400;
@@ -695,6 +702,7 @@
             Boss.state = "recover";
             Boss.stateTimer = 1.1;
             Config.bossPhase = 2;
+            if (!wasPhase2) bossRefillP2(); /* v0.8.151 二階段血條補滿 */
 
             Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Boss.x - Boss.facing * 240));
             Player.vx = -Boss.facing * 380;
