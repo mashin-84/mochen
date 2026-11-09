@@ -7989,6 +7989,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         D.a = (c.tintA || 0.35) * up * down; D.dim = 0.35 * up * down; D.focusX = cx;
       }
 
+      /* v0.8.154 招架時機光圈（生圖 cue.webp，由 Boss.nextImpactIn 驅動）全關卡套用：第 5 關起的做法推廣到九關；沒載到圖時 drawBossEntity 會退回程式光圈 */
+      Object.keys(Stages).forEach(k => { const st = Stages[k]; if (!st || !st.moves) return; st.cueArt = true; if (!(st.fxSheets || []).includes("cue")) st.fxSheets = (st.fxSheets || []).concat(["cue"]); });
+
       /* =========================================================================
        * 5. 渲染引擎：動態多場景視差背景與角色剪影
        * ========================================================================= */

@@ -670,3 +670,6 @@
         const up = Math.min(1, t / 0.8), down = t > c.dur - 0.6 ? Math.max(0, (c.dur - t) / 0.6) : 1;
         D.a = (c.tintA || 0.35) * up * down; D.dim = 0.35 * up * down; D.focusX = cx;
       }
+
+      /* v0.8.154 招架時機光圈（生圖 cue.webp，由 Boss.nextImpactIn 驅動）全關卡套用：第 5 關起的做法推廣到九關；沒載到圖時 drawBossEntity 會退回程式光圈 */
+      Object.keys(Stages).forEach(k => { const st = Stages[k]; if (!st || !st.moves) return; st.cueArt = true; if (!(st.fxSheets || []).includes("cue")) st.fxSheets = (st.fxSheets || []).concat(["cue"]); });
