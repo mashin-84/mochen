@@ -118,6 +118,11 @@
           }
         }
 
+        if (Boss._cd > 0.01 && Boss._orbPos) { /* 魔焰獸玉蓄力：整個戰場壓暗，只留魔焰球周圍亮（聚焦） */
+          const op = Boss._orbPos, g = ctx.createRadialGradient(op.x, op.y, 90, op.x, op.y, 400);
+          g.addColorStop(0, "rgba(10,0,24,0)"); g.addColorStop(1, `rgba(8,0,20,${0.82 * Boss._cd})`);
+          ctx.save(); ctx.fillStyle = g; ctx.fillRect(Game.camera.x - 1600, -1600, Config.baseWidth + 3200, 4200); ctx.restore();
+        }
         if (Game.darkVignetteAlpha > 0) {
           ctx.fillStyle = `rgba(3, 7, 18, ${Game.darkVignetteAlpha * 0.82})`;
           ctx.fillRect(-3000, -3000, Config.worldWidth + 6000, 7000); /* v0.8.47 修正：寬螢幕手機與鏡頭拉遠時，處決暗場要蓋滿整個畫面 */

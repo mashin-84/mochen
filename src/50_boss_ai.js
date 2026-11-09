@@ -239,6 +239,17 @@
       }
 
       function updateBossAI(dt) {
+        { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
+          const chOn = Boss.state === "windup" && Boss._orbDone && Boss._orbCfg && Boss.hp > 0;
+          Boss._cd = (Boss._cd || 0) + ((chOn ? 1 : 0) - (Boss._cd || 0)) * Math.min(1, dt * (chOn ? 3 : 9));
+          if (Boss._cd < 0.01) Boss._cd = 0;
+          if (chOn && fxReady("boss5morph")) {
+            const bm = Boss._orbCfg, fcC = Boss.facing, ox = Boss.x + fcC * bm.orbDx, oy = Boss.y + bm.orbDy; Boss._orbPos = { x: ox, y: oy };
+            Boss._pT = (Boss._pT || 0) - dt;
+            while (Boss._pT <= 0) { Boss._pT += 0.035; const an = Math.random() * Math.PI * 2, R = 240 + Math.random() * 220, sx = ox + Math.cos(an) * R, sy = oy + Math.sin(an) * R * 0.8, tt = 0.5 + Math.random() * 0.15;
+              spawnFx("boss5morph", 1, sx, sy, { w: 120 + Math.random() * 90, dur: tt, vx: (ox - sx) / tt, vy: (oy - sy) / tt, c0: 3, nf: 1, alpha: 0.9 }); }
+          }
+        }
         if (Boss._beamOn) { /* v0.8.144 魔焰獸玉：噴射期間畫面持續微幅晃動、手機低強度震動；快結束時換收尾火柱 */
           if (Boss.state !== "active" || Boss.hp <= 0) Boss._beamOn = false;
           else {
@@ -442,8 +453,8 @@
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
-          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.42 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖） */
-            Boss._orbDone = true; const bm = move.beam, fcO = Boss.facing, fo = () => ({ x: Boss.x + fcO * bm.orbDx, y: Boss.y + bm.orbDy });
+          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.22 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖） */
+            Boss._orbDone = true; Boss._orbCfg = move.beam; const bm = move.beam, fcO = Boss.facing, fo = () => ({ x: Boss.x + fcO * bm.orbDx, y: Boss.y + bm.orbDy });
             spawnFx("boss5beam", 0, fo().x, fo().y, { w: 340, dur: Math.max(0.3, Boss.stateTimer), alpha: 0.95, follow: fo });
             Sound.play("peril", 0.9, 0.45); screenFlash("rgba(90,20,120,0.25)", 0.25, Math.max(0.3, Boss.stateTimer)); hapticBuzz([20, 20, 30]);
           }

@@ -3086,8 +3086,8 @@
         M.b_rush = { kick: 0.25, name: "巨狼衝撞 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 720, frames: { windup: ["54_bc_wind"], active: ["55_bc_run"], recover: ["47_bs_rec"] }, windup: 0.70, active: 0.70, recover: 0.90, range: 260, lunge: 720, damage: 260, parryPostureDmg: 24 };
         M.b_rage = { kickHit: 0.15, fxHit: { sheet: "wolf", row: 0, ox: 220, oy: -200, w: 700, dur: 0.3 }, name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: { windup: ["56_b_howl"], active: ["41_bw_mid", "45_bs_down", "42_bw_follow"], recover: ["43_bw_rec"] }, windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
         M.b_breath = { name: "魔焰獸玉 (瞬步穿到狼後方才躲得掉)", isZone: true, zoneType: "beam", zoneDx: 925, zoneWidth: 1500, zoneDuration: 0.95, zoneDamagePerSec: 420, zoneWarn: 0.05, zoneTall: true, zoneNoDraw: true, zoneFacing: true, kick: 0.5, hintKey: "tg_beam", hintText: "【魔焰獸玉】火柱又高又長，跳不過也退不掉：趁它後縮蓄力時，用瞬步衝到狼身後！",
-          beam: { orbDx: 190, orbDy: -250, mx: 175, my: -285, w: 1500, h: 760 }, /* 嘴部座標（相對腳底中心，圖朝右；coil／fire 關鍵格量得）；orb＝後縮時嘴裡的魔焰球；beam＝火柱起點與大小 */
-          frames: { windup: ["60_br_crouch", "61_br_coil"], active: ["62_br_fire"], recover: ["63_br_rec"] }, windup: 1.5, active: 1.1, recover: 1.1, range: 900, lunge: 0, damage: 0 };
+          beam: { orbDx: 190, orbDy: -250, mx: 175, my: -285, w: 1500, h: 1250 }, /* 嘴部座標（相對腳底中心，圖朝右；coil／fire 關鍵格量得）；orb＝後縮時嘴裡的魔焰球；beam＝火柱起點與大小 */
+          frames: { windup: ["60_br_crouch", "61_br_coil"], active: ["62_br_fire"], recover: ["63_br_rec"] }, windup: 2.3, active: 1.1, recover: 1.1, range: 900, lunge: 0, damage: 0 };
         Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S5.moves = M;
         const SFX = { s_bite: { w: "w_snarl", a: "w_snap" }, s_bite2: { w: "w_snarl", h: "w_snap" }, s_claw3: { w: "w_snarl", h: "w_claw" }, s_pounce: { w: "w_snarl", a: "w_bark" }, s_rush: { w: "w_snarl", a: "w_bark" }, s_tail: { w: "w_snarl", a: "w_claw" }, s_shadow: { a: "w_claw" }, s_decoy: { w: "w_snarl", a: "w_snap" }, s_rage: { w: "w_howl", a: "w_bark" }, backstep: { a: "w_claw" }, dash_in: { a: "w_claw" },
@@ -5040,6 +5040,17 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
 
       function updateBossAI(dt) {
+        { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
+          const chOn = Boss.state === "windup" && Boss._orbDone && Boss._orbCfg && Boss.hp > 0;
+          Boss._cd = (Boss._cd || 0) + ((chOn ? 1 : 0) - (Boss._cd || 0)) * Math.min(1, dt * (chOn ? 3 : 9));
+          if (Boss._cd < 0.01) Boss._cd = 0;
+          if (chOn && fxReady("boss5morph")) {
+            const bm = Boss._orbCfg, fcC = Boss.facing, ox = Boss.x + fcC * bm.orbDx, oy = Boss.y + bm.orbDy; Boss._orbPos = { x: ox, y: oy };
+            Boss._pT = (Boss._pT || 0) - dt;
+            while (Boss._pT <= 0) { Boss._pT += 0.035; const an = Math.random() * Math.PI * 2, R = 240 + Math.random() * 220, sx = ox + Math.cos(an) * R, sy = oy + Math.sin(an) * R * 0.8, tt = 0.5 + Math.random() * 0.15;
+              spawnFx("boss5morph", 1, sx, sy, { w: 120 + Math.random() * 90, dur: tt, vx: (ox - sx) / tt, vy: (oy - sy) / tt, c0: 3, nf: 1, alpha: 0.9 }); }
+          }
+        }
         if (Boss._beamOn) { /* v0.8.144 魔焰獸玉：噴射期間畫面持續微幅晃動、手機低強度震動；快結束時換收尾火柱 */
           if (Boss.state !== "active" || Boss.hp <= 0) Boss._beamOn = false;
           else {
@@ -5243,8 +5254,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
-          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.42 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖） */
-            Boss._orbDone = true; const bm = move.beam, fcO = Boss.facing, fo = () => ({ x: Boss.x + fcO * bm.orbDx, y: Boss.y + bm.orbDy });
+          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.22 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖） */
+            Boss._orbDone = true; Boss._orbCfg = move.beam; const bm = move.beam, fcO = Boss.facing, fo = () => ({ x: Boss.x + fcO * bm.orbDx, y: Boss.y + bm.orbDy });
             spawnFx("boss5beam", 0, fo().x, fo().y, { w: 340, dur: Math.max(0.3, Boss.stateTimer), alpha: 0.95, follow: fo });
             Sound.play("peril", 0.9, 0.45); screenFlash("rgba(90,20,120,0.25)", 0.25, Math.max(0.3, Boss.stateTimer)); hapticBuzz([20, 20, 30]);
           }
@@ -8063,6 +8074,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           }
         }
 
+        if (Boss._cd > 0.01 && Boss._orbPos) { /* 魔焰獸玉蓄力：整個戰場壓暗，只留魔焰球周圍亮（聚焦） */
+          const op = Boss._orbPos, g = ctx.createRadialGradient(op.x, op.y, 90, op.x, op.y, 400);
+          g.addColorStop(0, "rgba(10,0,24,0)"); g.addColorStop(1, `rgba(8,0,20,${0.82 * Boss._cd})`);
+          ctx.save(); ctx.fillStyle = g; ctx.fillRect(Game.camera.x - 1600, -1600, Config.baseWidth + 3200, 4200); ctx.restore();
+        }
         if (Game.darkVignetteAlpha > 0) {
           ctx.fillStyle = `rgba(3, 7, 18, ${Game.darkVignetteAlpha * 0.82})`;
           ctx.fillRect(-3000, -3000, Config.worldWidth + 6000, 7000); /* v0.8.47 修正：寬螢幕手機與鏡頭拉遠時，處決暗場要蓋滿整個畫面 */
