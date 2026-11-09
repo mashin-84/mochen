@@ -433,10 +433,6 @@
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
-          if (stage.cueArt && !Boss._cueDone && Boss.stateTimer <= 0.05 && fxReady("cue") && !move.isMobility && !move.isTransform && !move.isZone && !move.isRanged && !move.isTeleport && !move.isSwitch && (move.damage || move.comboDamagePerHit)) { /* v0.8.142 出招瞬間：收縮光圈的第 4 格（光點迸發），位置同 drawThreatMarker 的光圈 */
-            Boss._cueDone = true; const cr = move.isPerilous ? 1 : (move.armor ? 2 : 0);
-            spawnFx("cue", cr, Boss.x, Boss.y - Boss.h * 0.5, { w: 240, dur: 0.18, alpha: 0.95, c0: 3, nf: 1 });
-          }
           Boss.stateTimer -= dt;
           if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
             Boss.grabZoneX += (Player.x - Boss.grabZoneX) * Math.min(1, dt * 6);

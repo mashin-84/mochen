@@ -672,8 +672,18 @@
             } // 結束 if (useBossSprite) else
             ctx.restore(); // 結束後傾變換
 
+        { /* v0.8.143 生圖招架光圈（stage.cueArt）：和下面程式光圈同一個時間來源 nextImpactIn（命中前 0.35 秒由大縮到小，到 0 就是命中），所以時機與格擋判定一致；有生圖就不畫程式光圈 */
+          const stQ = Stages[Boss.stageId], cueOn = !!(stQ && stQ.cueArt && fxReady("cue") && Config.parryCueLevel > 0);
+          Boss._cueArtOn = cueOn;
+          if (cueOn && !Boss._ilDraw && Boss.state !== "idle" && Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35) {
+            const mq = stQ.moves && stQ.moves[Boss.moveType], pr = 1 - Boss.nextImpactIn / 0.35, dia = 240 - 180 * pr, row = Boss.isPerilous ? 1 : (mq && mq.armor ? 2 : 0);
+            const col = Boss.nextImpactIn <= 0.05 ? 3 : (pr < 0.35 ? 0 : pr < 0.7 ? 1 : 2), fr = [0.9, 0.7, 0.35, 0.9][col], cs = col === 3 ? 260 : dia / fr; /* 各格環的大小不同，依實際環徑換算格子大小，環徑才會連續縮小 */
+            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.5 + 0.5 * pr;
+            ctx.drawImage(fxSheet("cue").img, col * 256, row * 256, 256, 256, Boss.x - cs / 2, Boss.y - Boss.h * 0.5 - cs / 2, cs, cs); ctx.restore();
+          }
+        }
         // C4: 提示畫面 (強/弱)
-        if (!Boss._ilDraw && Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35 && Config.parryCueLevel > 0) {
+        if (!Boss._ilDraw && !Boss._cueArtOn && Boss.nextImpactIn > 0 && Boss.nextImpactIn <= 0.35 && Config.parryCueLevel > 0) {
             const isStrong = Config.parryCueLevel === 2;
             const isPeril = Boss.isPerilous;
             const cueColor = isPeril ? "#ef4444" : "#fde047";
