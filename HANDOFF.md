@@ -695,6 +695,8 @@
 
 **v0.8.150 魔焰獸玉改「血量剩一半必放一次」**（使用者：打贏了都沒放過）：新機制 `Stages[n].hpTriggers=[{move, at:血量比例, phase:最低階段, stance:姿態}]`，`updateBossAI` 在閒置／接近時檢查，達標且該場還沒放過就立刻放（`Boss._hpt[move]`，`loadStage` 重置，重打會再放一次）；之後恢復一般招式池（`b_breath` 仍在池中）。第 5 關：`{move:"b_breath", at:0.5, phase:2, stance:"B"}`。測試：二階段把血量壓到 49%，當前招式結束後下一招即為魔焰獸玉。
 
+**瘦身（v0.8.156 之後，未升版）**：刪除第 1～4 關舊過場影片 18 個（`assets/boss1～4/` 的 `intro`／`p2`／`form`，mp4＋webm，約 27MB；這四關由 `DIR_CFG` 的 `dirMode` 戰場演出取代，`stMovie` 不播影片，smoke 第 1～4 關通過）。`assets/` 83MB→54MB。**保留**：`boss5/intro.mp4／webm`（`Stages[5].introVideo` 仍被 `loadStage` 預載、是演出失敗的備案）、`music/` 的 `lilian／wenqing／dongfu／libie`（使用者要先留著）、`boss4/h01～h12`（巨手生圖）。
+
 **v0.8.156 共用圖片載入器（使用者回報：有時敵人或場景讀不出來）**：原因是只有 Boss 16 主格、背景、主角有重試，走路／倒地格、招式關鍵格（extras）、特效圖 `fxSheet`、部位圖失敗一次就永久缺圖；進場也不等這些圖。做法：
 - `10_boot.js` 接手 `HTMLImageElement.src` 攔截，成立 `IMGQ`：先用隱藏代理圖下載，成功才把網址交給真正的圖（下載中的圖沒有 src，`drawImage` 不會丟錯；失敗狀態的圖會丟錯）。同時最多 12 個下載（`IMGQ_MAX`）；單次 20 秒沒回應算失敗；一輪 4 次（重試間隔 0.6／1.2／1.8 秒，網址加 `&r=`），整輪失敗 6 秒後再一輪，共 8 次都失敗才對原圖發 error 事件。同網址只下載一次。各處舊的重試程式（`getBgArt`、Boss 主格、主角）已拿掉。
 - `tools/build.py` 把 assets 內全部 webp 清單填進 `@ASSET_LIST@`（`ASSET_IMGS`）。清單沒有的圖不發請求、直接算失敗，記到 `IMGQ.missing`；`tools/smoke.js` 改從這裡收缺圖。
