@@ -266,7 +266,7 @@
           let dir = 0;
           if (Keys.left) dir -= 1;
           if (Keys.right) dir += 1;
-          if (Game.mode === "enter") dir = 1;
+          if (Game.mode === "enter") dir = Game.loadHold ? 0 : 1; /* v0.8.156 等圖載完時原地站著 */
 
           if (dir !== 0) {
             Player.vx = dir * 580;

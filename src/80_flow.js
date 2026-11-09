@@ -1,6 +1,27 @@
       /* =========================================================================
        * 6. 關卡切換、心印裝配與結算推進系統 (PROGRESSION & STAGE SWITCHING)
        * ========================================================================= */
+      /* v0.8.156 掃描 Stages[n]（含姿態、部位）與 DIR_CFG[n] 所有字串：對得上 assets 檔名的圖就先載。
+       * 字串若是資料夾名（boss5b 等）就當角色圖資料夾，其他字串在這些資料夾、fx、bg 裡找同名檔。 */
+      function prefetchStageArt(stageId) {
+        const strs = new Set(), seen = new Set();
+        const walk = (o, dep) => {
+          if (dep > 10 || o == null) return;
+          if (typeof o === "string") { if (o.length < 80) strs.add(o.replace(/^assets\//, "").replace(/\.webp.*$/, "")); return; }
+          if (typeof o !== "object" || seen.has(o)) return;
+          seen.add(o);
+          for (const k in o) walk(o[k], dep + 1);
+        };
+        walk(Stages[stageId], 0);
+        if (typeof DIR_CFG !== "undefined") walk(DIR_CFG[stageId], 0);
+        const dirs = [...strs].filter(s => ASSET_DIRS.has(s) && /^boss/.test(s));
+        strs.forEach(s => {
+          if (s.indexOf("/") > 0) { if (ASSET_IMGS.has(s)) { if (s.indexOf("fx/") === 0) fxSheet(s.slice(3)); else if (s.indexOf("bg/") === 0) getBgArt(s.slice(3)); else new Image().src = "assets/" + s + ".webp"; } return; }
+          if (ASSET_IMGS.has("fx/" + s)) fxSheet(s);
+          if (ASSET_IMGS.has("bg/" + s)) getBgArt(s);
+          dirs.forEach(d => { if (ASSET_IMGS.has(d + "/" + s)) getBossSprite(d, [s]); });
+        });
+      }
       function loadStage(stageId, opts) {
         const stage = Stages[stageId];
         if (!stage) return;
@@ -26,6 +47,8 @@
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");
         if (stage.bg) getBgArt(stage.bg);
         if (stage.bgSky) getBgArt(stage.bgSky);
+        prefetchStageArt(stageId); /* v0.8.156 這關資料裡提到的圖全部先載（招式關鍵格、特效、部位圖），不等打到才載 */
+        IMGQ.mark();
         Boss.maxHp = stage.maxHp; Boss._hpt = {}; /* 血量門檻招式重置 */
         Boss.maxHp2 = 0; Boss._fillT = 0; Boss._hpOut = false; Boss._split = !!(stage.hpSplit && !stage.parts);
         if (stage.hpSplit && !stage.parts) { Boss.maxHp = Math.round(stage.maxHp * stage.hpSplit[0]); Boss.maxHp2 = Math.round(stage.maxHp * stage.hpSplit[1]); } /* v0.8.151 一階段血條；二階段進場時補滿成 maxHp2 */

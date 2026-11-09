@@ -18,7 +18,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'smoke-'));
 let html = fs.readFileSync(file, 'utf8');
 const anchor = 'window.onload = function () {';
 if (html.split(anchor).length !== 2) { console.log('找不到唯一的 window.onload 鉤點'); process.exit(1); }
-html = html.replace(anchor, 'window.__B=Boss;window.__P=Player;window.__G=Game;window.__L=loadStage;window.__PR=Progress;window.__S=Stages;window.__DLG=DLG;\n      ' + anchor);
+html = html.replace(anchor, 'window.__B=Boss;window.__P=Player;window.__G=Game;window.__L=loadStage;window.__PR=Progress;window.__S=Stages;window.__DLG=DLG;window.__IMGQ=IMGQ;\n      ' + anchor);
 fs.writeFileSync(path.join(tmp, 'index.html'), html);
 fs.symlinkSync(path.join(root, 'assets'), path.join(tmp, 'assets'));
 
@@ -86,6 +86,7 @@ const server = http.createServer((req, res) => {
     if (probs.length) failed++;
     console.log(`${probs.length ? 'FAIL' : 'ok  '} 第 ${sid} 關${stat.won ? '（擊敗）' : ''}｜招式 ${stat.moves.size} 種｜Boss 最低血量 ${stat.minHp === Infinity ? '-' : Math.round(stat.minHp)}${probs.length ? '｜' + probs.join('；') : ''}`);
   }
+  try { (await page.evaluate(() => (window.__IMGQ && __IMGQ.missing) || [])).forEach(u => missing.add('/' + u)); } catch (e) { } /* v0.8.156 IMGQ 不對不存在的圖發請求，改從它的清單收 */
   await b.close(); server.close();
   /* tools/missing_ok.txt 列的是「還沒做、程式會自動退回替代圖」的檔案（例：還沒生的半身像、走路影片），只提示不算 FAIL */
   const okFile = path.join(__dirname, 'missing_ok.txt');

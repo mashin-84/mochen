@@ -57,7 +57,7 @@
             BOSS_FRAME_NAMES.forEach(name => {
               const img = new Image(); let rn = 0;
               img.onload = () => { if (!img._ok) { img._ok = true; sp.ready++; } };
-              img.onerror = () => { if (rn < 3) { rn++; setTimeout(() => { img.src = dir + name + ".webp?v=" + ASSET_VER + "&r=" + rn; }, 500 * rn); } else console.warn("Failed to load: " + dir + name); };
+              /* v0.8.156 重試改由 IMGQ 統一處理 */
               img.src = dir + name + ".webp";
               sp.imgs[name] = img;
             });
@@ -776,7 +776,7 @@
         const img = new Image();
         let rn = 0;
         img.onload = () => { MC_READY = MC_NAMES.filter(n => MC_IMGS[n] && MC_IMGS[n].complete && MC_IMGS[n].naturalWidth > 0).length; }; /* v0.8.114 用實際載入狀態計數（原本 ++ 計數，重複觸發或失敗就永遠 !==16＝方塊人） */
-        img.onerror = () => { if (rn < 3) { rn++; setTimeout(() => { img.src = 'assets/mc/' + name + '.webp?v=' + ASSET_VER + '&r=' + rn; }, 500 * rn); } else console.warn("Failed to load: " + name); };
+        /* v0.8.156 重試改由 IMGQ 統一處理 */
         img.src = 'assets/mc/' + name + '.webp';
         MC_IMGS[name] = img;
       });

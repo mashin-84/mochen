@@ -15,11 +15,34 @@
             Player.vx = 0;
             Player.state = "idle";
             Player.facing = 1;
+            if (!stageArtGate(dt)) return; /* v0.8.156 這關的圖還沒載完：原地等（最多 12 秒），畫面下方顯示「載入中」 */
             beginBattleIntro();
           }
         }
       }
 
+      /* v0.8.156 進場閘門：IMGQ 還有圖在下載就讓主角站在入口等，顯示進度；最多等 12 秒（網路太差就先開打，圖之後會補上） */
+      function stageArtGate(dt) {
+        const pend = IMGQ.pending();
+        Game.loadHoldT = (Game.loadHoldT || 0) + dt;
+        let el = document.getElementById("load-hold");
+        if (pend === 0 || Game.loadHoldT > 12) {
+          Game.loadHold = false; Game.loadHoldT = 0;
+          if (el) el.style.display = "none";
+          return true;
+        }
+        Game.loadHold = true;
+        if (Game.loadHoldT < 0.25) return false; /* 只差一點點就不閃字 */
+        if (!el) {
+          el = document.createElement("div"); el.id = "load-hold";
+          el.style.cssText = "position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:9000;padding:6px 18px;border-radius:999px;background:rgba(15,23,42,.72);color:#e2e8f0;font-family:'Noto Serif TC','Songti TC',serif;font-size:13px;letter-spacing:.2em;pointer-events:none;";
+          document.body.appendChild(el);
+        }
+        const tot = Math.max(IMGQ.total, pend, 1);
+        el.textContent = "載入中　" + Math.round(100 * (1 - pend / tot)) + "%";
+        el.style.display = "block";
+        return false;
+      }
       function beginBattleIntro() {
         Game.mode = "battle";
         const stage0 = Stages[Boss.stageId];

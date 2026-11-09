@@ -18,6 +18,14 @@ def asset_hash():
             p = os.path.join(dp, f); h.update(os.path.relpath(p, root).encode()); h.update(hashlib.sha1(open(p, "rb").read()).digest())
     return h.hexdigest()[:8]
 out = out.replace("@ASSET_HASH@", asset_hash()) # v0.8.135 ASSET_VER＝assets 內容雜湊
+def asset_list(): # v0.8.156 assets 內所有 webp 圖（"資料夾/檔名"，不含副檔名），進關時據此預載該關用到的圖
+    r = []
+    for dp, dn, fn in sorted(os.walk(os.path.join(root, "assets"))):
+        dn.sort()
+        for f in sorted(fn):
+            if f.endswith(".webp"): r.append(os.path.splitext(os.path.relpath(os.path.join(dp, f), os.path.join(root, "assets")))[0].replace(os.sep, "/"))
+    return ",".join(r)
+out = out.replace("@ASSET_LIST@", asset_list())
 target = os.path.join(root, "index.html")
 if "--check" in sys.argv:
     cur = open(target, encoding="utf-8", newline="").read()
