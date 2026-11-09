@@ -781,6 +781,7 @@
 
       function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
         if (fromAtk && Boss._hpOut) return; /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢（普攻、重斬、蓄力、被 Boss 彈刀都不算） */
+        if (fromAtk) { const c60 = Boss.maxPosture * 0.6; cap = cap ? Math.min(cap, c60) : c60; } /* v0.8.157 攻擊類（普攻、重斬、蓄力、凌空斬／下劈）一律最多把架勢加到 60%；最後 40% 只能靠完美招架、踏劍看破、凌空踩頭、折射 */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
         

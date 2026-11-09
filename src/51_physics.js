@@ -228,7 +228,8 @@
                   triggerHitstop(5);
                   triggerShake(Player.facing, 0.22, 18, 0.24);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "parry", -Player.facing);
-                  damageBossPosture(14, "敵將彈刀！", null, false, true);
+                  /* v0.8.157 隻狼式閉環：Boss 彈刀＝「攻守互換」的訊號，不再替 Boss 加架勢（原本 +14 且無上限，連打普攻就能靠它破防）；改扣主角 20 劍勢 */
+                  Player.stamina = Math.max(0, Player.stamina - 20); Player.staminaRecoverDelay = Math.max(Player.staminaRecoverDelay || 0, 0.8);
 
                   // 墨塵長劍被彈開受阻
                   Player.vx = -Player.facing * 160;
