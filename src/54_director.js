@@ -169,7 +169,7 @@
         spawnFx(a.sheet, a.row, Boss.x, Boss.y + dy, { anchor: "b", w: a.w * m, dur: 36000, loop: true, fps: a.fps || 9, alpha: a.alpha == null ? 1 : a.alpha, follow: () => ({ x: Boss.x, y: Boss.y + dy }) });
         Game._p2AuraFx = Game.fxList[Game.fxList.length - 1];
       }
-      /* v0.8.139 二→三階段「古靈降臨」：核心珠緩降（boss4fx 列 1 蓄光）→ 光柱中人形以現有三格成形（17_kneel 蜷伏→14_cast 起身舉手→01_idle1 站立，淡入＋亮度漸退＋微上浮），不再彈出 */
+      /* v0.8.139 二→三階段「古靈降臨」（v0.8.140 改用 51～54_desc 四格）：核心珠緩降（boss4fx 列 1 蓄光）→ 光柱中人形以現有三格成形（17_kneel 蜷伏→14_cast 起身舉手→01_idle1 站立，淡入＋亮度漸退＋微上浮），不再彈出 */
       function drawDescendWorld(D, G, now) {
         const P = Boss._pp, cx = D.cx != null ? D.cx : (P ? P.coreX : Boss.x), t = D.t, F = fxReady("boss4fx") ? fxSheet("boss4fx") : null;
         if (F && t >= 0.1 && t < 1.4) { /* 核心珠由上方降到胸口 */
@@ -178,7 +178,8 @@
         }
         const u = (t - 1.25) / 1.9; if (u <= 0) return;
         const st = Stages[Boss.stageId], SP = st.sprite ? getBossSprite(st.sprite) : null; if (!SP) return;
-        const key = u < 0.3 ? "17_kneel" : u < 0.62 ? "14_cast" : "01_idle1", img = SP.imgs[key] || (key === "17_kneel" && SP.death.kneel.ok ? SP.death.kneel.img : null);
+        const kk = ["51_desc_a", "52_desc_b", "53_desc_c", "54_desc_d"], ki = u < 0.26 ? 0 : u < 0.5 ? 1 : u < 0.76 ? 2 : 3; /* v0.8.140 降臨四張專屬關鍵格（Gemini）：蜷伏→半起→睜眼劍指→站定；沒載到時退回舊三格 */
+        let key = kk[ki], img = SP.imgs[key]; if (!(img && img.complete && img.naturalWidth)) { key = u < 0.3 ? "17_kneel" : u < 0.62 ? "14_cast" : "01_idle1"; img = SP.imgs[key] || (key === "17_kneel" && SP.death.kneel.ok ? SP.death.kneel.img : null); }
         if (!img || !img.complete || !img.naturalWidth) return;
         const k = bossVis(st).k, a = Math.min(1, u * 1.6), br = 1 + Math.max(0, 1 - u) * 2.2, face = Player.x >= cx ? 1 : -1, sc = 0.95 + 0.05 * Math.min(1, u * 1.3), rise = (1 - Math.min(1, u * 1.2)) * 26;
         ctx.save(); ctx.globalAlpha = a; ctx.filter = `brightness(${br.toFixed(2)})`; ctx.translate(cx, G + GROUND_SINK + rise); ctx.scale(face * k * sc, k * sc); ctx.drawImage(img, -450, -560); ctx.restore();

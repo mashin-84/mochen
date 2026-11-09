@@ -325,7 +325,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const S4 = Stages[4];
         S4.name = "萬劍古靈"; S4.maxHp = 2400; S4.maxPosture = 120; S4.deathblows = 2;
         S4.execKill = 2; /* v0.8.90 二階段人形劍魂：處決 2 次才擊敗 */
-        S4.sprite = "boss4s"; S4.spriteExtras = ["20_spin_wind", "21_spin_hit", "22_sweep_wind", "23_fly_launch", "24_rain_wind", "25_spin_rec"]; /* v0.8.90 二階段人形古靈（動作表 16 格：03/04 飄移、20/21 旋斬） */
+        S4.sprite = "boss4s"; S4.spriteExtras = ["20_spin_wind", "21_spin_hit", "22_sweep_wind", "23_fly_launch", "24_rain_wind", "25_spin_rec", "51_desc_a", "52_desc_b", "53_desc_c", "54_desc_d"]; /* v0.8.90 二階段人形古靈（動作表 16 格：03/04 飄移、20/21 旋斬） */
         S4.camZoomP = { 1: 0.85, 2: 0.92 }; /* 鏡頭依階段縮放 */
         S4.parts = {
           seals: 3, handPosture: 100,
