@@ -230,6 +230,7 @@
         let col = "#facc15", key = "tg_yellow", txt = "黃圈：可招架（在紅圈收縮到底時按招架）";
         if (Boss.isPerilous) { col = "#ef4444"; key = "tg_red"; txt = "紅圈【危】：突刺類可在完美窗口內招架看破；橫掃、橫穿、躍斬類不能擋，要跳、瞬步或側閃"; }
         else if (m.armor) { col = "#60a5fa"; key = "tg_blue"; txt = "藍圈：霸體，普攻打不斷；可招架或閃開"; }
+        if (m.hintText) { key = m.hintKey || key; txt = m.hintText; } /* 招式自訂提示（魔焰獸玉不能擋、要瞬步到狼身後） */
         hintOnce(key, txt);
         const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
         const cx = Boss.x, cy = Boss.y - Boss.h * 0.5;

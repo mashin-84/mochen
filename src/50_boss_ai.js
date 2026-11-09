@@ -191,7 +191,7 @@
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
-        Boss._cueDone = false;
+        Boss._cueDone = false; Boss._orbDone = false; Boss._beamOn = false;
         if (m.fxWind && fxReady(m.fxWind.sheet)) { const f = m.fxWind, fc = Boss.facing; spawnFx(f.sheet, f.row, Boss.x + fc * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: m.windup * phaseMod, facing: fc, loop: true, fps: f.fps || 6, alpha: f.alpha == null ? 1 : f.alpha }); } /* v0.8.141 前搖全程的預警圖（魔焰吐息的紅線） */
         Boss.isPerilous = !!m.isPerilous;
         Boss.perilType = m.perilType || null;
@@ -239,6 +239,15 @@
       }
 
       function updateBossAI(dt) {
+        if (Boss._beamOn) { /* v0.8.144 魔焰獸玉：噴射期間畫面持續微幅晃動、手機低強度震動；快結束時換收尾火柱 */
+          if (Boss.state !== "active" || Boss.hp <= 0) Boss._beamOn = false;
+          else {
+            Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.3);
+            Boss._beamHap = (Boss._beamHap || 0) - dt; if (Boss._beamHap <= 0) { Boss._beamHap = 0.2; hapticBuzz(22); }
+            Boss._beamT -= dt;
+            if (!Boss._beamEnded && Boss._beamT <= 0.42 && fxReady("boss5beam")) { Boss._beamEnded = true; const b = Boss._beamCfg, fc = Boss.facing; spawnFx("boss5beam", 3, Boss.x + fc * (b.mx + b.w / 2), Boss.y + b.my, { w: b.w, h: b.h, dur: 0.45, facing: fc, alpha: 0.95, follow: () => ({ x: Boss.x + fc * (b.mx + b.w / 2), y: Boss.y + b.my }) }); }
+          }
+        }
         if (Game.bossDeath) {
           Boss.vx = 0;
           Boss.state = "recover";
@@ -433,6 +442,11 @@
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
+          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.42 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖） */
+            Boss._orbDone = true; const bm = move.beam, fcO = Boss.facing, fo = () => ({ x: Boss.x + fcO * bm.orbDx, y: Boss.y + bm.orbDy });
+            spawnFx("boss5beam", 0, fo().x, fo().y, { w: 340, dur: Math.max(0.3, Boss.stateTimer), alpha: 0.95, follow: fo });
+            Sound.play("peril", 0.9, 0.45); screenFlash("rgba(90,20,120,0.25)", 0.25, Math.max(0.3, Boss.stateTimer)); hapticBuzz([20, 20, 30]);
+          }
           Boss.stateTimer -= dt;
           if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
             Boss.grabZoneX += (Player.x - Boss.grabZoneX) * Math.min(1, dt * 6);
@@ -489,7 +503,7 @@
             // 原語 (4) 區域封鎖：召喚地表持續傷害區域
             if (move.isZone) {
               bsfx("zone");
-              const zX = (move.zoneTargetPlayer || (move.zoneTargetP2 && Config.bossPhase === 2)) ? Player.x : Boss.x + Boss.facing * (move.range * 0.5);
+              const zX = move.zoneDx != null ? Boss.x + Boss.facing * move.zoneDx : (move.zoneTargetPlayer || (move.zoneTargetP2 && Config.bossPhase === 2)) ? Player.x : Boss.x + Boss.facing * (move.range * 0.5);
               Game.hazardZones.push({
                 x: zX,
                 y: Config.groundY,
@@ -499,9 +513,16 @@
                 maxDur: move.zoneDuration || 2.5,
                 type: move.zoneType || "fire",
                 damagePerSec: move.zoneDamagePerSec || 150,
-                warningTimer: move.zoneWarn != null ? move.zoneWarn : 0.5
+                warningTimer: move.zoneWarn != null ? move.zoneWarn : 0.5,
+                tall: !!move.zoneTall, noDraw: !!move.zoneNoDraw
               });
               Sound.play("peril", 0.85, 1.3);
+              if (move.beam && fxReady("boss5beam")) { /* 火柱：從嘴巴射出（整段循環），結尾由 updateBossAI 的 beamTick 換收尾格 */
+                const bm = move.beam, fcB = Boss.facing, fb = () => ({ x: Boss.x + fcB * (bm.mx + bm.w / 2), y: Boss.y + bm.my });
+                spawnFx("boss5beam", 2, fb().x, fb().y, { w: bm.w, h: bm.h, dur: Math.max(0.4, Boss.stateTimer), loop: true, fps: 14, facing: fcB, alpha: 0.96, follow: fb });
+                Boss._beamOn = true; Boss._beamT = Boss.stateTimer; Boss._beamEnded = false; Boss._beamCfg = bm; Boss._beamHap = 0;
+                screenFlash("rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); Sound.play("execution", 0.8, 0.5); Sound.play("m_roar", 1.0, 0.8);
+              }
               spawnFloatingText(zX, Config.groundY - 50, "【煞氣絕地形成】！", "#f87171", 1.15);
             }
 

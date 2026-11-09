@@ -75,6 +75,7 @@
         // Draw Hazard Zones (原語 4)
         if (Game.hazardZones && Game.hazardZones.length > 0) {
           for (const hz of Game.hazardZones) {
+            if (hz.noDraw) continue; /* 火柱等自帶特效的區域不畫方塊 */
             ctx.save();
             const alpha = Math.max(0, Math.min(1, hz.duration / (hz.maxDur || 1)));
             const isWarn = hz.warningTimer > 0;

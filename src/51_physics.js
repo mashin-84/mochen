@@ -346,7 +346,7 @@
             hz.warningTimer -= dt;
             hz.duration -= dt;
             if (hz.warningTimer <= 0) {
-              const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && Player.y >= Config.groundY - 20;
+              const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && (hz.tall || Player.y >= Config.groundY - 20); /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
               if (inZone && Player.invulnTimer <= 0 && Player.state !== "execution") {
                 /* v0.7.8 煞氣地形是持續傷害：每 0.3 秒結算一次、不硬直不停頓，可以走出去（以前每幀 takeDamage 會一直硬直卡死） */
                 hz.tickT = (hz.tickT || 0) - dt;

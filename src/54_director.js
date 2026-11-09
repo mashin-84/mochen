@@ -55,7 +55,7 @@
           ring: { sheet: "land", row: 0, w: 1100, dur: 0.8 },
           sfxT: [[0.1, "w_howl", 1.0, 0.8], [0.9, "peril", 0.8, 0.5], [2.4, "b3_plunge", 0.8, 0.6], [3.0, "b2_shatter", 0.7, 0.8], [4.4, "peril", 1.0, 0.7]], sfx: [["execution", 0.9, 0.55], ["m_roar", 1.0, 1]] }
       };
-      if (Stages[5]) Stages[5].fxSheets = (Stages[5].fxSheets || []).concat(["boss5intro", "boss5morph", "boss5flame", "cue"]);
+      if (Stages[5]) Stages[5].fxSheets = (Stages[5].fxSheets || []).concat(["boss5intro", "boss5morph", "boss5flame", "boss5beam", "cue"]);
       function wolfBackFlame() { /* 大狼背上的魔焰（flame.webp 第 3 列大火、第 4 列飄散火星）：疊加發光、循環搖擺，跟著 Boss */
         if (!fxReady("flame")) return;
         [[-140, 6.5, 2, 190, 0.5], [-10, 8, 2, 220, 0.5], [115, 7, 2, 190, 0.5], [0, 5, 3, 300, 0.7]].forEach(([o, fps, row, sz, al]) => spawnFx("flame", row, Boss.x, Boss.y - 185, { anchor: "b", w: sz, h: sz, alpha: al, dur: 9999, loop: true, fps, follow: () => (Boss.hp > 0 ? { x: Boss.x + Boss.facing * o, y: Boss.y - 185 } : { x: -9999, y: -9999 }) }));

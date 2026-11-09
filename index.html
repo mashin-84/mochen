@@ -2098,7 +2098,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "91524d5d"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
+      const ASSET_VER = "a75f701e"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
       (function () {
         const d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
         if (!d || !d.set) return;
@@ -3085,13 +3085,15 @@
         M.b_tail = { kick: 0.25, fxAct: { sheet: "wolf2", row: 0, ox: 40, oy: -70, w: 1150, h: 520, dur: 0.5, alpha: 0.9 }, name: "【危】魔尾裂風掃 (起跳踩頭)", isPerilous: true, perilType: "sweep", frames: { windup: ["58_bt_wind"], active: ["59_bt_spin"], recover: ["43_bw_rec"] }, windup: 0.60, active: 0.24, recover: 0.62, range: 360, lunge: 260, damage: 300 };
         M.b_rush = { kick: 0.25, name: "巨狼衝撞 (跳躍越過)", isCharge: true, armor: true, chargeSpeed: 720, frames: { windup: ["54_bc_wind"], active: ["55_bc_run"], recover: ["47_bs_rec"] }, windup: 0.70, active: 0.70, recover: 0.90, range: 260, lunge: 720, damage: 260, parryPostureDmg: 24 };
         M.b_rage = { kickHit: 0.15, fxHit: { sheet: "wolf", row: 0, ox: 220, oy: -200, w: 700, dur: 0.3 }, name: "血海狼嚎・亂爪 (霸體)", isRage: true, armor: true, isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 130, frames: { windup: ["56_b_howl"], active: ["41_bw_mid", "45_bs_down", "42_bw_follow"], recover: ["43_bw_rec"] }, windup: 0.70, active: 0.95, recover: 0.70, range: 340, lunge: 320, damage: 220, parryPostureDmg: 26 };
-        M.b_breath = { name: "魔焰吐息 (看紅線，跳起或側閃，不能擋)", isZone: true, zoneType: "flame", zoneWidth: 560, zoneDuration: 1.0, zoneDamagePerSec: 460, zoneWarn: 0.1, kick: 0.3, fxWind: { sheet: "boss5flame", row: 2, ox: 330, oy: -22, w: 760, h: 560, fps: 5, alpha: 1 }, fxAct: { sheet: "boss5flame", row: 0, ox: 560, oy: -330, w: 720, h: 360, dur: 0.9, alpha: 0.95 }, frames: { windup: ["07_windup"], active: ["56_b_howl"], recover: ["43_bw_rec"] }, windup: 1.0, active: 0.9, recover: 0.75, range: 540, lunge: 0, damage: 0 };
+        M.b_breath = { name: "魔焰獸玉 (瞬步穿到狼後方才躲得掉)", isZone: true, zoneType: "beam", zoneDx: 925, zoneWidth: 1500, zoneDuration: 0.95, zoneDamagePerSec: 420, zoneWarn: 0.05, zoneTall: true, zoneNoDraw: true, zoneFacing: true, kick: 0.5, hintKey: "tg_beam", hintText: "【魔焰獸玉】火柱又高又長，跳不過也退不掉：趁它後縮蓄力時，用瞬步衝到狼身後！",
+          beam: { orbDx: 190, orbDy: -250, mx: 175, my: -285, w: 1500, h: 760 }, /* 嘴部座標（相對腳底中心，圖朝右；coil／fire 關鍵格量得）；orb＝後縮時嘴裡的魔焰球；beam＝火柱起點與大小 */
+          frames: { windup: ["60_br_crouch", "61_br_coil"], active: ["62_br_fire"], recover: ["63_br_rec"] }, windup: 1.5, active: 1.1, recover: 1.1, range: 900, lunge: 0, damage: 0 };
         Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
         S5.moves = M;
         const SFX = { s_bite: { w: "w_snarl", a: "w_snap" }, s_bite2: { w: "w_snarl", h: "w_snap" }, s_claw3: { w: "w_snarl", h: "w_claw" }, s_pounce: { w: "w_snarl", a: "w_bark" }, s_rush: { w: "w_snarl", a: "w_bark" }, s_tail: { w: "w_snarl", a: "w_claw" }, s_shadow: { a: "w_claw" }, s_decoy: { w: "w_snarl", a: "w_snap" }, s_rage: { w: "w_howl", a: "w_bark" }, backstep: { a: "w_claw" }, dash_in: { a: "w_claw" },
           b_swipe: { w: "m_growl", a: "m_swipe" }, b_stomp: { w: "m_growl", h: "m_stomp" }, b_howl: { a: "m_roar" }, b_breath: { w: "m_growl", a: "m_roar" }, b_bone: { w: "m_growl" }, b_leap: { w: "m_growl", a: "m_roar" }, b_bite: { w: "m_growl", a: "m_bite" }, b_tail: { w: "m_growl", a: "m_swipe" }, b_rush: { w: "m_growl", a: "m_roar" }, b_rage: { w: "m_howl", h: "m_swipe" }, transform: { w: "w_howl" } };
         Object.keys(SFX).forEach((k) => { if (M[k]) M[k].sfx = SFX[k]; }); /* v0.8.34 狼的招式音效：w＝前搖、a＝出招、h＝連擊每一下 */
-        S5.dfmK = 0.35; /* 變形強度：使用者要求輕微（原 1.0 太誇張）*/ S5.fxSheets = ["wolf", "wolf2", "land", "flame", "boss5intro", "boss5morph", "boss5flame", "cue"]; S5.cueArt = true; S5.zoneArt = { bone: ["wolf2", 2, "up"], flame: ["boss5flame", 1, "flat"] }; S5.landArt = ["wolf2", 3]; /* v0.8.82 第二張專屬特效圖：0 甩尾魂焰弧、1 錘地震波、2 白骨刺（1～3 循環）、3 落地衝擊 */ S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 2.67; /* v0.8.82 小狼放大 0.64→0.72，脹大倍數 3.0×0.64/0.72 讓蛻變終點大小不變 */ /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
+        S5.dfmK = 0.35; /* 變形強度：使用者要求輕微（原 1.0 太誇張）*/ S5.fxSheets = ["wolf", "wolf2", "land", "flame", "boss5intro", "boss5morph", "boss5flame", "boss5beam", "cue"]; S5.cueArt = true; S5.zoneArt = { bone: ["wolf2", 2, "up"], flame: ["boss5flame", 1, "flat"] }; S5.landArt = ["wolf2", 3]; /* v0.8.82 第二張專屬特效圖：0 甩尾魂焰弧、1 錘地震波、2 白骨刺（1～3 循環）、3 落地衝擊 */ S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 2.67; /* v0.8.82 小狼放大 0.64→0.72，脹大倍數 3.0×0.64/0.72 讓蛻變終點大小不變 */ /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
         /* v0.8.79 第 5 關分層場景：荒原殘陽地面帶＋前景剪影（參數同第 2 關） */
         S5.layers = [
           { img: "arena5_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.08 },
@@ -3102,7 +3104,7 @@
             pool: [["s_bite", 14], ["s_bite2", 12], ["s_claw3", 11], ["s_bite+backstep", 10, "mobility"], ["s_pounce+backstep", 9, "mobility"], ["dash_in+s_bite", 10, "chase"], ["s_rush", 8], ["s_tail", 8], ["s_shadow+s_bite", 8, "chase"], ["s_decoy", 9]],
             far: ["dash_in+s_bite", "s_pounce"], farP2: [] },
           B: { sprite: "boss5b", stride: 330, speed: 250, /* 大狼：站立與走路只用外觀一致（無骨腿）的格子，避免 AI 生圖各格骨腿有無不同而閃爍 */
-            extras: ["22_swipe_rear", "23_swipe_mid", "24_slam_up", "25_slam_mid", "26_leap_crouch", "27_leap_fly", "28_leap_dive", "29_bite_wind", "30_bite_snap", "31_rush", "32_tail_wind", "33_tail_spin", "40_bw_wind", "41_bw_mid", "42_bw_follow", "43_bw_rec", "44_bs_up", "45_bs_down", "46_bs_up2", "47_bs_rec", "48_bl_crouch", "49_bl_fly", "50_bl_dive", "51_bl_land", "52_bb_tell", "53_bb_snap", "54_bc_wind", "55_bc_run", "56_b_howl", "57_b_summon", "58_bt_wind", "59_bt_spin"], walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 1.05, hurtHalf: 230, bodyW: 520, bodyH: 300, rageMove: "b_rage",
+            extras: ["22_swipe_rear", "23_swipe_mid", "24_slam_up", "25_slam_mid", "26_leap_crouch", "27_leap_fly", "28_leap_dive", "29_bite_wind", "30_bite_snap", "31_rush", "32_tail_wind", "33_tail_spin", "40_bw_wind", "41_bw_mid", "42_bw_follow", "43_bw_rec", "44_bs_up", "45_bs_down", "46_bs_up2", "47_bs_rec", "48_bl_crouch", "49_bl_fly", "50_bl_dive", "51_bl_land", "52_bb_tell", "53_bb_snap", "54_bc_wind", "55_bc_run", "56_b_howl", "57_b_summon", "58_bt_wind", "59_bt_spin", "60_br_crouch", "61_br_coil", "62_br_fire", "63_br_rec"], walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], spriteScale: 1.05, hurtHalf: 230, bodyW: 520, bodyH: 300, rageMove: "b_rage",
             pool: [["b_swipe", 16], ["b_stomp", 12], ["b_howl", 9, "push"], ["b_bite", 9], ["b_tail", 9], ["b_leap", 12, "mobility"], ["b_rush", 8, "chase"], ["b_breath", 10]],
             far: ["b_rush", "b_leap"], farP2: [] }
         };
@@ -4990,7 +4992,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
-        Boss._cueDone = false;
+        Boss._cueDone = false; Boss._orbDone = false; Boss._beamOn = false;
         if (m.fxWind && fxReady(m.fxWind.sheet)) { const f = m.fxWind, fc = Boss.facing; spawnFx(f.sheet, f.row, Boss.x + fc * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: m.windup * phaseMod, facing: fc, loop: true, fps: f.fps || 6, alpha: f.alpha == null ? 1 : f.alpha }); } /* v0.8.141 前搖全程的預警圖（魔焰吐息的紅線） */
         Boss.isPerilous = !!m.isPerilous;
         Boss.perilType = m.perilType || null;
@@ -5038,6 +5040,15 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
 
       function updateBossAI(dt) {
+        if (Boss._beamOn) { /* v0.8.144 魔焰獸玉：噴射期間畫面持續微幅晃動、手機低強度震動；快結束時換收尾火柱 */
+          if (Boss.state !== "active" || Boss.hp <= 0) Boss._beamOn = false;
+          else {
+            Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.3);
+            Boss._beamHap = (Boss._beamHap || 0) - dt; if (Boss._beamHap <= 0) { Boss._beamHap = 0.2; hapticBuzz(22); }
+            Boss._beamT -= dt;
+            if (!Boss._beamEnded && Boss._beamT <= 0.42 && fxReady("boss5beam")) { Boss._beamEnded = true; const b = Boss._beamCfg, fc = Boss.facing; spawnFx("boss5beam", 3, Boss.x + fc * (b.mx + b.w / 2), Boss.y + b.my, { w: b.w, h: b.h, dur: 0.45, facing: fc, alpha: 0.95, follow: () => ({ x: Boss.x + fc * (b.mx + b.w / 2), y: Boss.y + b.my }) }); }
+          }
+        }
         if (Game.bossDeath) {
           Boss.vx = 0;
           Boss.state = "recover";
@@ -5232,6 +5243,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
+          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.42 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖） */
+            Boss._orbDone = true; const bm = move.beam, fcO = Boss.facing, fo = () => ({ x: Boss.x + fcO * bm.orbDx, y: Boss.y + bm.orbDy });
+            spawnFx("boss5beam", 0, fo().x, fo().y, { w: 340, dur: Math.max(0.3, Boss.stateTimer), alpha: 0.95, follow: fo });
+            Sound.play("peril", 0.9, 0.45); screenFlash("rgba(90,20,120,0.25)", 0.25, Math.max(0.3, Boss.stateTimer)); hapticBuzz([20, 20, 30]);
+          }
           Boss.stateTimer -= dt;
           if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
             Boss.grabZoneX += (Player.x - Boss.grabZoneX) * Math.min(1, dt * 6);
@@ -5288,7 +5304,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             // 原語 (4) 區域封鎖：召喚地表持續傷害區域
             if (move.isZone) {
               bsfx("zone");
-              const zX = (move.zoneTargetPlayer || (move.zoneTargetP2 && Config.bossPhase === 2)) ? Player.x : Boss.x + Boss.facing * (move.range * 0.5);
+              const zX = move.zoneDx != null ? Boss.x + Boss.facing * move.zoneDx : (move.zoneTargetPlayer || (move.zoneTargetP2 && Config.bossPhase === 2)) ? Player.x : Boss.x + Boss.facing * (move.range * 0.5);
               Game.hazardZones.push({
                 x: zX,
                 y: Config.groundY,
@@ -5298,9 +5314,16 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                 maxDur: move.zoneDuration || 2.5,
                 type: move.zoneType || "fire",
                 damagePerSec: move.zoneDamagePerSec || 150,
-                warningTimer: move.zoneWarn != null ? move.zoneWarn : 0.5
+                warningTimer: move.zoneWarn != null ? move.zoneWarn : 0.5,
+                tall: !!move.zoneTall, noDraw: !!move.zoneNoDraw
               });
               Sound.play("peril", 0.85, 1.3);
+              if (move.beam && fxReady("boss5beam")) { /* 火柱：從嘴巴射出（整段循環），結尾由 updateBossAI 的 beamTick 換收尾格 */
+                const bm = move.beam, fcB = Boss.facing, fb = () => ({ x: Boss.x + fcB * (bm.mx + bm.w / 2), y: Boss.y + bm.my });
+                spawnFx("boss5beam", 2, fb().x, fb().y, { w: bm.w, h: bm.h, dur: Math.max(0.4, Boss.stateTimer), loop: true, fps: 14, facing: fcB, alpha: 0.96, follow: fb });
+                Boss._beamOn = true; Boss._beamT = Boss.stateTimer; Boss._beamEnded = false; Boss._beamCfg = bm; Boss._beamHap = 0;
+                screenFlash("rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); Sound.play("execution", 0.8, 0.5); Sound.play("m_roar", 1.0, 0.8);
+              }
               spawnFloatingText(zX, Config.groundY - 50, "【煞氣絕地形成】！", "#f87171", 1.15);
             }
 
@@ -5962,7 +5985,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
             hz.warningTimer -= dt;
             hz.duration -= dt;
             if (hz.warningTimer <= 0) {
-              const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && Player.y >= Config.groundY - 20;
+              const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && (hz.tall || Player.y >= Config.groundY - 20); /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
               if (inZone && Player.invulnTimer <= 0 && Player.state !== "execution") {
                 /* v0.7.8 煞氣地形是持續傷害：每 0.3 秒結算一次、不硬直不停頓，可以走出去（以前每幀 takeDamage 會一直硬直卡死） */
                 hz.tickT = (hz.tickT || 0) - dt;
@@ -7304,7 +7327,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ring: { sheet: "land", row: 0, w: 1100, dur: 0.8 },
           sfxT: [[0.1, "w_howl", 1.0, 0.8], [0.9, "peril", 0.8, 0.5], [2.4, "b3_plunge", 0.8, 0.6], [3.0, "b2_shatter", 0.7, 0.8], [4.4, "peril", 1.0, 0.7]], sfx: [["execution", 0.9, 0.55], ["m_roar", 1.0, 1]] }
       };
-      if (Stages[5]) Stages[5].fxSheets = (Stages[5].fxSheets || []).concat(["boss5intro", "boss5morph", "boss5flame", "cue"]);
+      if (Stages[5]) Stages[5].fxSheets = (Stages[5].fxSheets || []).concat(["boss5intro", "boss5morph", "boss5flame", "boss5beam", "cue"]);
       function wolfBackFlame() { /* 大狼背上的魔焰（flame.webp 第 3 列大火、第 4 列飄散火星）：疊加發光、循環搖擺，跟著 Boss */
         if (!fxReady("flame")) return;
         [[-140, 6.5, 2, 190, 0.5], [-10, 8, 2, 220, 0.5], [115, 7, 2, 190, 0.5], [0, 5, 3, 300, 0.7]].forEach(([o, fps, row, sz, al]) => spawnFx("flame", row, Boss.x, Boss.y - 185, { anchor: "b", w: sz, h: sz, alpha: al, dur: 9999, loop: true, fps, follow: () => (Boss.hp > 0 ? { x: Boss.x + Boss.facing * o, y: Boss.y - 185 } : { x: -9999, y: -9999 }) }));
@@ -7997,6 +8020,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         // Draw Hazard Zones (原語 4)
         if (Game.hazardZones && Game.hazardZones.length > 0) {
           for (const hz of Game.hazardZones) {
+            if (hz.noDraw) continue; /* 火柱等自帶特效的區域不畫方塊 */
             ctx.save();
             const alpha = Math.max(0, Math.min(1, hz.duration / (hz.maxDur || 1)));
             const isWarn = hz.warningTimer > 0;
@@ -9232,6 +9256,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         let col = "#facc15", key = "tg_yellow", txt = "黃圈：可招架（在紅圈收縮到底時按招架）";
         if (Boss.isPerilous) { col = "#ef4444"; key = "tg_red"; txt = "紅圈【危】：突刺類可在完美窗口內招架看破；橫掃、橫穿、躍斬類不能擋，要跳、瞬步或側閃"; }
         else if (m.armor) { col = "#60a5fa"; key = "tg_blue"; txt = "藍圈：霸體，普攻打不斷；可招架或閃開"; }
+        if (m.hintText) { key = m.hintKey || key; txt = m.hintText; } /* 招式自訂提示（魔焰獸玉不能擋、要瞬步到狼身後） */
         hintOnce(key, txt);
         const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
         const cx = Boss.x, cy = Boss.y - Boss.h * 0.5;
