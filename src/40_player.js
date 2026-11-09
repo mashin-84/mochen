@@ -245,7 +245,7 @@
         triggerShake(Player.facing, dive ? 0.6 : -0.15, dive ? 20 : 11, dive ? 0.24 : 0.16);
         spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - (dive ? Boss.h * 0.85 : 62), "hit", Player.facing);
         bossHitFx(dive ? "heavy" : "hit");
-        damageBossPosture(post, null, Boss.maxPosture * (dive ? 0.8 : 0.6));
+        damageBossPosture(post, null, Boss.maxPosture * (dive ? 0.8 : 0.6), false, true);
         spawnFloatingText(Boss.x + (Math.random() - 0.5) * 24, Boss.y - 105, `-${dmg}${dive ? " 下劈" : " 凌空"}`, "#7dd3fc", dive ? 1.2 : 1.0);
         setTelemetry(`${dive ? "凌空下劈" : "凌空斬"}命中 (-${dmg} 氣血 / 架勢 +${post}%)`);
         if (dive) {
@@ -779,7 +779,8 @@
         syncAssistUI();
       }
 
-      function damageBossPosture(amount, label, cap, noSeal) {
+      function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
+        if (fromAtk && Boss._hpOut) return; /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢（普攻、重斬、蓄力、被 Boss 彈刀都不算） */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
         

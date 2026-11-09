@@ -245,10 +245,12 @@
         return arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
       }
       function updateBossAI(dt) {
-        { const SH = Stages[Boss.stageId]; /* v0.8.151 血磨到見底（普攻最低只到 1）＝自動破防，等玩家處決（一階段→進二階段、二階段→擊敗） */
-          if (SH && SH.hpSplit && !SH.parts && Boss.hp > 0 && Boss.hp <= 1 && !Game.bossDeath && !Game.dir && Player.state !== "execution" && Boss.state !== "staggered") {
-            Boss._hpOut = true; damageBossPosture(Boss.maxPosture * 2, "", null, true);
-            if (Boss.state === "staggered") { Boss.staggerTimer = 99; hintOnce("hpout", "Boss 血見底了！按【處決】收下這一條血"); }
+        { const SH = Stages[Boss.stageId]; /* v0.8.153 血磨到見底（普攻最低只到 1）＝架勢直接拉到 80% 且停止恢復，但不直接破防：還要靠彈刀／完美招架補滿才能處決（使用者選方案一；普攻架勢有 60% 上限，補不滿） */
+          if (SH && SH.hpSplit && !SH.parts && Boss.hp > 0 && !Game.bossDeath) {
+            if (Boss.hp <= 1) {
+              if (!Boss._hpOut) { Boss._hpOut = true; hintOnce("hpout", "Boss 血見底了！架勢不再恢復：彈刀或完美招架補滿架勢，就能處決"); }
+              if (Boss.state !== "staggered") Boss.posture = Math.max(Boss.posture, Boss.maxPosture * 0.8);
+            } else Boss._hpOut = false;
           }
         }
         { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
@@ -367,7 +369,7 @@
 
         if (Boss.postureDecayDelay > 0) {
           Boss.postureDecayDelay -= dt;
-        } else if (Boss.state === "idle" || Boss.state === "approach") {
+        } else if ((Boss.state === "idle" || Boss.state === "approach") && !Boss._hpOut) { /* v0.8.153 血見底時架勢不恢復 */
           // 隻狼核心機制：Boss 氣血決定架勢恢復速度！
           // 血量 > 75%：架勢恢復極快 (12%/s，拉開距離瞬間回滿)！
           // 血量 50%~75%：架勢恢復中速 (6%/s)

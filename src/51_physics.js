@@ -137,7 +137,7 @@
                   Boss.flashFrames = 4;
                   Boss.consecutiveBlocks = 0;
 
-                  damageBossPosture(30, "【蓄力破霸體】架勢 +30%！");
+                  damageBossPosture(30, "【蓄力破霸體】架勢 +30%！", null, false, true);
                   Boss.hp = Math.max(1, Boss.hp - 160);
 
                   Sound.play("parry", 1.0, 1.25);
@@ -157,7 +157,7 @@
                   Boss.flashFrames = 2;
                   Boss.vx = Player.facing * 85;
 
-                  damageBossPosture(10, null); // 普通重斬架勢，不得有破防加成！
+                  damageBossPosture(10, null, null, false, true); // 普通重斬架勢，不得有破防加成！
                   Sound.play("hit", 0.9, 0.88);
                   Sound.play("s_hit", 0.7, 0.9);
                   triggerHitstopMs(hitstopByDmg(dmg));
@@ -193,7 +193,7 @@
                 triggerShake(Player.facing, -0.15, 11, 0.16);
                 spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
 
-                damageBossPosture(post, null, Boss.maxPosture * 0.6);
+                damageBossPosture(post, null, Boss.maxPosture * 0.6, false, true);
                 bossHitFx(Player.comboStep === 3 ? "heavy" : "hit");
                 spawnFloatingText(Boss.x + (Math.random() - 0.5) * 28, Boss.y - 105, `-${dmg}`, "#38bdf8", Player.comboStep === 3 ? 1.15 : 0.98);
                 setTelemetry(`破綻重創！青雲劍斬中敵酋 (-${dmg} 氣血 / 架勢 +${post}%)`);
@@ -208,7 +208,7 @@
                   Sound.play("block", 0.9, 1.0);
                   triggerHitstop(3);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "block", Player.facing);
-                  damageBossPosture(5, null, Boss.maxPosture * 0.6);
+                  damageBossPosture(5, null, Boss.maxPosture * 0.6, false, true);
                   bossHitFx("block");
                   spawnFloatingText(Boss.x, Boss.y - 95, `敵將格擋 (第${Boss.consecutiveBlocks}劍)`, "#cbd5e1", 0.95);
                   setTelemetry(`〔交鋒：敵將舉兵格擋第 ${Boss.consecutiveBlocks} 劍，注意彈刀！〕`);
@@ -221,7 +221,7 @@
                   triggerHitstop(5);
                   triggerShake(Player.facing, 0.22, 18, 0.24);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "parry", -Player.facing);
-                  damageBossPosture(14, "敵將彈刀！");
+                  damageBossPosture(14, "敵將彈刀！", null, false, true);
 
                   // 墨塵長劍被彈開受阻
                   Player.vx = -Player.facing * 160;

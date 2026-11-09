@@ -4015,7 +4015,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         triggerShake(Player.facing, dive ? 0.6 : -0.15, dive ? 20 : 11, dive ? 0.24 : 0.16);
         spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - (dive ? Boss.h * 0.85 : 62), "hit", Player.facing);
         bossHitFx(dive ? "heavy" : "hit");
-        damageBossPosture(post, null, Boss.maxPosture * (dive ? 0.8 : 0.6));
+        damageBossPosture(post, null, Boss.maxPosture * (dive ? 0.8 : 0.6), false, true);
         spawnFloatingText(Boss.x + (Math.random() - 0.5) * 24, Boss.y - 105, `-${dmg}${dive ? " 下劈" : " 凌空"}`, "#7dd3fc", dive ? 1.2 : 1.0);
         setTelemetry(`${dive ? "凌空下劈" : "凌空斬"}命中 (-${dmg} 氣血 / 架勢 +${post}%)`);
         if (dive) {
@@ -4549,7 +4549,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         syncAssistUI();
       }
 
-      function damageBossPosture(amount, label, cap, noSeal) {
+      function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
+        if (fromAtk && Boss._hpOut) return; /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢（普攻、重斬、蓄力、被 Boss 彈刀都不算） */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
         
@@ -5055,10 +5056,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         return arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
       }
       function updateBossAI(dt) {
-        { const SH = Stages[Boss.stageId]; /* v0.8.151 血磨到見底（普攻最低只到 1）＝自動破防，等玩家處決（一階段→進二階段、二階段→擊敗） */
-          if (SH && SH.hpSplit && !SH.parts && Boss.hp > 0 && Boss.hp <= 1 && !Game.bossDeath && !Game.dir && Player.state !== "execution" && Boss.state !== "staggered") {
-            Boss._hpOut = true; damageBossPosture(Boss.maxPosture * 2, "", null, true);
-            if (Boss.state === "staggered") { Boss.staggerTimer = 99; hintOnce("hpout", "Boss 血見底了！按【處決】收下這一條血"); }
+        { const SH = Stages[Boss.stageId]; /* v0.8.153 血磨到見底（普攻最低只到 1）＝架勢直接拉到 80% 且停止恢復，但不直接破防：還要靠彈刀／完美招架補滿才能處決（使用者選方案一；普攻架勢有 60% 上限，補不滿） */
+          if (SH && SH.hpSplit && !SH.parts && Boss.hp > 0 && !Game.bossDeath) {
+            if (Boss.hp <= 1) {
+              if (!Boss._hpOut) { Boss._hpOut = true; hintOnce("hpout", "Boss 血見底了！架勢不再恢復：彈刀或完美招架補滿架勢，就能處決"); }
+              if (Boss.state !== "staggered") Boss.posture = Math.max(Boss.posture, Boss.maxPosture * 0.8);
+            } else Boss._hpOut = false;
           }
         }
         { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
@@ -5177,7 +5180,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
 
         if (Boss.postureDecayDelay > 0) {
           Boss.postureDecayDelay -= dt;
-        } else if (Boss.state === "idle" || Boss.state === "approach") {
+        } else if ((Boss.state === "idle" || Boss.state === "approach") && !Boss._hpOut) { /* v0.8.153 血見底時架勢不恢復 */
           // 隻狼核心機制：Boss 氣血決定架勢恢復速度！
           // 血量 > 75%：架勢恢復極快 (12%/s，拉開距離瞬間回滿)！
           // 血量 50%~75%：架勢恢復中速 (6%/s)
@@ -5819,7 +5822,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                   Boss.flashFrames = 4;
                   Boss.consecutiveBlocks = 0;
 
-                  damageBossPosture(30, "【蓄力破霸體】架勢 +30%！");
+                  damageBossPosture(30, "【蓄力破霸體】架勢 +30%！", null, false, true);
                   Boss.hp = Math.max(1, Boss.hp - 160);
 
                   Sound.play("parry", 1.0, 1.25);
@@ -5839,7 +5842,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                   Boss.flashFrames = 2;
                   Boss.vx = Player.facing * 85;
 
-                  damageBossPosture(10, null); // 普通重斬架勢，不得有破防加成！
+                  damageBossPosture(10, null, null, false, true); // 普通重斬架勢，不得有破防加成！
                   Sound.play("hit", 0.9, 0.88);
                   Sound.play("s_hit", 0.7, 0.9);
                   triggerHitstopMs(hitstopByDmg(dmg));
@@ -5875,7 +5878,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                 triggerShake(Player.facing, -0.15, 11, 0.16);
                 spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "hit", Player.facing);
 
-                damageBossPosture(post, null, Boss.maxPosture * 0.6);
+                damageBossPosture(post, null, Boss.maxPosture * 0.6, false, true);
                 bossHitFx(Player.comboStep === 3 ? "heavy" : "hit");
                 spawnFloatingText(Boss.x + (Math.random() - 0.5) * 28, Boss.y - 105, `-${dmg}`, "#38bdf8", Player.comboStep === 3 ? 1.15 : 0.98);
                 setTelemetry(`破綻重創！青雲劍斬中敵酋 (-${dmg} 氣血 / 架勢 +${post}%)`);
@@ -5890,7 +5893,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                   Sound.play("block", 0.9, 1.0);
                   triggerHitstop(3);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "block", Player.facing);
-                  damageBossPosture(5, null, Boss.maxPosture * 0.6);
+                  damageBossPosture(5, null, Boss.maxPosture * 0.6, false, true);
                   bossHitFx("block");
                   spawnFloatingText(Boss.x, Boss.y - 95, `敵將格擋 (第${Boss.consecutiveBlocks}劍)`, "#cbd5e1", 0.95);
                   setTelemetry(`〔交鋒：敵將舉兵格擋第 ${Boss.consecutiveBlocks} 劍，注意彈刀！〕`);
@@ -5903,7 +5906,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
                   triggerHitstop(5);
                   triggerShake(Player.facing, 0.22, 18, 0.24);
                   spawnSparks((Player.x + Boss.x) * 0.5, Boss.y - 62, "parry", -Player.facing);
-                  damageBossPosture(14, "敵將彈刀！");
+                  damageBossPosture(14, "敵將彈刀！", null, false, true);
 
                   // 墨塵長劍被彈開受阻
                   Player.vx = -Player.facing * 160;
