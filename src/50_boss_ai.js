@@ -191,7 +191,7 @@
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
-        Boss._cueDone = false; Boss._orbDone = false; Boss._beamOn = false;
+        Boss._cueDone = false; Boss._orbDone = false; Boss._ringDone = false; Boss._beamOn = false;
         if (m.fxWind && fxReady(m.fxWind.sheet)) { const f = m.fxWind, fc = Boss.facing; spawnFx(f.sheet, f.row, Boss.x + fc * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: m.windup * phaseMod, facing: fc, loop: true, fps: f.fps || 6, alpha: f.alpha == null ? 1 : f.alpha }); } /* v0.8.141 前搖全程的預警圖（魔焰吐息的紅線） */
         Boss.isPerilous = !!m.isPerilous;
         Boss.perilType = m.perilType || null;
@@ -238,17 +238,18 @@
         }
       }
 
+      /* v0.8.147 魔焰獸玉：依目前播放的關鍵格取嘴部座標（cfg.mouthW／mouthA＝每格 [dx,dy]，相對腳底中心、圖朝右） */
+      function beamMouth(cfg, ph) {
+        const arr = ph === "A" ? cfg.mouthA : cfg.mouthW; if (!arr) return [cfg.orbDx || 0, cfg.orbDy || 0];
+        const dur = Boss.stateDur || 1, p = Math.max(0, Math.min(0.999, ph === "A" ? 1 - Boss.stateTimer / dur : 1 - Boss.stateTimer / dur));
+        return arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
+      }
       function updateBossAI(dt) {
         { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
           const chOn = Boss.state === "windup" && Boss._orbDone && Boss._orbCfg && Boss.hp > 0;
           Boss._cd = (Boss._cd || 0) + ((chOn ? 1 : 0) - (Boss._cd || 0)) * Math.min(1, dt * (chOn ? 3 : 9));
           if (Boss._cd < 0.01) Boss._cd = 0;
-          if (chOn && fxReady("boss5morph")) {
-            const bm = Boss._orbCfg, fcC = Boss.facing, ox = Boss.x + fcC * bm.orbDx, oy = Boss.y + bm.orbDy; Boss._orbPos = { x: ox, y: oy };
-            Boss._pT = (Boss._pT || 0) - dt;
-            while (Boss._pT <= 0) { Boss._pT += 0.035; const an = Math.random() * Math.PI * 2, R = 240 + Math.random() * 220, sx = ox + Math.cos(an) * R, sy = oy + Math.sin(an) * R * 0.8, tt = 0.5 + Math.random() * 0.15;
-              spawnFx("boss5morph", 1, sx, sy, { w: 120 + Math.random() * 90, dur: tt, vx: (ox - sx) / tt, vy: (oy - sy) / tt, c0: 3, nf: 1, alpha: 0.9 }); }
-          }
+          if (chOn) { const mw = beamMouth(Boss._orbCfg, "W"); Boss._orbPos = { x: Boss.x + Boss.facing * mw[0], y: Boss.y + mw[1] }; } /* 聚焦壓暗的中心跟著嘴 */
         }
         if (Boss._beamOn) { /* v0.8.144 魔焰獸玉：噴射期間畫面持續微幅晃動、手機低強度震動；快結束時換收尾火柱 */
           if (Boss.state !== "active" || Boss.hp <= 0) Boss._beamOn = false;
@@ -453,10 +454,16 @@
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
-          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.22 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖） */
-            Boss._orbDone = true; Boss._orbCfg = move.beam; const bm = move.beam, fcO = Boss.facing, fo = () => ({ x: Boss.x + fcO * bm.orbDx, y: Boss.y + bm.orbDy });
-            spawnFx("boss5beam", 0, fo().x, fo().y, { w: 340, dur: Math.max(0.3, Boss.stateTimer), alpha: 0.95, follow: fo });
-            Sound.play("peril", 0.9, 0.45); screenFlash("rgba(90,20,120,0.25)", 0.25, Math.max(0.3, Boss.stateTimer)); hapticBuzz([20, 20, 30]);
+          if (move.beam && !Boss._orbDone && 1 - Boss.stateTimer / (Boss.stateDur || 1) >= 0.28 && fxReady("boss5beam")) { /* 後縮：嘴裡凝出魔焰球（4 格長大，播滿剩餘前搖），球心收集光點 */
+            Boss._orbDone = true; Boss._orbCfg = move.beam; const bm = move.beam, rem = Math.max(0.3, Boss.stateTimer);
+            const fo = () => { const mw = beamMouth(bm, "W"); return { x: Boss.x + Boss.facing * mw[0], y: Boss.y + mw[1] }; }, p0 = fo();
+            spawnFx("boss5beam", 0, p0.x, p0.y, { w: 340, dur: rem, alpha: 0.95, follow: fo });
+            if (fxReady("boss5charge")) spawnFx("boss5charge", 0, p0.x, p0.y, { w: 620, dur: rem, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: fo }); /* 向球心收集的光點（生圖） */
+            Sound.play("peril", 0.9, 0.45); screenFlash("rgba(90,20,120,0.25)", 0.25, rem); hapticBuzz([20, 20, 30]);
+          }
+          if (move.beam && Boss._orbDone && !Boss._ringDone && Boss.stateTimer <= 0.3 && fxReady("boss5charge")) { /* 噴射前一瞬：光圈快速繞球一圈 */
+            Boss._ringDone = true; const bm = move.beam, fo = () => { const mw = beamMouth(bm, "W"); return { x: Boss.x + Boss.facing * mw[0], y: Boss.y + mw[1] }; }, p0 = fo();
+            spawnFx("boss5charge", 1, p0.x, p0.y, { w: 460, dur: 0.3, alpha: 0.95, follow: fo }); Sound.play("assist", 0.7, 1.6); hapticBuzz(30);
           }
           Boss.stateTimer -= dt;
           if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
@@ -528,9 +535,13 @@
                 tall: !!move.zoneTall, noDraw: !!move.zoneNoDraw
               });
               Sound.play("peril", 0.85, 1.3);
-              if (move.beam && fxReady("boss5beam")) { /* 火柱：從嘴巴射出（整段循環），結尾由 updateBossAI 的 beamTick 換收尾格 */
-                const bm = move.beam, fcB = Boss.facing, fb = () => ({ x: Boss.x + fcB * (bm.mx + bm.w / 2), y: Boss.y + bm.my });
-                spawnFx("boss5beam", 2, fb().x, fb().y, { w: bm.w, h: bm.h, dur: Math.max(0.4, Boss.stateTimer), loop: true, fps: 14, facing: fcB, alpha: 0.96, follow: fb });
+              if (move.beam && fxReady("boss5beam")) { /* 火柱：從嘴巴射出（整段循環），結尾由 updateBossAI 的 beamTick 換收尾格；噴口爆發＋火柱外覆翻騰煙團 */
+                const bm = move.beam, fcB = Boss.facing, fb = () => ({ x: Boss.x + fcB * (bm.mx + bm.w / 2), y: Boss.y + bm.my }), dB = Math.max(0.4, Boss.stateTimer);
+                spawnFx("boss5beam", 2, fb().x, fb().y, { w: bm.w, h: bm.h, dur: dB, loop: true, fps: 14, facing: fcB, alpha: 0.96, follow: fb });
+                if (fxReady("boss5charge")) {
+                  spawnFx("boss5charge", 2, Boss.x + fcB * (bm.mx + 0.28 * 800), Boss.y + bm.my, { w: 800, dur: 0.55, facing: fcB, alpha: 0.95, follow: () => ({ x: Boss.x + fcB * (bm.mx + 0.28 * 800), y: Boss.y + bm.my }) });
+                  [420, 900, 1380].forEach((d, q) => spawnFx("boss5charge", 3, Boss.x + fcB * (bm.mx + d), Boss.y + bm.my - 20, { w: 900, h: 900, dur: dB, loop: true, fps: 7 + q, facing: q % 2 ? -fcB : fcB, alpha: 0.5, follow: () => ({ x: Boss.x + fcB * (bm.mx + d), y: Boss.y + bm.my - 20 }) }));
+                }
                 Boss._beamOn = true; Boss._beamT = Boss.stateTimer; Boss._beamEnded = false; Boss._beamCfg = bm; Boss._beamHap = 0;
                 screenFlash("rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); Sound.play("execution", 0.8, 0.5); Sound.play("m_roar", 1.0, 0.8);
               }
