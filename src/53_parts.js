@@ -728,11 +728,9 @@
         ctx.beginPath(); ctx.arc(sx, G - 640 + bob, 72, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.globalAlpha = bgBody ? 0 : 0.12 * fade; ctx.lineWidth = 26; ctx.lineCap = "round";
         for (const h of P.hands) { ctx.beginPath(); ctx.moveTo(sx + h.side * 210, G - 540 + bob); ctx.quadraticCurveTo(sx + h.side * 360, G - 420, h.x, h.y - 90); ctx.stroke(); }
-        if (P.phase !== 2) { /* 胸口的劍魂（轉場時降下） */
-          const cy = P.phase === "t" ? G - 480 + Math.min(1, Math.max(0, (P.tt - 0.8) / 1.6)) * 330 : G - 480;
-          const cx = P.phase === "t" ? sx + (P.coreX - sx) * Math.min(1, Math.max(0, (P.tt - 0.8) / 1.6)) : sx;
-          ctx.globalAlpha = P.phase === "t" ? 0.9 : 0.35; ctx.fillStyle = "#7dd3fc"; ctx.shadowColor = "#7dd3fc"; ctx.shadowBlur = 24;
-          ctx.beginPath(); ctx.arc(cx, cy, P.phase === "t" ? 40 : 26, 0, Math.PI * 2); ctx.fill();
+        if (P.phase === 1) { /* 胸口的劍魂（v0.8.139 改用生圖 boss4fx 列 0 核心珠；轉場時由導演 descend 畫降下與成形） */
+          const F = fxReady("boss4fx") ? fxSheet("boss4fx") : null;
+          if (F) { const col = Math.floor(now * 4) % 4; ctx.globalAlpha = 0.5; ctx.globalCompositeOperation = "lighter"; ctx.drawImage(F.img, col * 256, 0, 256, 256, sx - 40, G - 480 - 40, 80, 80); ctx.globalCompositeOperation = "source-over"; }
         }
         ctx.restore();
         /* 地面預警 */
