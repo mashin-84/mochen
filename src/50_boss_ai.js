@@ -785,6 +785,12 @@
           Boss.stanceCount = 0; triggerBossMove("stance_switch"); return;
         }
         const stn = stanceOf(stage);
+        if (stage.hpTriggers && Boss.aiCooldown <= 0) { /* v0.8.150 血量門檻必放招式：stage.hpTriggers=[{move,at:血量比例,phase:最低階段}]，每場只放一次，之後恢復一般招式池 */
+          Boss._hpt = Boss._hpt || {};
+          for (const ht of stage.hpTriggers) {
+            if (!Boss._hpt[ht.move] && stage.moves[ht.move] && Config.bossPhase >= (ht.phase || 1) && Boss.hp / Boss.maxHp <= ht.at && (!ht.stance || Boss.stance === ht.stance)) { Boss._hpt[ht.move] = true; triggerBossMove(ht.move); return; }
+          }
+        }
 
         const hurtX = stn ? (stn.hurtHalf || 0) : 0;
         if (dist > 220 + hurtX) {

@@ -26,7 +26,7 @@
         getPortrait("boss" + stageId); getPortrait("boss" + stageId + "_alt");
         if (stage.bg) getBgArt(stage.bg);
         if (stage.bgSky) getBgArt(stage.bgSky);
-        Boss.maxHp = stage.maxHp;
+        Boss.maxHp = stage.maxHp; Boss._hpt = {}; /* 血量門檻招式重置 */
         Boss.hp = stage.maxHp;
         Boss._leapPity = 0;
         Game.defeated = false;
