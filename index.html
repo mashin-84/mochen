@@ -5885,6 +5885,13 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
               } else {
                 // 2. Boss 正常對峙防守：普通格擋與完美彈刀反擊！
                 Boss.consecutiveBlocks = (Boss.consecutiveBlocks || 0) + 1;
+                { /* v0.8.155 普攻一律扣血（使用者：天經地義）：Boss 對峙中被砍到＝扣約 55% 破綻傷害（第三劍 66、其餘 41）；架勢與格擋／彈刀反擊照舊 */
+                  let dmgN = Math.round((Player.comboStep === 3 ? 120 : 75) * 0.55);
+                  if (Progress.echoes && Progress.echoes.includes(14)) dmgN = Math.round(dmgN * 1.10);
+                  if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) dmgN = Math.round(dmgN * 1.8);
+                  Boss.hp = Math.max(1, Boss.hp - dmgN); Boss.flashFrames = Math.max(Boss.flashFrames || 0, 1);
+                  Sound.play("hit", 0.6, 1.1); spawnFloatingText(Boss.x + (Math.random() - 0.5) * 28, Boss.y - 105, `-${dmgN}`, "#38bdf8", 0.9);
+                }
 
                 if (Boss.consecutiveBlocks < 3) {
                   // Boss 普通格擋：沉悶鐵鳴，橘紅小火花，積累架勢，不傷氣血！
