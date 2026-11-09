@@ -22,6 +22,7 @@
         const stage = Stages[Boss.stageId];
         if (stage && !stage.transformMove && !(stage.p2Movie && !stage.parts) && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* 有二階段影片的關卡，換曲改在影片結束時 */ /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
         if (stage && stage.p2Movie && !stage.parts && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) { Boss._p2MoviePending = true; return; } /* v0.8.103 有二階段影片：影片裡演拔劍，姿態等影片開始時才換（applyP2Stance），不播拔劍招式 */
+        if (stage && stage.transformMove && Game.dir && Game.dir.kind === "phase" && Game.dir.c.kind === "morph") return; /* v0.8.141 第 5 關：由導演演完蛻變（換姿態、換曲都在爆發那一刻） */
         if (stage && stage.transformMove && stage.moves[stage.transformMove] && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) {
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */
           return;
@@ -190,6 +191,8 @@
         const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
+        Boss._cueDone = false;
+        if (m.fxWind && fxReady(m.fxWind.sheet)) { const f = m.fxWind, fc = Boss.facing; spawnFx(f.sheet, f.row, Boss.x + fc * (f.ox || 0), Boss.y + (f.oy || 0), { w: f.w, h: f.h || f.w, dur: m.windup * phaseMod, facing: fc, loop: true, fps: f.fps || 6, alpha: f.alpha == null ? 1 : f.alpha }); } /* v0.8.141 前搖全程的預警圖（魔焰吐息的紅線） */
         Boss.isPerilous = !!m.isPerilous;
         Boss.perilType = m.perilType || null;
         if (m.ultimate) {
@@ -430,6 +433,10 @@
             addTrauma(dt * (0.25 + 0.6 * tp));
             if (Math.random() < dt * 14) emitDust(Boss.x + (Math.random() - 0.5) * 120 * Boss._scaleMul, Config.groundY, Math.random() < 0.5 ? -1 : 1, 2, 0.9 + tp);
           }
+          if (stage.cueArt && !Boss._cueDone && Boss.stateTimer <= 0.17 && fxReady("cue") && !move.isMobility && !move.isTransform && !move.isZone && !move.isRanged && !move.isTeleport && !move.isSwitch && (move.damage || move.comboDamagePerHit)) { /* v0.8.141 招架時機光圈：出招前 0.17 秒在攻擊點收縮（黃＝可擋、紅＝危、藍＝霸體） */
+            Boss._cueDone = true; const cr = move.isPerilous ? 1 : (move.armor ? 2 : 0), cx = (move.isLeap || move.isCharge) ? Boss.x : Boss.x + Boss.facing * (move.range || 150) * 0.4;
+            spawnFx("cue", cr, cx, Boss.y - 100, { w: 240, dur: 0.2, alpha: 0.95 });
+          }
           Boss.stateTimer -= dt;
           if ((Boss.perilType === "grab" || Boss.perilType === "leap") && Boss.stateTimer > 0.2) {
             Boss.grabZoneX += (Player.x - Boss.grabZoneX) * Math.min(1, dt * 6);
@@ -475,9 +482,7 @@
                 Sound.play("m_roar", 1.0, 1); /* v0.8.34 大狼覺醒的怪物咆哮；二階段配樂（若有） */
                 if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
                 blastPlayer(Player.x >= Boss.x ? 1 : -1); /* 震飛主角，劍插地穩住 */
-                if (Boss.stageId === 5 && fxReady("flame")) { /* 大狼背上的魔焰（v0.8.33 新圖 flame.webp：第 3 列大火、第 4 列飄散火星）：疊加發光、循環搖擺，跟著 Boss */
-                  [[-140, 6.5, 2, 190, 0.5], [-10, 8, 2, 220, 0.5], [115, 7, 2, 190, 0.5], [0, 5, 3, 300, 0.7]].forEach(([o, fps, row, sz, al]) => spawnFx("flame", row, Boss.x, Boss.y - 185, { anchor: "b", w: sz, h: sz, alpha: al, dur: 9999, loop: true, fps, follow: () => (Boss.hp > 0 ? { x: Boss.x + Boss.facing * o, y: Boss.y - 185 } : { x: -9999, y: -9999 }) }));
-                }
+                if (Boss.stageId === 5) wolfBackFlame();
               }
             }
 
@@ -498,7 +503,7 @@
                 maxDur: move.zoneDuration || 2.5,
                 type: move.zoneType || "fire",
                 damagePerSec: move.zoneDamagePerSec || 150,
-                warningTimer: 0.5
+                warningTimer: move.zoneWarn != null ? move.zoneWarn : 0.5
               });
               Sound.play("peril", 0.85, 1.3);
               spawnFloatingText(zX, Config.groundY - 50, "【煞氣絕地形成】！", "#f87171", 1.15);

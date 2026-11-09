@@ -93,7 +93,9 @@
             }
             ctx.lineWidth = 2.5;
             const zA = Stages[Boss.stageId] && Stages[Boss.stageId].zoneArt && Stages[Boss.stageId].zoneArt[hz.type];
-            if (zA && fxReady(zA[0])) { /* v0.8.59 生圖地面陣紋（4 格循環、疊加發光）；預警時淡、爆發後亮 */
+            if (zA && zA[2] === "flat" && fxReady(zA[0])) { /* v0.8.141 魔焰吐息的地面火毯：保持正方比例、格底貼地；預警時不畫（前搖有紅線） */
+              if (!isWarn) { const sh = fxSheet(zA[0]), dw = hz.w * 1.2; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Math.min(1, alpha * 2.2); ctx.drawImage(sh.img, (Math.floor(performance.now() / 90) % 4) * 256, zA[1] * 256, 256, 256, hz.x - dw / 2, hz.y - dw * 0.89, dw, dw); ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; }
+            } else if (zA && fxReady(zA[0])) { /* v0.8.59 生圖地面陣紋（4 格循環、疊加發光）；預警時淡、爆發後亮 */
               const sh = fxSheet(zA[0]), up = zA[2] === "up";
               /* v0.8.82 zA[2]="up"：直立物（白骨刺）腳底貼地；預警時只露第 0 格的刺尖，爆發後 1～3 格循環 */
               const col = up ? (isWarn ? 0 : 1 + Math.floor(performance.now() / 130) % 3) : Math.floor(performance.now() / 110) % 4;
@@ -105,7 +107,7 @@
             ctx.fillRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
             ctx.strokeRect(hz.x - hz.w * 0.5, hz.y - hz.h, hz.w, hz.h);
             }
-            if (isWarn) {
+            if (isWarn && !(zA && zA[2] === "flat")) {
               ctx.font = "700 12px 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif";
               ctx.fillStyle = "#fde047";
               ctx.textAlign = "center";
