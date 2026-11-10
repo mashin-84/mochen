@@ -97,7 +97,7 @@
               emitDust(Player.x, gy, -B.dir, 6, 1.6); addTrauma(0.5); hapticBuzz(30);
               Sound.play("block", 0.8, 0.6); Sound.play("slash", 0.5, 0.5);
               spawnFloatingText(Player.x, Player.y - 120, "〔以劍駐地〕", "#a5b4fc", 1.1);
-              if (fxReady("land")) spawnFx("land", 0, Player.x - Player.facing * 40, gy + 14, { w: 330, h: 330, dur: 0.45, anchor: "b", alpha: 0.6 });
+              if (fxReady("land")) spawnFx("land", 0, Player.x - Player.facing * 40, groundFxY("land", 0, 330, gy), { w: 330, h: 330, dur: 0.45, anchor: "b", alpha: 0.6 });
             }
           }
         } else if (B.phase === "plant") {
@@ -516,7 +516,7 @@
                 Boss._scaleMul = 1; applyBossBody(stage);
                 addTrauma(0.9); Boss.flashFrames = 5; triggerHitstopMs(90); hapticBuzz(40);
                 emitDust(Boss.x, Config.groundY, 1, 8, 1.8); emitDust(Boss.x, Config.groundY, -1, 8, 1.8);
-                if (fxReady("land")) spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 900, h: 900, dur: 0.7, anchor: "b", alpha: 0.9 });
+                if (fxReady("land")) spawnFx("land", 0, Boss.x, groundFxY("land", 0, 900), { w: 900, h: 900, dur: 0.7, anchor: "b", alpha: 0.9 });
                 Sound.play("execution", 0.7, 0.55);
                 Sound.play("m_roar", 1.0, 1); /* v0.8.34 大狼覺醒的怪物咆哮；二階段配樂（若有） */
                 if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
@@ -750,8 +750,8 @@
                 addTrauma(0.6 * fl);
               } else if (move.fxLand && fxReady("land")) {
                 const fl = move.fxLand === true ? 1 : move.fxLand;
-                spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 760 * fl, h: 760 * fl, dur: 0.6, anchor: "b", alpha: 0.85 });
-                spawnFx("land", 1, Boss.x, Config.groundY + 6, { w: 480 * fl, h: 480 * fl, dur: 1.0, anchor: "b", alpha: 0.7 });
+                spawnFx("land", 0, Boss.x, groundFxY("land", 0, 760 * fl), { w: 760 * fl, h: 760 * fl, dur: 0.6, anchor: "b", alpha: 0.85 });
+                spawnFx("land", 1, Boss.x, groundFxY("land", 1, 480 * fl), { w: 480 * fl, h: 480 * fl, dur: 1.0, anchor: "b", alpha: 0.7 });
                 addTrauma(0.6 * fl);
               }
               triggerShake(Boss.facing, 0, 20, 0.25); Sound.play("peril", 0.6, 1.3);

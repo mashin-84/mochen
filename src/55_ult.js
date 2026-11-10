@@ -59,14 +59,14 @@
         if (once("stab")) {
           Boss._ultFrame = c.img.stab; Game.ultCam = -0.04; Game.ultFocus = false;
           const sx = Boss.x + fc * c.stabDx * k;
-          if (fxReady("boss1ult")) spawnFx("boss1ult", 1, sx, G + 6, { anchor: "b", w: 420, h: 420, dur: 0.5 });
+          if (fxReady("boss1ult")) spawnFx("boss1ult", 1, sx, groundFxY("boss1ult", 1, 420), { anchor: "b", w: 420, h: 420, dur: 0.5 });
           Sound.play("b3_plunge", 1.0, 0.85); triggerShake(0, 0.5, 30, 0.4); hapticBuzz([40, 20, 60]); triggerHitstopMs(60);
         }
         if (t < T.cross) {
           Boss._ultFrame = c.img.stab; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 4);
           /* ③ 地火三波：每波左右各一道矮火牆 */
-          if (U.wN < 3 && t >= T.w1 + U.wN * T.gap - 0.25 && once("pre" + U.wN) && fxReady("boss1ult")) spawnFx("boss1ult", 1, Boss.x + fc * c.stabDx * k, G + 6, { anchor: "b", w: 200, h: 200, dur: 0.25, c0: 0, nf: 1 }); /* 放波前 0.25 秒插地點先閃 */
-          if (t >= 1.35 && once("hint")) hintOnce("ult1", "大招：地上的矮火牆可以招架、跳過或瞬步；最後的高火牆只能【瞬步】穿過！"); /* 等大招名橫幅（1.3 秒）消失再出提示，避免疊字 */
+          if (U.wN < 3 && t >= T.w1 + U.wN * T.gap - 0.25 && once("pre" + U.wN) && fxReady("boss1ult")) spawnFx("boss1ult", 1, Boss.x + fc * c.stabDx * k, groundFxY("boss1ult", 1, 200), { anchor: "b", w: 200, h: 200, dur: 0.25, c0: 0, nf: 1 }); /* 放波前 0.25 秒插地點先閃 */
+          if (t >= 1.6 && once("hint")) hintOnce("ult1", "大招：地上的矮火牆可以招架、跳過或瞬步；最後的高火牆只能【瞬步】穿過！"); /* 等大招名橫幅（1.3 秒）消失再出提示，避免疊字 */
           while (U.wN < 3 && t >= T.w1 + U.wN * T.gap) {
             U.wN++; const sx = Boss.x + fc * c.stabDx * k;
             Ult.waves.push({ big: false, x: sx, dir: 1, done: false }, { big: false, x: sx, dir: -1, done: false });
@@ -77,7 +77,7 @@
         /* ④ 抱胸蓄力：插地爆焰蓋過換格（戟從刃朝下變刃朝上），再拉近、紅光向胸口聚集 */
         if (t < T.roar) {
           if (once("cross")) {
-            if (fxReady("boss1ult")) { const sx = Boss.x + fc * c.stabDx * k; spawnFx("boss1ult", 1, sx, G + 6, { anchor: "b", w: 300, h: 300, dur: 0.4, c0: 1, nf: 3 }); }
+            if (fxReady("boss1ult")) { const sx = Boss.x + fc * c.stabDx * k; spawnFx("boss1ult", 1, sx, groundFxY("boss1ult", 1, 300), { anchor: "b", w: 300, h: 300, dur: 0.4, c0: 1, nf: 3 }); }
             Boss.flashFrames = 3; Sound.play("b3_seal", 0.7, 0.8);
             const p = ultPt(450, 260); if (fxReady("boss1ult2")) spawnFx("boss1ult2", 0, p.x, p.y, { w: 520, h: 520, dur: T.roar - T.cross, alpha: 0.95, follow: () => ultPt(450, 260) });
           }
@@ -89,7 +89,7 @@
         if (once("roar")) {
           Boss._ultCue = null; Boss._ultFrame = c.img.roar; Game.ultCam = -0.06; Game.ultFocus = false; Boss._ucd = 0.6;
           const hp = ultPt(445, 170);
-          if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, G + 6, { anchor: "b", w: 560, h: (G + 6) - ultViewTop() + 120, dur: 0.6 }); } /* 竄起火牆直接頂到畫面上緣 */
+          if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, groundFxY("boss1ult2", 2, 0), { anchor: "b", w: 900, h: (G + 6) - ultViewTop() + 260, dur: 0.6 }); } /* 竄起火牆直接頂到畫面上緣 */
           Sound.play("m_roar", 1.0, 0.8); Sound.play("b3_heavy", 0.9, 0.7);
           triggerShake(0, 0.7, 40, 0.6); hapticBuzz([60, 30, 90]); triggerHitstopMs(80);
           Ult.waves.push({ big: true, x: Boss.x, dir: 1, done: false }, { big: true, x: Boss.x, dir: -1, done: false });
@@ -141,7 +141,7 @@
         const hp0 = Player.hp;
         resolveBossStrike({ damage: cfg.dmg, parryPostureDmg: cfg.post });
         Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
-        if (Player.hp === hp0 && Player.state === "parry") { w.cut = true; if (fxReady("boss1ult")) spawnFx("boss1ult", 1, Player.x + dir * 30, Config.groundY + 6, { anchor: "b", w: 160, h: 160, dur: 0.3, c0: 2, nf: 2 }); } /* 招架斬斷火牆 */
+        if (Player.hp === hp0 && Player.state === "parry") { w.cut = true; if (fxReady("boss1ult")) spawnFx("boss1ult", 1, Player.x + dir * 30, groundFxY("boss1ult", 1, 160), { anchor: "b", w: 160, h: 160, dur: 0.3, c0: 2, nf: 2 }); } /* 招架斬斷火牆 */
       }
       /* 繪製：壓暗聚焦（世界座標，畫在 Boss 之前）＋火牆 */
       function drawUltWorld() {
@@ -156,19 +156,21 @@
         for (const w of W) {
           if (w.cut) continue;
           const cfg = w.big ? c.big : c.low, row = w.big ? 3 : 2, S = cfg.draw, col = Math.floor(now / 70 + (w.dir > 0 ? 0 : 2)) % 4;
-          ctx.save(); ctx.translate(w.x, G + 8); ctx.scale(w.dir, 1);
-          if (w.big) { /* v0.8.161 高火牆＝滿屏：從地面一路頂到畫面上緣再多 120px，兩層錯格疊出厚度，前緣再加一道亮光 */
-            const Hh = (G + 8) - ultViewTop() + 120, Wd = 620;
+          const Hb = w.big ? (G + GROUND_SINK) - ultViewTop() + 260 : S; /* v0.8.162 高火牆再往上延伸（頂出畫面）；腳底對齊扣掉圖裡留白 */
+          ctx.save(); ctx.translate(w.x, groundFxY("boss1ult", row, Hb)); ctx.scale(w.dir, 1);
+          if (w.big) { /* v0.8.161 高火牆＝滿屏；v0.8.162 加寬加厚（寬 620→1000、四層火焰），判定不變 */
+            const Hh = Hb, Wd = 1000;
             ctx.globalCompositeOperation = "source-over"; /* 先墊深紅實色火牆身體（亮背景上疊加發光會變淡粉霧，壓不住） */
-            const gb = ctx.createLinearGradient(-Wd * 1.3, 0, 30, 0);
-            gb.addColorStop(0, "rgba(90,0,18,0)"); gb.addColorStop(0.35, "rgba(110,4,24,0.55)"); gb.addColorStop(0.8, "rgba(170,14,34,0.78)"); gb.addColorStop(1, "rgba(210,40,50,0)");
-            ctx.fillStyle = gb; ctx.fillRect(-Wd * 1.3, -Hh, Wd * 1.3 + 30, Hh);
+            const gb = ctx.createLinearGradient(-Wd * 1.7, 0, 30, 0);
+            gb.addColorStop(0, "rgba(90,0,18,0)"); gb.addColorStop(0.25, "rgba(110,4,24,0.62)"); gb.addColorStop(0.8, "rgba(175,14,34,0.85)"); gb.addColorStop(1, "rgba(210,40,50,0)");
+            ctx.fillStyle = gb; ctx.fillRect(-Wd * 1.7, -Hh, Wd * 1.7 + 30, Hh);
             ctx.globalCompositeOperation = "lighter";
             ctx.globalAlpha = 0.75; ctx.drawImage(img, ((col + 2) % 4) * 256, row * 256, 256, 256, -Wd * 1.25, -Hh, Wd, Hh);
             ctx.globalAlpha = 1; ctx.drawImage(img, col * 256, row * 256, 256, 256, -Wd * 0.92, -Hh, Wd, Hh);
             ctx.globalAlpha = 0.6; ctx.drawImage(img, ((col + 1) % 4) * 256, row * 256, 256, 256, -Wd * 0.8, -Hh, Wd * 0.85, Hh); /* 再疊一層讓火焰飽和 */
-            const gl = ctx.createLinearGradient(-60, 0, 90, 0); gl.addColorStop(0, "rgba(255,120,140,0)"); gl.addColorStop(0.6, "rgba(255,170,150,0.55)"); gl.addColorStop(1, "rgba(255,80,110,0)");
-            ctx.fillStyle = gl; ctx.fillRect(-60, -Hh, 150, Hh);
+            ctx.globalAlpha = 0.55; ctx.drawImage(img, ((col + 3) % 4) * 256, row * 256, 256, 256, -Wd * 1.6, -Hh, Wd * 0.9, Hh); /* 尾段再一層：火牆更厚 */
+            const gl = ctx.createLinearGradient(-90, 0, 120, 0); gl.addColorStop(0, "rgba(255,120,140,0)"); gl.addColorStop(0.6, "rgba(255,170,150,0.55)"); gl.addColorStop(1, "rgba(255,80,110,0)");
+            ctx.fillStyle = gl; ctx.fillRect(-90, -Hh, 210, Hh);
           } else {
             ctx.globalAlpha = 0.95;
             ctx.drawImage(img, col * 256, row * 256, 256, 256, -S * 0.92, -S, S, S); /* 圖中火牆前緣約在格寬 92% 處 → 對到 w.x */

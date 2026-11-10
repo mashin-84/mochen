@@ -142,8 +142,8 @@
         const lk = Game.cine && Game.cine.dash ? 0.6 : 1;
         landingFx(Boss.x, 1.8 * lk, 6);
         if (fxReady("land")) {
-          spawnFx("land", 0, Boss.x, gy + 22, { w: 620 * lk, h: 620 * lk, dur: 0.6, anchor: "b", alpha: 0.85 });
-          spawnFx("land", 1, Boss.x, gy + 6, { w: 400 * lk, h: 400 * lk, dur: 1.0, anchor: "b", alpha: 0.7 });
+          spawnFx("land", 0, Boss.x, groundFxY("land", 0, 620 * lk, gy), { w: 620 * lk, h: 620 * lk, dur: 0.6, anchor: "b", alpha: 0.85 });
+          spawnFx("land", 1, Boss.x, groundFxY("land", 1, 400 * lk, gy), { w: 400 * lk, h: 400 * lk, dur: 1.0, anchor: "b", alpha: 0.7 });
         }
         hapticBuzz(35);
         Sound.play("execution", 0.6, 0.55);

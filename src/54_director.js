@@ -95,7 +95,7 @@
           if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
         } else if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
         (c.sfx || []).forEach(s => Sound.play(s[0], s[1], s[2]));
-        if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7, alpha: c.ring.alpha == null ? 1 : c.ring.alpha });
+        if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, groundFxY(c.ring.sheet, c.ring.row, c.ring.w * 0.4, G), { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7, alpha: c.ring.alpha == null ? 1 : c.ring.alpha });
         if (c.pillar && fxReady(c.pillar.sheet)) spawnFx(c.pillar.sheet, c.pillar.row, Boss.x, G, { anchor: "b", w: c.pillar.w, h: c.pillar.w * 1.6, dur: c.pillar.dur || 0.8, alpha: c.pillar.alpha == null ? 1 : c.pillar.alpha });
         screenFlash("rgba(255,255,255,0.8)", (D.kind === "phase" ? 0.5 : 0.35) * (c.flashK == null ? 1 : c.flashK), 0.5); /* flashK：該關閃白強度倍率（亮背景的關卡調低） */
         addTrauma(D.kind === "phase" ? 0.8 : 0.45); triggerHitstopMs(D.kind === "phase" ? 100 : 60);
@@ -114,8 +114,8 @@
         if (t < c.fall) D.camNow = { zoom: z0, y: Math.max(-700, (Boss.y - G) * 0.85), rate: 10 }; /* 鏡頭跟著 Boss 往下走 */
         if (!D.hit && t >= c.fall) {
           D.hit = true;
-          if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 });
-          if (c.dust && fxReady(c.dust.sheet)) { spawnFx(c.dust.sheet, c.dust.row, Boss.x - 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: -1 }); spawnFx(c.dust.sheet, c.dust.row, Boss.x + 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: 1 }); }
+          if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, groundFxY(c.ring.sheet, c.ring.row, c.ring.w * 0.4, G), { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 }); /* v0.8.162 光圈圓心對齊腳底（原 G-8 浮空約 75px） */
+          if (c.dust && fxReady(c.dust.sheet)) { spawnFx(c.dust.sheet, c.dust.row, Boss.x - 60, groundFxY(c.dust.sheet, c.dust.row, c.dust.w, G), { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: -1 }); spawnFx(c.dust.sheet, c.dust.row, Boss.x + 60, groundFxY(c.dust.sheet, c.dust.row, c.dust.w, G), { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: 1 }); }
           (c.sfx || []).forEach(sf => Sound.play(sf[0], sf[1], sf[2]));
           triggerHitstopMs(110); screenFlash("rgba(255,244,230,0.45)", 0.4, 0.3);
           hapticBuzz([90, 40, 80, 40, 70, 40, 60, 40, 50, 40, 40]);
@@ -512,7 +512,7 @@
         if (!D.landed && t >= c.landAt) {
           D.landed = true; Boss.x = D.tx; Boss._introHide = false; Boss._cineImg = "20_bite_crouch";
           if (fxReady("boss5intro")) spawnFx("boss5intro", 3, Boss.x, Boss.y - 80, { w: 460, dur: 0.6, facing: Boss.facing }); /* 現身剪影也要朝向主角（圖朝右，不鏡像會一瞬間反向） */
-          if (fxReady("land")) { spawnFx("land", 0, Boss.x, G - 8, { anchor: "b", w: 800, h: 320, dur: 0.7, alpha: 0.9 }); spawnFx("land", 1, Boss.x - D.dir * -60, G, { anchor: "b", w: 520, dur: 0.8, facing: -Boss.facing }); }
+          if (fxReady("land")) { spawnFx("land", 0, Boss.x, groundFxY("land", 0, 320, G), { anchor: "b", w: 800, h: 320, dur: 0.7, alpha: 0.9 }); spawnFx("land", 1, Boss.x - D.dir * -60, groundFxY("land", 1, 520, G), { anchor: "b", w: 520, dur: 0.8, facing: -Boss.facing }); }
           emitDust(Boss.x, G, 1, 6, 1.6); emitDust(Boss.x, G, -1, 6, 1.6);
           screenFlash("rgba(255,120,120,0.5)", 0.45, 0.3); addTrauma(0.75); triggerHitstopMs(90); hapticBuzz([50, 30, 80]);
         }

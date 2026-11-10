@@ -4970,7 +4970,7 @@ const Config = {
               emitDust(Player.x, gy, -B.dir, 6, 1.6); addTrauma(0.5); hapticBuzz(30);
               Sound.play("block", 0.8, 0.6); Sound.play("slash", 0.5, 0.5);
               spawnFloatingText(Player.x, Player.y - 120, "〔以劍駐地〕", "#a5b4fc", 1.1);
-              if (fxReady("land")) spawnFx("land", 0, Player.x - Player.facing * 40, gy + 14, { w: 330, h: 330, dur: 0.45, anchor: "b", alpha: 0.6 });
+              if (fxReady("land")) spawnFx("land", 0, Player.x - Player.facing * 40, groundFxY("land", 0, 330, gy), { w: 330, h: 330, dur: 0.45, anchor: "b", alpha: 0.6 });
             }
           }
         } else if (B.phase === "plant") {
@@ -5389,7 +5389,7 @@ const Config = {
                 Boss._scaleMul = 1; applyBossBody(stage);
                 addTrauma(0.9); Boss.flashFrames = 5; triggerHitstopMs(90); hapticBuzz(40);
                 emitDust(Boss.x, Config.groundY, 1, 8, 1.8); emitDust(Boss.x, Config.groundY, -1, 8, 1.8);
-                if (fxReady("land")) spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 900, h: 900, dur: 0.7, anchor: "b", alpha: 0.9 });
+                if (fxReady("land")) spawnFx("land", 0, Boss.x, groundFxY("land", 0, 900), { w: 900, h: 900, dur: 0.7, anchor: "b", alpha: 0.9 });
                 Sound.play("execution", 0.7, 0.55);
                 Sound.play("m_roar", 1.0, 1); /* v0.8.34 大狼覺醒的怪物咆哮；二階段配樂（若有） */
                 if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
@@ -5623,8 +5623,8 @@ const Config = {
                 addTrauma(0.6 * fl);
               } else if (move.fxLand && fxReady("land")) {
                 const fl = move.fxLand === true ? 1 : move.fxLand;
-                spawnFx("land", 0, Boss.x, Config.groundY + 22, { w: 760 * fl, h: 760 * fl, dur: 0.6, anchor: "b", alpha: 0.85 });
-                spawnFx("land", 1, Boss.x, Config.groundY + 6, { w: 480 * fl, h: 480 * fl, dur: 1.0, anchor: "b", alpha: 0.7 });
+                spawnFx("land", 0, Boss.x, groundFxY("land", 0, 760 * fl), { w: 760 * fl, h: 760 * fl, dur: 0.6, anchor: "b", alpha: 0.85 });
+                spawnFx("land", 1, Boss.x, groundFxY("land", 1, 480 * fl), { w: 480 * fl, h: 480 * fl, dur: 1.0, anchor: "b", alpha: 0.7 });
                 addTrauma(0.6 * fl);
               }
               triggerShake(Boss.facing, 0, 20, 0.25); Sound.play("peril", 0.6, 1.3);
@@ -7488,7 +7488,7 @@ const Config = {
           if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]);
         } else if (STAGE_BGM[Boss.stageId]) Music.play(STAGE_BGM[Boss.stageId]);
         (c.sfx || []).forEach(s => Sound.play(s[0], s[1], s[2]));
-        if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7, alpha: c.ring.alpha == null ? 1 : c.ring.alpha });
+        if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, groundFxY(c.ring.sheet, c.ring.row, c.ring.w * 0.4, G), { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7, alpha: c.ring.alpha == null ? 1 : c.ring.alpha });
         if (c.pillar && fxReady(c.pillar.sheet)) spawnFx(c.pillar.sheet, c.pillar.row, Boss.x, G, { anchor: "b", w: c.pillar.w, h: c.pillar.w * 1.6, dur: c.pillar.dur || 0.8, alpha: c.pillar.alpha == null ? 1 : c.pillar.alpha });
         screenFlash("rgba(255,255,255,0.8)", (D.kind === "phase" ? 0.5 : 0.35) * (c.flashK == null ? 1 : c.flashK), 0.5); /* flashK：該關閃白強度倍率（亮背景的關卡調低） */
         addTrauma(D.kind === "phase" ? 0.8 : 0.45); triggerHitstopMs(D.kind === "phase" ? 100 : 60);
@@ -7507,8 +7507,8 @@ const Config = {
         if (t < c.fall) D.camNow = { zoom: z0, y: Math.max(-700, (Boss.y - G) * 0.85), rate: 10 }; /* 鏡頭跟著 Boss 往下走 */
         if (!D.hit && t >= c.fall) {
           D.hit = true;
-          if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, G - 8, { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 });
-          if (c.dust && fxReady(c.dust.sheet)) { spawnFx(c.dust.sheet, c.dust.row, Boss.x - 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: -1 }); spawnFx(c.dust.sheet, c.dust.row, Boss.x + 60, G, { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: 1 }); }
+          if (c.ring && fxReady(c.ring.sheet)) spawnFx(c.ring.sheet, c.ring.row, Boss.x, groundFxY(c.ring.sheet, c.ring.row, c.ring.w * 0.4, G), { anchor: "b", w: c.ring.w, h: c.ring.w * 0.4, dur: c.ring.dur || 0.7 }); /* v0.8.162 光圈圓心對齊腳底（原 G-8 浮空約 75px） */
+          if (c.dust && fxReady(c.dust.sheet)) { spawnFx(c.dust.sheet, c.dust.row, Boss.x - 60, groundFxY(c.dust.sheet, c.dust.row, c.dust.w, G), { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: -1 }); spawnFx(c.dust.sheet, c.dust.row, Boss.x + 60, groundFxY(c.dust.sheet, c.dust.row, c.dust.w, G), { anchor: "b", w: c.dust.w, dur: c.dust.dur || 0.8, facing: 1 }); }
           (c.sfx || []).forEach(sf => Sound.play(sf[0], sf[1], sf[2]));
           triggerHitstopMs(110); screenFlash("rgba(255,244,230,0.45)", 0.4, 0.3);
           hapticBuzz([90, 40, 80, 40, 70, 40, 60, 40, 50, 40, 40]);
@@ -7905,7 +7905,7 @@ const Config = {
         if (!D.landed && t >= c.landAt) {
           D.landed = true; Boss.x = D.tx; Boss._introHide = false; Boss._cineImg = "20_bite_crouch";
           if (fxReady("boss5intro")) spawnFx("boss5intro", 3, Boss.x, Boss.y - 80, { w: 460, dur: 0.6, facing: Boss.facing }); /* 現身剪影也要朝向主角（圖朝右，不鏡像會一瞬間反向） */
-          if (fxReady("land")) { spawnFx("land", 0, Boss.x, G - 8, { anchor: "b", w: 800, h: 320, dur: 0.7, alpha: 0.9 }); spawnFx("land", 1, Boss.x - D.dir * -60, G, { anchor: "b", w: 520, dur: 0.8, facing: -Boss.facing }); }
+          if (fxReady("land")) { spawnFx("land", 0, Boss.x, groundFxY("land", 0, 320, G), { anchor: "b", w: 800, h: 320, dur: 0.7, alpha: 0.9 }); spawnFx("land", 1, Boss.x - D.dir * -60, groundFxY("land", 1, 520, G), { anchor: "b", w: 520, dur: 0.8, facing: -Boss.facing }); }
           emitDust(Boss.x, G, 1, 6, 1.6); emitDust(Boss.x, G, -1, 6, 1.6);
           screenFlash("rgba(255,120,120,0.5)", 0.45, 0.3); addTrauma(0.75); triggerHitstopMs(90); hapticBuzz([50, 30, 80]);
         }
@@ -8128,14 +8128,14 @@ const Config = {
         if (once("stab")) {
           Boss._ultFrame = c.img.stab; Game.ultCam = -0.04; Game.ultFocus = false;
           const sx = Boss.x + fc * c.stabDx * k;
-          if (fxReady("boss1ult")) spawnFx("boss1ult", 1, sx, G + 6, { anchor: "b", w: 420, h: 420, dur: 0.5 });
+          if (fxReady("boss1ult")) spawnFx("boss1ult", 1, sx, groundFxY("boss1ult", 1, 420), { anchor: "b", w: 420, h: 420, dur: 0.5 });
           Sound.play("b3_plunge", 1.0, 0.85); triggerShake(0, 0.5, 30, 0.4); hapticBuzz([40, 20, 60]); triggerHitstopMs(60);
         }
         if (t < T.cross) {
           Boss._ultFrame = c.img.stab; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 4);
           /* ③ 地火三波：每波左右各一道矮火牆 */
-          if (U.wN < 3 && t >= T.w1 + U.wN * T.gap - 0.25 && once("pre" + U.wN) && fxReady("boss1ult")) spawnFx("boss1ult", 1, Boss.x + fc * c.stabDx * k, G + 6, { anchor: "b", w: 200, h: 200, dur: 0.25, c0: 0, nf: 1 }); /* 放波前 0.25 秒插地點先閃 */
-          if (t >= 1.35 && once("hint")) hintOnce("ult1", "大招：地上的矮火牆可以招架、跳過或瞬步；最後的高火牆只能【瞬步】穿過！"); /* 等大招名橫幅（1.3 秒）消失再出提示，避免疊字 */
+          if (U.wN < 3 && t >= T.w1 + U.wN * T.gap - 0.25 && once("pre" + U.wN) && fxReady("boss1ult")) spawnFx("boss1ult", 1, Boss.x + fc * c.stabDx * k, groundFxY("boss1ult", 1, 200), { anchor: "b", w: 200, h: 200, dur: 0.25, c0: 0, nf: 1 }); /* 放波前 0.25 秒插地點先閃 */
+          if (t >= 1.6 && once("hint")) hintOnce("ult1", "大招：地上的矮火牆可以招架、跳過或瞬步；最後的高火牆只能【瞬步】穿過！"); /* 等大招名橫幅（1.3 秒）消失再出提示，避免疊字 */
           while (U.wN < 3 && t >= T.w1 + U.wN * T.gap) {
             U.wN++; const sx = Boss.x + fc * c.stabDx * k;
             Ult.waves.push({ big: false, x: sx, dir: 1, done: false }, { big: false, x: sx, dir: -1, done: false });
@@ -8146,7 +8146,7 @@ const Config = {
         /* ④ 抱胸蓄力：插地爆焰蓋過換格（戟從刃朝下變刃朝上），再拉近、紅光向胸口聚集 */
         if (t < T.roar) {
           if (once("cross")) {
-            if (fxReady("boss1ult")) { const sx = Boss.x + fc * c.stabDx * k; spawnFx("boss1ult", 1, sx, G + 6, { anchor: "b", w: 300, h: 300, dur: 0.4, c0: 1, nf: 3 }); }
+            if (fxReady("boss1ult")) { const sx = Boss.x + fc * c.stabDx * k; spawnFx("boss1ult", 1, sx, groundFxY("boss1ult", 1, 300), { anchor: "b", w: 300, h: 300, dur: 0.4, c0: 1, nf: 3 }); }
             Boss.flashFrames = 3; Sound.play("b3_seal", 0.7, 0.8);
             const p = ultPt(450, 260); if (fxReady("boss1ult2")) spawnFx("boss1ult2", 0, p.x, p.y, { w: 520, h: 520, dur: T.roar - T.cross, alpha: 0.95, follow: () => ultPt(450, 260) });
           }
@@ -8158,7 +8158,7 @@ const Config = {
         if (once("roar")) {
           Boss._ultCue = null; Boss._ultFrame = c.img.roar; Game.ultCam = -0.06; Game.ultFocus = false; Boss._ucd = 0.6;
           const hp = ultPt(445, 170);
-          if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, G + 6, { anchor: "b", w: 560, h: (G + 6) - ultViewTop() + 120, dur: 0.6 }); } /* 竄起火牆直接頂到畫面上緣 */
+          if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, groundFxY("boss1ult2", 2, 0), { anchor: "b", w: 900, h: (G + 6) - ultViewTop() + 260, dur: 0.6 }); } /* 竄起火牆直接頂到畫面上緣 */
           Sound.play("m_roar", 1.0, 0.8); Sound.play("b3_heavy", 0.9, 0.7);
           triggerShake(0, 0.7, 40, 0.6); hapticBuzz([60, 30, 90]); triggerHitstopMs(80);
           Ult.waves.push({ big: true, x: Boss.x, dir: 1, done: false }, { big: true, x: Boss.x, dir: -1, done: false });
@@ -8210,7 +8210,7 @@ const Config = {
         const hp0 = Player.hp;
         resolveBossStrike({ damage: cfg.dmg, parryPostureDmg: cfg.post });
         Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
-        if (Player.hp === hp0 && Player.state === "parry") { w.cut = true; if (fxReady("boss1ult")) spawnFx("boss1ult", 1, Player.x + dir * 30, Config.groundY + 6, { anchor: "b", w: 160, h: 160, dur: 0.3, c0: 2, nf: 2 }); } /* 招架斬斷火牆 */
+        if (Player.hp === hp0 && Player.state === "parry") { w.cut = true; if (fxReady("boss1ult")) spawnFx("boss1ult", 1, Player.x + dir * 30, groundFxY("boss1ult", 1, 160), { anchor: "b", w: 160, h: 160, dur: 0.3, c0: 2, nf: 2 }); } /* 招架斬斷火牆 */
       }
       /* 繪製：壓暗聚焦（世界座標，畫在 Boss 之前）＋火牆 */
       function drawUltWorld() {
@@ -8225,19 +8225,21 @@ const Config = {
         for (const w of W) {
           if (w.cut) continue;
           const cfg = w.big ? c.big : c.low, row = w.big ? 3 : 2, S = cfg.draw, col = Math.floor(now / 70 + (w.dir > 0 ? 0 : 2)) % 4;
-          ctx.save(); ctx.translate(w.x, G + 8); ctx.scale(w.dir, 1);
-          if (w.big) { /* v0.8.161 高火牆＝滿屏：從地面一路頂到畫面上緣再多 120px，兩層錯格疊出厚度，前緣再加一道亮光 */
-            const Hh = (G + 8) - ultViewTop() + 120, Wd = 620;
+          const Hb = w.big ? (G + GROUND_SINK) - ultViewTop() + 260 : S; /* v0.8.162 高火牆再往上延伸（頂出畫面）；腳底對齊扣掉圖裡留白 */
+          ctx.save(); ctx.translate(w.x, groundFxY("boss1ult", row, Hb)); ctx.scale(w.dir, 1);
+          if (w.big) { /* v0.8.161 高火牆＝滿屏；v0.8.162 加寬加厚（寬 620→1000、四層火焰），判定不變 */
+            const Hh = Hb, Wd = 1000;
             ctx.globalCompositeOperation = "source-over"; /* 先墊深紅實色火牆身體（亮背景上疊加發光會變淡粉霧，壓不住） */
-            const gb = ctx.createLinearGradient(-Wd * 1.3, 0, 30, 0);
-            gb.addColorStop(0, "rgba(90,0,18,0)"); gb.addColorStop(0.35, "rgba(110,4,24,0.55)"); gb.addColorStop(0.8, "rgba(170,14,34,0.78)"); gb.addColorStop(1, "rgba(210,40,50,0)");
-            ctx.fillStyle = gb; ctx.fillRect(-Wd * 1.3, -Hh, Wd * 1.3 + 30, Hh);
+            const gb = ctx.createLinearGradient(-Wd * 1.7, 0, 30, 0);
+            gb.addColorStop(0, "rgba(90,0,18,0)"); gb.addColorStop(0.25, "rgba(110,4,24,0.62)"); gb.addColorStop(0.8, "rgba(175,14,34,0.85)"); gb.addColorStop(1, "rgba(210,40,50,0)");
+            ctx.fillStyle = gb; ctx.fillRect(-Wd * 1.7, -Hh, Wd * 1.7 + 30, Hh);
             ctx.globalCompositeOperation = "lighter";
             ctx.globalAlpha = 0.75; ctx.drawImage(img, ((col + 2) % 4) * 256, row * 256, 256, 256, -Wd * 1.25, -Hh, Wd, Hh);
             ctx.globalAlpha = 1; ctx.drawImage(img, col * 256, row * 256, 256, 256, -Wd * 0.92, -Hh, Wd, Hh);
             ctx.globalAlpha = 0.6; ctx.drawImage(img, ((col + 1) % 4) * 256, row * 256, 256, 256, -Wd * 0.8, -Hh, Wd * 0.85, Hh); /* 再疊一層讓火焰飽和 */
-            const gl = ctx.createLinearGradient(-60, 0, 90, 0); gl.addColorStop(0, "rgba(255,120,140,0)"); gl.addColorStop(0.6, "rgba(255,170,150,0.55)"); gl.addColorStop(1, "rgba(255,80,110,0)");
-            ctx.fillStyle = gl; ctx.fillRect(-60, -Hh, 150, Hh);
+            ctx.globalAlpha = 0.55; ctx.drawImage(img, ((col + 3) % 4) * 256, row * 256, 256, 256, -Wd * 1.6, -Hh, Wd * 0.9, Hh); /* 尾段再一層：火牆更厚 */
+            const gl = ctx.createLinearGradient(-90, 0, 120, 0); gl.addColorStop(0, "rgba(255,120,140,0)"); gl.addColorStop(0.6, "rgba(255,170,150,0.55)"); gl.addColorStop(1, "rgba(255,80,110,0)");
+            ctx.fillStyle = gl; ctx.fillRect(-90, -Hh, 210, Hh);
           } else {
             ctx.globalAlpha = 0.95;
             ctx.drawImage(img, col * 256, row * 256, 256, 256, -S * 0.92, -S, S, S); /* 圖中火牆前緣約在格寬 92% 處 → 對到 w.x */
@@ -8777,8 +8779,8 @@ const Config = {
         const lk = Game.cine && Game.cine.dash ? 0.6 : 1;
         landingFx(Boss.x, 1.8 * lk, 6);
         if (fxReady("land")) {
-          spawnFx("land", 0, Boss.x, gy + 22, { w: 620 * lk, h: 620 * lk, dur: 0.6, anchor: "b", alpha: 0.85 });
-          spawnFx("land", 1, Boss.x, gy + 6, { w: 400 * lk, h: 400 * lk, dur: 1.0, anchor: "b", alpha: 0.7 });
+          spawnFx("land", 0, Boss.x, groundFxY("land", 0, 620 * lk, gy), { w: 620 * lk, h: 620 * lk, dur: 0.6, anchor: "b", alpha: 0.85 });
+          spawnFx("land", 1, Boss.x, groundFxY("land", 1, 400 * lk, gy), { w: 400 * lk, h: 400 * lk, dur: 1.0, anchor: "b", alpha: 0.7 });
         }
         hapticBuzz(35);
         Sound.play("execution", 0.6, 0.55);
@@ -10787,6 +10789,11 @@ const Config = {
         ctx.drawImage(T2.img, w * 0.5 - ww / 2, h * 0.38 - hh / 2, ww, hh);
         ctx.restore();
       }
+      /* v0.8.162 特效圖每列「腳底」位置（格內 y，0～256）：底部對齊地面時要扣掉圖裡的留白，否則浮空。
+       * land 第 0 列是地面光圈，記的是圓環中心（圓心對齊腳底）。數值由 assets/fx 實測（亮度 >60 的最低列）。 */
+      const FX_FOOT = { land: [203, 242, 174, 240], boss1ult: [240, 235, 232, 244], boss1ult2: [256, 256, 250, 256] };
+      function fxFootY(sheet, row, h) { const b = (FX_FOOT[sheet] || [])[row]; return b == null ? 0 : h * (1 - b / 256); } /* anchor "b" 時要往下補的量 */
+      function groundFxY(sheet, row, h, gy) { return (gy == null ? Config.groundY : gy) + GROUND_SINK + fxFootY(sheet, row, h); } /* 讓特效的腳底（或光圈圓心）落在角色腳底線 */
       function spawnFx(sheet, row, x, y, o) {
         o = o || {};
         fxSheet(sheet);
