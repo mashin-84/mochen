@@ -8088,6 +8088,7 @@ const Config = {
         }
       };
       const Ult = { waves: [] };
+      function ultViewTop() { const z = Game.camera.zoom || 1; return Config.baseHeight * 0.5 - Config.baseHeight * 0.5 / z + (Game.camera.y || 0); } /* 畫面最上緣的世界 y（高火牆要頂到這裡） */
       function ultK() { return bossVis(Stages[Boss.stageId]).k; }
       function ultPt(px, py) { const k = ultK(); return { x: Boss.x + Boss.facing * (px - 450) * k, y: Boss.y + GROUND_SINK + (py - 560) * k }; } /* 圖上座標（900×600、圖朝右）→ 世界座標 */
       function ultStart(m, key) {
@@ -8157,7 +8158,7 @@ const Config = {
         if (once("roar")) {
           Boss._ultCue = null; Boss._ultFrame = c.img.roar; Game.ultCam = -0.06; Game.ultFocus = false; Boss._ucd = 0.6;
           const hp = ultPt(445, 170);
-          if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, G + 6, { anchor: "b", w: 440, h: 440, dur: 0.6 }); }
+          if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, G + 6, { anchor: "b", w: 560, h: (G + 6) - ultViewTop() + 120, dur: 0.6 }); } /* 竄起火牆直接頂到畫面上緣 */
           Sound.play("m_roar", 1.0, 0.8); Sound.play("b3_heavy", 0.9, 0.7);
           triggerShake(0, 0.7, 40, 0.6); hapticBuzz([60, 30, 90]); triggerHitstopMs(80);
           Ult.waves.push({ big: true, x: Boss.x, dir: 1, done: false }, { big: true, x: Boss.x, dir: -1, done: false });
@@ -8178,6 +8179,10 @@ const Config = {
       function ultWavesTick(dt) {
         const W = Ult.waves; if (!W.length) return;
         const G = Config.groundY, U = Boss._ult, c = (U && U.c) || ULT_CFG.b1fire;
+        if (W.some(w => w.big && Math.abs(w.x - Player.x) < 1400)) { /* v0.8.161 高火牆移動中：畫面持續震、手機低強度震動 */
+          Ult._rum = (Ult._rum || 0) - dt; if (Ult._rum <= 0) { Ult._rum = 0.12; triggerShake(0, 0.3, 9, 0.14); }
+          Ult._hap = (Ult._hap || 0) - dt; if (Ult._hap <= 0) { Ult._hap = 0.22; hapticBuzz(26); }
+        }
         for (let i = W.length - 1; i >= 0; i--) {
           const w = W[i], cfg = w.big ? c.big : c.low;
           w.x += w.dir * cfg.speed * dt;
@@ -8221,14 +8226,33 @@ const Config = {
           if (w.cut) continue;
           const cfg = w.big ? c.big : c.low, row = w.big ? 3 : 2, S = cfg.draw, col = Math.floor(now / 70 + (w.dir > 0 ? 0 : 2)) % 4;
           ctx.save(); ctx.translate(w.x, G + 8); ctx.scale(w.dir, 1);
-          ctx.globalAlpha = 0.95;
-          ctx.drawImage(img, col * 256, row * 256, 256, 256, -S * 0.92, -S, S, S); /* 圖中火牆前緣約在格寬 92% 處 → 對到 w.x */
+          if (w.big) { /* v0.8.161 高火牆＝滿屏：從地面一路頂到畫面上緣再多 120px，兩層錯格疊出厚度，前緣再加一道亮光 */
+            const Hh = (G + 8) - ultViewTop() + 120, Wd = 620;
+            ctx.globalCompositeOperation = "source-over"; /* 先墊深紅實色火牆身體（亮背景上疊加發光會變淡粉霧，壓不住） */
+            const gb = ctx.createLinearGradient(-Wd * 1.3, 0, 30, 0);
+            gb.addColorStop(0, "rgba(90,0,18,0)"); gb.addColorStop(0.35, "rgba(110,4,24,0.55)"); gb.addColorStop(0.8, "rgba(170,14,34,0.78)"); gb.addColorStop(1, "rgba(210,40,50,0)");
+            ctx.fillStyle = gb; ctx.fillRect(-Wd * 1.3, -Hh, Wd * 1.3 + 30, Hh);
+            ctx.globalCompositeOperation = "lighter";
+            ctx.globalAlpha = 0.75; ctx.drawImage(img, ((col + 2) % 4) * 256, row * 256, 256, 256, -Wd * 1.25, -Hh, Wd, Hh);
+            ctx.globalAlpha = 1; ctx.drawImage(img, col * 256, row * 256, 256, 256, -Wd * 0.92, -Hh, Wd, Hh);
+            ctx.globalAlpha = 0.6; ctx.drawImage(img, ((col + 1) % 4) * 256, row * 256, 256, 256, -Wd * 0.8, -Hh, Wd * 0.85, Hh); /* 再疊一層讓火焰飽和 */
+            const gl = ctx.createLinearGradient(-60, 0, 90, 0); gl.addColorStop(0, "rgba(255,120,140,0)"); gl.addColorStop(0.6, "rgba(255,170,150,0.55)"); gl.addColorStop(1, "rgba(255,80,110,0)");
+            ctx.fillStyle = gl; ctx.fillRect(-60, -Hh, 150, Hh);
+          } else {
+            ctx.globalAlpha = 0.95;
+            ctx.drawImage(img, col * 256, row * 256, 256, 256, -S * 0.92, -S, S, S); /* 圖中火牆前緣約在格寬 92% 處 → 對到 w.x */
+          }
           ctx.restore();
         }
         ctx.restore();
       }
       /* 招架光圈：矮火牆／高火牆到主角前 0.35 秒在主角身上收縮（同 cue.webp：黃＝可擋、紅＝只能瞬步）；長嘯前在 Boss 身上 */
       function drawUltTop() {
+        { /* v0.8.161 高火牆逼近：全畫面泛紅（越近越紅），壓迫感 */
+          let near = 0;
+          for (const w of Ult.waves) if (w.big) { const d = (Player.x - w.x) * w.dir; near = Math.max(near, d > 0 ? Math.max(0, 1 - d / 900) : Math.max(0, 1 + d / 500)); }
+          if (near > 0.01) { const z = Game.camera.zoom || 1, top = ultViewTop() - 50, hh = Config.baseHeight / z + 100; ctx.save(); ctx.fillStyle = `rgba(150,10,30,${0.32 * near})`; ctx.fillRect(Game.camera.x - 1200, top, Config.baseWidth / z + 2400, hh); ctx.restore(); }
+        }
         if (!fxReady("cue") || Config.parryCueLevel <= 0) return;
         const img = fxSheet("cue").img, c = ULT_CFG.b1fire;
         const ring = (x, y, tLeft, big) => {
