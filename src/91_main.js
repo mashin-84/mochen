@@ -127,6 +127,9 @@
         });
       }
 
+      const btnUltTest = document.getElementById("btn-ult-test"); /* v0.8.163 大招測試：選關直接進二階段放招牌大招 */
+      if (btnUltTest) btnUltTest.addEventListener("click", () => { if (elSysMenuModal) elSysMenuModal.classList.remove("open"); openUltTestMenu(); });
+
       const btnTestAll = document.getElementById("btn-testall");
       const menuTestAllTxt = document.getElementById("menu-testall-txt");
       if (menuTestAllTxt) menuTestAllTxt.textContent = TestAll.on ? "測試全解鎖：開" : "測試全解鎖：關";

@@ -224,6 +224,7 @@
         const SFX = { s_bite: { w: "w_snarl", a: "w_snap" }, s_bite2: { w: "w_snarl", h: "w_snap" }, s_claw3: { w: "w_snarl", h: "w_claw" }, s_pounce: { w: "w_snarl", a: "w_bark" }, s_rush: { w: "w_snarl", a: "w_bark" }, s_tail: { w: "w_snarl", a: "w_claw" }, s_shadow: { a: "w_claw" }, s_decoy: { w: "w_snarl", a: "w_snap" }, s_rage: { w: "w_howl", a: "w_bark" }, backstep: { a: "w_claw" }, dash_in: { a: "w_claw" },
           b_swipe: { w: "m_growl", a: "m_swipe" }, b_stomp: { w: "m_growl", h: "m_stomp" }, b_howl: { a: "m_roar" }, b_breath: { w: "m_growl", a: "m_roar" }, b_bone: { w: "m_growl" }, b_leap: { w: "m_growl", a: "m_roar" }, b_bite: { w: "m_growl", a: "m_bite" }, b_tail: { w: "m_growl", a: "m_swipe" }, b_rush: { w: "m_growl", a: "m_roar" }, b_rage: { w: "m_howl", h: "m_swipe" }, transform: { w: "w_howl" } };
         Object.keys(SFX).forEach((k) => { if (M[k]) M[k].sfx = SFX[k]; }); /* v0.8.34 狼的招式音效：w＝前搖、a＝出招、h＝連擊每一下 */
+        S5.sigMove = "b_breath"; /* v0.8.163 大招測試用：第 5 關招牌大招＝魔焰獸玉 */
         S5.dfmK = 0.35; /* 變形強度：使用者要求輕微（原 1.0 太誇張）*/ S5.fxSheets = ["wolf", "wolf2", "land", "flame", "boss5intro", "boss5morph", "boss5flame", "boss5beam", "boss5charge", "cue"]; S5.cueArt = true; S5.zoneArt = { bone: ["wolf2", 2, "up"], flame: ["boss5flame", 1, "flat"] }; S5.landArt = ["wolf2", 3]; /* v0.8.82 第二張專屬特效圖：0 甩尾魂焰弧、1 錘地震波、2 白骨刺（1～3 循環）、3 落地衝擊 */ S5.hpTriggers = [{ move: "b_breath", at: 0.5, phase: 2, stance: "B" }]; /* 魔焰獸玉：二階段血量剩一半時必放一次（使用者：打贏了都沒看到），之後照一般招式池 */ S5.stanceByPhase = { 1: "A", 2: "B" }; S5.transformMove = "transform"; S5.transformGrow = 2.67; /* v0.8.82 小狼放大 0.64→0.72，脹大倍數 3.0×0.64/0.72 讓蛻變終點大小不變 */ /* 蛻變時小狼脹大的倍數（接近大狼／小狼體型比） */
         /* v0.8.79 第 5 關分層場景：荒原殘陽地面帶＋前景剪影（參數同第 2 關） */
         S5.layers = [
@@ -295,6 +296,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Stages[1].moves.u_fire = { name: "血煞焚岳戟", ult: "b1fire", damage: 0, windup: 0.9, active: 4.1, recover: 3.35 };
         Stages[1].poolP2.push(["u_fire", 5]);
         Stages[1].hpTriggers = [{ move: "u_fire", at: 0.5, phase: 2 }];
+        Stages[1].sigMove = "u_fire"; /* v0.8.163 大招測試用：各關招牌大招 */
         Stages[1].spriteExtras = (Stages[1].spriteExtras || []).concat(["61_u_raise", "62_u_pause", "63_u_stab", "65_u_cross", "66_u_roar", "67_u_rest", "68_u_pull"]);
         Stages[1].fxSheets = Stages[1].fxSheets.concat(["boss1ult", "boss1ult2", "cue"]);
         Stages[1].farMoves = ["halberd_throw", "dash_in+slash2", "leap_slam"];

@@ -72,6 +72,7 @@
 - **招架時機提示**：`Boss.nextImpactIn`（命中前 0.35 秒倒數，與判定同源）；`cueArt` 關卡在 `drawBossEntity` 的 C4 區塊畫生圖光圈 `cue.webp`，否則畫程式光圈；`drawThreatMarker` 畫前搖色圈與首次提示文字。
 - 部位 Boss（第 4、7 關）：`53_parts.js`（`Stages[n].parts`、`Boss._pp`、`partsUpdate`／`partsTryHit`／`partStrike`／`drawPartsBack`／`drawPartsFront`）
 - **戰場上導演演出**（登場／階段轉換，取代影片）：`54_director.js`（`DIR_CFG[n] = {intro, phase, form, phase3, p2Aura}`、`dirStart`／`dirUpdate`／`dirEnd`／`dirBurst`、各 kind 的 step：drop／mirror／dash／graveyard／formtrans／descend／wolf／morph、`drawDirWorld`、`stMovie`）。**新增登場 kind 時，要把它加進 `src/80_flow.js` 的 `_introHide` 清單（登場前 Boss 不可站在場上）**。
+- **招牌大招**（演出型，每關一招）：`55_ult.js`（`ULT_CFG[種類]` 時間軸、`ultStart`／`ultUpdate`／`ultWavesTick`／`drawUltWorld`／`drawUltTop`），招式資料 `moves.X.ult = "種類"`；**齒輪「大招測試」**直接進二階段放大招，新關做好後加 `Stages[n].sigMove = "招式鍵"` 就會列出。特效貼地用 `groundFxY(sheet,row,h)`（`70_fx.js` 的 `FX_FOOT` 表要補新圖各列的腳底 y）。
 - 玄天珠（輔助技）：`assistStart`／`activateAssist`／`applyAssistEffect`（靈光／替身兩種，營地選擇）
 - 美術特效：`spawnFx(sheet,row,x,y,{w,h,dur,loop,fps,facing,follow,c0,nf,vx,vy,alpha,anchor})`／`updateFx`／`drawFx`（`assets/fx/*.webp`，4×4 格、每格 256px）、`spawnMoveFx`、`executionFx`、`drawUltArt`、`landingFx`
 - Boss 繪製：`drawBossEntity`、`getBossSprite`、`bossVis`、`getWalkNorm`；玩家：`drawPlayer`

@@ -43,6 +43,7 @@
       /* 每幀：updateBossAI 開頭呼叫；回傳 true＝本幀 Boss 由大招接管 */
       function ultUpdate(dt) {
         ultWavesTick(dt);
+        if (ultTestTick(dt)) return true; /* v0.8.163 大招測試倒數 */
         const U = Boss._ult; if (!U) return false;
         if (Boss.state === "staggered" || Boss.hp <= 0 || Game.bossDeath || Game.mode !== "battle") { ultEnd(true); return false; } /* 被打破防（招架火牆累積架勢）＝大招中斷 */
         const c = U.c, T = c.t, once = (k) => (U.ev[k] ? false : (U.ev[k] = true));
@@ -207,4 +208,51 @@
           const tl = d / cfg.speed; if (!best || tl < best.tl) best = { tl, big: w.big };
         }
         if (best) ring(Player.x, Player.y - 70, best.tl, best.big);
+      }
+      /* =========================================================================
+       * v0.8.163 大招測試（齒輪選單「大招測試」）：直接進該關二階段、主角滿血，1.2 秒後放招牌大招。
+       * 各關在 Stages[n].sigMove 登記招牌大招（之後每做好一關就加一行）；不寫進度、不影響存檔。
+       * ========================================================================= */
+      function ultTestList() { const L = []; for (let n = 1; n <= 9; n++) { const s = Stages[n]; if (s && s.sigMove && s.moves && s.moves[s.sigMove]) L.push({ n, boss: s.name, move: String(s.moves[s.sigMove].name).replace(/\s*[（(].*[）)]\s*/, "") }); } return L; }
+      function ultTest(n) {
+        const st = Stages[n]; if (!st || !st.sigMove) return;
+        document.querySelectorAll(".cult-modal-backdrop.open").forEach(e => e.classList.remove("open"));
+        if (DLG.active) { DLG.onEnd = null; dlgFinish(); } /* 關掉進行中的對話，不觸發它的後續 */
+        loadStage(n);
+        Game.mode = "battle"; Game.introT = 0; Game.pendingPre = false; Game.dir = null; Game.cine = null; Game.cutsceneActive = false; Game.defeated = false;
+        Boss._introHide = false; Boss._p2MoviePending = false;
+        Config.bossPhase = 2; if (Boss.maxHp2) bossRefillP2();
+        if (st.stanceByPhase && st.stanceByPhase[2]) { Boss._scaleMul = 1; Boss.stance = st.stanceByPhase[2]; Boss.stanceCount = 0; applyBossBody(st); }
+        if (STAGE_BGM_P2[n]) Music.play(STAGE_BGM_P2[n]);
+        Player.hp = Player.maxHp; Player.stamina = Player.maxStamina; Player.x = Math.max(200, Boss.x - 560); Player.facing = 1; Boss.facing = -1;
+        Boss.state = "idle"; Boss.aiCooldown = 99; Boss.posture = 0;
+        Game.ultTest = { n, t: 1.2 };
+        showBanner("大招測試", "第 " + n + " 關・二階段", 1100, "#fde68a");
+      }
+      function ultTestTick(dt) { /* ultUpdate 開頭呼叫：倒數期間 Boss 待機，時間到放該關招牌大招 */
+        const T = Game.ultTest; if (!T) return false;
+        if (Game.mode !== "battle" || Boss.stageId !== T.n) { Game.ultTest = null; return false; }
+        T.t -= dt; Boss.state = "idle"; Boss.vx = 0; Boss.aiCooldown = 99;
+        if (T.t <= 0) { Game.ultTest = null; Boss.aiCooldown = 0; Boss.facing = Player.x >= Boss.x ? 1 : -1; triggerBossMove(Stages[T.n].sigMove); }
+        return true;
+      }
+      function openUltTestMenu() {
+        let m = document.getElementById("ult-test-modal");
+        if (!m) {
+          m = document.createElement("div"); m.id = "ult-test-modal"; m.className = "cult-modal-backdrop";
+          m.innerHTML = '<div class="cult-scroll-box" style="width:460px;max-width:90vw;padding:16px 20px;"><div class="modal-banner-row"><span class="modal-chapter-tag">【大招測試】直接進二階段放招牌大招</span><button type="button" class="cult-header-btn" id="btn-close-ult-test">關閉 ✕</button></div><div id="ult-test-list" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div></div>';
+          document.body.appendChild(m);
+          m.querySelector("#btn-close-ult-test").addEventListener("click", () => m.classList.remove("open"));
+        }
+        const box = m.querySelector("#ult-test-list"); box.innerHTML = "";
+        const L = ultTestList();
+        if (!L.length) box.innerHTML = '<div style="color:#cbd5e1;font-size:13px;">還沒有做好的招牌大招。</div>';
+        L.forEach(it => {
+          const b = document.createElement("button"); b.type = "button"; b.className = "menu-tile-btn";
+          b.style.cssText = "width:100%;justify-content:flex-start;text-align:left;";
+          b.innerHTML = "<span>🔥</span><span>第 " + it.n + " 關・" + it.boss + "：" + it.move + "</span>";
+          b.addEventListener("click", () => ultTest(it.n));
+          box.appendChild(b);
+        });
+        m.classList.add("open");
       }
