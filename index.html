@@ -2098,14 +2098,14 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "bf4622e0"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
+      const ASSET_VER = "f540063e"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
       /* v0.8.156 共用圖片載入器 IMGQ：所有 assets/ 圖片（不論哪裡 new Image）都經過這裡。
        * - 先用隱藏的代理圖下載，成功才把網址交給真正的圖（此時從快取秒載、觸發原本的 onload）；
        *   下載中的圖沒有 src，畫出來不會丟錯（失敗狀態的圖 drawImage 會丟錯）。
        * - 同時最多 IMGQ_MAX 個下載；單次 20 秒沒回應視為失敗；失敗重試 3 次（0.6／1.2／1.8 秒後，網址加 &r=）；
        *   整輪都失敗就 6 秒後再來一輪；兩輪都失敗才對原圖發 error 事件（圖保持「沒有 src」，畫了也安全）。
        * - 同一網址只下載一次。IMGQ.pending() 給進場閘門用（v0.8.156 進戰場前等圖載完）。 */
-      const ASSET_IMGS = new Set("bg/arena1,bg/arena1_fg,bg/arena1_ground,bg/arena1_sky,bg/arena2,bg/arena2_fg,bg/arena2_ground,bg/arena3,bg/arena3_fg,bg/arena3_ground,bg/arena4,bg/arena4_fg,bg/arena4_ground,bg/arena5,bg/arena5_fg,bg/arena5_ground,bg/camp,bg/hub_fire_base,bg/hub_gate,bg/hub_gate_front,bg/hub_shimei_1,bg/hub_shimei_2,bg/hub_shimei_3,bg/hub_shimei_4,bg/intro1,bg/intro2,bg/intro3,bg/intro5,boss1/01_idle1,boss1/02_idle2,boss1/03_walk1,boss1/04_walk2,boss1/05_walk3,boss1/06_walk4,boss1/07_windup,boss1/08_windup_thrust,boss1/09_slash,boss1/10_slash_rec,boss1/11_thrust,boss1/12_thrust_rec,boss1/13_sweep,boss1/14_cast,boss1/15_hurt,boss1/16_stagger,boss1/17_kneel,boss1/18_fall,boss1/19_lie,boss1/20_jump,boss1/21_fall,boss1/22_land,boss1/23_rise,boss1/24_chop_wind,boss1/25_chop_hit,boss1/26_chop_rec,boss1/27_thr_wind,boss1/28_thr_hit,boss1/29_thr_rec,boss1/30_swp_wind,boss1/31_swp_hit,boss1/32_swp_rec,boss1/33_leap_crouch,boss1/34_leap_air,boss1/35_leap_land,boss1/36_tq_wind,boss1/37_tq_hit,boss1/38_tq_rec,boss1/39_cb_wind,boss1/40_cb_h1,boss1/41_cb_h2,boss1/42_cb_rec,boss1/43_dl_hold,boss1/44_dl_hit,boss1/45_tw_wind,boss1/46_tw_rel,boss1/47_tw_catch,boss1/48_sp_wind,boss1/49_sp_hit,boss1/50_sp_rec,boss1/51_ch_wind,boss1/52_ch_run,boss1/53_ch_stop,boss1/54_sh_vanish,boss1/55_sh_strike,boss1/name,boss1/walk_01,boss1/walk_02,boss1/walk_03,boss1/walk_04,boss1/walk_05,boss1/walk_06,boss1/walk_07,boss1/walk_08,boss1/walk_09,boss1/walk_10,boss1/walk_11,boss1/walk_12,boss2/01_idle1,boss2/02_idle2,boss2/03_walk1,boss2/04_walk2,boss2/05_walk3,boss2/06_walk4,boss2/07_windup,boss2/08_windup_thrust,boss2/09_slash,boss2/10_slash_rec,boss2/11_thrust,boss2/12_thrust_rec,boss2/13_sweep,boss2/14_cast,boss2/15_hurt,boss2/16_stagger,boss2/17_kneel,boss2/18_fall,boss2/19_lie,boss2/20_fan_wind,boss2/21_fan_hit,boss2/22_fan_rec,boss2/23_thr_wind,boss2/24_thr_hit,boss2/25_thr_rec,boss2/26_swp_wind,boss2/27_swp_hit,boss2/28_swp_rec,boss2/29_cast_wind,boss2/30_cast_hit,boss2/31_cast_rec,boss2/32_tp_wind,boss2/33_tp_hit,boss2/34_tp_rec,boss2/35_fs_wind,boss2/36_fs_1,boss2/37_fs_2,boss2/38_fs_3,boss2/39_fs_rec,boss2/40_sky_cast,boss2/41_zone_wind,boss2/42_zone_hit,boss2/43_zone_rec,boss2/44_grab_tell,boss2/45_grab_hit,boss2/46_grab_rec,boss2/47_mir_wind,boss2/48_mir_spin,boss2/49_mir_rec,boss2/50_tc_back,boss2/51_tc_low,boss2/52_tc_rec,boss2/name,boss2/walk_01,boss2/walk_02,boss2/walk_03,boss2/walk_04,boss2/walk_05,boss2/walk_06,boss2/walk_07,boss2/walk_08,boss2/walk_09,boss2/walk_10,boss2/walk_11,boss2/walk_12,boss3/01_idle1,boss3/02_idle2,boss3/03_walk1,boss3/04_walk2,boss3/05_walk3,boss3/06_walk4,boss3/07_windup,boss3/08_windup_thrust,boss3/09_slash,boss3/10_slash_rec,boss3/11_thrust,boss3/12_thrust_rec,boss3/13_sweep,boss3/14_cast,boss3/15_hurt,boss3/16_stagger,boss3/17_kneel,boss3/18_fall,boss3/19_lie,boss3/20_hs_wind,boss3/21_hs_hit,boss3/22_hs_rec,boss3/23_x_wind,boss3/24_x_hold,boss3/25_x_hit,boss3/26_spin_wind,boss3/27_spin_hit,boss3/28_spin_rec,boss3/29_dash_wind,boss3/30_dash_hit,boss3/31_dash_rec,boss3/32_low_wind,boss3/33_low_hit,boss3/34_low_rec,boss3/35_draw_a,boss3/name,boss3/walk_01,boss3/walk_02,boss3/walk_03,boss3/walk_04,boss3/walk_05,boss3/walk_06,boss3/walk_07,boss3/walk_08,boss3/walk_09,boss3/walk_10,boss3/walk_11,boss3/walk_12,boss3b/01_idle1,boss3b/02_idle2,boss3b/03_walk1,boss3b/04_walk2,boss3b/05_walk3,boss3b/06_walk4,boss3b/07_windup,boss3b/08_windup_thrust,boss3b/09_slash,boss3b/10_slash_rec,boss3b/11_thrust,boss3b/12_thrust_rec,boss3b/13_sweep,boss3b/14_cast,boss3b/15_hurt,boss3b/16_stagger,boss3b/17_kneel,boss3b/18_fall,boss3b/19_lie,boss3b/20_slam_wind,boss3b/21_slam_hit,boss3b/22_slam_rec,boss3b/23_plunge_jump,boss3b/24_plunge_hit,boss3b/25_plunge_rec,boss3b/26_charge_wind,boss3b/27_charge_hit,boss3b/28_charge_rec,boss3b/29_sweep_wind,boss3b/30_sweep_hit,boss3b/31_sweep_rec,boss3b/35_draw_a,boss3b/36_draw_b,boss3b/37_draw_c,boss3b/walk_01,boss3b/walk_02,boss3b/walk_03,boss3b/walk_04,boss3b/walk_05,boss3b/walk_06,boss3b/walk_07,boss3b/walk_08,boss3b/walk_09,boss3b/walk_10,boss3b/walk_11,boss3b/walk_12,boss4/fs11,boss4/fs12,boss4/fs14,boss4/fs21,boss4/fs22,boss4/fs24,boss4/fs31,boss4/fs32,boss4/fs34,boss4/fs41,boss4/fs42,boss4/fs44,boss4/h01,boss4/h02,boss4/h03,boss4/h04,boss4/h05,boss4/h06,boss4/h07,boss4/h08,boss4/h09,boss4/h10,boss4/h11,boss4/h12,boss4/ls1,boss4/ls2,boss4/ls3,boss4/ls4,boss4/name,boss4/rs1,boss4/rs2,boss4/rs3,boss4/rs4,boss4/sw1,boss4/sw2,boss4/sw3,boss4s/01_idle1,boss4s/02_idle2,boss4s/03_walk1,boss4s/04_walk2,boss4s/05_walk3,boss4s/06_walk4,boss4s/07_windup,boss4s/08_windup_thrust,boss4s/09_slash,boss4s/10_slash_rec,boss4s/11_thrust,boss4s/12_thrust_rec,boss4s/13_sweep,boss4s/14_cast,boss4s/15_hurt,boss4s/16_stagger,boss4s/17_kneel,boss4s/18_fall,boss4s/19_lie,boss4s/20_spin_wind,boss4s/21_spin_hit,boss4s/22_sweep_wind,boss4s/23_fly_launch,boss4s/24_rain_wind,boss4s/25_spin_rec,boss4s/51_desc_a,boss4s/52_desc_b,boss4s/53_desc_c,boss4s/54_desc_d,boss5/01_idle1,boss5/02_idle2,boss5/03_walk1,boss5/04_walk2,boss5/05_walk3,boss5/06_walk4,boss5/07_windup,boss5/08_windup_thrust,boss5/09_slash,boss5/10_slash_rec,boss5/11_thrust,boss5/12_thrust_rec,boss5/13_sweep,boss5/14_cast,boss5/15_hurt,boss5/16_stagger,boss5/20_bite_crouch,boss5/21_bite_lunge,boss5/22_pounce_coil,boss5/23_pounce_fly,boss5/24_pounce_dive,boss5/25_pounce_land,boss5/26_rush,boss5/27_tail_wind,boss5/28_tail_spin,boss5/29_claw,boss5/40_sb_wind,boss5/41_sb_open,boss5/42_sb_snap,boss5/43_sb_rec,boss5/44_sc_rear,boss5/45_sc_a,boss5/46_sc_b,boss5/47_sc_rec,boss5/48_sp_coil,boss5/49_sp_rise,boss5/50_sp_dive,boss5/51_sp_land,boss5/52_sr_tell,boss5/53_sr_dart,boss5/54_sr_skid,boss5/55_ss_hit,boss5/56_st_wind,boss5/57_st_spin,boss5/58_st_rec,boss5/59_s_howl,boss5/name,boss5b/01_idle1,boss5b/02_idle2,boss5b/03_walk1,boss5b/04_walk2,boss5b/05_walk3,boss5b/06_walk4,boss5b/07_windup,boss5b/08_windup_thrust,boss5b/09_slash,boss5b/10_slash_rec,boss5b/11_thrust,boss5b/12_thrust_rec,boss5b/13_sweep,boss5b/14_cast,boss5b/15_hurt,boss5b/16_stagger,boss5b/17_kneel,boss5b/18_fall,boss5b/19_lie,boss5b/22_swipe_rear,boss5b/23_swipe_mid,boss5b/24_slam_up,boss5b/25_slam_mid,boss5b/26_leap_crouch,boss5b/27_leap_fly,boss5b/28_leap_dive,boss5b/29_bite_wind,boss5b/30_bite_snap,boss5b/31_rush,boss5b/32_tail_wind,boss5b/33_tail_spin,boss5b/40_bw_wind,boss5b/41_bw_mid,boss5b/42_bw_follow,boss5b/43_bw_rec,boss5b/44_bs_up,boss5b/45_bs_down,boss5b/46_bs_up2,boss5b/47_bs_rec,boss5b/48_bl_crouch,boss5b/49_bl_fly,boss5b/50_bl_dive,boss5b/51_bl_land,boss5b/52_bb_tell,boss5b/53_bb_snap,boss5b/54_bc_wind,boss5b/55_bc_run,boss5b/56_b_howl,boss5b/57_b_summon,boss5b/58_bt_wind,boss5b/59_bt_spin,boss5b/60_br_crouch,boss5b/61_br_coil,boss5b/62_br_fire,boss5b/63_br_rec,boss5b/64_br_deep,boss5b/65_br_g1,boss5b/66_br_g2,boss5b/67_br_coil2,boss5b/68_br_lunge,boss5b/69_br_fire2,boss5b/70_br_fire3,fx/air,fx/boss1,fx/boss1fx2,fx/boss2,fx/boss2fx,fx/boss2intro,fx/boss2sw,fx/boss3bfx,fx/boss3fx,fx/boss3intro,fx/boss4fx,fx/boss4fx2,fx/boss4fx3,fx/boss4intro,fx/boss4warn,fx/boss5beam,fx/boss5charge,fx/boss5flame,fx/boss5intro,fx/boss5morph,fx/campfire,fx/cue,fx/dir1,fx/dir2,fx/dir3,fx/dir4,fx/exec,fx/exec2,fx/exec_t1,fx/exec_t2,fx/flame,fx/heal_fx,fx/ink,fx/land,fx/mark,fx/peril_aura,fx/scene,fx/slash,fx/spark,fx/ult,fx/wolf,fx/wolf2,fx/xtz,fx/xtz_shield,fx/xtz_star,mc/01_idle1,mc/02_idle2,mc/03_run1,mc/04_run2,mc/05_run3,mc/06_run4,mc/07_jump,mc/08_fall,mc/09_slash1,mc/10_slash2,mc/11_thrust,mc/12_charge,mc/13_parry,mc/14_dash,mc/15_drink,mc/16_hurt,mc/17_slide,mc/18_plant,mc/19_rise,mc/20_s1a,mc/21_s1b,mc/22_s1c,mc/23_s2a,mc/24_s2b,mc/25_s2c,mc/26_t_a,mc/27_t_b,mc/28_t_c,mc/29_parry_a,mc/30_parry_b,mc/31_parry_c,mc/32_jump_a,mc/33_dash_a,mc/34_dash_b,mc/35_dash_c,mc/36_hurt_a,mc/37_hurt_b,mc/38_hv_a,mc/39_hv_b,mc/40_hv_c,mc/41_point_a,mc/42_point_b,mc/43_point_c,mc/idle_01,mc/idle_02,mc/idle_03,mc/idle_04,mc/idle_05,mc/idle_06,mc/idle_07,mc/idle_08,mc/idle_09,mc/idle_10,mc/idle_11,mc/idle_12,mc/idle_13,mc/idle_14,mc/idle_15,mc/idle_16,mc/idle_17,mc/idle_18,mc/idle_19,mc/idle_20,mc/idle_21,mc/idle_22,mc/idle_23,mc/idle_24,mc/run_01,mc/run_02,mc/run_03,mc/run_04,mc/run_05,mc/run_06,mc/run_07,mc/run_08,mc/run_09,mc/run_10,portrait/boss1,portrait/boss1_alt,portrait/boss2,portrait/boss2_alt,portrait/boss3,portrait/boss3_alt,portrait/mochen,portrait/mochen_alt,portrait/shidi,portrait/shidi_alt".split(",")); /* v0.8.156 build.py 填入 assets 內全部 webp（"資料夾/檔名"） */
+      const ASSET_IMGS = new Set("bg/arena1,bg/arena1_fg,bg/arena1_ground,bg/arena1_sky,bg/arena2,bg/arena2_fg,bg/arena2_ground,bg/arena3,bg/arena3_fg,bg/arena3_ground,bg/arena4,bg/arena4_fg,bg/arena4_ground,bg/arena5,bg/arena5_fg,bg/arena5_ground,bg/camp,bg/hub_fire_base,bg/hub_gate,bg/hub_gate_front,bg/hub_shimei_1,bg/hub_shimei_2,bg/hub_shimei_3,bg/hub_shimei_4,bg/intro1,bg/intro2,bg/intro3,bg/intro5,boss1/01_idle1,boss1/02_idle2,boss1/03_walk1,boss1/04_walk2,boss1/05_walk3,boss1/06_walk4,boss1/07_windup,boss1/08_windup_thrust,boss1/09_slash,boss1/10_slash_rec,boss1/11_thrust,boss1/12_thrust_rec,boss1/13_sweep,boss1/14_cast,boss1/15_hurt,boss1/16_stagger,boss1/17_kneel,boss1/18_fall,boss1/19_lie,boss1/20_jump,boss1/21_fall,boss1/22_land,boss1/23_rise,boss1/24_chop_wind,boss1/25_chop_hit,boss1/26_chop_rec,boss1/27_thr_wind,boss1/28_thr_hit,boss1/29_thr_rec,boss1/30_swp_wind,boss1/31_swp_hit,boss1/32_swp_rec,boss1/33_leap_crouch,boss1/34_leap_air,boss1/35_leap_land,boss1/36_tq_wind,boss1/37_tq_hit,boss1/38_tq_rec,boss1/39_cb_wind,boss1/40_cb_h1,boss1/41_cb_h2,boss1/42_cb_rec,boss1/43_dl_hold,boss1/44_dl_hit,boss1/45_tw_wind,boss1/46_tw_rel,boss1/47_tw_catch,boss1/48_sp_wind,boss1/49_sp_hit,boss1/50_sp_rec,boss1/51_ch_wind,boss1/52_ch_run,boss1/53_ch_stop,boss1/54_sh_vanish,boss1/55_sh_strike,boss1/61_u_raise,boss1/62_u_pause,boss1/63_u_stab,boss1/64_u_hold,boss1/65_u_cross,boss1/66_u_roar,boss1/67_u_rest,boss1/68_u_pull,boss1/name,boss1/walk_01,boss1/walk_02,boss1/walk_03,boss1/walk_04,boss1/walk_05,boss1/walk_06,boss1/walk_07,boss1/walk_08,boss1/walk_09,boss1/walk_10,boss1/walk_11,boss1/walk_12,boss2/01_idle1,boss2/02_idle2,boss2/03_walk1,boss2/04_walk2,boss2/05_walk3,boss2/06_walk4,boss2/07_windup,boss2/08_windup_thrust,boss2/09_slash,boss2/10_slash_rec,boss2/11_thrust,boss2/12_thrust_rec,boss2/13_sweep,boss2/14_cast,boss2/15_hurt,boss2/16_stagger,boss2/17_kneel,boss2/18_fall,boss2/19_lie,boss2/20_fan_wind,boss2/21_fan_hit,boss2/22_fan_rec,boss2/23_thr_wind,boss2/24_thr_hit,boss2/25_thr_rec,boss2/26_swp_wind,boss2/27_swp_hit,boss2/28_swp_rec,boss2/29_cast_wind,boss2/30_cast_hit,boss2/31_cast_rec,boss2/32_tp_wind,boss2/33_tp_hit,boss2/34_tp_rec,boss2/35_fs_wind,boss2/36_fs_1,boss2/37_fs_2,boss2/38_fs_3,boss2/39_fs_rec,boss2/40_sky_cast,boss2/41_zone_wind,boss2/42_zone_hit,boss2/43_zone_rec,boss2/44_grab_tell,boss2/45_grab_hit,boss2/46_grab_rec,boss2/47_mir_wind,boss2/48_mir_spin,boss2/49_mir_rec,boss2/50_tc_back,boss2/51_tc_low,boss2/52_tc_rec,boss2/name,boss2/walk_01,boss2/walk_02,boss2/walk_03,boss2/walk_04,boss2/walk_05,boss2/walk_06,boss2/walk_07,boss2/walk_08,boss2/walk_09,boss2/walk_10,boss2/walk_11,boss2/walk_12,boss3/01_idle1,boss3/02_idle2,boss3/03_walk1,boss3/04_walk2,boss3/05_walk3,boss3/06_walk4,boss3/07_windup,boss3/08_windup_thrust,boss3/09_slash,boss3/10_slash_rec,boss3/11_thrust,boss3/12_thrust_rec,boss3/13_sweep,boss3/14_cast,boss3/15_hurt,boss3/16_stagger,boss3/17_kneel,boss3/18_fall,boss3/19_lie,boss3/20_hs_wind,boss3/21_hs_hit,boss3/22_hs_rec,boss3/23_x_wind,boss3/24_x_hold,boss3/25_x_hit,boss3/26_spin_wind,boss3/27_spin_hit,boss3/28_spin_rec,boss3/29_dash_wind,boss3/30_dash_hit,boss3/31_dash_rec,boss3/32_low_wind,boss3/33_low_hit,boss3/34_low_rec,boss3/35_draw_a,boss3/name,boss3/walk_01,boss3/walk_02,boss3/walk_03,boss3/walk_04,boss3/walk_05,boss3/walk_06,boss3/walk_07,boss3/walk_08,boss3/walk_09,boss3/walk_10,boss3/walk_11,boss3/walk_12,boss3b/01_idle1,boss3b/02_idle2,boss3b/03_walk1,boss3b/04_walk2,boss3b/05_walk3,boss3b/06_walk4,boss3b/07_windup,boss3b/08_windup_thrust,boss3b/09_slash,boss3b/10_slash_rec,boss3b/11_thrust,boss3b/12_thrust_rec,boss3b/13_sweep,boss3b/14_cast,boss3b/15_hurt,boss3b/16_stagger,boss3b/17_kneel,boss3b/18_fall,boss3b/19_lie,boss3b/20_slam_wind,boss3b/21_slam_hit,boss3b/22_slam_rec,boss3b/23_plunge_jump,boss3b/24_plunge_hit,boss3b/25_plunge_rec,boss3b/26_charge_wind,boss3b/27_charge_hit,boss3b/28_charge_rec,boss3b/29_sweep_wind,boss3b/30_sweep_hit,boss3b/31_sweep_rec,boss3b/35_draw_a,boss3b/36_draw_b,boss3b/37_draw_c,boss3b/walk_01,boss3b/walk_02,boss3b/walk_03,boss3b/walk_04,boss3b/walk_05,boss3b/walk_06,boss3b/walk_07,boss3b/walk_08,boss3b/walk_09,boss3b/walk_10,boss3b/walk_11,boss3b/walk_12,boss4/fs11,boss4/fs12,boss4/fs14,boss4/fs21,boss4/fs22,boss4/fs24,boss4/fs31,boss4/fs32,boss4/fs34,boss4/fs41,boss4/fs42,boss4/fs44,boss4/h01,boss4/h02,boss4/h03,boss4/h04,boss4/h05,boss4/h06,boss4/h07,boss4/h08,boss4/h09,boss4/h10,boss4/h11,boss4/h12,boss4/ls1,boss4/ls2,boss4/ls3,boss4/ls4,boss4/name,boss4/rs1,boss4/rs2,boss4/rs3,boss4/rs4,boss4/sw1,boss4/sw2,boss4/sw3,boss4s/01_idle1,boss4s/02_idle2,boss4s/03_walk1,boss4s/04_walk2,boss4s/05_walk3,boss4s/06_walk4,boss4s/07_windup,boss4s/08_windup_thrust,boss4s/09_slash,boss4s/10_slash_rec,boss4s/11_thrust,boss4s/12_thrust_rec,boss4s/13_sweep,boss4s/14_cast,boss4s/15_hurt,boss4s/16_stagger,boss4s/17_kneel,boss4s/18_fall,boss4s/19_lie,boss4s/20_spin_wind,boss4s/21_spin_hit,boss4s/22_sweep_wind,boss4s/23_fly_launch,boss4s/24_rain_wind,boss4s/25_spin_rec,boss4s/51_desc_a,boss4s/52_desc_b,boss4s/53_desc_c,boss4s/54_desc_d,boss5/01_idle1,boss5/02_idle2,boss5/03_walk1,boss5/04_walk2,boss5/05_walk3,boss5/06_walk4,boss5/07_windup,boss5/08_windup_thrust,boss5/09_slash,boss5/10_slash_rec,boss5/11_thrust,boss5/12_thrust_rec,boss5/13_sweep,boss5/14_cast,boss5/15_hurt,boss5/16_stagger,boss5/20_bite_crouch,boss5/21_bite_lunge,boss5/22_pounce_coil,boss5/23_pounce_fly,boss5/24_pounce_dive,boss5/25_pounce_land,boss5/26_rush,boss5/27_tail_wind,boss5/28_tail_spin,boss5/29_claw,boss5/40_sb_wind,boss5/41_sb_open,boss5/42_sb_snap,boss5/43_sb_rec,boss5/44_sc_rear,boss5/45_sc_a,boss5/46_sc_b,boss5/47_sc_rec,boss5/48_sp_coil,boss5/49_sp_rise,boss5/50_sp_dive,boss5/51_sp_land,boss5/52_sr_tell,boss5/53_sr_dart,boss5/54_sr_skid,boss5/55_ss_hit,boss5/56_st_wind,boss5/57_st_spin,boss5/58_st_rec,boss5/59_s_howl,boss5/name,boss5b/01_idle1,boss5b/02_idle2,boss5b/03_walk1,boss5b/04_walk2,boss5b/05_walk3,boss5b/06_walk4,boss5b/07_windup,boss5b/08_windup_thrust,boss5b/09_slash,boss5b/10_slash_rec,boss5b/11_thrust,boss5b/12_thrust_rec,boss5b/13_sweep,boss5b/14_cast,boss5b/15_hurt,boss5b/16_stagger,boss5b/17_kneel,boss5b/18_fall,boss5b/19_lie,boss5b/22_swipe_rear,boss5b/23_swipe_mid,boss5b/24_slam_up,boss5b/25_slam_mid,boss5b/26_leap_crouch,boss5b/27_leap_fly,boss5b/28_leap_dive,boss5b/29_bite_wind,boss5b/30_bite_snap,boss5b/31_rush,boss5b/32_tail_wind,boss5b/33_tail_spin,boss5b/40_bw_wind,boss5b/41_bw_mid,boss5b/42_bw_follow,boss5b/43_bw_rec,boss5b/44_bs_up,boss5b/45_bs_down,boss5b/46_bs_up2,boss5b/47_bs_rec,boss5b/48_bl_crouch,boss5b/49_bl_fly,boss5b/50_bl_dive,boss5b/51_bl_land,boss5b/52_bb_tell,boss5b/53_bb_snap,boss5b/54_bc_wind,boss5b/55_bc_run,boss5b/56_b_howl,boss5b/57_b_summon,boss5b/58_bt_wind,boss5b/59_bt_spin,boss5b/60_br_crouch,boss5b/61_br_coil,boss5b/62_br_fire,boss5b/63_br_rec,boss5b/64_br_deep,boss5b/65_br_g1,boss5b/66_br_g2,boss5b/67_br_coil2,boss5b/68_br_lunge,boss5b/69_br_fire2,boss5b/70_br_fire3,fx/air,fx/boss1,fx/boss1fx2,fx/boss1ult,fx/boss1ult2,fx/boss2,fx/boss2fx,fx/boss2intro,fx/boss2sw,fx/boss3bfx,fx/boss3fx,fx/boss3intro,fx/boss4fx,fx/boss4fx2,fx/boss4fx3,fx/boss4intro,fx/boss4warn,fx/boss5beam,fx/boss5charge,fx/boss5flame,fx/boss5intro,fx/boss5morph,fx/campfire,fx/cue,fx/dir1,fx/dir2,fx/dir3,fx/dir4,fx/exec,fx/exec2,fx/exec_t1,fx/exec_t2,fx/flame,fx/heal_fx,fx/ink,fx/land,fx/mark,fx/peril_aura,fx/scene,fx/slash,fx/spark,fx/ult,fx/wolf,fx/wolf2,fx/xtz,fx/xtz_shield,fx/xtz_star,mc/01_idle1,mc/02_idle2,mc/03_run1,mc/04_run2,mc/05_run3,mc/06_run4,mc/07_jump,mc/08_fall,mc/09_slash1,mc/10_slash2,mc/11_thrust,mc/12_charge,mc/13_parry,mc/14_dash,mc/15_drink,mc/16_hurt,mc/17_slide,mc/18_plant,mc/19_rise,mc/20_s1a,mc/21_s1b,mc/22_s1c,mc/23_s2a,mc/24_s2b,mc/25_s2c,mc/26_t_a,mc/27_t_b,mc/28_t_c,mc/29_parry_a,mc/30_parry_b,mc/31_parry_c,mc/32_jump_a,mc/33_dash_a,mc/34_dash_b,mc/35_dash_c,mc/36_hurt_a,mc/37_hurt_b,mc/38_hv_a,mc/39_hv_b,mc/40_hv_c,mc/41_point_a,mc/42_point_b,mc/43_point_c,mc/idle_01,mc/idle_02,mc/idle_03,mc/idle_04,mc/idle_05,mc/idle_06,mc/idle_07,mc/idle_08,mc/idle_09,mc/idle_10,mc/idle_11,mc/idle_12,mc/idle_13,mc/idle_14,mc/idle_15,mc/idle_16,mc/idle_17,mc/idle_18,mc/idle_19,mc/idle_20,mc/idle_21,mc/idle_22,mc/idle_23,mc/idle_24,mc/run_01,mc/run_02,mc/run_03,mc/run_04,mc/run_05,mc/run_06,mc/run_07,mc/run_08,mc/run_09,mc/run_10,portrait/boss1,portrait/boss1_alt,portrait/boss2,portrait/boss2_alt,portrait/boss3,portrait/boss3_alt,portrait/mochen,portrait/mochen_alt,portrait/shidi,portrait/shidi_alt".split(",")); /* v0.8.156 build.py 填入 assets 內全部 webp（"資料夾/檔名"） */
       const ASSET_DIRS = new Set([...ASSET_IMGS].map(s => s.split("/")[0]));
       const IMGQ_MAX = 12;
       const IMGQ = { q: [], active: 0, urls: {}, done: 0, total: 0, failed: 0, missing: [],
@@ -3213,6 +3213,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Stages[1].poolP2 = Stages[1].pool.concat([
           ["charge_rush+thrust_peril", 10, "chase"], ["leap_slam+slash2", 8, "mobility"], ["shadow_strike+exclusive_combo", 8, "chase"]
         ]);
+        /* v0.8.160 招牌大招「血煞焚岳戟」（55_ult.js，設計卡見 HANDOFF 第〇節）：只在二階段；血條剩一半必放一次，之後偶爾出現 */
+        Stages[1].moves.u_fire = { name: "血煞焚岳戟", ult: "b1fire", damage: 0, windup: 0.9, active: 4.1, recover: 3.35 };
+        Stages[1].poolP2.push(["u_fire", 5]);
+        Stages[1].hpTriggers = [{ move: "u_fire", at: 0.5, phase: 2 }];
+        Stages[1].spriteExtras = (Stages[1].spriteExtras || []).concat(["61_u_raise", "62_u_pause", "63_u_stab", "65_u_cross", "66_u_roar", "67_u_rest", "68_u_pull"]);
+        Stages[1].fxSheets = Stages[1].fxSheets.concat(["boss1ult", "boss1ult2", "cue"]);
         Stages[1].farMoves = ["halberd_throw", "dash_in+slash2", "leap_slam"];
         Stages[1].farMovesP2 = ["charge_rush+thrust_peril", "shadow_strike"];
         Stages[1].rageMove = "rage_chain"; Stages[1].rageEvery = 0.2; /* 每損失 20% 氣血累積滿怒氣 */
@@ -5039,9 +5045,11 @@ const Config = {
       }
       function triggerBossMove(moveKey, queue = []) {
         if (Boss.state === "staggered" || Boss.state === "frozen") return;
+        if (Boss._ult) return; /* v0.8.160 招牌大招進行中：不接其他招（反斬、怒氣招等） */
         const stage = Stages[Boss.stageId];
         const m = stage.moves[moveKey];
         if (!m) return;
+        if (m.ult) { ultStart(m, moveKey); return; } /* v0.8.160 演出型招牌大招（55_ult.js） */
 
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         if (m.isSplit && illusionsAlive()) { triggerBossMove(stage.splitFallback || "slash1", queue); return; }
@@ -5120,6 +5128,7 @@ const Config = {
             } else Boss._hpOut = false;
           }
         }
+        if (ultUpdate(dt)) return; /* v0.8.160 招牌大招接管 Boss（55_ult.js） */
         { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
           const chOn = Boss.state === "windup" && Boss._orbDone && Boss._orbCfg && Boss.hp > 0;
           Boss._cd = (Boss._cd || 0) + ((chOn ? 1 : 0) - (Boss._cd || 0)) * Math.min(1, dt * (chOn ? 3 : 9));
@@ -5924,6 +5933,7 @@ const Config = {
                   post = Math.round(post * 1.5);
                 }
 
+                if (Boss._ultRest) { dmg = Math.round(dmg * 0.5); } /* v0.8.160 大招後跪地喘息：破綻傷害減半 */
                 Boss.hp = Math.max(1, Boss.hp - dmg);
                 Boss.flashFrames = 2;
                 Boss.vx = Player.facing * 75;
@@ -5940,7 +5950,7 @@ const Config = {
                 setTelemetry(`破綻重創！青雲劍斬中敵酋 (-${dmg} 氣血 / 架勢 +${post}%)`);
               } else {
                 // 2. Boss 正常對峙防守：普通格擋與完美彈刀反擊！
-                Boss.consecutiveBlocks = (Boss.consecutiveBlocks || 0) + 1;
+                Boss.consecutiveBlocks = Boss._ult ? 0 : (Boss.consecutiveBlocks || 0) + 1; /* v0.8.160 大招中不彈刀反斬 */
                 { /* v0.8.155 普攻一律扣血（使用者：天經地義）：Boss 對峙中被砍到＝扣約 55% 破綻傷害（第三劍 66、其餘 41）；架勢與格擋／彈刀反擊照舊 */
                   let dmgN = Player.comboStep === 3 ? 30 : 18; /* v0.8.158 普攻扣血 41／66 → 18／30：血條重點改放破綻窗口重擊與處決 */
                   if (Progress.echoes && Progress.echoes.includes(14)) dmgN = Math.round(dmgN * 1.10);
@@ -6287,7 +6297,7 @@ const Config = {
           const introOn = Game.introT > 0 || Game.dlgFocus || cineOn || !!Game.dir;
           if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = stZ.camZoomP ? (stZ.camZoomP[Config.bossPhase] || 1) : 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.83 camZoomP：依階段指定鏡頭縮放 */ /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
           const uw = Game.ultDim || 0;
-          const focusX = (Game.dir && Game.dir.focusX != null) ? Game.dir.focusX : cineOn || (Game.dir && Player.blast) ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
+          const focusX = (Game.dir && Game.dir.focusX != null) ? Game.dir.focusX : Game.ultFocus ? Boss.x * 0.72 + Player.x * 0.28 : cineOn || (Game.dir && Player.blast) ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
           let targetX = focusX - Config.baseWidth * 0.5;
           let minCam = 0;
           if (Game.mode === "hub") { targetX = -1280; minCam = -1280; }
@@ -6302,6 +6312,7 @@ const Config = {
           } else if (Game.mode !== "hub") cam._hubSnap = false;
           const dc = Game.dir && Game.dir.camNow; /* v0.8.106 導演鏡頭：瞬間拉近（rate 大）／垂直對焦 */
           if (dc) zTarget = dc.zoom;
+          else if (Game.ultCam && Game.mode === "battle") zTarget += Game.ultCam; /* v0.8.160 招牌大招鏡頭（蓄力拉近、放波拉回） */
           cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * (dc ? dc.rate : 7.5));
           cam.y = (cam.y || 0) + ((dc ? dc.y : 0) - (cam.y || 0)) * Math.min(1, dt * (dc ? dc.rate : 6));
         }
@@ -8057,6 +8068,191 @@ const Config = {
       Object.keys(Stages).forEach(k => { const st = Stages[k]; if (!st || !st.moves) return; st.cueArt = true; if (!(st.fxSheets || []).includes("cue")) st.fxSheets = (st.fxSheets || []).concat(["cue"]); });
 
       /* =========================================================================
+       * v0.8.160 招牌大招（演出型）引擎：Stages[n].moves.X.ult = "種類"
+       *   triggerBossMove 遇到 ult 招 → ultStart；updateBossAI 開頭 ultUpdate 接管（回傳 true 就不跑一般 AI）；
+       *   繪製：drawUltWorld（壓暗聚焦＋火牆，畫在 Boss 之前）、drawUltTop（主角腳下的招架光圈，畫在最上層）；
+       *   鏡頭：Game.ultCam（拉近量）＋ Game.ultFocus（焦點偏向 Boss），由 updateCamera 讀。
+       * 第 1 關「血煞焚岳戟」（ult:"b1fire"，使用者 2026-11-10 定案設計卡，見 HANDOFF 第〇節）：
+       *   舉戟蓄勢 0.9 秒（拉近、壓暗、戟焰閃爍）→ 插地（拉回）→ 地火三波（左右矮火牆，招架／跳／瞬步都可躲）
+       *   → 抱胸蓄力 1.0 秒（再拉近、紅光聚集）→ 仰天長嘯放高火牆（只有瞬步能穿過）→ 跪地喘息 3 秒（破綻、傷害減半）→ 拔戟回戰鬥。
+       * Boss 圖：assets/boss1/61_u_raise～68_u_pull；特效：assets/fx/boss1ult（0 戟焰／1 插地爆裂／2 矮火牆／3 高火牆）、
+       *   boss1ult2（0 紅光聚集／1 長嘯衝擊環／2 火牆竄起／3 喘息熱氣）。
+       * ========================================================================= */
+      const ULT_CFG = {
+        b1fire: {
+          t: { pause: 0.45, stab: 0.9, w1: 1.05, gap: 0.9, cross: 3.3, roar: 4.3, rest: 5.0, restDur: 3.0, pull: 0.35 }, /* gap 0.9：跳一次滯空約 0.72 秒，落地後要來得及應付下一波（設計卡原 0.6，實測連跳必中） */
+          low: { dmg: 120, speed: 820, h: 60, depth: 150, draw: 280, post: 12 },   /* dmg 為基礎值，會乘 BOSS_DMG_K（1.25）＝150 */
+          big: { dmg: 304, speed: 950, depth: 170, draw: 430 },                      /* 304×1.25＝380 */
+          stabDx: 170,                                                              /* 戟刃插地點：圖上腳底右方 170px（乘 bossK） */
+          img: { raise: "61_u_raise", pause: "62_u_pause", stab: "63_u_stab", cross: "65_u_cross", roar: "66_u_roar", rest: "67_u_rest", pull: "68_u_pull" }
+        }
+      };
+      const Ult = { waves: [] };
+      function ultK() { return bossVis(Stages[Boss.stageId]).k; }
+      function ultPt(px, py) { const k = ultK(); return { x: Boss.x + Boss.facing * (px - 450) * k, y: Boss.y + GROUND_SINK + (py - 560) * k }; } /* 圖上座標（900×600、圖朝右）→ 世界座標 */
+      function ultStart(m, key) {
+        const c = ULT_CFG[m.ult]; if (!c) return false;
+        Boss.facing = Player.x >= Boss.x ? 1 : -1;
+        Boss.moveType = key; Boss.state = "ult"; Boss.vx = 0; Boss.isPerilous = false; Boss.perilType = null;
+        Boss.nextImpactIn = 999; Boss.consecutiveBlocks = 0;
+        Boss._ult = { kind: m.ult, c, m, t: 0, ev: {}, wN: 0 }; Boss._ultRest = false; Boss._ultFrame = c.img.raise;
+        Ult.waves.length = 0;
+        showBanner(String(m.name).replace(/\s*[（(].*[）)]\s*/, ""), "大　招", 1300, "#fca5a5");
+        Sound.play("peril", 1.0, 0.7); hapticBuzz([30, 40, 60]);
+        return true;
+      }
+      function ultEnd(cancel) {
+        const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
+        Game.ultCam = 0; Game.ultFocus = false;
+        if (cancel) { Ult.waves.length = 0; return; }
+        Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
+        if (U && U.m) Boss.ultCd = 18;
+      }
+      /* 每幀：updateBossAI 開頭呼叫；回傳 true＝本幀 Boss 由大招接管 */
+      function ultUpdate(dt) {
+        ultWavesTick(dt);
+        const U = Boss._ult; if (!U) return false;
+        if (Boss.state === "staggered" || Boss.hp <= 0 || Game.bossDeath || Game.mode !== "battle") { ultEnd(true); return false; } /* 被打破防（招架火牆累積架勢）＝大招中斷 */
+        const c = U.c, T = c.t, once = (k) => (U.ev[k] ? false : (U.ev[k] = true));
+        U.t += dt; const t = U.t; Boss.vx = 0; Boss.nextImpactIn = 999;
+        const k = ultK(), fc = Boss.facing, G = Config.groundY;
+        /* ① 舉戟蓄勢：拉近、壓暗聚焦、戟身火焰閃爍 */
+        if (t < T.stab) {
+          Boss.state = "ult"; Boss._ultFrame = t < T.pause ? c.img.raise : c.img.pause;
+          Game.ultCam = 0.2; Game.ultFocus = true; Boss._ucd = Math.min(1, (Boss._ucd || 0) + dt * 3); Boss._ucdPos = ultPt(450, 230);
+          if (once("flame")) { const p = ultPt(450, 120); if (fxReady("boss1ult")) spawnFx("boss1ult", 0, p.x, p.y, { w: 220, h: 220, dur: T.stab, loop: true, fps: 10, alpha: 0.95, follow: () => ultPt(450, 120) }); Sound.play("b3_charge", 0.8, 0.85); }
+          return true;
+        }
+        /* ② 插地：爆裂、震屏、震動、鏡頭拉回（放波時看得到主角與火牆） */
+        if (once("stab")) {
+          Boss._ultFrame = c.img.stab; Game.ultCam = -0.04; Game.ultFocus = false;
+          const sx = Boss.x + fc * c.stabDx * k;
+          if (fxReady("boss1ult")) spawnFx("boss1ult", 1, sx, G + 6, { anchor: "b", w: 420, h: 420, dur: 0.5 });
+          Sound.play("b3_plunge", 1.0, 0.85); triggerShake(0, 0.5, 30, 0.4); hapticBuzz([40, 20, 60]); triggerHitstopMs(60);
+        }
+        if (t < T.cross) {
+          Boss._ultFrame = c.img.stab; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 4);
+          /* ③ 地火三波：每波左右各一道矮火牆 */
+          if (U.wN < 3 && t >= T.w1 + U.wN * T.gap - 0.25 && once("pre" + U.wN) && fxReady("boss1ult")) spawnFx("boss1ult", 1, Boss.x + fc * c.stabDx * k, G + 6, { anchor: "b", w: 200, h: 200, dur: 0.25, c0: 0, nf: 1 }); /* 放波前 0.25 秒插地點先閃 */
+          if (t >= 1.35 && once("hint")) hintOnce("ult1", "大招：地上的矮火牆可以招架、跳過或瞬步；最後的高火牆只能【瞬步】穿過！"); /* 等大招名橫幅（1.3 秒）消失再出提示，避免疊字 */
+          while (U.wN < 3 && t >= T.w1 + U.wN * T.gap) {
+            U.wN++; const sx = Boss.x + fc * c.stabDx * k;
+            Ult.waves.push({ big: false, x: sx, dir: 1, done: false }, { big: false, x: sx, dir: -1, done: false });
+            Sound.play("b3_low", 0.9, 0.9 + U.wN * 0.04); triggerShake(0, 0.25, 10, 0.18); hapticBuzz(18);
+          }
+          return true;
+        }
+        /* ④ 抱胸蓄力：插地爆焰蓋過換格（戟從刃朝下變刃朝上），再拉近、紅光向胸口聚集 */
+        if (t < T.roar) {
+          if (once("cross")) {
+            if (fxReady("boss1ult")) { const sx = Boss.x + fc * c.stabDx * k; spawnFx("boss1ult", 1, sx, G + 6, { anchor: "b", w: 300, h: 300, dur: 0.4, c0: 1, nf: 3 }); }
+            Boss.flashFrames = 3; Sound.play("b3_seal", 0.7, 0.8);
+            const p = ultPt(450, 260); if (fxReady("boss1ult2")) spawnFx("boss1ult2", 0, p.x, p.y, { w: 520, h: 520, dur: T.roar - T.cross, alpha: 0.95, follow: () => ultPt(450, 260) });
+          }
+          Boss._ultFrame = c.img.cross; Game.ultCam = 0.24; Game.ultFocus = true;
+          Boss._ucd = Math.min(1, (Boss._ucd || 0) + dt * 2.5); Boss._ucdPos = ultPt(450, 260);
+          return true;
+        }
+        /* ⑤ 仰天長嘯：衝擊環＋左右高火牆（只能瞬步） */
+        if (once("roar")) {
+          Boss._ultCue = null; Boss._ultFrame = c.img.roar; Game.ultCam = -0.06; Game.ultFocus = false; Boss._ucd = 0.6;
+          const hp = ultPt(445, 170);
+          if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, G + 6, { anchor: "b", w: 440, h: 440, dur: 0.6 }); }
+          Sound.play("m_roar", 1.0, 0.8); Sound.play("b3_heavy", 0.9, 0.7);
+          triggerShake(0, 0.7, 40, 0.6); hapticBuzz([60, 30, 90]); triggerHitstopMs(80);
+          Ult.waves.push({ big: true, x: Boss.x, dir: 1, done: false }, { big: true, x: Boss.x, dir: -1, done: false });
+        }
+        if (t < T.rest) { Boss._ultFrame = c.img.roar; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 2); return true; }
+        /* ⑥ 跪地喘息：破綻窗口（state=recover），窗口內傷害減半（51_physics 讀 Boss._ultRest） */
+        if (t < T.rest + T.restDur) {
+          if (once("rest")) { const p = ultPt(510, 200); if (fxReady("boss1ult2")) spawnFx("boss1ult2", 3, p.x, p.y, { w: 200, h: 200, dur: T.restDur, loop: true, fps: 5, alpha: 0.8, facing: fc, follow: () => ultPt(510, 200) }); hintOnce("ult1rest", "神衛力竭喘息：趁機反擊！（大招後的破綻傷害減半）"); }
+          Boss.state = "recover"; Boss._ultRest = true; Boss._ultFrame = c.img.rest; Boss.stateTimer = T.rest + T.restDur - t; Boss.stateDur = T.restDur;
+          return true;
+        }
+        /* ⑦ 拔戟回到戰鬥 */
+        if (t < T.rest + T.restDur + T.pull) { Boss.state = "recover"; Boss._ultRest = false; Boss._ultFrame = c.img.pull; return true; }
+        ultEnd(false);
+        return true;
+      }
+      /* 火牆移動與判定（大招結束後已放出的火牆仍會飛完） */
+      function ultWavesTick(dt) {
+        const W = Ult.waves; if (!W.length) return;
+        const G = Config.groundY, U = Boss._ult, c = (U && U.c) || ULT_CFG.b1fire;
+        for (let i = W.length - 1; i >= 0; i--) {
+          const w = W[i], cfg = w.big ? c.big : c.low;
+          w.x += w.dir * cfg.speed * dt;
+          if (Math.abs(w.x - Boss.x) > 2600 || w.x < -400 || w.x > Config.worldWidth + 400) { W.splice(i, 1); continue; }
+          if (w.done) continue;
+          /* 火牆前緣 w.x，往後 depth 都是火；主角在火裡（且矮火牆時腳在火焰高度內）就結算一次 */
+          const rel = (Player.x - w.x) * w.dir; /* >0 主角在前方未到；<0 已在火裡或身後 */
+          if (rel > 10 || rel < -cfg.depth) continue; /* 判定比圖寬容：前緣碰到主角中心才算；矮火牆離地 60px 以上就算跳過（圖約 90px 高） */
+          if (Player.state === "execution") { w.done = true; continue; }
+          if (!w.big && Player.y < G - cfg.h) continue; /* 跳過矮火牆 */
+          w.done = true;
+          ultWaveHit(w, cfg);
+        }
+      }
+      function ultWaveHit(w, cfg) {
+        const dir = w.dir;
+        if (w.big) {
+          if (Player.invulnTimer > 0) { perfectDodgeFx("【瞬步穿火】", 10); spawnFloatingText(Player.x, Player.y - 120, "穿過高火牆！", "#7dd3fc", 1.15); return; }
+          takeDamage(bossDmg(cfg.dmg), dir, "【焚岳火牆】");
+          return;
+        }
+        /* 矮火牆：走一般格擋判定（瞬步無敵、完美招架、普通格擋、受擊），Boss 暫時當成在火牆位置 */
+        const sx = Boss.x, sp = Boss.isPerilous, st = Boss.perilType, svx = Boss.vx;
+        Boss.x = w.x - dir * 60; Boss.isPerilous = false; Boss.perilType = null;
+        const hp0 = Player.hp;
+        resolveBossStrike({ damage: cfg.dmg, parryPostureDmg: cfg.post });
+        Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
+        if (Player.hp === hp0 && Player.state === "parry") { w.cut = true; if (fxReady("boss1ult")) spawnFx("boss1ult", 1, Player.x + dir * 30, Config.groundY + 6, { anchor: "b", w: 160, h: 160, dur: 0.3, c0: 2, nf: 2 }); } /* 招架斬斷火牆 */
+      }
+      /* 繪製：壓暗聚焦（世界座標，畫在 Boss 之前）＋火牆 */
+      function drawUltWorld() {
+        if ((Boss._ucd || 0) > 0.01 && Boss._ucdPos) {
+          const op = Boss._ucdPos, g = ctx.createRadialGradient(op.x, op.y, 110, op.x, op.y, 460);
+          g.addColorStop(0, "rgba(24,0,6,0)"); g.addColorStop(1, `rgba(16,0,4,${0.78 * Boss._ucd})`);
+          ctx.save(); ctx.fillStyle = g; ctx.fillRect(Game.camera.x - 1600, -1600, Config.baseWidth + 3200, 4200); ctx.restore();
+        }
+        const W = Ult.waves; if (!W.length || !fxReady("boss1ult")) return;
+        const img = fxSheet("boss1ult").img, G = Config.groundY, c = ULT_CFG.b1fire, now = performance.now();
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        for (const w of W) {
+          if (w.cut) continue;
+          const cfg = w.big ? c.big : c.low, row = w.big ? 3 : 2, S = cfg.draw, col = Math.floor(now / 70 + (w.dir > 0 ? 0 : 2)) % 4;
+          ctx.save(); ctx.translate(w.x, G + 8); ctx.scale(w.dir, 1);
+          ctx.globalAlpha = 0.95;
+          ctx.drawImage(img, col * 256, row * 256, 256, 256, -S * 0.92, -S, S, S); /* 圖中火牆前緣約在格寬 92% 處 → 對到 w.x */
+          ctx.restore();
+        }
+        ctx.restore();
+      }
+      /* 招架光圈：矮火牆／高火牆到主角前 0.35 秒在主角身上收縮（同 cue.webp：黃＝可擋、紅＝只能瞬步）；長嘯前在 Boss 身上 */
+      function drawUltTop() {
+        if (!fxReady("cue") || Config.parryCueLevel <= 0) return;
+        const img = fxSheet("cue").img, c = ULT_CFG.b1fire;
+        const ring = (x, y, tLeft, big) => {
+          if (tLeft <= 0 || tLeft > 0.35) return;
+          const pr = 1 - tLeft / 0.35, dia = 240 - 180 * pr, col = tLeft <= 0.05 ? 3 : (pr < 0.35 ? 0 : pr < 0.7 ? 1 : 2), fr = [0.9, 0.7, 0.35, 0.9][col], cs = col === 3 ? 260 : dia / fr;
+          ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.5 + 0.5 * pr;
+          ctx.drawImage(img, col * 256, (big ? 1 : 0) * 256, 256, 256, x - cs / 2, y - cs / 2, cs, cs); ctx.restore();
+        };
+        let best = null;
+        const U = Boss._ult;
+        if (U && U.c === c) { /* 還沒放出的火牆：倒數＝距放出時間＋飛到主角的時間（站在插地點旁也一定有 0.35 秒預警） */
+          const T = c.t, k = ultK(), sx = Boss.x + Boss.facing * c.stabDx * k;
+          if (U.wN < 3) best = { tl: T.w1 + U.wN * T.gap - U.t + Math.abs(Player.x - sx) / c.low.speed, big: false };
+          else if (!U.ev.roar) best = { tl: T.roar - U.t + Math.abs(Player.x - Boss.x) / c.big.speed, big: true };
+        }
+        for (const w of Ult.waves) {
+          if (w.done) continue;
+          const cfg = w.big ? c.big : c.low, d = (Player.x - w.x) * w.dir; if (d < 0) continue;
+          const tl = d / cfg.speed; if (!best || tl < best.tl) best = { tl, big: w.big };
+        }
+        if (best) ring(Player.x, Player.y - 70, best.tl, best.big);
+      }
+
+      /* =========================================================================
        * 5. 渲染引擎：動態多場景視差背景與角色剪影
        * ========================================================================= */
       function render() {
@@ -8208,6 +8404,7 @@ const Config = {
         drawFlyingSwords();
         drawCineTrail();
         drawIllusions();
+        drawUltWorld(); /* v0.8.160 招牌大招：壓暗聚焦＋火牆 */
         drawDirWorld(); /* v0.8.133 第 4 關三段演出：劍、金環、巨手、暗層 */
         drawIntroGhosts(); /* v0.8.127 鏡花水月：分身殘影（畫在 Boss 後面） */
         drawBossAura(); /* v0.8.125 危招／霸體光暈（畫在 Boss 後面） */
@@ -8223,6 +8420,7 @@ const Config = {
         drawSparks();
         drawHitFx();
         drawFx();
+        drawUltTop(); /* v0.8.160 大招火牆的招架光圈 */
         drawLeaves();
         if (Game.mode === "battle") drawArenaLayers(Game.camera.x, Boss.stageId, "fg"); /* M2 前景剪影層 */
 
@@ -9770,6 +9968,7 @@ const Config = {
             imgKey = fr;
           }
           if (moveData && moveData.isLeap && Boss.state === "active" && !(moveData.frames && moveData.frames.active)) imgKey = (1 - Boss.stateTimer / (Boss.stateDur || 1)) < 0.5 ? "07_windup" : "09_slash";
+          if (Boss._ult && Boss._ultFrame && SP.imgs[Boss._ultFrame]) imgKey = Boss._ultFrame; /* v0.8.160 招牌大招關鍵格 */
           if (stnD && stnD.remap && stnD.remap[imgKey]) imgKey = stnD.remap[imgKey]; /* 動作表某格畫壞時改用別格 */
           const hrP = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
           if (hrP > 0.4 && Boss.hitReactKind !== "block" && (Boss.state === "idle" || Boss.state === "approach" || Boss.state === "recover")) {
@@ -10935,6 +11134,7 @@ const Config = {
         Game.defeated = false;
         Boss.maxPosture = stage.maxPosture;
         Boss.posture = 0;
+        ultEnd(true); /* v0.8.160 換關／重打清掉大招與火牆 */
         Boss.deathblows = stage.deathblows;
         Boss.hasSummonedClone = false;
         Boss.state = "idle";

@@ -291,6 +291,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Stages[1].poolP2 = Stages[1].pool.concat([
           ["charge_rush+thrust_peril", 10, "chase"], ["leap_slam+slash2", 8, "mobility"], ["shadow_strike+exclusive_combo", 8, "chase"]
         ]);
+        /* v0.8.160 招牌大招「血煞焚岳戟」（55_ult.js，設計卡見 HANDOFF 第〇節）：只在二階段；血條剩一半必放一次，之後偶爾出現 */
+        Stages[1].moves.u_fire = { name: "血煞焚岳戟", ult: "b1fire", damage: 0, windup: 0.9, active: 4.1, recover: 3.35 };
+        Stages[1].poolP2.push(["u_fire", 5]);
+        Stages[1].hpTriggers = [{ move: "u_fire", at: 0.5, phase: 2 }];
+        Stages[1].spriteExtras = (Stages[1].spriteExtras || []).concat(["61_u_raise", "62_u_pause", "63_u_stab", "65_u_cross", "66_u_roar", "67_u_rest", "68_u_pull"]);
+        Stages[1].fxSheets = Stages[1].fxSheets.concat(["boss1ult", "boss1ult2", "cue"]);
         Stages[1].farMoves = ["halberd_throw", "dash_in+slash2", "leap_slam"];
         Stages[1].farMovesP2 = ["charge_rush+thrust_peril", "shadow_strike"];
         Stages[1].rageMove = "rage_chain"; Stages[1].rageEvery = 0.2; /* 每損失 20% 氣血累積滿怒氣 */

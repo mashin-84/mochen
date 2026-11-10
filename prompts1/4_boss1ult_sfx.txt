@@ -1,0 +1,10 @@
+第 1 關招牌大招「血煞焚岳戟」音效（ElevenLabs Sound Effects；每條寫明秒數；拿到檔後由 Claude 裁切、正規化峰值 -1.5 dBFS、單聲道 mp3）
+目前暫用：b3_charge（蓄勢）、b3_plunge（插地）、b3_low（地火波）、b3_seal（抱胸）、m_roar（長嘯，借狼吼）、b3_heavy（高火牆）、喘息無聲。
+
+1. b1u_charge（1.0 秒）：Fire igniting and flickering along a raised metal halberd, low rumbling whoosh with crackling flames, rising tension, no music, no voice.
+2. b1u_stab（1.2 秒）：A heavy metal halberd slammed straight down into rocky ground, deep impact thud with cracking stone and a sudden burst of roaring fire, no music.
+3. b1u_wave（1.0 秒）：A low wall of fire rushing fast along the ground and passing by, sweeping whoosh with crackling flames, no music.
+4. b1u_gather（1.0 秒）：Deep ominous energy gathering into a warrior's body, rising hum with crackling embers, building pressure, no music, no voice.
+5. b1u_roar（1.5 秒）：A fierce armored male warrior roaring furiously up at the sky, powerful human battle cry with no words, slight echo, no music.
+6. b1u_bigwave（1.8 秒）：A massive towering wall of fire erupting from the ground and surging forward, huge roaring blaze with a deep rumble, no music.
+7. b1u_pant（2.5 秒）：An exhausted armored man kneeling and panting heavily, deep tired breaths, faint armor rattling, no music.

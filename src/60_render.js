@@ -150,6 +150,7 @@
         drawFlyingSwords();
         drawCineTrail();
         drawIllusions();
+        drawUltWorld(); /* v0.8.160 招牌大招：壓暗聚焦＋火牆 */
         drawDirWorld(); /* v0.8.133 第 4 關三段演出：劍、金環、巨手、暗層 */
         drawIntroGhosts(); /* v0.8.127 鏡花水月：分身殘影（畫在 Boss 後面） */
         drawBossAura(); /* v0.8.125 危招／霸體光暈（畫在 Boss 後面） */
@@ -165,6 +166,7 @@
         drawSparks();
         drawHitFx();
         drawFx();
+        drawUltTop(); /* v0.8.160 大招火牆的招架光圈 */
         drawLeaves();
         if (Game.mode === "battle") drawArenaLayers(Game.camera.x, Boss.stageId, "fg"); /* M2 前景剪影層 */
 

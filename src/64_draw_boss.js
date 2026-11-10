@@ -308,6 +308,7 @@
             imgKey = fr;
           }
           if (moveData && moveData.isLeap && Boss.state === "active" && !(moveData.frames && moveData.frames.active)) imgKey = (1 - Boss.stateTimer / (Boss.stateDur || 1)) < 0.5 ? "07_windup" : "09_slash";
+          if (Boss._ult && Boss._ultFrame && SP.imgs[Boss._ultFrame]) imgKey = Boss._ultFrame; /* v0.8.160 招牌大招關鍵格 */
           if (stnD && stnD.remap && stnD.remap[imgKey]) imgKey = stnD.remap[imgKey]; /* 動作表某格畫壞時改用別格 */
           const hrP = Boss.hitReactT > 0 ? Boss.hitReactT / (Boss.hitReactDur || 0.14) : 0;
           if (hrP > 0.4 && Boss.hitReactKind !== "block" && (Boss.state === "idle" || Boss.state === "approach" || Boss.state === "recover")) {

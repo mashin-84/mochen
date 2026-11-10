@@ -183,6 +183,7 @@
                   post = Math.round(post * 1.5);
                 }
 
+                if (Boss._ultRest) { dmg = Math.round(dmg * 0.5); } /* v0.8.160 大招後跪地喘息：破綻傷害減半 */
                 Boss.hp = Math.max(1, Boss.hp - dmg);
                 Boss.flashFrames = 2;
                 Boss.vx = Player.facing * 75;
@@ -199,7 +200,7 @@
                 setTelemetry(`破綻重創！青雲劍斬中敵酋 (-${dmg} 氣血 / 架勢 +${post}%)`);
               } else {
                 // 2. Boss 正常對峙防守：普通格擋與完美彈刀反擊！
-                Boss.consecutiveBlocks = (Boss.consecutiveBlocks || 0) + 1;
+                Boss.consecutiveBlocks = Boss._ult ? 0 : (Boss.consecutiveBlocks || 0) + 1; /* v0.8.160 大招中不彈刀反斬 */
                 { /* v0.8.155 普攻一律扣血（使用者：天經地義）：Boss 對峙中被砍到＝扣約 55% 破綻傷害（第三劍 66、其餘 41）；架勢與格擋／彈刀反擊照舊 */
                   let dmgN = Player.comboStep === 3 ? 30 : 18; /* v0.8.158 普攻扣血 41／66 → 18／30：血條重點改放破綻窗口重擊與處決 */
                   if (Progress.echoes && Progress.echoes.includes(14)) dmgN = Math.round(dmgN * 1.10);
@@ -546,7 +547,7 @@
           const introOn = Game.introT > 0 || Game.dlgFocus || cineOn || !!Game.dir;
           if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = stZ.camZoomP ? (stZ.camZoomP[Config.bossPhase] || 1) : 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.83 camZoomP：依階段指定鏡頭縮放 */ /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
           const uw = Game.ultDim || 0;
-          const focusX = (Game.dir && Game.dir.focusX != null) ? Game.dir.focusX : cineOn || (Game.dir && Player.blast) ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
+          const focusX = (Game.dir && Game.dir.focusX != null) ? Game.dir.focusX : Game.ultFocus ? Boss.x * 0.72 + Player.x * 0.28 : cineOn || (Game.dir && Player.blast) ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
           let targetX = focusX - Config.baseWidth * 0.5;
           let minCam = 0;
           if (Game.mode === "hub") { targetX = -1280; minCam = -1280; }
@@ -561,6 +562,7 @@
           } else if (Game.mode !== "hub") cam._hubSnap = false;
           const dc = Game.dir && Game.dir.camNow; /* v0.8.106 導演鏡頭：瞬間拉近（rate 大）／垂直對焦 */
           if (dc) zTarget = dc.zoom;
+          else if (Game.ultCam && Game.mode === "battle") zTarget += Game.ultCam; /* v0.8.160 招牌大招鏡頭（蓄力拉近、放波拉回） */
           cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * (dc ? dc.rate : 7.5));
           cam.y = (cam.y || 0) + ((dc ? dc.y : 0) - (cam.y || 0)) * Math.min(1, dt * (dc ? dc.rate : 6));
         }

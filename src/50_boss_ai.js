@@ -172,9 +172,11 @@
       }
       function triggerBossMove(moveKey, queue = []) {
         if (Boss.state === "staggered" || Boss.state === "frozen") return;
+        if (Boss._ult) return; /* v0.8.160 招牌大招進行中：不接其他招（反斬、怒氣招等） */
         const stage = Stages[Boss.stageId];
         const m = stage.moves[moveKey];
         if (!m) return;
+        if (m.ult) { ultStart(m, moveKey); return; } /* v0.8.160 演出型招牌大招（55_ult.js） */
 
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         if (m.isSplit && illusionsAlive()) { triggerBossMove(stage.splitFallback || "slash1", queue); return; }
@@ -253,6 +255,7 @@
             } else Boss._hpOut = false;
           }
         }
+        if (ultUpdate(dt)) return; /* v0.8.160 招牌大招接管 Boss（55_ult.js） */
         { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
           const chOn = Boss.state === "windup" && Boss._orbDone && Boss._orbCfg && Boss.hp > 0;
           Boss._cd = (Boss._cd || 0) + ((chOn ? 1 : 0) - (Boss._cd || 0)) * Math.min(1, dt * (chOn ? 3 : 9));
