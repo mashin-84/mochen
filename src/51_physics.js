@@ -415,7 +415,7 @@
                   setTelemetry("★ 青雲劍彈反折射飛劍！飛劍反噬射向 Boss！");
                 }
               } else if (Player.invulnTimer <= 0) {
-                takeDamage(sw.damage, sw.dir, "飛劍擊中！");
+                takeDamage(bossDmg(sw.damage), sw.dir, "飛劍擊中！");
                 swordImpactFx(sw);
                 Game.flyingSwords.splice(i, 1);
                 continue;

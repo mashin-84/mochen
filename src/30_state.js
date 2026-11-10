@@ -4,7 +4,9 @@
       const canvas = document.getElementById("battle-canvas");
       const ctx = canvas.getContext("2d");
 
-      const Config = {
+      const BOSS_DMG_K = 1.25; /* v0.8.159 Boss 招式傷害倍率（招式、飛劍、部位招；地面煞氣與火柱不乘） */
+function bossDmg(n) { return Math.round(n * BOSS_DMG_K); }
+const Config = {
         worldWidth: 3200,
         baseWidth: 1280,
         baseHeight: 720,

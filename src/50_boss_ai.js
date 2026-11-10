@@ -776,7 +776,7 @@
               triggerBossMove(next, Boss.comboChain);
             } else {
               Boss.state = "idle";
-              Boss.aiCooldown = Config.bossPhase === 2 ? 0.32 : 0.60;
+              Boss.aiCooldown = Config.bossPhase === 2 ? 0.25 : 0.45; /* v0.8.159 出招間隔 0.60／0.32 → 0.45／0.25 */
             }
           }
           return;

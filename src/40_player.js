@@ -448,11 +448,11 @@
 
         Player.gourds--;
         Player.state = "drink";
-        let drinkDuration = 0.85;
-        let healAmount = 450;
+        let drinkDuration = 1.2; /* v0.8.159 喝藥 0.85 → 1.2 秒 */
+        let healAmount = 350; /* v0.8.159 葫蘆回血 450 → 350 */
         if (Progress.equippedSeals.includes("ningshen")) {
           drinkDuration *= 0.5;
-          healAmount = 600;
+          healAmount = 500; /* v0.8.159 寧神印記 600 → 500（同步 -100）*/
         }
         Player.stateTimer = drinkDuration;
         Player.vx = 0;
@@ -799,7 +799,7 @@
         if (Boss.posture >= Boss.maxPosture) {
           Boss.posture = Boss.maxPosture;
           Boss.state = "staggered";
-          Boss.staggerTimer = 3.8;
+          Boss.staggerTimer = 3.0; /* v0.8.159 破防硬直 3.8 → 3.0 */
           Boss.isPerilous = false;
           Boss.vx = -Boss.facing * 160;
           Sound.play("mikiri", 1.0, 0.85);
@@ -861,7 +861,7 @@
             }
           }
 
-          takeDamage(move.damage, dir, "【危】殺招命中！");
+          takeDamage(bossDmg(move.damage), dir, "【危】殺招命中！");
           return;
         }
 
@@ -888,18 +888,18 @@
             Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.03);
             hapticBuzz(22);
             spawnSparks(cx, cy, "block", dir);
-            damageBossPosture(6, null);
+            damageBossPosture(2, null); /* v0.8.159 普通格擋給 Boss 架勢 +6 → +2 */
             spawnFloatingText(Player.x, Player.y - 95, `普通格擋 (+${el}ms 偏慢)`, "#cbd5e1", 0.95);
             setTelemetry(`普通招架 (+${el}ms > 窗口 ${currentWindow}ms)｜損耗自身劍勢`);
             if (Player.stamina <= 0) {
-              takeDamage(Math.round(move.damage * 0.5), dir, "劍勢崩潰受創！");
+              takeDamage(Math.round(bossDmg(move.damage) * 0.5), dir, "劍勢崩潰受創！");
               Player.stamina = 0;
             }
             return;
           }
         }
 
-        takeDamage(move.damage, dir, "受創！");
+        takeDamage(bossDmg(move.damage), dir, "受創！");
       }
 
       function doPerfectDeflect(cx, cy, dir, el, postureGain) {

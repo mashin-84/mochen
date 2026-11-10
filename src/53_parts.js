@@ -42,7 +42,7 @@
         if (Player.state === "execution") return;
         if (!move.unblockable) { partStrike(srcX, move); return; }
         if (Player.invulnTimer > 0) { if (Player.state === "dash") perfectDodgeFx("【完美閃避】", 8); return; }
-        takeDamage(move.damage, Player.x >= srcX ? 1 : -1, tag || "受創！");
+        takeDamage(bossDmg(move.damage), Player.x >= srcX ? 1 : -1, tag || "受創！");
       }
 
       /* ---------- 主角打部位 ---------- */
