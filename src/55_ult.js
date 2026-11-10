@@ -159,17 +159,14 @@
           const cfg = w.big ? c.big : c.low, row = w.big ? 3 : 2, S = cfg.draw, col = Math.floor(now / 70 + (w.dir > 0 ? 0 : 2)) % 4;
           const Hb = w.big ? (G + GROUND_SINK) - ultViewTop() + 260 : S; /* v0.8.162 高火牆再往上延伸（頂出畫面）；腳底對齊扣掉圖裡留白 */
           ctx.save(); ctx.translate(w.x, groundFxY("boss1ult", row, Hb)); ctx.scale(w.dir, 1);
-          if (w.big) { /* v0.8.161 高火牆＝滿屏；v0.8.162 加寬加厚（寬 620→1000、四層火焰），判定不變 */
+          if (w.big) { /* v0.8.161 高火牆＝滿屏；v0.8.162 加寬加厚（寬 1000）；v0.8.164 使用者要求火焰只留一層，判定不變 */
             const Hh = Hb, Wd = 1000;
             ctx.globalCompositeOperation = "source-over"; /* 先墊深紅實色火牆身體（亮背景上疊加發光會變淡粉霧，壓不住） */
-            const gb = ctx.createLinearGradient(-Wd * 1.7, 0, 30, 0);
+            const gb = ctx.createLinearGradient(-Wd * 1.0, 0, 30, 0);
             gb.addColorStop(0, "rgba(90,0,18,0)"); gb.addColorStop(0.25, "rgba(110,4,24,0.62)"); gb.addColorStop(0.8, "rgba(175,14,34,0.85)"); gb.addColorStop(1, "rgba(210,40,50,0)");
-            ctx.fillStyle = gb; ctx.fillRect(-Wd * 1.7, -Hh, Wd * 1.7 + 30, Hh);
+            ctx.fillStyle = gb; ctx.fillRect(-Wd * 1.0, -Hh, Wd * 1.0 + 30, Hh); /* 身體寬度對齊單層火焰 */
             ctx.globalCompositeOperation = "lighter";
-            ctx.globalAlpha = 0.75; ctx.drawImage(img, ((col + 2) % 4) * 256, row * 256, 256, 256, -Wd * 1.25, -Hh, Wd, Hh);
             ctx.globalAlpha = 1; ctx.drawImage(img, col * 256, row * 256, 256, 256, -Wd * 0.92, -Hh, Wd, Hh);
-            ctx.globalAlpha = 0.6; ctx.drawImage(img, ((col + 1) % 4) * 256, row * 256, 256, 256, -Wd * 0.8, -Hh, Wd * 0.85, Hh); /* 再疊一層讓火焰飽和 */
-            ctx.globalAlpha = 0.55; ctx.drawImage(img, ((col + 3) % 4) * 256, row * 256, 256, 256, -Wd * 1.6, -Hh, Wd * 0.9, Hh); /* 尾段再一層：火牆更厚 */
             const gl = ctx.createLinearGradient(-90, 0, 120, 0); gl.addColorStop(0, "rgba(255,120,140,0)"); gl.addColorStop(0.6, "rgba(255,170,150,0.55)"); gl.addColorStop(1, "rgba(255,80,110,0)");
             ctx.fillStyle = gl; ctx.fillRect(-90, -Hh, 210, Hh);
           } else {
