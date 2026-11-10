@@ -201,7 +201,7 @@
                 // 2. Boss 正常對峙防守：普通格擋與完美彈刀反擊！
                 Boss.consecutiveBlocks = (Boss.consecutiveBlocks || 0) + 1;
                 { /* v0.8.155 普攻一律扣血（使用者：天經地義）：Boss 對峙中被砍到＝扣約 55% 破綻傷害（第三劍 66、其餘 41）；架勢與格擋／彈刀反擊照舊 */
-                  let dmgN = Math.round((Player.comboStep === 3 ? 120 : 75) * 0.55);
+                  let dmgN = Player.comboStep === 3 ? 30 : 18; /* v0.8.158 普攻扣血 41／66 → 18／30：血條重點改放破綻窗口重擊與處決 */
                   if (Progress.echoes && Progress.echoes.includes(14)) dmgN = Math.round(dmgN * 1.10);
                   if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) dmgN = Math.round(dmgN * 1.8);
                   Boss.hp = Math.max(1, Boss.hp - dmgN); Boss.flashFrames = Math.max(Boss.flashFrames || 0, 1);
