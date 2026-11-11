@@ -559,6 +559,7 @@
       }
 
       function performExecution() {
+        if (mechPhase3Intercept()) return; /* v0.8.180 第 8 關：二階段血見底的處決被彈開 → 三階段 */
         hapticBuzz([40, 30, 40, 30, 90]);
         Music.duck(0.4, 1.3); /* v0.8.74 處決時音樂壓低（目前只在第 1 關生效） */
         Player.state = "execution";

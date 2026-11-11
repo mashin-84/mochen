@@ -453,3 +453,105 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ]
         };
       }
+
+      /* ===== v0.8.180 灰盒：第 7、8 關資料＋第 4～9 關招牌大招（引擎 57_gult.js；全部佔位美術，設計卡見 HANDOFF v0.8.180） ===== */
+      {
+        const U = (name, kind, act) => ({ name, ult: kind, damage: 0, windup: 0.6, active: act, recover: 2.0 });
+        const scale = (M) => Object.values(M).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
+        const addCue = (S) => { S.fxSheets = (S.fxSheets || []).concat(["cue"]); };
+        /* 第 4 關 人形劍魂 */
+        const S4 = Stages[4];
+        S4.moves.u_liujian = U("六劍朝宗", "g_s4", 6.5);
+        S4.hpTriggers = [{ move: "u_liujian", at: 0.6, phase: 2 }]; S4.sigMove = "u_liujian";
+        S4.pool = S4.pool.concat([["u_liujian", 4]]); S4.poolP2 = S4.pool; addCue(S4);
+        /* 第 5 關 小狼（一階段）；大狼＝魔焰獸玉（已有） */
+        const S5 = Stages[5];
+        S5.moves.u_shiyue = U("幽影噬月", "g_s5a", 4.0);
+        S5.hpTriggers = [{ move: "u_shiyue", at: 0.5, phase: 1, stance: "A" }];
+        S5.sigMoves = [{ move: "u_shiyue", phase: 1, stance: "A" }, { move: "b_breath", phase: 2, stance: "B" }];
+        S5.stances.A.pool.push(["u_shiyue", 4]);
+        /* 第 6 關 化血老祖＋魅月 */
+        const S6 = Stages[6];
+        S6.moves.u_xueshen = U("血神大法", "g_s6", 7.0);
+        S6.hpTriggers = [{ move: "u_xueshen", at: 0.5, phase: 2 }]; S6.sigMove = "u_xueshen";
+        S6.poolP2.push(["u_xueshen", 4]); addCue(S6);
+
+        /* 第 7 關 金甲天將（一階段：金光盾，完美招架 3 次破盾）→ 玄武神相（二階段：巨型，硬殼，只有破綻時頭伸出來吃全額傷害） */
+        const S7 = Stages[7];
+        S7.name = "金甲天將＋玄武神相"; S7.arenaName = "天門玄武陣"; S7.gbox = true; S7.maxPosture = 160;
+        S7.guard = { hits: 3, k: 0.15, down: 8 }; /* 盾在：氣血傷害剩 15%；完美招架 3 次＝破盾 8 秒 */
+        S7.shell = { k: 0.3 };
+        S7.moves = {
+          a_smash: { name: "天罰金鐧", armor: true, windup: 0.5, active: 0.15, recover: 0.5, range: 190, lunge: 360, damage: 180, parryPostureDmg: 26 },
+          a_feint: { name: "降魔金鐧・變速砸 (慢半拍)", isFeint: true, feintPauseAt: 0.42, feintPauseDur: 0.28, windup: 0.62, active: 0.18, recover: 0.5, range: 210, lunge: 320, damage: 200, parryPostureDmg: 28 },
+          a_combo: { name: "雙鐧連擊", isCombo: true, comboTotalHits: 2, comboInterval: 0.3, comboDamagePerHit: 105, windup: 0.46, active: 0.6, recover: 0.5, range: 195, lunge: 330, damage: 210, parryPostureDmg: 22 },
+          a_bash: { name: "金盾震擊 (霸體・震退)", armor: true, pushback: 760, windup: 0.55, active: 0.14, recover: 0.6, range: 210, lunge: 140, damage: 90, parryPostureDmg: 18 },
+          a_thrust: { name: "【危】天崩地裂刺 (前閃看破)", pose: "thrust", windup: 0.66, active: 0.2, recover: 0.7, range: 300, lunge: 940, damage: 320, isPerilous: true, perilType: "thrust" },
+          a_sweep: { name: "【危】雷霆萬鈞掃 (起跳踩頭)", pose: "sweep", windup: 0.66, active: 0.22, recover: 0.66, range: 255, lunge: 280, damage: 300, isPerilous: true, perilType: "sweep" },
+          u_thunder: U("天罡雷陣", "g_s7a", 7.0),
+          b_bite: { name: "玄蛇噬咬", windup: 0.62, active: 0.18, recover: 0.75, range: 340, lunge: 220, damage: 220, parryPostureDmg: 30 },
+          b_stomp: { name: "玄武踏地・二連", isCombo: true, comboTotalHits: 2, comboInterval: 0.42, comboDamagePerHit: 130, windup: 0.6, active: 0.9, recover: 0.8, range: 330, lunge: 260, damage: 260, parryPostureDmg: 24 },
+          b_tail: { name: "【危】蛇尾橫掃 (起跳)", pose: "sweep", isPerilous: true, perilType: "sweep", windup: 0.7, active: 0.24, recover: 0.8, range: 380, lunge: 240, damage: 300 },
+          b_leap: { name: "【危】玄武躍壓 (閃開)", isLeap: true, fxLand: true, isPerilous: true, perilType: "leap", leapH: 220, leapMax: 620, windup: 0.8, active: 0.6, recover: 1.0, range: 300, lunge: 0, damage: 300, parryPostureDmg: 22 },
+          b_spin: { name: "縮殼旋撞 (霸體・瞬步穿過)", isCharge: true, armor: true, chargeSpeed: 700, windup: 0.75, active: 0.75, recover: 1.1, range: 260, lunge: 700, damage: 250, parryPostureDmg: 24 },
+          b_water: { name: "玄冥水牢 (離開藍圈)", isZone: true, zoneType: "ice", zoneWidth: 320, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, zoneWarn: 0.75, windup: 0.6, active: 0.3, recover: 0.7, range: 600, lunge: 0, damage: 0 },
+          u_fountain: U("玄冥噴泉", "g_s7b", 7.4)
+        };
+        scale(S7.moves);
+        S7.stances = {
+          A: { alias: { thrust_peril: "a_thrust", sweep_peril: "a_sweep" },
+            pool: [["a_smash", 24], ["a_feint", 16], ["a_combo", 22], ["a_bash", 12, "push"], ["a_thrust", 13], ["a_sweep", 12], ["u_thunder", 4]], far: [], farP2: [] },
+          B: { alias: { thrust_peril: "b_bite", sweep_peril: "b_tail" }, size: 2.0, bodyW: 280, bodyH: 210, hurtHalf: 110, speed: 170,
+            pool: [["b_bite", 24], ["b_stomp", 18], ["b_tail", 14], ["b_leap", 12, "mobility"], ["b_spin", 10, "chase"], ["b_water", 12, "ranged"], ["u_fountain", 4]], far: ["b_spin", "b_water", "b_leap"], farP2: [] }
+        };
+        S7.stanceByPhase = { 1: "A", 2: "B" };
+        S7.hpTriggers = [{ move: "u_thunder", at: 0.5, phase: 1, stance: "A" }, { move: "u_fountain", at: 0.5, phase: 2, stance: "B" }];
+        S7.sigMoves = [{ move: "u_thunder", phase: 1, stance: "A" }, { move: "u_fountain", phase: 2, stance: "B" }];
+        S7.sfxClass = "heavy"; addCue(S7);
+
+        /* 第 8 關 司徒衡 三階段：人（劍修）→ 魔染（爪與魔影）→ 天道附體（劫雷）。血條 30%／35%／35%；
+           二階段血見底後的處決被天道彈開 → 三階段（mechPhase3Intercept） */
+        const S8 = Stages[8];
+        S8.gbox = true; S8.hpSplit = [0.3, 0.35]; S8.hp3 = Math.round(S8.maxHp * 0.35); S8.form3Name = "司徒衡・天道劫身"; S8.maxPosture = 170;
+        S8.moves = {
+          a_slash: { name: "青雲戮仙劍", windup: 0.42, active: 0.13, recover: 0.42, range: 190, lunge: 420, damage: 180, parryPostureDmg: 24 },
+          a_combo: { name: "三絕劍・遲刃 (最後一劍慢半拍)", isCombo: true, comboTotalHits: 3, comboInterval: 0.22, comboLastDelay: 0.36, comboDamagePerHit: 105, windup: 0.46, active: 0.85, recover: 0.5, range: 195, lunge: 380, damage: 315, parryPostureDmg: 20 },
+          a_fly: { name: "青雲劍氣・三連 (可折射)", isRanged: true, bulletCount: 3, bulletGap: 0.4, bulletSpeed: 780, bulletTrajectory: "linear", bulletColor: "#7dd3fc", windup: 0.5, active: 0.9, recover: 0.5, range: 620, lunge: 0, damage: 110, parryPostureDmg: 18 },
+          a_thrust: { name: "【危】天地同壽刺 (前閃看破)", pose: "thrust", windup: 0.62, active: 0.2, recover: 0.66, range: 320, lunge: 1000, damage: 340, isPerilous: true, perilType: "thrust" },
+          a_sweep: { name: "【危】戮仙斷空掃 (起跳踩頭)", pose: "sweep", windup: 0.64, active: 0.22, recover: 0.62, range: 270, lunge: 330, damage: 320, isPerilous: true, perilType: "sweep" },
+          u_tianhe: U("青雲劍訣・天河", "g_s8a", 3.5),
+          b_claw: { name: "魔染裂爪 (霸體)", armor: true, windup: 0.5, active: 0.14, recover: 0.5, range: 200, lunge: 400, damage: 200, parryPostureDmg: 26 },
+          b_tele: { name: "無相魔影・背襲", isTeleport: true, teleportBehind: true, teleportDelay: 0.3, windup: 0.6, active: 0.14, recover: 0.5, range: 180, lunge: 200, damage: 190, parryPostureDmg: 22 },
+          b_combo: { name: "魔爪四連", isCombo: true, comboTotalHits: 4, comboInterval: 0.22, comboDamagePerHit: 85, windup: 0.5, active: 0.95, recover: 0.6, range: 195, lunge: 360, damage: 340, parryPostureDmg: 16 },
+          b_zone: { name: "九幽魔沼 (離開紅圈)", isZone: true, zoneType: "fire", zoneWidth: 320, zoneDuration: 2.6, zoneDamagePerSec: 160, zoneTargetPlayer: true, zoneWarn: 0.7, windup: 0.55, active: 0.3, recover: 0.6, range: 600, lunge: 0, damage: 0 },
+          b_grab: { name: "【危】天魔擒拿 (極限側閃)", windup: 0.7, active: 0.16, recover: 0.7, range: 190, lunge: 0, damage: 380, isPerilous: true, perilType: "grab" },
+          b_thrust: { name: "【危】魔影突襲 (前閃看破)", pose: "thrust", windup: 0.62, active: 0.2, recover: 0.66, range: 320, lunge: 1020, damage: 350, isPerilous: true, perilType: "thrust" },
+          u_moying: U("無相魔影殺", "g_s8b", 6.0),
+          c_smite: { name: "天道劫光", windup: 0.45, active: 0.14, recover: 0.45, range: 210, lunge: 420, damage: 210, parryPostureDmg: 28 },
+          c_feint: { name: "輪迴湮滅劫 (慢半拍)", isFeint: true, feintPauseAt: 0.45, feintPauseDur: 0.35, windup: 0.68, active: 0.2, recover: 0.5, range: 240, lunge: 260, damage: 230, parryPostureDmg: 30 },
+          c_thunder: { name: "九霄雷矛 (從天而降)", isRanged: true, bulletCount: 4, bulletGap: 0.3, bulletSpeed: 820, bulletTrajectory: "vertical", bulletColor: "#c084fc", windup: 0.6, active: 1.1, recover: 0.5, range: 620, lunge: 0, damage: 140 },
+          c_fly: { name: "紫霄神雷劍・三連 (可折射)", isRanged: true, bulletCount: 3, bulletGap: 0.38, bulletSpeed: 820, bulletTrajectory: "linear", bulletColor: "#c084fc", windup: 0.5, active: 0.9, recover: 0.5, range: 620, lunge: 0, damage: 120, parryPostureDmg: 20 },
+          c_thrust: { name: "【危】神罰貫天刺 (前閃看破)", pose: "thrust", windup: 0.62, active: 0.2, recover: 0.66, range: 330, lunge: 1050, damage: 370, isPerilous: true, perilType: "thrust" },
+          c_sweep: { name: "【危】六道輪迴掃 (起跳踩頭)", pose: "sweep", windup: 0.64, active: 0.22, recover: 0.62, range: 280, lunge: 340, damage: 340, isPerilous: true, perilType: "sweep" },
+          c_grab: { name: "【危】天道滅世劫 (極限側閃)", windup: 0.7, active: 0.16, recover: 0.7, range: 200, lunge: 0, damage: 400, isPerilous: true, perilType: "grab" },
+          u_guixu: U("天劫・萬象歸墟", "g_s8c", 12.0)
+        };
+        scale(S8.moves);
+        S8.stances = {
+          A: { alias: { thrust_peril: "a_thrust", sweep_peril: "a_sweep" },
+            pool: [["a_slash", 24], ["a_combo", 22], ["a_thrust", 14], ["a_sweep", 12], ["a_fly", 12, "ranged"], ["u_tianhe", 4]], far: ["a_fly"], farP2: [] },
+          B: { alias: { thrust_peril: "b_thrust", sweep_peril: "b_grab" },
+            pool: [["b_claw", 20], ["b_combo", 20], ["b_tele", 16, "chase"], ["b_thrust", 12], ["b_grab", 10], ["b_zone", 12, "ranged"], ["u_moying", 4]], far: ["b_tele", "b_zone"], farP2: [] },
+          C: { alias: { thrust_peril: "c_thrust", sweep_peril: "c_sweep" },
+            pool: [["c_smite", 20], ["c_feint", 16], ["c_thrust", 12], ["c_sweep", 12], ["c_grab", 9], ["c_thunder", 12, "ranged"], ["c_fly", 10, "ranged"], ["u_guixu", 4]], far: ["c_thunder", "c_fly"], farP2: [] }
+        };
+        S8.stanceByPhase = { 1: "A", 2: "B" };
+        S8.hpTriggers = [{ move: "u_tianhe", at: 0.5, phase: 1, stance: "A" }, { move: "u_moying", at: 0.5, phase: 2, stance: "B" }, { move: "u_guixu", at: 0.5, phase: 2, stance: "C" }];
+        S8.sigMoves = [{ move: "u_tianhe", phase: 1, stance: "A" }, { move: "u_moying", phase: 2, stance: "B" }, { move: "u_guixu", phase: 2, stance: "C", form: 3 }];
+        S8.sfxClass = "light"; addCue(S8);
+
+        /* 第 9 關 心魔（鏡像 AI，單一形態）：二階段半血必放 */
+        const S9 = Stages[9];
+        S9.moves.u_sannian = U("三念歸一", "g_s9", 7.5);
+        S9.hpTriggers = [{ move: "u_sannian", at: 0.5, phase: 2 }]; S9.sigMove = "u_sannian"; addCue(S9);
+      }

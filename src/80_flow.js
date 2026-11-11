@@ -119,6 +119,7 @@
         illusionReset();
         partsInit(stage); /* v0.8.83 部位 Boss */
         partnerInit(stage); /* v0.8.179 第 6 關同伴＋血池 */
+        mechInit(stage); /* v0.8.180 金光盾／硬殼／三階段 */
         Boss._headY = null;
         Game.camera.targetZoom = 1.0 - Math.min(0.25, ((stage.size || 1) - 1) * 0.3);
         const focusX = Player.x * 0.64 + Boss.x * 0.36;

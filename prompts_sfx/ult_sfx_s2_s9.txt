@@ -1,0 +1,62 @@
+第 2～9 關招牌大招＋第 6～8 關機制音效（ElevenLabs Sound Effects；每條寫明秒數；全部 no music, no voice。
+拿到檔後交給 Claude：裁切、正規化峰值 -1.5 dBFS、單聲道 mp3、接入。檔名用每條開頭的代號。第 1 關的在 prompts1/4_boss1ult_sfx.txt。
+目前全部暫借通用音效（peril／hit／slash／mikiri／execution 等），這份到齊後逐招換掉。
+
+【第 2 關 羅天萬劍】
+1. b2u_rise（1.2 秒）：An elder cultivator rising into the air, soft airy whoosh with a faint shimmering chime and fluttering robes, no music, no voice.
+2. b2u_rain（1.0 秒）：Several thin flying swords falling from the sky and stabbing into stone ground one after another, sharp metallic whistles and three quick impacts, no music, no voice.
+3. b2u_gather（1.5 秒）：Many metal swords clinking and locking together into one giant blade, rising metallic resonance with a swelling hum, no music, no voice.
+4. b2u_giant（1.0 秒）：A giant sword diving through the air, deep accelerating whoosh ending in a huge metal clang, no music, no voice.
+5. b2u_clash（2.0 秒）：Two blades grinding against each other in a struggle, continuous harsh metal scraping with showering sparks and strain, no music, no voice.
+6. b2u_shatter（1.2 秒）：A giant metal sword shattering into fragments, bright explosive crack followed by tinkling shards, no music, no voice.
+
+【第 3 關 寒川十字／玄鐵龍捲】
+7. b3u_cross（0.8 秒）：Two fast sword slashes forming a cross, two sharp icy swishes ending in one crisp ringing tone, no music, no voice.
+8. b3u_crossfly（1.0 秒）：A cross-shaped blade of cold energy flying past, hissing icy whoosh with a faint crystalline shimmer, no music, no voice.
+9. b3u_tornado（3.0 秒，可循環）：A heavy iron greatsword spinning into a whirlwind, deep rotating whoosh getting faster and louder, strong wind suction, no music, no voice.
+10. b3u_throw（0.8 秒）：A massive iron sword thrown and spinning through the air, heavy low whirring pass-by, no music, no voice.
+11. b3u_slam（1.4 秒）：A giant iron sword smashing down into rocky ground, enormous deep impact with cracking stone and rolling rubble, no music, no voice.
+
+【第 4 關 六劍朝宗】
+12. b4u_cross（0.6 秒）：A single spirit sword streaking horizontally past at high speed, thin bright metallic whistle, no music, no voice.
+13. b4u_merge（1.0 秒）：Six swords merging into one above in the sky, layered metallic chimes rising in pitch into a single pure ringing note, no music, no voice.
+14. b4u_fall（1.0 秒）：A great sword of light dropping straight down from the sky and piercing the ground, descending whistle then a hard stone impact with a ringing aftertone, no music, no voice.
+
+【第 5 關 幽影噬月（小狼）】
+15. b5u_vanish（0.6 秒）：A wolf dissolving into shadow, quick dark airy swirl with a low short growl, no music, no voice.
+16. b5u_pounce（0.8 秒）：A wolf diving down from above and slamming its claws into dry earth, snarling rush then a heavy thud with scattering dirt, no music, no voice.
+
+【第 6 關 化血老祖＋魅月仙子】
+17. b6_chant（2.4 秒）：A woman's spell being channelled, soft shimmering moonlight tones slowly rising, gentle wind chimes, mystical and calm, no music, no voice.
+18. b6_shield（0.8 秒）：A magical barrier snapping into place, clear glassy ring with a soft low hum, no music, no voice.
+19. b6_shieldbreak（0.8 秒）：A magical barrier shattering like thin glass, bright crack and falling crystal fragments, no music, no voice.
+20. b6_heal（1.2 秒）：Gentle healing magic, warm rising shimmer with soft water droplets, no music, no voice.
+21. b6_petal（0.5 秒）：A sharp flower petal projectile being flicked through the air, light quick silky whoosh, no music, no voice.
+22. b6_pool（1.5 秒，可循環）：Thick blood-like liquid bubbling slowly in a pool, wet viscous bubbles and low gurgling, no music, no voice.
+23. b6u_charge（3.0 秒）：A huge orb of dark liquid energy swelling, deep pulsing throb getting faster with wet swirling sounds, ominous rising tension, no music, no voice.
+24. b6u_pillar（0.8 秒）：A column of thick liquid erupting upward from the ground, wet explosive gush and splatter, no music, no voice.
+25. b6u_blast（1.5 秒）：A massive wet explosion filling the whole area, deep boom with a heavy liquid shockwave and long splattering tail, no music, no voice.
+
+【第 7 關 金甲天將／玄武神相】
+26. b7_guard（0.5 秒）：A sword striking a glowing golden energy shield and bouncing off, dull metallic clang with a bright bell-like ring, no music, no voice.
+27. b7_guardbreak（1.0 秒）：A golden energy shield cracking and bursting apart, sharp crack then an explosive bright shatter with ringing metal, no music, no voice.
+28. b7u_thunder（1.0 秒）：A single bolt of lightning striking the ground very close, sharp crack and a short deep boom, no music, no voice.
+29. b7u_charge（1.2 秒）：A heavily armoured warrior charging forward behind a large shield, thundering armoured footsteps with a rushing metallic whoosh, no music, no voice.
+30. b7_shell（0.5 秒）：A sword hitting a huge stone turtle shell, hard dull knock with a short rocky echo, no music, no voice.
+31. b7u_geyser（0.9 秒）：A water geyser bursting up from stone ground, powerful hissing gush of water, no music, no voice.
+32. b7u_slam（1.6 秒）：A giant turtle landing on the ground after a jump, colossal deep impact with a rumbling quake and a wave of water rushing outward, no music, no voice.
+33. b7_roar（1.5 秒）：A giant ancient turtle beast roaring, very deep slow rumbling bellow, no music, no human voice.
+
+【第 8 關 司徒衡 三階段】
+34. b8u_swords（0.5 秒）：A flying sword launched forward with a crisp airy whistle and a faint ringing tone, no music, no voice.
+35. b8u_shadow（0.6 秒）：A shadow clone lunging out of dark mist, quick dark whoosh with a hollow ghostly hiss, no music, no voice.
+36. b8_form3（2.5 秒）：A giant eye of heaven opening in the sky, deep resonant drone swelling into a thunderous crack and a huge shockwave, no music, no voice.
+37. b8u_field（1.2 秒）：Many lightning bolts striking the ground at once in a row, crackling build-up then a broad heavy thunderclap, no music, no voice.
+38. b8u_wall（1.5 秒）：A towering wall of crackling energy sweeping across the ground and passing by, roaring electric whoosh, no music, no voice.
+39. b8u_smite（0.5 秒）：A single fast strike of divine light, sharp bright slash with a short thunder snap, no music, no voice.
+
+【第 9 關 心魔 三念歸一】
+40. b9u_vanish（0.8 秒）：A figure fading into a reflection, soft reversed whoosh with a glassy shimmer, eerie and quiet, no music, no voice.
+41. b9u_slash（0.5 秒）：A sword slash from an unseen attacker, clean sharp swish with a faint echo, no music, no voice.
+42. b9u_sweep（0.7 秒）：A low wide sword sweep skimming along the ground, long scraping whoosh, no music, no voice.
+43. b9u_end（0.7 秒）：A downward finishing strike of dark energy, heavy dull slam with a short low boom, no music, no voice.

@@ -789,7 +789,7 @@
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         Boss.aiCooldown -= dt;
         const dist = Math.abs(Player.x - Boss.x);
-        if (stage.mirror) { mirrorAI(dt, dist); return; }
+        if (stage.mirror) { if (hpTrigTry(stage)) return; mirrorAI(dt, dist); return; }
         if (stage.phaseSwitchMove && !Boss._p2MoviePending && Config.bossPhase === 2 && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2] && Boss.aiCooldown <= 0) { triggerBossMove(stage.phaseSwitchMove); return; } /* 拔劍被打斷時，下一個出招機會補播 */
         if (Boss._splitPending && Boss.aiCooldown <= 0 && stage.splitMove) { Boss._splitPending = false; triggerBossMove(stage.splitMove); return; }
         if (stage.stances && !stage.stanceByPhase && Boss.aiCooldown <= 0 && Boss.stanceCount >= ((Config.bossPhase === 2 && stage.switchEveryP2) || stage.switchEvery || 3)) {

@@ -57,6 +57,7 @@
         return true;
       }
       function ultEnd(cancel) {
+        gultCleanup(cancel);
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
         Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; Game.ultBind = false; ultClashUI(false);
         if (Boss._ultAir || (U && U.lift) || Boss.y < Config.groundY) { Boss.y = Config.groundY; } /* v0.8.176 接劍等空中段被中斷也落回地面 */ Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
@@ -68,10 +69,11 @@
       }
       /* 每幀：updateBossAI 開頭呼叫；回傳 true＝本幀 Boss 由大招接管 */
       function ultUpdate(dt) {
-        ultWavesTick(dt); ultB3Tick(dt);
+        ultWavesTick(dt); ultB3Tick(dt); gultTick(dt);
         if (ultTestTick(dt)) return true; /* v0.8.163 大招測試倒數 */
         const U = Boss._ult; if (!U) return false;
         if (Boss.state === "staggered" || Boss.hp <= 0 || Game.bossDeath || Game.mode !== "battle") { ultEnd(true); return false; } /* 被打破防（招架火牆累積架勢）＝大招中斷 */
+        if (GULT[U.kind]) return gultStep(U, dt); /* v0.8.180 灰盒大招 */
         if (U.kind === "b2sword") return ultB2(U, dt);
         if (U.kind === "b3cross") return ultB3A(U, dt);
         if (U.kind === "b3tornado") return ultB3B(U, dt);
@@ -465,7 +467,7 @@
         for (let n = 1; n <= 9; n++) {
           const s = Stages[n]; if (!s || !s.moves) continue;
           const list = s.sigMoves || (s.sigMove ? [{ move: s.sigMove, phase: 2 }] : []);
-          list.forEach((sg, i) => { if (s.moves[sg.move]) L.push({ n, i, sg, boss: s.name, move: String(s.moves[sg.move].name).replace(/\s*[（(].*[）)]\s*/, "") + (list.length > 1 ? "（" + (sg.phase === 1 ? "一" : "二") + "階段）" : "") }); });
+          list.forEach((sg, i) => { if (s.moves[sg.move]) L.push({ n, i, sg, boss: s.name, move: String(s.moves[sg.move].name).replace(/\s*[（(].*[）)]\s*/, "") + (list.length > 1 ? "（" + (sg.form === 3 ? "三" : sg.phase === 1 ? "一" : "二") + "階段）" : "") }); });
         }
         return L;
       }
@@ -481,6 +483,8 @@
         if (ph === 2) { Config.bossPhase = 2; if (Boss.maxHp2) bossRefillP2(); if (STAGE_BGM_P2[n]) Music.play(STAGE_BGM_P2[n]); }
         const stc = sg.stance || (st.stanceByPhase && st.stanceByPhase[ph]);
         if (stc) { Boss._scaleMul = 1; Boss.stance = stc; Boss.stanceCount = 0; applyBossBody(st); }
+        if (st.parts && Boss._pp && ph === 2) { const P = Boss._pp; if (P.act) actCancel(P.act); P.act = null; P.marks = []; P.phase = 2; P.p2t = 99; if (P.sword) P.sword.mode = "gone"; Boss.w = 100; Boss.h = 162; Boss._ekN = 0; Boss.hp = Boss.maxHp; } /* v0.8.180 第 4 關：直接跳到人形劍魂 */
+        if (sg.form === 3 && st.hp3) { Boss._form = 3; Boss.maxHp = st.hp3; Boss.hp = Boss.maxHp; Boss.lastHp = Boss.hp; }
         Player.hp = Player.maxHp; Player.stamina = Player.maxStamina; Player.x = Math.max(200, Boss.x - 560); Player.facing = 1; Boss.facing = -1;
         Boss.state = "idle"; Boss.aiCooldown = 99; Boss.posture = 0;
         Game.ultTest = { n, t: 1.2, move: sg.move };

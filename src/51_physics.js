@@ -347,6 +347,7 @@
         updateBossAI(dt);
         updateIllusions(dt);
         partnerUpdate(dt); /* v0.8.179 */
+        mechTick(dt); /* v0.8.180 */
         Boss.x += Boss.vx * dt;
         Boss.x = Math.max(95, Math.min(Config.worldWidth - 95, Boss.x));
 

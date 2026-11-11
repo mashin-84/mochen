@@ -57,7 +57,7 @@
         const dx = p.x - Player.x, d = Math.abs(dx);
         const ok = (air && Player.isDive) ? d <= reach : (dx * Player.facing >= -30 && d <= reach);
         if (!ok || d >= Math.abs(Boss.x - Player.x)) return false;
-        const D = ptDef().hit, k = air ? D.air : Player.isChargedAttack ? D.charged : Player.comboStep === 3 ? D.third : D.normal;
+        const D = ptDef().hit, k = p.state === "ultchant" ? 34 : air ? D.air : Player.isChargedAttack ? D.charged : Player.comboStep === 3 ? D.third : D.normal;
         ptInterrupt();
         ptAddPosture(k);
         spawnSparks(p.x, Config.groundY - 90, "hit", Player.facing);
@@ -171,6 +171,8 @@
           const P = d.petal, n = Config.bossPhase === 2 ? P.countP2 : P.count;
           while (p.shots < n && p.t >= P.windup + p.shots * P.gap) { ptShoot(); p.shots++; }
           if (p.t >= P.windup + (n - 1) * P.gap + P.recover) { p.kind = "petal_done"; ptFinishCast(); }
+        } else if (p.state === "ultchant") { /* 大招護法：站定不動，等被打到失神（57_gult.js g_s6） */
+          p.t += dt;
         } else if (p.state === "flinch") {
           p.t -= dt; if (p.t <= 0) p.state = "idle";
         } else if (p.state === "stun") {
@@ -212,7 +214,7 @@
         /* 影子 */
         ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(p.x, G + 2, 46, 9, 0, 0, Math.PI * 2); ctx.fill();
         /* 詠唱：腳下光圈＋連到老祖的光線 */
-        if (p.state === "chant") {
+        if (p.state === "chant" || p.state === "ultchant") {
           const col = p.kind === "shield" ? "165, 243, 252" : "134, 239, 172", pr = p.t / p.dur;
           ctx.strokeStyle = `rgba(${col}, ${0.35 + 0.3 * Math.sin(now / 90)})`; ctx.lineWidth = 3 + pr * 5; ctx.setLineDash([14, 10]); ctx.lineDashOffset = -now / 14;
           ctx.beginPath(); ctx.moveTo(p.x, fy - 120); ctx.quadraticCurveTo((p.x + Boss.x) / 2, fy - 330, Boss.x, Boss.y - 120); ctx.stroke(); ctx.setLineDash([]);
@@ -231,7 +233,7 @@
         ctx.fillStyle = p.hitT > 0 ? "#ffffff" : "#fde8ef"; ctx.beginPath(); ctx.arc(p.x + p.facing * 3, hy, 21, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = "#1e1b4b"; ctx.beginPath(); ctx.arc(p.x - p.facing * 5, hy - 5, 22, Math.PI * 0.9, Math.PI * 2.05); ctx.fill();
         /* 手上的光（飛花前搖：粉；詠唱：青／綠） */
-        if (p.state === "petal" || p.state === "chant") {
+        if (p.state === "petal" || p.state === "chant" || p.state === "ultchant") {
           const c = p.state === "petal" ? "249, 168, 212" : p.kind === "shield" ? "165, 243, 252" : "134, 239, 172";
           const r = 14 + 8 * Math.sin(now / 70);
           const g = ctx.createRadialGradient(p.x + p.facing * 34, fy - 130, 2, p.x + p.facing * 34, fy - 130, r + 16);
@@ -245,7 +247,7 @@
         ctx.fillText(d.name, p.x, by - 16); ctx.shadowBlur = 0;
         ctx.fillStyle = "rgba(15,23,42,0.8)"; ctx.fillRect(p.x - 46, by - 8, 92, 7);
         ctx.fillStyle = "#f59e0b"; ctx.fillRect(p.x - 46, by - 8, 92 * (p.state === "stun" ? 1 : p.posture / d.maxPosture), 7);
-        if (p.state === "chant") {
+        if (p.state === "chant" || p.state === "ultchant") {
           ctx.fillStyle = "rgba(15,23,42,0.8)"; ctx.fillRect(p.x - 46, by + 3, 92, 7);
           ctx.fillStyle = p.kind === "shield" ? "#67e8f9" : "#4ade80"; ctx.fillRect(p.x - 46, by + 3, 92 * Math.min(1, p.t / p.dur), 7);
         }
@@ -264,7 +266,7 @@
           ctx.save(); ctx.fillStyle = "rgba(15,23,42,0.75)"; ctx.fillRect(Boss.x - 60, Boss.y - 262, 120, 6);
           ctx.fillStyle = "#67e8f9"; ctx.fillRect(Boss.x - 60, Boss.y - 262, 120 * Math.max(0, Boss._ptShield / d.shield.dur), 6); ctx.restore();
         }
-        if (p.state === "gone" || p.alpha < 0.3 || (p.state !== "chant" && p.state !== "petal")) return;
+        if (p.state === "gone" || p.alpha < 0.3 || (p.state !== "chant" && p.state !== "petal" && p.state !== "ultchant")) return;
         const cam = Game.camera, half = Config.baseWidth * 0.5 / cam.zoom, cx = cam.x + Config.baseWidth * 0.5;
         const L = cx - half + 46, R = cx + half - 46;
         if (p.x >= L - 30 && p.x <= R + 30) return;
@@ -273,7 +275,7 @@
         ctx.save(); ctx.globalAlpha = 0.75 + 0.25 * Math.sin(now / 100);
         ctx.fillStyle = "rgba(15,23,42,0.85)"; ctx.strokeStyle = col; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(ex, ey, 30, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        if (p.state === "chant") { ctx.beginPath(); ctx.arc(ex, ey, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, p.t / p.dur)); ctx.lineWidth = 7; ctx.stroke(); }
+        if (p.state !== "petal") { ctx.beginPath(); ctx.arc(ex, ey, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, p.t / p.dur)); ctx.lineWidth = 7; ctx.stroke(); }
         ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(ex + dir * 46, ey); ctx.lineTo(ex + dir * 32, ey - 11); ctx.lineTo(ex + dir * 32, ey + 11); ctx.closePath(); ctx.fill();
         ctx.font = "800 20px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = "#fff";
         ctx.fillText(p.state === "petal" ? "花" : p.kind === "shield" ? "盾" : "癒", ex, ey + 7);
