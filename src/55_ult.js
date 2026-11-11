@@ -35,8 +35,8 @@
       };
       ULT_CFG.b3tornado = { /* 玄鐵龍捲：旋轉加速＋吸風 → 停頓閃光 → 擲劍（不能招架）插地 → 瞬移立劍柄 → 吃力拔劍（破綻、傷害照常）→ 回頭砍滿高衝擊波（招架或瞬步） */
         t: { spin: 0.5, pause: 3.0, throw: 3.4, perch: 0.45, strain: 1.2, back: 0.4, rest: 1.0 },
-        pull: 240, spinDmg: 60, spinR: 150, throwSpeed: 1050, throwDmg: 240, beyond: 260, waveSpeed: 900, waveDmg: 240,
-        img: { hold: "71_ub_hold", spinf: "72_ub_spinf", spinb: "73_ub_spinb", pause: "74_ub_pause", throw: "75_ub_throw", perch: "76_ub_perch", strain: "77_ub_strain", back: "78_ub_back", rest: "22_slam_rec" }
+        pull: 420, spinDmg: 60, spinR: 150, throwSpeed: 750, throwDmg: 240, strainDx: 74, hop: 0.25, beyond: 260, waveSpeed: 900, waveDmg: 240,
+        img: { hold: "71_ub_hold", spinf: "72_ub_spinf", spinb: "73_ub_spinb", pause: "74_ub_pause", throw: "75_ub_throw", perch: "76_ub_perch", hop: "23_plunge_jump", strain: "77_ub_strain", back: "78_ub_back", rest: "22_slam_rec" }
       };
       const Ult = { waves: [], rain: [], b3: [] };
       const B3IMG = {}; function b3img(n) { if (!B3IMG[n]) { const im = new Image(); im.src = "assets/boss3b/" + n + ".webp"; B3IMG[n] = im; } const im = B3IMG[n]; return im.complete && im.naturalWidth ? im : null; }
@@ -416,6 +416,10 @@
       }
       /* 招架光圈：矮火牆／高火牆到主角前 0.35 秒在主角身上收縮（同 cue.webp：黃＝可擋、紅＝只能瞬步）；長嘯前在 Boss 身上 */
       function drawUltTop() {
+        { const U3 = Boss._ult; if (U3 && U3.kind === "b3tornado" && (U3.spinP || 0) > 0.05 && fxReady("boss3btorn")) { /* v0.8.174 龍捲前層：半透明罩住人物，看得出他在龍捲中心旋轉 */
+          const img = fxSheet("boss3btorn").img, p = U3.spinP, col = Math.floor((U3.t * (6 + 16 * p)) % 4), h = 760, w = 640, fcT = U3.fc0 || Boss.facing;
+          ctx.save(); ctx.translate(Boss.x, 0); ctx.scale(fcT, 1); ctx.globalAlpha = 0.25 + 0.4 * p;
+          ctx.drawImage(img, ((col + 2) % 4) * 256, 0, 256, 256, -w / 2, groundFxY("boss3bult", 0, h) - h, w, h); ctx.restore(); } }
         { /* v0.8.161 高火牆逼近：全畫面泛紅（越近越紅），壓迫感 */
           let near = 0;
           for (const w of Ult.waves) if (w.big) { const d = (Player.x - w.x) * w.dir; near = Math.max(near, d > 0 ? Math.max(0, 1 - d / 900) : Math.max(0, 1 + d / 500)); }
@@ -551,13 +555,14 @@
         if (t < T.sweep) { Boss.state = "ult"; Boss._ultFrame = c.img.guard; Game.ultCam = 0.18; Game.ultFocus = true; Boss._ucd = Math.min(0.7, (Boss._ucd || 0) + dt * 2); Boss._ucdPos = ultPt(450, 280); if (once("g")) Sound.play("b3_draw", 0.8, 1.1); return true; }
         if (t < T.raise) {
           Boss._ultFrame = c.img.sweep;
-          if (once("h") && fxReady("boss3ult")) { spawnFx("boss3ult", 0, x0(), Boss.y - 140, { w: 560, h: 560, dur: 0.24, nf: 3, facing: fc }); spawnFx("boss3ult", 0, x0(), Boss.y - 140, { w: 560, h: 560, dur: T.push - T.sweep - 0.22, loop: true, c0: 3, nf: 1, fps: 1, facing: fc }); Sound.play("b3_twin", 0.9, 1.0); }
-          return true;
+          if (once("h") && fxReady("boss3ult")) { spawnFx("boss3ult", 0, x0(), Boss.y - 140, { w: 560, h: 560, dur: 0.24, nf: 3, facing: fc }); Sound.play("b3_twin", 0.9, 1.0); }
         }
+        if (t >= T.sweep + 0.24 && once("h2") && fxReady("boss3ult")) spawnFx("boss3ult", 0, x0(), Boss.y - 140, { w: 560, h: 560, dur: T.push - t + 0.04, loop: true, c0: 3, nf: 1, fps: 1, facing: fc }); /* v0.8.174 橫刀芒一直留到十字飛出 */
+        if (t < T.raise) return true;
         if (t < T.chop) { Boss._ultFrame = c.img.raise; return true; }
         if (t < T.push) {
           Boss._ultFrame = c.img.chop;
-          if (once("v") && fxReady("boss3ult")) { const cy = G + 20 - Hv / 2; spawnFx("boss3ult", 1, x0(), cy, { w: Hv * 0.6, h: Hv * 1.05, dur: 0.2, nf: 3, facing: fc }); spawnFx("boss3ult", 1, x0(), cy, { w: Hv * 0.6, h: Hv * 1.05, dur: T.push - T.chop - 0.18, loop: true, c0: 3, nf: 1, fps: 1, facing: fc }); Sound.play("b3_cross", 1.0, 0.9); triggerShake(0, 0.2, 8, 0.12); }
+          if (once("v") && fxReady("boss3ult")) { const cy = G + 20 - Hv / 2; spawnFx("boss3ult", 1, x0(), cy, { w: Hv * 0.6, h: Hv * 1.05, dur: 0.2, nf: 3, facing: fc }); spawnFx("boss3ult", 1, x0(), cy, { w: Hv * 0.6, h: Hv * 1.05, dur: T.push - T.chop + 0.04, loop: true, c0: 3, nf: 1, fps: 1, facing: fc }); Sound.play("b3_cross", 1.0, 0.9); triggerShake(0, 0.2, 8, 0.12); }
           return true;
         }
         if (once("push")) { /* 十字成形飛出 */
@@ -581,11 +586,11 @@
         if (t < T.pause) { /* 旋轉加速：換格間隔 0.22→0.05 秒，正反兩格＋左右翻面＝轉一圈；捲風吸人、貼近被割 */
           const p = (t - T.spin) / (T.pause - T.spin); U.spinP = p;
           U.sAcc = (U.sAcc || 0) + dt; const iv = 0.22 - 0.17 * p;
-          if (U.sAcc >= iv) { U.sAcc = 0; U.sI = ((U.sI || 0) + 1) % 4; if (U.sI % 2 === 0) Sound.play("b3_spin", 0.4 + 0.5 * p, 0.8 + 0.5 * p); }
-          const sI = U.sI || 0; Boss._ultFrame = sI % 2 === 0 ? c.img.spinf : c.img.spinb; Boss.facing = sI < 2 ? U.fc0 : -U.fc0;
+          if (U.sAcc >= iv) { U.sAcc = 0; U.sI = ((U.sI || 0) + 1) % 2; if (U.sI === 0) Sound.play("b3_spin", 0.4 + 0.5 * p, 0.8 + 0.5 * p); }
+          Boss._ultFrame = (U.sI || 0) === 0 ? c.img.spinf : c.img.spinb; Boss.facing = U.fc0; /* v0.8.174 只用正、背兩格交替（劍在前→劍在後），不再左右翻面 */
           Game.ultCam = 0.05;
           const dx = Boss.x - Player.x, ad = Math.abs(dx);
-          if (ad < 950 && Player.invulnTimer <= 0 && Player.state !== "execution") Player.x += Math.sign(dx) * c.pull * p * dt * (ad < 60 ? 0 : 1); /* 吸風：越轉越強，主角跑速 580 可以逆風脫離 */
+          if (ad < 950 && Player.invulnTimer <= 0 && Player.state !== "execution") Player.x += Math.sign(dx) * c.pull * Math.pow(p, 0.8) * dt * (ad < 60 ? 0 : 1); /* 吸風：越轉越強（最大 420），主角全速 580 仍可逆風脫離 */
           if (ad < c.spinR && Player.state !== "execution") takeDamage(bossDmg(c.spinDmg), -Math.sign(dx) || 1, "【龍捲割傷】");
           U.rmT = (U.rmT || 0) - dt; if (U.rmT <= 0) { U.rmT = 0.15; triggerShake(0, 0.08 + 0.25 * p, 4 + 8 * p, 0.12); if (p > 0.5) hapticBuzz(Math.round(15 + 25 * p)); }
           if (once("spinHint")) hintOnce("ult3b", "玄鐵龍捲：被風吸過去會被割傷，往外跑！重劍擲出時跳過或瞬步（不能招架）");
@@ -593,12 +598,13 @@
         }
         if (t < T.throw) { /* 停頓閃光 */
           Boss.facing = Player.x >= Boss.x ? 1 : -1; Boss._ultFrame = c.img.pause; U.spinP = 0;
+          if (t - T.pause < 0.25 && Math.abs(Player.x - Boss.x) < 300 && Player.state !== "execution") Player.x += (Player.x >= Boss.x ? 1 : -1) * 900 * dt; /* v0.8.174 風勢一收把人震開（約 225px），飛劍才有飛行距離可看 */
           if (once("flash")) { const p = ultPt(250, 230); if (fxReady("boss3bult")) spawnFx("boss3bult", 2, p.x, p.y, { w: 560, h: 560, dur: T.throw - T.pause }); Sound.play("b3_charge", 1.0, 0.8); triggerHitstopMs(70); Game.ultCam = 0.16; }
           return true;
         }
         if (once("throw")) { /* 擲劍：水平旋轉飛向主角，飛過主角 beyond px 後插地 */
           const fc = Boss.facing, sx = Boss.x + fc * 40, stop = Math.max(160, Math.min(Config.worldWidth - 160, Player.x + fc * c.beyond));
-          U.sw = { kind: "sword", x: sx, y: G - 110, dir: fc, speed: c.throwSpeed, stopX: stop, rot: 0, done: false, stuck: false, c };
+          U.sw = { kind: "sword", x: sx, y: G - 120, dir: fc, speed: c.throwSpeed, stopX: stop, rot: 0, done: false, stuck: false, c };
           Ult.b3.push(U.sw); Sound.play("b3_dash", 1.0, 0.7); Game.ultCam = 0;
         }
         const sw = U.sw;
@@ -611,8 +617,16 @@
           Boss.x = sw.x; Boss.facing = Player.x >= Boss.x ? 1 : -1; sw.hide = true; Sound.play("b3_dash", 0.8, 1.3);
         }
         if (st < 0.25 + T.perch) { Boss._ultFrame = c.img.perch; return true; }
-        if (st < 0.25 + T.perch + T.strain) { /* 吃力拔劍＝破綻（傷害照常） */
-          Boss.state = "recover"; Boss._ultRest = false; Boss._ultFrame = c.img.strain; Boss.stateTimer = 0.25 + T.perch + T.strain - st; Boss.stateDur = T.strain;
+        const hopT = c.hop, k3 = ultK();
+        if (st < 0.25 + T.perch + hopT) { /* v0.8.174 從劍柄跳下、落在劍旁（插地的劍重新顯示），拔劍格裡的劍才對得上 */
+          const hp = (st - 0.25 - T.perch) / hopT, fcB = Player.x >= sw.x ? 1 : -1; Boss.facing = fcB; sw.hide = false;
+          Boss.x = sw.x - fcB * c.strainDx * k3 * hp; Boss.y = G - 70 * Math.sin(Math.PI * hp); Boss._ultFrame = c.img.hop;
+          if (once("hopS")) Sound.play("b3_dash", 0.6, 1.2);
+          return true;
+        }
+        if (once("land3")) { Boss.y = G; Boss.x = sw.x - Boss.facing * c.strainDx * k3; sw.hide = true; if (fxReady("land")) spawnFx("land", 1, Boss.x, groundFxY("land", 1, 240), { anchor: "b", w: 240, dur: 0.5 }); triggerShake(0, 0.2, 8, 0.15); }
+        if (st < 0.25 + T.perch + hopT + T.strain) { /* 吃力拔劍＝破綻（傷害照常） */
+          Boss.state = "recover"; Boss._ultRest = false; Boss._ultFrame = c.img.strain; Boss.stateTimer = 0.25 + T.perch + hopT + T.strain - st; Boss.stateDur = T.strain;
           U.dsT = (U.dsT || 0) - dt; if (U.dsT <= 0) { U.dsT = 0.3; if (fxReady("land")) spawnFx("land", 1, Boss.x + Boss.facing * 40, groundFxY("land", 1, 160), { anchor: "b", w: 160, dur: 0.5 }); triggerShake(0, 0.1, 4, 0.1); }
           if (once("strainS")) Sound.play("b3_draw", 0.9, 0.7);
           return true;
@@ -622,8 +636,8 @@
           Ult.b3.push({ kind: "wave", x: Boss.x + Boss.facing * 120, dir: Boss.facing, speed: c.waveSpeed, done: false, c });
           Sound.play("b3_heavy", 1.0, 0.75); Sound.play("b3_plunge", 0.8, 0.9); triggerShake(Boss.facing, 0.6, 28, 0.35); hapticBuzz([40, 20, 60]);
         }
-        if (st < 0.25 + T.perch + T.strain + T.back) { Boss._ultFrame = c.img.back; return true; }
-        if (st < 0.25 + T.perch + T.strain + T.back + T.rest) { Boss.state = "recover"; Boss._ultFrame = c.img.rest; return true; }
+        if (st < 0.25 + T.perch + hopT + T.strain + T.back) { Boss._ultFrame = c.img.back; return true; }
+        if (st < 0.25 + T.perch + hopT + T.strain + T.back + T.rest) { Boss.state = "recover"; Boss._ultFrame = c.img.rest; return true; }
         ultEnd(false); return true;
       }
       /* 第 3 關投射物：十字、飛劍、衝擊波（大招結束後已放出的仍會飛完） */
@@ -634,7 +648,7 @@
           const o = L[i], c = o.c;
           if (o.kind === "sword") {
             if (o.stuck) { o.st = (o.st || 0) + dt; if (!Boss._ult) L.splice(i, 1); continue; }
-            o.x += o.dir * o.speed * dt; o.rot += 16 * dt;
+            o.x += o.dir * o.speed * dt; o.rot += 11 * dt;
             if (!o.done && Math.abs(Player.x - o.x) < 80 && Player.state !== "execution") {
               if (Player.y < G - 70) { /* 跳過（離地 70px 以上；飛劍在腰高，判定比圖寬容） */ }
               else { o.done = true; if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 8); else takeDamage(bossDmg(c.throwDmg), o.dir, "【玄鐵飛劍】"); }
@@ -683,11 +697,11 @@
       }
       function drawUltB3() {
         const L = Ult.b3, U = Boss._ult, G = Config.groundY, now = performance.now();
-        if (U && U.kind === "b3tornado" && (U.spinP || 0) > 0 && fxReady("boss3bult")) { /* 龍捲＋吸入氣流（越轉越快、越濃） */
-          const img = fxSheet("boss3bult").img, p = U.spinP, col = Math.floor((U.t * (6 + 14 * p)) % 4), h = 640, w = 560;
-          ctx.save(); ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = 0.35 + 0.6 * p; ctx.drawImage(img, col * 256, 0, 256, 256, Boss.x - w / 2, groundFxY("boss3bult", 0, h) - h, w, h);
-          ctx.globalAlpha = 0.25 + 0.55 * p; ctx.drawImage(img, ((col + 1) % 4) * 256, 256, 256, 256, Boss.x - 600, Boss.y - 150 - 250, 1200, 500);
+        if (U && U.kind === "b3tornado" && (U.spinP || 0) > 0 && fxReady("boss3btorn")) { /* 龍捲＋吸入氣流（越轉越快、越濃）；v0.8.174 改不透明版 boss3btorn（亮背景上疊加發光會變透明） */
+          const img = fxSheet("boss3btorn").img, p = U.spinP, col = Math.floor((U.t * (6 + 16 * p)) % 4), h = 780, w = 720, fcT = U.fc0 || Boss.facing;
+          ctx.save(); ctx.translate(Boss.x, 0); ctx.scale(fcT, 1); /* v0.8.174 依面向鏡像：旋向與擲劍方向一致 */
+          ctx.globalAlpha = 0.4 + 0.6 * p; ctx.drawImage(img, ((col + 2) % 4) * 256, 256, 256, 256, -760, Boss.y - 150 - 300, 1520, 600); /* 吸入氣流（人物後面） */
+          ctx.globalAlpha = 0.5 + 0.5 * p; ctx.drawImage(img, col * 256, 0, 256, 256, -w / 2, groundFxY("boss3bult", 0, h) - h, w, h); /* 龍捲背層 */
           ctx.restore();
         }
         if (!L.length) return;
@@ -698,13 +712,13 @@
             ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(o.x, cy); ctx.scale(o.dir, 1);
             const tw = 1100, th = h * 0.42; ctx.globalAlpha = 0.75; ctx.drawImage(img, ((col + 1) % 4) * 256, 768, 256, 256, -w * 0.05 - tw * 0.95, -th / 2, tw, th); /* v0.8.173 尾霧（第 4 列）：亮的那頭接在十字內凹面後方 */
             ctx.globalAlpha = 1; ctx.drawImage(img, col * 256, 512, 256, 256, -w / 2, -h / 2, w, h); ctx.restore();
-          } else if (o.kind === "wave" && fxReady("boss3bult")) {
-            const img = fxSheet("boss3bult").img, col = Math.floor(now / 70) % 4, h = (G - vt) + 160, w = 560;
-            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(o.x, groundFxY("boss3bult", 3, h)); ctx.scale(o.dir, 1); ctx.drawImage(img, col * 256, 768, 256, 256, -w * 0.9, -h, w, h); ctx.restore();
+          } else if (o.kind === "wave" && fxReady("boss3bwave")) { /* v0.8.174 衝擊波改用不透明版（boss3bwave：由原圖亮度算出不透明度），照原圖顏色飛出 */
+            const img = fxSheet("boss3bwave").img, col = Math.floor(now / 70) % 4, h = (G - vt) + 160, w = 560;
+            ctx.save(); ctx.translate(o.x, groundFxY("boss3bult", 3, h)); ctx.scale(o.dir, 1); ctx.drawImage(img, col * 256, 0, 256, 256, -w * 0.9, -h, w, h); ctx.restore();
           } else if (o.kind === "sword" && !o.hide) {
             const k = ultK();
-            if (!o.stuck) { const im = b3img("obj_fly"); if (im) { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.rot * o.dir); ctx.scale(o.dir * k, k); ctx.drawImage(im, -im.width / 2, -im.height / 2); ctx.restore(); } }
-            else { const im = b3img(o.st < 0.35 ? "obj_lean" : "obj_stuck"); if (im) { ctx.save(); ctx.translate(o.x, G + GROUND_SINK + 14); ctx.scale(o.dir * k, k); ctx.drawImage(im, -im.width / 2, -im.height); ctx.restore(); } }
+            if (!o.stuck) { const im = b3img("obj_fly"); if (im) { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.rot * o.dir); ctx.scale(o.dir * k * 0.8, k * 0.8); ctx.drawImage(im, -im.width / 2, -im.height / 2); ctx.restore(); } } /* 物件劍身比關鍵格粗 1.4 倍，縮 0.8 */
+            else { const im = b3img(o.st < 0.35 ? "obj_lean" : "obj_stuck"); if (im) { ctx.save(); ctx.translate(o.x, G + GROUND_SINK + 14); ctx.scale(o.dir * k * 0.8, k * 0.8); ctx.drawImage(im, -im.width / 2, -im.height); ctx.restore(); } }
           }
         }
       }
