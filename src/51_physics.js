@@ -102,13 +102,13 @@
           Player.stateTimer -= dt;
 
           if (Boss.hp <= 0) { /* v0.8.65 Boss 已倒下：出刀不再判定（原本會把血量夾回 1） */
-          } else if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02) {
+          } else if (Player.state === "attack" && Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.02 && !Boss._ultAir) { /* v0.8.165 大招浮空中打不到 */
             airAttackHit();
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && partsBusy()) {
             if (partsMode() && partsTryHit(false)) Player.attackHitRegistered = true; /* v0.8.83 部位 Boss 一階段：只判部位，本體不可打 */
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && illusionTryHit(false)) {
             Player.attackHitRegistered = true; /* v0.8.55 打到幻影 */
-          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04) {
+          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && !Boss._ultAir) {
             const dx = Boss.x - Player.x;
             const inFront = dx * Player.facing >= -30;
             const baseReach = (Player.isChargedAttack ? 175 : Player.comboStep === 3 ? 165 : 140) * CHAR_K;
@@ -547,7 +547,7 @@
           const introOn = Game.introT > 0 || Game.dlgFocus || cineOn || !!Game.dir;
           if (Game.mode === "battle") { const stZ = Stages[Boss.stageId]; if (stZ) cam.targetZoom = stZ.camZoomP ? (stZ.camZoomP[Config.bossPhase] || 1) : 1.0 - Math.min(0.25, Math.max(0, (bossVis(stZ).k / 0.64 - 1) * 0.3)); } /* v0.8.83 camZoomP：依階段指定鏡頭縮放 */ /* v0.8.23 依 Boss 目前體型（含蛻變脹大）推算鏡頭拉遠 */
           const uw = Game.ultDim || 0;
-          const focusX = (Game.dir && Game.dir.focusX != null) ? Game.dir.focusX : Game.ultFocus ? Boss.x * 0.72 + Player.x * 0.28 : cineOn || (Game.dir && Player.blast) ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
+          const focusX = (Game.dir && Game.dir.focusX != null) ? Game.dir.focusX : Game.ultFocus ? (typeof Game.ultFocus === "number" ? Boss.x * Game.ultFocus + Player.x * (1 - Game.ultFocus) : Boss.x * 0.72 + Player.x * 0.28) : cineOn || (Game.dir && Player.blast) ? (Player.x + Boss.x) * 0.5 : introOn ? Boss.x : Player.x * (0.64 - 0.14 * uw) + Boss.x * (0.36 + 0.14 * uw);
           let targetX = focusX - Config.baseWidth * 0.5;
           let minCam = 0;
           if (Game.mode === "hub") { targetX = -1280; minCam = -1280; }
@@ -564,7 +564,7 @@
           if (dc) zTarget = dc.zoom;
           else if (Game.ultCam && Game.mode === "battle") zTarget += Game.ultCam; /* v0.8.160 招牌大招鏡頭（蓄力拉近、放波拉回） */
           cam.zoom += (zTarget - cam.zoom) * Math.min(1, dt * (dc ? dc.rate : 7.5));
-          cam.y = (cam.y || 0) + ((dc ? dc.y : 0) - (cam.y || 0)) * Math.min(1, dt * (dc ? dc.rate : 6));
+          cam.y = (cam.y || 0) + ((dc ? dc.y : (Game.mode === "battle" ? (Game.ultCamY || 0) : 0)) - (cam.y || 0)) * Math.min(1, dt * (dc ? dc.rate : 6)); /* v0.8.165 Game.ultCamY：大招浮空時鏡頭往上抬 */
         }
 
         cam.shakeClock += dt;

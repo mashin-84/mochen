@@ -45,7 +45,7 @@
       }
       /* v0.8.162 特效圖每列「腳底」位置（格內 y，0～256）：底部對齊地面時要扣掉圖裡的留白，否則浮空。
        * land 第 0 列是地面光圈，記的是圓環中心（圓心對齊腳底）。數值由 assets/fx 實測（亮度 >60 的最低列）。 */
-      const FX_FOOT = { land: [203, 242, 174, 240], boss1ult: [240, 235, 232, 244], boss1ult2: [256, 256, 250, 256] };
+      const FX_FOOT = { land: [203, 242, 174, 240], boss1ult: [240, 235, 232, 244], boss1ult2: [256, 256, 250, 256], boss2ult: [256, 256, 228, 145] }; /* boss2ult 第 3 列紅圈記圓心 */
       function fxFootY(sheet, row, h) { const b = (FX_FOOT[sheet] || [])[row]; return b == null ? 0 : h * (1 - b / 256); } /* anchor "b" 時要往下補的量 */
       function groundFxY(sheet, row, h, gy) { return (gy == null ? Config.groundY : gy) + GROUND_SINK + fxFootY(sheet, row, h); } /* 讓特效的腳底（或光圈圓心）落在角色腳底線 */
       function spawnFx(sheet, row, x, y, o) {

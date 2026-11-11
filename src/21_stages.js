@@ -51,6 +51,11 @@
         S2.splitMove = "mirror_split"; S2.splitFallback = "slash1";
         S2.pool = [["slash1", 30], ["flyswords", 20, "ranged"], ["exclusive_zone", 15], ["thrust_peril", 20], ["sweep_peril", 15]]; /* 一階段（與 p1Pool 相同；有 pool 才會走 pickFromPool／poolP2） */
         S2.poolP2 = [["slash1", 22], ["flyswords", 12, "ranged"], ["exclusive_zone", 9], ["thrust_peril", 13], ["sweep_peril", 11], ["grab_peril", 7], ["exclusive_teleport", 11, "chase"], ["teleport_combo", 11, "chase"], ["sky_swords", 8, "ranged"], ["mirror_split", 9]];
+        /* v0.8.165 招牌大招「羅天萬劍」（55_ult.js b2sword）：二階段；血條剩一半必放一次，之後偶爾出現 */
+        S2.moves.u_sword = { name: "羅天萬劍", ult: "b2sword", damage: 0, windup: 0.6, active: 4.8, recover: 3.4 };
+        S2.poolP2.push(["u_sword", 5]);
+        S2.hpTriggers = [{ move: "u_sword", at: 0.5, phase: 2 }];
+        S2.sigMove = "u_sword";
         S2.dfmK = 0.5; /* 變形強度（第 5 關 0.35，顧天風動作較飄逸稍大） */
         M.slash1.dfm = { w: { sx: 0.96, sy: 1.03, rot: -0.07, ox: -16 }, a: { sx: 1.06, sy: 0.97, rot: 0.06, ox: 24, ghost: 2, gap: 34 }, r: {} };
         M.slash1.fxAct = { sheet: "boss2fx", row: 0, ox: 120, oy: -125, w: 360, dur: 0.3 };
@@ -88,6 +93,7 @@
         M.mirror_split.frames = { windup: "47_mir_wind", active: "48_mir_spin", recover: "49_mir_rec" };
         if (M.teleport_combo) M.teleport_combo.frames = { windup: "32_tp_wind", active: ["33_tp_hit", "50_tc_back", "51_tc_low"], recover: "52_tc_rec" };
         S2.spriteExtras = ["41_zone_wind", "42_zone_hit", "43_zone_rec", "44_grab_tell", "45_grab_hit", "46_grab_rec", "47_mir_wind", "48_mir_spin", "49_mir_rec", "50_tc_back", "51_tc_low", "52_tc_rec", "20_fan_wind", "21_fan_hit", "22_fan_rec", "23_thr_wind", "24_thr_hit", "25_thr_rec", "26_swp_wind", "27_swp_hit", "28_swp_rec", "29_cast_wind", "30_cast_hit", "31_cast_rec", "32_tp_wind", "33_tp_hit", "34_tp_rec", "35_fs_wind", "36_fs_1", "37_fs_2", "38_fs_3", "39_fs_rec", "40_sky_cast"];
+        S2.spriteExtras = S2.spriteExtras.concat(["61_u_rise", "62_u_summon", "63_u_rain", "64_u_gather", "65_u_launch", "66_u_struck", "67_u_rest", "68_u_recover"]); S2.fxSheets = S2.fxSheets.concat(["boss2ult", "boss2ult2", "cue", "land"]); /* v0.8.165 羅天萬劍 */
         S2.layers = [
           { img: "arena2_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.08 },
           { img: "arena2_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.15 }
