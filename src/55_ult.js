@@ -483,19 +483,30 @@
         if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 300, h: 300, dur: 0.2, c0: 1, nf: 2 });
         return true;
       }
-      function ultClashUI(on, m, tp) {
+      function ultClashUI(on, m, tp) { /* v0.8.170 生圖角力條：assets/ui/clash_bar（雕花框，軌道鏤空）＋ clash_medal（雙劍徽章，停在青紅交界＝誰佔上風） */
         let el = document.getElementById("ult-clash");
         const pb = document.getElementById("touch-parry");
         if (!on) { if (el) el.style.display = "none"; if (pb) pb.classList.remove("clash-pulse"); return; }
+        const CH = { l: 9.11, w: 81.79, t: 14.26, h: 21.01, cy: 24.58 }; /* 軌道在框圖中的位置（%），由圖實測 */
         if (!el) {
           el = document.createElement("div"); el.id = "ult-clash";
-          el.style.cssText = "position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:8500;width:min(56vw,460px);pointer-events:none;text-align:center;font-family:'Noto Serif TC','Songti TC',serif;";
-          el.innerHTML = '<div style="color:#fef3c7;font-size:15px;letter-spacing:.25em;text-shadow:0 0 8px rgba(0,0,0,.8);margin-bottom:6px;">連按【招架】頂回去！</div><div style="position:relative;height:12px;border-radius:6px;background:linear-gradient(90deg,#7f1d1d,#ef4444);box-shadow:0 0 10px rgba(0,0,0,.6);overflow:hidden;"><div id="ult-clash-fill" style="position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#0f766e,#5eead4);"></div><div style="position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:#fff;opacity:.8;"></div></div><div id="ult-clash-time" style="height:3px;margin-top:4px;background:#fde68a;width:100%;border-radius:2px;"></div>';
+          el.style.cssText = "position:fixed;left:50%;top:20%;transform:translateX(-50%);z-index:8500;width:min(62vw,560px);pointer-events:none;text-align:center;font-family:'Noto Serif TC','Songti TC',serif;";
+          el.innerHTML = '<div style="color:#fef3c7;font-size:15px;letter-spacing:.25em;text-shadow:0 0 8px rgba(0,0,0,.85);margin-bottom:2px;">連按【招架】頂回去！</div><div id="ult-clash-time" style="height:3px;margin:0 auto 4px;background:#fde68a;width:80%;border-radius:2px;"></div>'
+            + '<div id="ult-clash-box" style="position:relative;width:100%;aspect-ratio:2504/533;">'
+            + '<div style="position:absolute;left:' + CH.l + '%;top:' + CH.t + '%;width:' + CH.w + '%;height:' + CH.h + '%;background:linear-gradient(90deg,#7f1d1d,#dc2626);"><div id="ult-clash-fill" style="position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#115e59,#5eead4);"></div></div>'
+            + '</div>';
           document.body.appendChild(el);
+          const box = el.querySelector("#ult-clash-box");
+          const fr = new Image(); fr.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;"; fr.src = "assets/ui/clash_bar.webp"; box.appendChild(fr);
+          const md = new Image(); md.id = "ult-clash-medal"; md.style.cssText = "position:absolute;width:auto;height:58%;top:" + CH.cy + "%;left:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 6px rgba(255,250,220,.85));"; md.src = "assets/ui/clash_medal.webp"; box.appendChild(md);
           const st = document.createElement("style"); st.textContent = "@keyframes clashPulse{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(253,224,71,.9)}100%{transform:scale(1.18);box-shadow:0 0 0 14px rgba(253,224,71,0)}} #touch-parry.clash-pulse{animation:clashPulse .32s ease-out infinite;}";
           document.head.appendChild(st);
         }
+        if (el.style.display !== "block" && typeof elHintToast !== "undefined" && elHintToast) { elHintToast.style.transition = "none"; elHintToast.style.opacity = "0"; } /* 角力開始：收掉上方提示字，免得和角力條疊字 */
         el.style.display = "block"; if (pb) pb.classList.add("clash-pulse");
-        if (m != null) { const f = document.getElementById("ult-clash-fill"); if (f) f.style.width = Math.round(m * 100) + "%"; }
-        if (tp != null) { const tb = document.getElementById("ult-clash-time"); if (tb) tb.style.width = Math.round((1 - tp) * 100) + "%"; }
+        if (m != null) {
+          const f = document.getElementById("ult-clash-fill"); if (f) f.style.width = (m * 100).toFixed(1) + "%";
+          const md = document.getElementById("ult-clash-medal"); if (md) { md.style.left = (CH.l + CH.w * m).toFixed(2) + "%"; md.style.transform = "translate(-50%,-50%) rotate(" + (Math.sin(performance.now() / 45) * 4).toFixed(1) + "deg)"; } /* 徽章隨角力左右滑、微微顫動 */
+        }
+        if (tp != null) { const tb = document.getElementById("ult-clash-time"); if (tb) tb.style.width = Math.round((1 - tp) * 80) + "%"; }
       }
