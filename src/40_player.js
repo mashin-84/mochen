@@ -27,6 +27,7 @@
       function inputLocked() { return Game.mode === "battle" && (Game.cutsceneActive || Game.ultLock); } /* v0.8.166 Game.ultLock：大招角力中鎖操作 */
 
       function startAttackCharge() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (Game.mode === "hub") {
           if (Game.hubNpcNear) hubTalk();
@@ -104,6 +105,7 @@
       }
 
       function doNormalAttack() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         Mirror.noteAttack(); Reader.note("atk");
         if (Player.state === "execution" || Player.state === "hitstun") {
@@ -302,6 +304,7 @@
       }
 
       function doDash() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked()) return;
         Mirror.noteDash(); Reader.note("dash");
@@ -401,6 +404,7 @@
       }
 
       function doJump() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked()) return;
         if (Player.state === "execution" || Player.state === "hitstun") {
@@ -435,6 +439,7 @@
       }
 
       function doDrinkGourd() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked()) return;
         if (Player.state === "execution" || Player.state === "hitstun") return;
@@ -740,6 +745,7 @@
       }
 
       function activateAssist() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked() || Game.dir) return;
         if (!Player.assistAvailable) {

@@ -269,6 +269,7 @@
           if (Keys.left) dir -= 1;
           if (Keys.right) dir += 1;
           if (Game.mode === "enter") dir = Game.loadHold ? 0 : 1; /* v0.8.156 等圖載完時原地站著 */
+          if (Game.ultBind) dir = 0; /* v0.8.168 大招劍陣鎖身：不能移動 */
 
           if (dir !== 0) {
             Player.vx = dir * 580;

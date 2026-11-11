@@ -3869,6 +3869,7 @@ const Config = {
       function inputLocked() { return Game.mode === "battle" && (Game.cutsceneActive || Game.ultLock); } /* v0.8.166 Game.ultLock：大招角力中鎖操作 */
 
       function startAttackCharge() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (Game.mode === "hub") {
           if (Game.hubNpcNear) hubTalk();
@@ -3946,6 +3947,7 @@ const Config = {
       }
 
       function doNormalAttack() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         Mirror.noteAttack(); Reader.note("atk");
         if (Player.state === "execution" || Player.state === "hitstun") {
@@ -4144,6 +4146,7 @@ const Config = {
       }
 
       function doDash() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked()) return;
         Mirror.noteDash(); Reader.note("dash");
@@ -4243,6 +4246,7 @@ const Config = {
       }
 
       function doJump() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked()) return;
         if (Player.state === "execution" || Player.state === "hitstun") {
@@ -4277,6 +4281,7 @@ const Config = {
       }
 
       function doDrinkGourd() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked()) return;
         if (Player.state === "execution" || Player.state === "hitstun") return;
@@ -4582,6 +4587,7 @@ const Config = {
       }
 
       function activateAssist() {
+        if (Game.ultBind) return; /* v0.8.168 大招劍陣鎖身：只能招架 */
         Sound.resume();
         if (inputLocked() || Game.dir) return;
         if (!Player.assistAvailable) {
@@ -6032,6 +6038,7 @@ const Config = {
           if (Keys.left) dir -= 1;
           if (Keys.right) dir += 1;
           if (Game.mode === "enter") dir = Game.loadHold ? 0 : 1; /* v0.8.156 等圖載完時原地站著 */
+          if (Game.ultBind) dir = 0; /* v0.8.168 大招劍陣鎖身：不能移動 */
 
           if (dir !== 0) {
             Player.vx = dir * 580;
@@ -8126,7 +8133,7 @@ const Config = {
       }
       function ultEnd(cancel) {
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
-        Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; ultClashUI(false);
+        Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; Game.ultBind = false; ultClashUI(false);
         if (Boss._ultAir || (U && U.lift)) { Boss.y = Config.groundY; } Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
         if (cancel) { Ult.waves.length = 0; return; }
         Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
@@ -8257,15 +8264,27 @@ const Config = {
             return true;
           }
           if (t < T.launch) { /* 聚劍成巨劍：拉近、壓暗、巨劍瞄準主角 */
-            Boss._ultFrame = c.img.gather; Game.ultCam = 0.15; Game.ultFocus = true;
+            Boss._ultFrame = c.img.gather; Game.ultCam = 0.06; Game.ultFocus = 0.45; Game.ultCamY = -80; /* v0.8.168 鎖身時主角也要在畫面內 */
             Boss._ucd = Math.min(0.85, (Boss._ucd || 0) + dt * 1.5); Boss._ucdPos = ultPt(560, 300);
-            if (once("gather")) { const p = ultPt(640, 300); if (fxReady("boss2ult2")) spawnFx("boss2ult2", 0, p.x, p.y, { w: 640, h: 640, dur: T.launch - T.gather, alpha: 0.95, follow: () => ultPt(640, 300) }); Sound.play("b2_vortex", 0.9, 0.8); }
+            if (once("gather")) {
+              const p = ultPt(640, 300); if (fxReady("boss2ult2")) spawnFx("boss2ult2", 0, p.x, p.y, { w: 640, h: 640, dur: T.launch - T.gather, alpha: 0.95, follow: () => ultPt(640, 300) }); Sound.play("b2_vortex", 0.9, 0.8);
+              /* v0.8.168 劍陣鎖身：巨劍成形時把主角鎖在原地，只能招架（使用者：走開或瞬步就能躲＝漏洞） */
+              Game.ultBind = true; Player.vx = 0; if (Player.state === "move" || Player.state === "dash") Player.state = "idle";
+              const lockDur = T.launch + T.fly - T.gather + 0.1, pf = () => ({ x: Player.x, y: Player.y - 70 });
+              if (fxReady("boss2ult")) spawnFx("boss2ult", 0, Player.x, Player.y - 70, { w: 380, h: 380, dur: lockDur, loop: true, fps: 6, alpha: 0.85, back: true, follow: () => ({ x: Player.x, y: Player.y - 110 }) });
+              if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, Player.x, Player.y - 70, { w: 300, h: 300, dur: lockDur, loop: true, fps: 8, c0: 2, nf: 1, alpha: 0.7, follow: pf });
+              Sound.play("b2_sword_cast", 1.0, 0.7); hapticBuzz([30, 30, 30]);
+              spawnFloatingText(Player.x, Player.y - 150, "【劍陣鎖身】", "#a7f3d0", 1.3);
+              hintOnce("ult2bind", "被劍陣鎖住了！巨劍只能【完美招架】：抓準光圈縮到最小的瞬間按招架");
+            }
+            if (Game.ultBind) { Player.vx = 0; if (Player.state === "move") Player.state = "idle"; }
             U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; U.ga = Math.min(1, (t - T.gather) / (T.launch - T.gather - 0.2));
             return true;
           }
           /* 發劍：瞬間鎖定，0.35 秒刺到 */
           if (once("launch")) { U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; Sound.play("b2_thrust", 1.0, 0.75); Game.ultCam = 0; Game.ultFocus = 0.5; hapticBuzz(30); }
-          Boss._ultFrame = c.img.launch; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 2);
+          Boss._ultFrame = c.img.launch; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 2); Game.ultFocus = 0.45; Game.ultCamY = -80;
+          if (Game.ultBind) { Player.vx = 0; if (Player.state === "move") Player.state = "idle"; }
           U.gp = Math.min(1, (t - T.launch) / T.fly);
           if (U.gp >= 1) ultB2Resolve(U);
           return true;
@@ -8370,7 +8389,7 @@ const Config = {
       function ultB2Mid(U, f) { const tip = U.res ? U.tgt : ultB2Tip(U), S = U.c.giant.S; return { x: tip.x - Math.cos(U.ang) * S * 0.465 * f, y: tip.y - Math.sin(U.ang) * S * 0.465 * f }; }
       function ultB2Resolve(U) {
         const c = U.c, g = c.giant, G = Config.groundY;
-        U.rt = U.t; U.liftAtRef = U.lift || c.lift;
+        U.rt = U.t; U.liftAtRef = U.lift || c.lift; Game.ultBind = false; /* 巨劍刺到＝劍陣解除 */
         const near = Math.abs(Player.x - U.tgt.x) < g.r && Player.state !== "execution";
         const el = performance.now() - (Player.parryStartMs || 0);
         if (near && Player.state === "parry" && el <= g.win) { /* 完美招架＝折射 */
