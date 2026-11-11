@@ -106,7 +106,7 @@
             airAttackHit();
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && partsBusy()) {
             if (partsMode() && partsTryHit(false)) Player.attackHitRegistered = true; /* v0.8.83 部位 Boss 一階段：只判部位，本體不可打 */
-          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && illusionTryHit(false)) {
+          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && (partnerTryHit(false) || illusionTryHit(false))) {
             Player.attackHitRegistered = true; /* v0.8.55 打到幻影 */
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && !Boss._ultAir) {
             const dx = Boss.x - Player.x;
@@ -346,6 +346,7 @@
 
         updateBossAI(dt);
         updateIllusions(dt);
+        partnerUpdate(dt); /* v0.8.179 */
         Boss.x += Boss.vx * dt;
         Boss.x = Math.max(95, Math.min(Config.worldWidth - 95, Boss.x));
 
@@ -425,6 +426,7 @@
             }
           } else if (partsBusy()) { /* v0.8.83 部位 Boss 一階段：折射飛劍打回巨手 */
             if (partsMode() && partsReflectHit(sw)) { Game.flyingSwords.splice(i, 1); continue; }
+          } else if (partnerReflectHit(sw)) { swordImpactFx(sw); Game.flyingSwords.splice(i, 1); continue; /* v0.8.179 折射打回魅月 */
           } else {
             const d = Math.abs(sw.x - Boss.x);
             if (Boss.hp > 0 && d < 45 && sw.y > Boss.y - Boss.h * 1.6 && sw.y < Boss.y + 6) { /* Boss 已倒下就不再被折射飛劍打回 1 血 */ /* v0.8.65 折射回去也照圖上身高判定（原 -105～5） */

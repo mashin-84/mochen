@@ -58,6 +58,7 @@
         drawSkyExtension(cam);
         if (Game.mode !== "battle") drawHubScene();
         drawPartsBack(); /* v0.8.83 部位 Boss：背景本體與地面預警 */
+        drawPools(); /* v0.8.179 第 6 關血池 */
 
         if (Game.ultDim > 0.01) {
           ctx.save();
@@ -150,6 +151,7 @@
         drawFlyingSwords();
         drawCineTrail();
         drawIllusions();
+        drawPartner(); /* v0.8.179 第 6 關同伴 */
         drawUltWorld(); /* v0.8.160 招牌大招：壓暗聚焦＋火牆 */
         drawDirWorld(); /* v0.8.133 第 4 關三段演出：劍、金環、巨手、暗層 */
         drawIntroGhosts(); /* v0.8.127 鏡花水月：分身殘影（畫在 Boss 後面） */
@@ -166,6 +168,7 @@
         drawSparks();
         drawHitFx();
         drawFx();
+        drawPartnerTop();
         drawUltTop(); /* v0.8.160 大招火牆的招架光圈 */
         drawLeaves();
         if (Game.mode === "battle") drawArenaLayers(Game.camera.x, Boss.stageId, "fg"); /* M2 前景剪影層 */

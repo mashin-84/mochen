@@ -405,3 +405,51 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         ];
         S4.flySwordArt = { sheet: "boss4fx", row: 3, frames: [2, 3], fps: 10, w: 150, tipX: 222, tipY: 128 }; /* 指劍劍氣與核心飛劍 */
       }
+
+      /* ===== v0.8.179 M4 第 6 關 魅月仙子＋化血老祖（灰盒）：雙 Boss 同場（同伴引擎 56_partner.js） =====
+         主 Boss＝化血老祖（一般 Boss AI，兩階段血條）；魅月仙子＝同伴（不死，心神打滿失神）。
+         這關教玩家「先決定切誰」：魅月詠唱護體／回春要趕過去打斷，但老祖會追著打；血池擋路要跳或瞬步。
+         美術全部佔位（程式畫），設計卡見 HANDOFF 第 6 關段落。 */
+      {
+        const S6 = Stages[6];
+        S6.name = "化血老祖＋魅月仙子"; S6.artId = 9; S6.arenaName = "萬毒血池"; S6.realmBadge = "元神後期・萬毒魔宗";
+        S6.maxPosture = 150;
+        S6.camZoomP = { 1: 0.88, 2: 0.88 }; /* 鏡頭拉遠一點：看得到魅月與血池 */
+        S6.moves = {
+          claw: { name: "化血魔爪", windup: 0.45, active: 0.14, recover: 0.45, range: 185, lunge: 360, damage: 160, parryPostureDmg: 22 },
+          claw3: { name: "血痕三連", isCombo: true, comboTotalHits: 3, comboInterval: 0.26, comboDamagePerHit: 85, windup: 0.5, active: 0.82, recover: 0.55, range: 185, lunge: 300, damage: 255, parryPostureDmg: 20 },
+          blood_bolt: { name: "腐骨血錐・三連 (可折射)", isRanged: true, bulletCount: 3, bulletGap: 0.42, bulletSpeed: 720, bulletTrajectory: "linear", bulletColor: "#ef4444", windup: 0.55, active: 0.95, recover: 0.5, range: 620, lunge: 0, damage: 100, parryPostureDmg: 16 },
+          thrust_peril: { name: "【危】魔煞血河刺 (前閃看破)", pose: "thrust", windup: 0.66, active: 0.2, recover: 0.7, range: 290, lunge: 920, damage: 300, isPerilous: true, perilType: "thrust" },
+          sweep_peril: { name: "【危】萬毒化骨掃 (起跳踩頭)", pose: "sweep", windup: 0.66, active: 0.22, recover: 0.66, range: 245, lunge: 280, damage: 280, isPerilous: true, perilType: "sweep" },
+          blood_spring: { name: "血泉湧 (離開紅圈)", isZone: true, zoneType: "fire", zoneWidth: 300, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, zoneWarn: 0.75, windup: 0.6, active: 0.3, recover: 0.6, range: 600, lunge: 0, damage: 0 },
+          grab_peril: { name: "【危】血海擒拿 (極限側閃)", windup: 0.72, active: 0.16, recover: 0.75, range: 175, lunge: 0, damage: 340, isPerilous: true, perilType: "grab" }
+        };
+        Object.values(S6.moves).forEach(m => { if (m.range) m.range = Math.round(m.range * CHAR_K); });
+        S6.pool = [["claw", 26], ["claw3", 22], ["thrust_peril", 14], ["sweep_peril", 12], ["blood_bolt", 12, "ranged"]];
+        S6.poolP2 = [["claw", 20], ["claw3", 20], ["thrust_peril", 13], ["sweep_peril", 12], ["blood_bolt", 10, "ranged"], ["blood_spring", 13, "ranged"], ["grab_peril", 10]];
+        S6.farMoves = ["blood_bolt"]; S6.farMovesP2 = ["blood_spring"];
+        S6.sfxClass = "heavy";
+        S6.partner = {
+          name: "魅月仙子", maxPosture: 100, decay: 4, /* 心神每秒回 4 */
+          keep: 620, speed: 150, fleeAt: 230, blinkCd: 7, /* 待機時離主角 620；主角靠近 230 內就幻渡（冷卻 7 秒，詠唱中不能逃） */
+          firstCd: 4.0, cd: [3.4, 4.6], cdAfterBreak: 3.2, fastP2: 0.8, stun: 7, stunP2: 5.5,
+          order: ["petal", "shield", "petal", "heal"],
+          shield: { chant: 2.4, dur: 8, k: 0.3 }, /* 護體：詠唱 2.4 秒、持續 8 秒、傷害只剩三成 */
+          heal: { chant: 2.8, amt: 0.08, below: 0.8, cd: 14 }, /* 回春：詠唱 2.8 秒、回該階段血條 8%（血量 80% 以下才放、冷卻 14 秒） */
+          petal: { windup: 0.7, count: 2, countP2: 3, gap: 0.5, recover: 0.6, speed: 640, damage: 90 }, /* 飛花：每發間隔 0.5 秒（> 一次格擋 0.36 秒），可折射 */
+          hit: { normal: 26, third: 40, charged: 100, air: 34, reflect: 45 }
+        };
+        S6.pools = { 1: [[1600, 300]], 2: [[1150, 300], [2050, 300]] }; /* 固定血池 [中心 x, 寬]；主角步幅：跳躍或瞬步可越過 300 */
+        S6.poolDps = 110;
+        S6.dialogue = {
+          pre: [
+            { speaker: "化血老祖", text: "青雲小輩！敢壞老祖血祭大計，老祖要抽乾你的元神，煉成血神子！", role: "boss" },
+            { speaker: "魅月仙子", text: "老祖莫急。這位小道長生得俊俏，讓奴家先替您照看著……", role: "boss" },
+            { speaker: "墨塵", text: "百萬生靈的血債，今日一併了結。", role: "mochen" }
+          ],
+          post: [
+            { speaker: "化血老祖", text: "魅月……救我……啊啊啊！", role: "boss" },
+            { speaker: "魅月仙子", text: "（身影化作月光散去）好狠的心……九幽深處，還有人等著你呢。", role: "boss" }
+          ]
+        };
+      }

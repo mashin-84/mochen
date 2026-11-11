@@ -47,7 +47,7 @@
         if (partsBusy()) { const px = partsAimX(); return px == null ? Player.x + Player.facing : px; } /* v0.8.83 部位 Boss：面向最近的可打部位 */
         let best = Boss.x, bd = Math.abs(Boss.x - Player.x);
         if (Game.illusions) for (const il of Game.illusions) { if (il.dead) continue; const d = Math.abs(il.x - Player.x); if (d < bd) { bd = d; best = il.x; } }
-        return best;
+        return partnerAimX(best);
       }
       /* 主角攻擊判定：最近且在範圍內的幻影比真身近 → 打到幻影（回傳 true，真身不受傷） */
       function illusionTryHit(air) {

@@ -220,7 +220,7 @@
 
       function airAttackHit() {
         if (partsBusy()) { if (partsMode() && partsTryHit(true)) Player.attackHitRegistered = true; return; } /* v0.8.83 部位 Boss */
-        if (illusionTryHit(true)) { Player.attackHitRegistered = true; return; } /* v0.8.55 打到幻影 */
+        if (partnerTryHit(true) || illusionTryHit(true)) { Player.attackHitRegistered = true; return; } /* v0.8.55 打到幻影 */
         const dx = Boss.x - Player.x;
         const dive = Player.isDive;
         const reach = (dive ? 100 : 135) * CHAR_K;
