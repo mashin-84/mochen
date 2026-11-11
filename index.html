@@ -8663,7 +8663,7 @@ const Config = {
           return true;
         }
         if (once("push")) { /* 十字成形飛出 */
-          Ult.b3.push({ kind: "cross", x: x0(), dir: fc, speed: c.speed, done: false, c });
+          Ult.b3.push({ kind: "cross", x: x0(), dir: fc, speed: c.speed, done: false, c, yH: Boss.y - 140, Hv, cy: G + 20 - Hv / 2 }); /* v0.8.175 記下揮出時的位置：飛行時原樣平移 */
           if (fxReady("boss3bult")) spawnFx("boss3bult", 2, x0(), Boss.y - 140, { w: 520, h: 520, dur: 0.35 });
           Sound.play("b3_spin", 1.0, 0.8); triggerShake(fc, 0.4, 18, 0.25); hapticBuzz([30, 20, 50]); Game.ultCam = 0; Game.ultFocus = false;
           hintOnce("ult3a", "寒川十字：跳不過！看到十字飛來就【按住青雲斬】蓄力，十字到面前會自動放出【蓄力斬】劈碎它（或瞬步穿過）");
@@ -8805,10 +8805,14 @@ const Config = {
         const vt = ultViewTop(), Hv = Math.min(980, (G - vt) + 40);
         for (const o of L) {
           if (o.kind === "cross" && fxReady("boss3ult")) {
-            const img = fxSheet("boss3ult").img, col = Math.floor(now / 70) % 4, h = Hv * 1.05, w = h * 0.85, cy = G + 20 - Hv / 2;
-            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(o.x, cy); ctx.scale(o.dir, 1);
-            const tw = 1100, th = h * 0.42; ctx.globalAlpha = 0.75; ctx.drawImage(img, ((col + 1) % 4) * 256, 768, 256, 256, -w * 0.05 - tw * 0.95, -th / 2, tw, th); /* v0.8.173 尾霧（第 4 列）：亮的那頭接在十字內凹面後方 */
-            ctx.globalAlpha = 1; ctx.drawImage(img, col * 256, 512, 256, 256, -w / 2, -h / 2, w, h); ctx.restore();
+            /* v0.8.175 飛行的十字＝揮出來的那兩道原樣平移（橫刀芒在胸口高度、直月牙同大小同位置），不再換成第 3 列的十字圖（交叉點高度對不上） */
+            const img = fxSheet("boss3ult").img, sh = (Math.floor(now / 90) % 2) + 2, Hc = o.Hv;
+            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(o.x, 0); ctx.scale(o.dir, 1);
+            const tw = 1100, th = 300; ctx.globalAlpha = 0.75; ctx.drawImage(img, ((Math.floor(now / 70) + 1) % 4) * 256, 768, 256, 256, -tw * 0.95 - 40, o.yH - th / 2, tw, th); /* 尾霧接在十字後方、胸口高度 */
+            ctx.globalAlpha = 1;
+            ctx.drawImage(img, sh * 256, 256, 256, 256, -Hc * 0.3, o.cy - Hc * 0.525, Hc * 0.6, Hc * 1.05); /* 直月牙（揮出時同尺寸） */
+            ctx.drawImage(img, sh * 256, 0, 256, 256, -280, o.yH - 280, 560, 560); /* 橫刀芒（揮出時同尺寸、同高度） */
+            ctx.restore();
           } else if (o.kind === "wave" && fxReady("boss3bwave")) { /* v0.8.174 衝擊波改用不透明版（boss3bwave：由原圖亮度算出不透明度），照原圖顏色飛出 */
             const img = fxSheet("boss3bwave").img, col = Math.floor(now / 70) % 4, h = (G - vt) + 160, w = 560;
             ctx.save(); ctx.translate(o.x, groundFxY("boss3bult", 3, h)); ctx.scale(o.dir, 1); ctx.drawImage(img, col * 256, 0, 256, 256, -w * 0.9, -h, w, h); ctx.restore();
