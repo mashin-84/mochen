@@ -46,7 +46,7 @@
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
         Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; Game.ultBind = false; ultClashUI(false);
         if (Boss._ultAir || (U && U.lift)) { Boss.y = Config.groundY; } Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
-        if (cancel) { Ult.waves.length = 0; return; }
+        if (cancel) { Ult.waves.length = 0; if (Game.fxList) Game.fxList = Game.fxList.filter(f => f.sheet !== "boss2bind"); return; } /* 中斷時劍陣一起清掉 */
         Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
         if (U && U.m) Boss.ultCd = 18;
       }
@@ -182,13 +182,18 @@
               /* v0.8.168 劍陣鎖身：巨劍成形時把主角鎖在原地，只能招架（使用者：走開或瞬步就能躲＝漏洞） */
               Game.ultBind = true; Player.vx = 0; if (Player.state === "move" || Player.state === "dash") Player.state = "idle";
               const lockDur = T.launch + T.fly - T.gather + 0.1, pf = () => ({ x: Player.x, y: Player.y - 70 });
-              if (fxReady("boss2ult")) spawnFx("boss2ult", 0, Player.x, Player.y - 70, { w: 380, h: 380, dur: lockDur, loop: true, fps: 6, alpha: 0.85, back: true, follow: () => ({ x: Player.x, y: Player.y - 110 }) });
-              if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, Player.x, Player.y - 70, { w: 300, h: 300, dur: lockDur, loop: true, fps: 8, c0: 2, nf: 1, alpha: 0.7, follow: pf });
+              /* v0.8.169 專屬劍陣圖 boss2bind：0 落劍成陣（一次）→ 1 劍陣光絲（循環，畫在主角前）；2 地面陣印（循環，主角後）；3 破陣（巨劍刺到時） */
+              U.bx = Player.x; U.bw = 440; U.lockEnd = T.launch + T.fly;
+              if (fxReady("boss2bind")) {
+                spawnFx("boss2bind", 2, U.bx, groundFxY("boss2bind", 2, U.bw), { anchor: "b", w: U.bw, h: U.bw, dur: lockDur, loop: true, fps: 6, alpha: 0.9, back: true });
+                spawnFx("boss2bind", 0, U.bx, groundFxY("boss2bind", 0, U.bw), { anchor: "b", w: U.bw, h: U.bw, dur: 0.45 });
+              }
               Sound.play("b2_sword_cast", 1.0, 0.7); hapticBuzz([30, 30, 30]);
               spawnFloatingText(Player.x, Player.y - 150, "【劍陣鎖身】", "#a7f3d0", 1.3);
               hintOnce("ult2bind", "被劍陣鎖住了！巨劍只能【完美招架】：抓準光圈縮到最小的瞬間按招架");
             }
             if (Game.ultBind) { Player.vx = 0; if (Player.state === "move") Player.state = "idle"; }
+            if (U.bx != null && t >= T.gather + 0.45 && once("cage") && fxReady("boss2bind")) spawnFx("boss2bind", 1, U.bx, groundFxY("boss2bind", 1, U.bw), { anchor: "b", w: U.bw, h: U.bw, dur: U.lockEnd - t, loop: true, fps: 6, alpha: 0.95 });
             U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; U.ga = Math.min(1, (t - T.gather) / (T.launch - T.gather - 0.2));
             return true;
           }
@@ -301,6 +306,7 @@
       function ultB2Resolve(U) {
         const c = U.c, g = c.giant, G = Config.groundY;
         U.rt = U.t; U.liftAtRef = U.lift || c.lift; Game.ultBind = false; /* 巨劍刺到＝劍陣解除 */
+        if (U.bx != null && fxReady("boss2bind")) spawnFx("boss2bind", 3, U.bx, groundFxY("boss2bind", 3, U.bw), { anchor: "b", w: U.bw, h: U.bw, dur: 0.55 });
         const near = Math.abs(Player.x - U.tgt.x) < g.r && Player.state !== "execution";
         const el = performance.now() - (Player.parryStartMs || 0);
         if (near && Player.state === "parry" && el <= g.win) { /* 完美招架＝折射 */

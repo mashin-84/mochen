@@ -93,7 +93,7 @@
         M.mirror_split.frames = { windup: "47_mir_wind", active: "48_mir_spin", recover: "49_mir_rec" };
         if (M.teleport_combo) M.teleport_combo.frames = { windup: "32_tp_wind", active: ["33_tp_hit", "50_tc_back", "51_tc_low"], recover: "52_tc_rec" };
         S2.spriteExtras = ["41_zone_wind", "42_zone_hit", "43_zone_rec", "44_grab_tell", "45_grab_hit", "46_grab_rec", "47_mir_wind", "48_mir_spin", "49_mir_rec", "50_tc_back", "51_tc_low", "52_tc_rec", "20_fan_wind", "21_fan_hit", "22_fan_rec", "23_thr_wind", "24_thr_hit", "25_thr_rec", "26_swp_wind", "27_swp_hit", "28_swp_rec", "29_cast_wind", "30_cast_hit", "31_cast_rec", "32_tp_wind", "33_tp_hit", "34_tp_rec", "35_fs_wind", "36_fs_1", "37_fs_2", "38_fs_3", "39_fs_rec", "40_sky_cast"];
-        S2.spriteExtras = S2.spriteExtras.concat(["61_u_rise", "62_u_summon", "63_u_rain", "64_u_gather", "65_u_launch", "66_u_struck", "67_u_rest", "68_u_recover"]); S2.fxSheets = S2.fxSheets.concat(["boss2ult", "boss2ult2", "cue", "land"]); /* v0.8.165 羅天萬劍 */
+        S2.spriteExtras = S2.spriteExtras.concat(["61_u_rise", "62_u_summon", "63_u_rain", "64_u_gather", "65_u_launch", "66_u_struck", "67_u_rest", "68_u_recover"]); S2.fxSheets = S2.fxSheets.concat(["boss2ult", "boss2ult2", "boss2bind", "cue", "land"]); /* v0.8.165 羅天萬劍 */
         S2.layers = [
           { img: "arena2_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.08 },
           { img: "arena2_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.15 }
