@@ -4116,6 +4116,7 @@ const Config = {
 
       function doParry() {
         Sound.resume();
+        if (Game.ultLock && ultClashPress()) return; /* v0.8.167 大招角力：連按招架推角力條 */
         if (inputLocked()) return;
         Mirror.noteParry(); Reader.note("parry");
         if (Player.state === "execution") return;
@@ -8101,7 +8102,7 @@ const Config = {
         /* v0.8.165 第 2 關「羅天萬劍」：長老整段浮空（離地 lift）；劍雨三輪 → 聚劍成巨劍 → 巨劍從空中斜下刺主角：
          *   完美招架（窗口 win）＝折射：巨劍沿原路倒飛回去 → 長老被擊中摔落、破防；瞬步＝安全；沒擋／普通格擋＝重傷。 */
         b2sword: {
-          t: { summon: 0.6, rain1: 1.2, gap: 1.0, warn: 0.6, fall: 0.25, gather: 4.2, launch: 5.4, fly: 0.8, clash: 2.0, back: 0.35, drop: 0.35, descend: 0.6, restDur: 2.5, rec: 0.35 }, /* v0.8.166 fly 0.35→0.8（三次方加速）、完美招架後角力 clash 2 秒 */
+          t: { summon: 0.6, rain1: 1.2, gap: 1.0, warn: 0.6, fall: 0.25, gather: 4.2, launch: 5.4, fly: 0.8, clash: 2.0, mashAdd: 0.08, mashDecay: 0.22, back: 0.35, drop: 0.35, descend: 0.6, restDur: 2.5, rec: 0.35 }, /* v0.8.166 fly 0.35→0.8（三次方加速）、完美招架後角力 clash 2 秒 */
           lift: 260,
           rain: { dmg: 120, r: 60 },                                   /* 每把 120×1.25＝150；判定半徑 60（紅圈畫得比判定大） */
           giant: { dmg: 320, block: 160, win: 220, r: 210, S: 2000 },  /* 400／普通格擋 200；完美窗口放寬 220ms；巨劍畫 2000px（v0.8.166 由 1400 加大） */
@@ -8125,7 +8126,7 @@ const Config = {
       }
       function ultEnd(cancel) {
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
-        Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false;
+        Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; ultClashUI(false);
         if (Boss._ultAir || (U && U.lift)) { Boss.y = Config.groundY; } Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
         if (cancel) { Ult.waves.length = 0; return; }
         Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
@@ -8271,8 +8272,10 @@ const Config = {
         }
         const rt = t - U.rt;
         if (U.res === "ref") { /* 折射：角力 2 秒 → 巨劍碎裂、劍光倒飛 → 擊中長老 → 摔落破防 */
-          if (rt < T.clash) { /* v0.8.166 角力：主角舉劍頂住，劍尖一推一拉越來越激烈，火花、摩擦聲、震動持續 */
-            const k = rt / T.clash, fcP = Boss.x >= Player.x ? 1 : -1;
+          if (U.mash == null) { U.mash = 0.5; ultClashUI(true); }
+          if (rt < T.clash && U.mash > 0 && U.mash < 1) { /* v0.8.166 角力；v0.8.167 連按招架推角力條（長老持續往回壓；推滿＝提前破劍、被壓到底＝輸） */
+            U.mash = Math.max(0, U.mash - T.mashDecay * dt); ultClashUI(true, U.mash, rt / T.clash);
+            const k = Math.max(rt / T.clash, Math.abs(U.mash - 0.5) * 2), fcP = Boss.x >= Player.x ? 1 : -1;
             Boss._ultFrame = c.img.launch; Game.ultLock = true;
             Player.state = "parry"; Player.stateTimer = 0.25; Player.vx = 0; Player.facing = fcP; Player.invulnTimer = Math.max(Player.invulnTimer, 0.3);
             Player.x -= fcP * dt * 22; /* 被巨劍一點一點往後推 */
@@ -8280,18 +8283,29 @@ const Config = {
             U.jit = Math.sin(rt * (26 + 34 * k)) * (8 + 20 * k); U.ck = k;
             U.spT = (U.spT || 0) - dt; if (U.spT <= 0) { U.spT = 0.11 - 0.05 * k; if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x + (Math.random() - 0.5) * 60, U.tgt.y + (Math.random() - 0.5) * 60, { w: 180 + 160 * k, h: 180 + 160 * k, dur: 0.22, c0: 1, nf: 2 }); }
             U.snT = (U.snT || 0) - dt; if (U.snT <= 0) { U.snT = 0.24 - 0.1 * k; Sound.play("block", 0.4 + 0.35 * k, 0.75 + Math.random() * 0.3); }
-            U.hpT = (U.hpT || 0) - dt; if (U.hpT <= 0) { U.hpT = 0.14; hapticBuzz(Math.round(16 + 24 * k)); triggerShake(0, 0.12 + 0.25 * k, 5 + 10 * k, 0.12); }
+            U.hpT = (U.hpT || 0) - dt; if (U.hpT <= 0) { U.hpT = 0.12; hapticBuzz(Math.round(30 + 40 * k)); triggerShake(0, 0.2 + 0.35 * k, 8 + 14 * k, 0.12); } /* v0.8.167 震動加強 */
+            return true;
+          }
+          if (U.mash != null && U.mash < 0.5 && !U.ev.break) { /* 角力輸了：被巨劍壓垮，震退受傷；長老落地喘息 */
+            ultClashUI(false); Game.ultLock = false; Player.state = "idle"; Player.stateTimer = 0; Player.invulnTimer = 0; Player.hurtInv = 0;
+            if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 700, h: 700, dur: 0.45 });
+            Sound.play("b2_sword_rain", 1.0, 0.75); triggerShake(Boss.facing, 0.7, 34, 0.4); hapticBuzz([80, 30, 80]);
+            takeDamage(bossDmg(c.giant.block), Player.x >= Boss.x ? 1 : -1, "【角力落敗】");
+            Player.vx = (Player.x >= Boss.x ? 1 : -1) * 420;
+            spawnFloatingText(Player.x, Player.y - 140, "角力落敗", "#f87171", 1.3);
+            U.res = "miss"; U.rt = U.t; U.ev = Object.assign(U.ev, { shatterG: false, land: false });
             return true;
           }
           if (once("break")) { /* 角力結束：巨劍碎裂爆開，碎劍化成劍光倒飛回去 */
-            Game.ultLock = false; Player.state = "idle"; Player.stateTimer = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 0.5);
+            ultClashUI(false); Game.ultLock = false; Player.state = "idle"; Player.stateTimer = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 0.5);
             if (fxReady("boss2ult2")) { spawnFx("boss2ult2", 3, U.tgt.x - Math.cos(U.ang) * 260, U.tgt.y - Math.sin(U.ang) * 260, { w: 1400, h: 1400, dur: 0.6, rot: U.ang }); spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 900, h: 900, dur: 0.5 }); }
             Sound.play("b2_shatter", 1.0, 0.8); Sound.play("parry", 1.0, 0.7);
             triggerHitstopMs(130); Game.slowT = 0.35; Game.slowScale = 0.35; triggerShake(Boss.facing, 0.8, 40, 0.5); hapticBuzz([60, 20, 100]);
             Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.12); Game.ultCam = 0; Game.ultFocus = 0.5;
             spawnFloatingText(Player.x, Player.y - 140, "【破劍折射】", "#fde047", 1.4);
           }
-          const bt = rt - T.clash;
+          if (U.brT == null) U.brT = rt; /* 推滿提前破劍：之後的倒飛時間從破劍那一刻算 */
+          const bt = rt - U.brT;
           if (bt < T.back) { U.bp = bt / T.back; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 3); return true; }
           if (once("hitBoss")) {
             const p = ultPt(450, 300);
@@ -8300,7 +8314,7 @@ const Config = {
             spawnFloatingText(Boss.x, Boss.y - 200, "【折射】巨劍反噬！", "#a7f3d0", 1.3);
           }
           Boss._ultFrame = c.img.struck;
-          const dp = (rt - T.clash - T.back) / T.drop;
+          const dp = (rt - U.brT - T.back) / T.drop;
           if (dp < 1) { setLift(U.liftAtRef * (1 - dp * dp)); return true; }
           setLift(0); Boss.y = G; Boss._ultAir = false;
           if (fxReady("land")) spawnFx("land", 1, Boss.x, groundFxY("land", 1, 420), { anchor: "b", w: 420, dur: 0.7 });
@@ -8398,8 +8412,8 @@ const Config = {
         if (!U.res) { tip = ultB2Tip(U); ang = U.ang; a = U.gp == null ? (U.ga || 0) : 1; }
         else if (U.res === "ref") {
           const rt = U.t - U.rt;
-          if (rt > T.clash + T.back) return;
-          if (rt < T.clash) { /* 角力：劍尖頂在主角身前一推一拉，越來越亮 */
+          if (U.brT != null && rt > U.brT + T.back) return;
+          if (U.brT == null) { /* 角力：劍尖頂在主角身前一推一拉，越來越亮 */
             ang = U.ang; const j = 14 + (U.jit || 0); tip = { x: U.tgt.x - Math.cos(ang) * j, y: U.tgt.y - Math.sin(ang) * j }; white = 0.25 + 0.6 * (U.ck || 0);
           } else { /* 碎劍化成劍光（巨劍 0.6 倍、疊亮）沿原路倒飛，越飛越快 */
             white = 1; ang = U.ang + Math.PI; S = g.S * 0.6;
@@ -8523,6 +8537,31 @@ const Config = {
           box.appendChild(b);
         });
         m.classList.add("open");
+      }
+
+      /* v0.8.167 角力：連按招架（doParry 在 Game.ultLock 時先呼叫這裡）；角力條 UI（畫面上方，左青＝墨塵、右紅＝敵方）＋招架鈕脈動 */
+      function ultClashPress() {
+        const U = Boss._ult; if (!U || U.kind !== "b2sword" || U.res !== "ref" || U.brT != null || U.mash == null) return false;
+        U.mash = Math.min(1, U.mash + U.c.t.mashAdd);
+        hapticBuzz(28); Sound.play("block", 0.55, 1.1 + Math.random() * 0.2); triggerShake(Boss.facing, 0.2, 8, 0.08);
+        if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 300, h: 300, dur: 0.2, c0: 1, nf: 2 });
+        return true;
+      }
+      function ultClashUI(on, m, tp) {
+        let el = document.getElementById("ult-clash");
+        const pb = document.getElementById("touch-parry");
+        if (!on) { if (el) el.style.display = "none"; if (pb) pb.classList.remove("clash-pulse"); return; }
+        if (!el) {
+          el = document.createElement("div"); el.id = "ult-clash";
+          el.style.cssText = "position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:8500;width:min(56vw,460px);pointer-events:none;text-align:center;font-family:'Noto Serif TC','Songti TC',serif;";
+          el.innerHTML = '<div style="color:#fef3c7;font-size:15px;letter-spacing:.25em;text-shadow:0 0 8px rgba(0,0,0,.8);margin-bottom:6px;">連按【招架】頂回去！</div><div style="position:relative;height:12px;border-radius:6px;background:linear-gradient(90deg,#7f1d1d,#ef4444);box-shadow:0 0 10px rgba(0,0,0,.6);overflow:hidden;"><div id="ult-clash-fill" style="position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#0f766e,#5eead4);"></div><div style="position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:#fff;opacity:.8;"></div></div><div id="ult-clash-time" style="height:3px;margin-top:4px;background:#fde68a;width:100%;border-radius:2px;"></div>';
+          document.body.appendChild(el);
+          const st = document.createElement("style"); st.textContent = "@keyframes clashPulse{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(253,224,71,.9)}100%{transform:scale(1.18);box-shadow:0 0 0 14px rgba(253,224,71,0)}} #touch-parry.clash-pulse{animation:clashPulse .32s ease-out infinite;}";
+          document.head.appendChild(st);
+        }
+        el.style.display = "block"; if (pb) pb.classList.add("clash-pulse");
+        if (m != null) { const f = document.getElementById("ult-clash-fill"); if (f) f.style.width = Math.round(m * 100) + "%"; }
+        if (tp != null) { const tb = document.getElementById("ult-clash-time"); if (tb) tb.style.width = Math.round((1 - tp) * 100) + "%"; }
       }
 
       /* =========================================================================

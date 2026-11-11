@@ -274,6 +274,7 @@
 
       function doParry() {
         Sound.resume();
+        if (Game.ultLock && ultClashPress()) return; /* v0.8.167 大招角力：連按招架推角力條 */
         if (inputLocked()) return;
         Mirror.noteParry(); Reader.note("parry");
         if (Player.state === "execution") return;
