@@ -24,7 +24,7 @@
       }
 
       /* v0.8.65 戰鬥中的過場（對白、擊敗後演出、結算、敗北）物理已暫停，按鍵不再改主角狀態（原本會卡在跳躍／攻擊姿勢浮在空中） */
-      function inputLocked() { return Game.mode === "battle" && Game.cutsceneActive; }
+      function inputLocked() { return Game.mode === "battle" && (Game.cutsceneActive || Game.ultLock); } /* v0.8.166 Game.ultLock：大招角力中鎖操作 */
 
       function startAttackCharge() {
         Sound.resume();

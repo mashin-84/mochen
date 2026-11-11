@@ -20,10 +20,10 @@
         /* v0.8.165 第 2 關「羅天萬劍」：長老整段浮空（離地 lift）；劍雨三輪 → 聚劍成巨劍 → 巨劍從空中斜下刺主角：
          *   完美招架（窗口 win）＝折射：巨劍沿原路倒飛回去 → 長老被擊中摔落、破防；瞬步＝安全；沒擋／普通格擋＝重傷。 */
         b2sword: {
-          t: { summon: 0.6, rain1: 1.2, gap: 1.0, warn: 0.6, fall: 0.25, gather: 4.2, launch: 5.4, fly: 0.35, freeze: 0.12, back: 0.3, drop: 0.35, descend: 0.6, restDur: 2.5, rec: 0.35 },
+          t: { summon: 0.6, rain1: 1.2, gap: 1.0, warn: 0.6, fall: 0.25, gather: 4.2, launch: 5.4, fly: 0.8, clash: 2.0, back: 0.35, drop: 0.35, descend: 0.6, restDur: 2.5, rec: 0.35 }, /* v0.8.166 fly 0.35→0.8（三次方加速）、完美招架後角力 clash 2 秒 */
           lift: 260,
           rain: { dmg: 120, r: 60 },                                   /* 每把 120×1.25＝150；判定半徑 60（紅圈畫得比判定大） */
-          giant: { dmg: 320, block: 160, win: 220, r: 210, S: 1400 },  /* 400／普通格擋 200；完美窗口放寬 220ms；巨劍畫 1400px */
+          giant: { dmg: 320, block: 160, win: 220, r: 210, S: 2000 },  /* 400／普通格擋 200；完美窗口放寬 220ms；巨劍畫 2000px（v0.8.166 由 1400 加大） */
           img: { rise: "61_u_rise", summon: "62_u_summon", rain: "63_u_rain", gather: "64_u_gather", launch: "65_u_launch", struck: "66_u_struck", rest: "67_u_rest", rec: "68_u_recover" }
         }
       };
@@ -44,7 +44,7 @@
       }
       function ultEnd(cancel) {
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
-        Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0;
+        Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false;
         if (Boss._ultAir || (U && U.lift)) { Boss.y = Config.groundY; } Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
         if (cancel) { Ult.waves.length = 0; return; }
         Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
@@ -178,20 +178,40 @@
             Boss._ultFrame = c.img.gather; Game.ultCam = 0.15; Game.ultFocus = true;
             Boss._ucd = Math.min(0.85, (Boss._ucd || 0) + dt * 1.5); Boss._ucdPos = ultPt(560, 300);
             if (once("gather")) { const p = ultPt(640, 300); if (fxReady("boss2ult2")) spawnFx("boss2ult2", 0, p.x, p.y, { w: 640, h: 640, dur: T.launch - T.gather, alpha: 0.95, follow: () => ultPt(640, 300) }); Sound.play("b2_vortex", 0.9, 0.8); }
-            U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: G - 10 }; U.ga = Math.min(1, (t - T.gather) / (T.launch - T.gather - 0.2));
+            U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; U.ga = Math.min(1, (t - T.gather) / (T.launch - T.gather - 0.2));
             return true;
           }
           /* 發劍：瞬間鎖定，0.35 秒刺到 */
-          if (once("launch")) { U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: G - 10 }; Sound.play("b2_thrust", 1.0, 0.75); Game.ultCam = 0; Game.ultFocus = 0.5; hapticBuzz(30); }
+          if (once("launch")) { U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; Sound.play("b2_thrust", 1.0, 0.75); Game.ultCam = 0; Game.ultFocus = 0.5; hapticBuzz(30); }
           Boss._ultFrame = c.img.launch; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 2);
           U.gp = Math.min(1, (t - T.launch) / T.fly);
           if (U.gp >= 1) ultB2Resolve(U);
           return true;
         }
         const rt = t - U.rt;
-        if (U.res === "ref") { /* 折射：定格 → 巨劍倒飛 → 擊中長老 → 摔落破防 */
-          if (rt < T.freeze) { Boss._ultFrame = c.img.launch; return true; }
-          if (rt < T.freeze + T.back) { U.bp = (rt - T.freeze) / T.back; return true; }
+        if (U.res === "ref") { /* 折射：角力 2 秒 → 巨劍碎裂、劍光倒飛 → 擊中長老 → 摔落破防 */
+          if (rt < T.clash) { /* v0.8.166 角力：主角舉劍頂住，劍尖一推一拉越來越激烈，火花、摩擦聲、震動持續 */
+            const k = rt / T.clash, fcP = Boss.x >= Player.x ? 1 : -1;
+            Boss._ultFrame = c.img.launch; Game.ultLock = true;
+            Player.state = "parry"; Player.stateTimer = 0.25; Player.vx = 0; Player.facing = fcP; Player.invulnTimer = Math.max(Player.invulnTimer, 0.3);
+            Player.x -= fcP * dt * 22; /* 被巨劍一點一點往後推 */
+            Game.ultCam = 0.24; Game.ultFocus = 0.22; Game.ultCamY = -30; Boss._ucd = Math.min(0.7, (Boss._ucd || 0) + dt * 2); Boss._ucdPos = { x: U.tgt.x, y: U.tgt.y };
+            U.jit = Math.sin(rt * (26 + 34 * k)) * (8 + 20 * k); U.ck = k;
+            U.spT = (U.spT || 0) - dt; if (U.spT <= 0) { U.spT = 0.11 - 0.05 * k; if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x + (Math.random() - 0.5) * 60, U.tgt.y + (Math.random() - 0.5) * 60, { w: 180 + 160 * k, h: 180 + 160 * k, dur: 0.22, c0: 1, nf: 2 }); }
+            U.snT = (U.snT || 0) - dt; if (U.snT <= 0) { U.snT = 0.24 - 0.1 * k; Sound.play("block", 0.4 + 0.35 * k, 0.75 + Math.random() * 0.3); }
+            U.hpT = (U.hpT || 0) - dt; if (U.hpT <= 0) { U.hpT = 0.14; hapticBuzz(Math.round(16 + 24 * k)); triggerShake(0, 0.12 + 0.25 * k, 5 + 10 * k, 0.12); }
+            return true;
+          }
+          if (once("break")) { /* 角力結束：巨劍碎裂爆開，碎劍化成劍光倒飛回去 */
+            Game.ultLock = false; Player.state = "idle"; Player.stateTimer = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 0.5);
+            if (fxReady("boss2ult2")) { spawnFx("boss2ult2", 3, U.tgt.x - Math.cos(U.ang) * 260, U.tgt.y - Math.sin(U.ang) * 260, { w: 1400, h: 1400, dur: 0.6, rot: U.ang }); spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 900, h: 900, dur: 0.5 }); }
+            Sound.play("b2_shatter", 1.0, 0.8); Sound.play("parry", 1.0, 0.7);
+            triggerHitstopMs(130); Game.slowT = 0.35; Game.slowScale = 0.35; triggerShake(Boss.facing, 0.8, 40, 0.5); hapticBuzz([60, 20, 100]);
+            Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.12); Game.ultCam = 0; Game.ultFocus = 0.5;
+            spawnFloatingText(Player.x, Player.y - 140, "【破劍折射】", "#fde047", 1.4);
+          }
+          const bt = rt - T.clash;
+          if (bt < T.back) { U.bp = bt / T.back; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 3); return true; }
           if (once("hitBoss")) {
             const p = ultPt(450, 300);
             if (fxReady("boss2ult2")) { spawnFx("boss2ult2", 3, p.x, p.y, { w: 820, h: 820, dur: 0.6, rot: U.ang + Math.PI }); spawnFx("boss2ult2", 2, p.x, p.y, { w: 560, h: 560, dur: 0.45 }); }
@@ -199,7 +219,7 @@
             spawnFloatingText(Boss.x, Boss.y - 200, "【折射】巨劍反噬！", "#a7f3d0", 1.3);
           }
           Boss._ultFrame = c.img.struck;
-          const dp = (rt - T.freeze - T.back) / T.drop;
+          const dp = (rt - T.clash - T.back) / T.drop;
           if (dp < 1) { setLift(U.liftAtRef * (1 - dp * dp)); return true; }
           setLift(0); Boss.y = G; Boss._ultAir = false;
           if (fxReady("land")) spawnFx("land", 1, Boss.x, groundFxY("land", 1, 420), { anchor: "b", w: 420, dur: 0.7 });
@@ -249,7 +269,7 @@
       }
       function ultB2Tip(U) { /* 巨劍劍尖目前位置 */
         const dx = U.tgt.x - U.org.x, dy = U.tgt.y - U.org.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-        const st = { x: U.org.x + ux * 260, y: U.org.y + uy * 260 }, p = U.gp == null ? 0 : U.gp * U.gp;
+        const st = { x: U.org.x + ux * 260, y: U.org.y + uy * 260 }, p = U.gp == null ? 0 : U.gp * U.gp * U.gp; /* v0.8.166 三次方：剛離手慢、一路加速 */
         return { x: st.x + (U.tgt.x - st.x) * p, y: st.y + (U.tgt.y - st.y) * p };
       }
       function ultB2Mid(U, f) { const tip = U.res ? U.tgt : ultB2Tip(U), S = U.c.giant.S; return { x: tip.x - Math.cos(U.ang) * S * 0.465 * f, y: tip.y - Math.sin(U.ang) * S * 0.465 * f }; }
@@ -260,12 +280,12 @@
         const el = performance.now() - (Player.parryStartMs || 0);
         if (near && Player.state === "parry" && el <= g.win) { /* 完美招架＝折射 */
           U.res = "ref";
-          if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y - 60, { w: 620, h: 620, dur: 0.5 });
+          if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 620, h: 620, dur: 0.5 });
           Sound.play("parry", 1.0, 0.8); Sound.play("b2_shard_hit", 1.0, 0.7);
-          triggerHitstopMs(120); Game.slowT = 0.45; Game.slowScale = 0.3; triggerShake(-Player.facing, 0.4, 26, 0.3); hapticBuzz([40, 20, 70]);
+          triggerHitstopMs(120); triggerShake(-Player.facing, 0.4, 26, 0.3); hapticBuzz([40, 20, 70]);
           Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.1);
           Player.stamina = Math.min(Player.maxStamina, Player.stamina + 30); Progress.parryCount = (Progress.parryCount || 0) + 1;
-          spawnFloatingText(Player.x, Player.y - 130, "【完美折射】", "#fde047", 1.35);
+          spawnFloatingText(Player.x, Player.y - 130, "【角力】", "#fde047", 1.35);
           return;
         }
         U.res = "miss";
@@ -291,23 +311,25 @@
           ctx.restore();
         }
         if (!U.org || U.gone || !fxReady("boss2ult2")) return;
-        const g = c.giant, img = fxSheet("boss2ult2").img, S = g.S, col = Math.floor(now / 80) % 4;
+        const g = c.giant, img = fxSheet("boss2ult2").img, col = Math.floor(now / 80) % 4; let S = g.S;
         let tip, ang, a = 1, white = 0;
         U.ang = Math.atan2(U.tgt.y - U.org.y, U.tgt.x - U.org.x);
         if (!U.res) { tip = ultB2Tip(U); ang = U.ang; a = U.gp == null ? (U.ga || 0) : 1; }
         else if (U.res === "ref") {
           const rt = U.t - U.rt;
-          if (rt > T.freeze + T.back) return;
-          white = 1; ang = U.ang + Math.PI;
-          const bp = rt < T.freeze ? 0 : Math.min(1, U.bp || 0), back = { x: Boss.x, y: Boss.y - 150 };
-          const st = U.tgt; /* 以劍尖為支點反轉：劍尖從碰撞點直指長老飛回（翻轉瞬間有爆光＋定格遮蓋） */
-          tip = { x: st.x + (back.x - st.x) * bp * bp, y: st.y + (back.y - st.y) * bp * bp };
-          if (rt < T.freeze) tip = { x: st.x - Math.cos(ang) * 40, y: st.y - Math.sin(ang) * 40 }; /* 被撞得往後一縮 */
+          if (rt > T.clash + T.back) return;
+          if (rt < T.clash) { /* 角力：劍尖頂在主角身前一推一拉，越來越亮 */
+            ang = U.ang; const j = 14 + (U.jit || 0); tip = { x: U.tgt.x - Math.cos(ang) * j, y: U.tgt.y - Math.sin(ang) * j }; white = 0.25 + 0.6 * (U.ck || 0);
+          } else { /* 碎劍化成劍光（巨劍 0.6 倍、疊亮）沿原路倒飛，越飛越快 */
+            white = 1; ang = U.ang + Math.PI; S = g.S * 0.6;
+            const bp = Math.min(1, U.bp || 0), back = { x: Boss.x, y: Boss.y - 150 }, st = U.tgt;
+            tip = { x: st.x + (back.x - st.x) * bp * bp, y: st.y + (back.y - st.y) * bp * bp };
+          }
         } else { tip = U.tgt; ang = U.ang; a = Math.max(0, 1 - Math.max(0, U.t - U.rt - 0.3) / 0.2); }
         if (a <= 0.01) return;
         ctx.save(); ctx.translate(tip.x, tip.y); ctx.rotate(ang); ctx.globalCompositeOperation = "lighter";
         ctx.globalAlpha = a; ctx.drawImage(img, col * 256, 256, 256, 256, -S * 0.965, -S / 2, S, S);
-        if (white) { ctx.globalAlpha = 0.8; ctx.drawImage(img, col * 256, 256, 256, 256, -S * 0.965, -S / 2, S, S); } /* 折射：同圖再疊一次＝更亮（不用程式畫光） */
+        if (white) { ctx.globalAlpha = 0.8 * Math.min(1, white); ctx.drawImage(img, col * 256, 256, 256, 256, -S * 0.965, -S / 2, S, S); } /* 折射：同圖再疊一次＝更亮（不用程式畫光） */
         ctx.restore();
       }
       /* 繪製：壓暗聚焦（世界座標，畫在 Boss 之前）＋火牆 */
