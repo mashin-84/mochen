@@ -596,7 +596,7 @@
           if (ad < 950 && Player.invulnTimer <= 0 && Player.state !== "execution") Player.x += Math.sign(dx) * c.pull * Math.pow(p, 0.8) * dt * (ad < 60 ? 0 : 1); /* 吸風：越轉越強（最大 420），主角全速 580 仍可逆風脫離 */
           if (ad < c.spinR && Player.state !== "execution") takeDamage(bossDmg(c.spinDmg), -Math.sign(dx) || 1, "【龍捲割傷】");
           U.rmT = (U.rmT || 0) - dt; if (U.rmT <= 0) { U.rmT = 0.15; triggerShake(0, 0.08 + 0.25 * p, 4 + 8 * p, 0.12); if (p > 0.5) hapticBuzz(Math.round(15 + 25 * p)); }
-          if (once("spinHint")) hintOnce("ult3b", "玄鐵龍捲：被風吸過去會被割傷，往外跑！重劍擲出時跳過或瞬步（不能招架）");
+          if (once("spinHint")) hintOnce("ult3b", "玄鐵龍捲：被風吸過去會被割傷，往外跑！重劍擲出時跳過或瞬步（不能招架）；他接劍後時間會停住，劍舉到頂閃光時才能動，再招架或瞬步躲衝擊波");
           return true;
         }
         if (t < T.throw) { /* 停頓閃光 */
@@ -619,8 +619,10 @@
           if (fxReady("boss3bult")) { spawnFx("boss3bult", 2, Boss.x, Boss.y - 150, { w: 380, h: 380, dur: 0.3 }); spawnFx("boss3bult", 2, sw.x, sw.y, { w: 420, h: 420, dur: 0.3 }); }
           Boss.facing = fcS; Boss.x = sw.x - fcS * c.catchDx * k3; Boss.y = G - c.air;
           sw.gone = true; Sound.play("b3_dash", 0.9, 1.3); Sound.play("b3_draw", 0.7, 1.0); triggerShake(0, 0.2, 8, 0.12);
+          Game.ultLock = true; Player.vx = 0; if (Player.state === "move" || Player.state === "dash") Player.state = "idle"; /* v0.8.178 時停：接劍到舉劍頂點只有 Boss 在動，主角不能操作，頂點閃光才放開 */
         }
         const ct = t - U.ctT, C = c.ct;
+        if (Game.ultLock && ct < C.raise) { Player.vx = 0; Game.ultCam = 0.14; Game.ultFocus = 0.7; Boss._ucd = Math.min(0.6, (Boss._ucd || 0) + dt * 2); Boss._ucdPos = ultPt(450, 260); }
         if (ct < C.catch) { Boss._ultFrame = c.img.catch; return true; }
         if (ct < C.pull) { const q = (ct - C.catch) / (C.pull - C.catch); Boss._ultFrame = c.img.pull; Boss.y = G - c.air * (1 - q * q); return true; }
         if (once("landB")) { /* 落地、轉身面向主角 */
@@ -633,7 +635,7 @@
         if (ct < C.slam) { /* 舉劍過頭：聚焦＋閃光（主角身上黃圈倒數到衝擊波抵達） */
           Boss._ultFrame = ct < C.raise ? c.img.raise : c.img.peak; Boss.facing = Player.x >= Boss.x ? 1 : -1;
           Game.ultCam = 0.18; Game.ultFocus = true; Boss._ucd = Math.min(0.75, (Boss._ucd || 0) + dt * 2.5); Boss._ucdPos = ultPt(430, 120);
-          if (ct >= C.raise && once("flashB")) { const p = ultPt(300, 60); if (fxReady("boss3bult")) spawnFx("boss3bult", 2, p.x, p.y, { w: 600, h: 600, dur: C.slam - C.raise }); Sound.play("b3_charge", 1.0, 0.7); triggerHitstopMs(60); }
+          if (ct >= C.raise && once("flashB")) { Game.ultLock = false; hapticBuzz([30, 20, 30]); const p = ultPt(300, 60); if (fxReady("boss3bult")) spawnFx("boss3bult", 2, p.x, p.y, { w: 600, h: 600, dur: C.slam - C.raise }); Sound.play("b3_charge", 1.0, 0.7); triggerHitstopMs(60); }
           return true;
         }
         if (once("slamB")) { /* 下劈：劈地爆裂＋實體衝擊波 */
