@@ -283,7 +283,7 @@
       /* ---------- 關卡機制 ---------- */
       function mechInit(stage) {
         Boss._gd = stage.guard ? { n: stage.guard.hits, down: 0, pc: 0 } : null;
-        Boss._form = 1; Boss._mHp = null; Boss._shellT = 0; Boss._bodyStance = null; Boss._shellOpen = false;
+        Boss._form = 1; Boss._mHp = null; Boss._shellT = 0; Boss._bodyStance = null; Boss._shellOpen = false; Game.plats = []; Player._floor = null; Boss._plOn = false; Boss._rideT = 0; Boss._shake = 0;
       }
       function mechRefund(k) { /* 把這一幀 Boss 掉的血退還 k（0～1）；回傳是否有掉血 */
         let hit = false;
@@ -311,13 +311,35 @@
           gd.blk = Math.max(0, (gd.blk || 0) - dt);
         }
         if (gd) gd.pc = Progress.parryCount;
-        /* 第 7 關二階段 玄武硬殼：只有破綻（收招、破防、大招後喘息）時頭伸出來才吃全額傷害，其他時候只剩 shell.k */
-        if (stage.shell && live && Config.bossPhase === 2) {
-          const open = Boss.state === "recover" || Boss.state === "staggered" || Boss.state === "frozen" || Boss.state === "grounded";
-          Boss._shellOpen = open;
-          if (!open && mechRefund(1 - stage.shell.k)) { Boss._shellT = 0.2; if ((Boss._shMsg = (Boss._shMsg || 0) - 1) <= 0) { Boss._shMsg = 3; spawnFloatingText(Boss.x, Boss.y - 260, "硬殼！等牠出招後頭伸出來再砍", "#93c5fd", 1.0); } hintOnce("m_shell", "玄武縮在殼裡時傷害只剩三成：招架或閃過牠的攻擊，趁收招時頭伸出來全力砍"); }
+        /* 第 7 關二階段 玄武（v0.8.181 平台版）：龜背＋浮石是平台。站在地面砍＝硬殼只剩 shell.k；
+           站在高處（浮石、龜背、空中）砍到頭尾＝全額；破綻（收招、破防、喘息）時地面也全額。
+           在龜背上站太久會被「甩殼」震落（起跳可躲）。 */
+        if (stage.shell && Config.bossPhase === 2 && Game.mode === "battle") {
+          const G = Config.groundY, C = stage.shell;
+          if (!Boss._plOn) { Boss._plOn = true; Game.plats = [{ x: Boss.x, w: C.backW, y: G - Boss.h, shell: true }].concat(C.stones.map(x => ({ x, w: C.stoneW, y: G - C.stoneH }))); hintOnce("m_plat", "玄武的殼很硬：跳上【浮石】或【龜背】，從高處砍才有全額傷害（二段跳上得去）"); }
+          const sp = Game.plats[0];
+          if (sp && sp.shell) {
+            const riding = !sp.off && Player._floor === sp.y && Player.y >= sp.y - 2;
+            sp.y = G - Boss.h;
+            if (riding) { Player.x += Boss.x - sp.x; Player.y = sp.y; Player._floor = sp.y; }
+            sp.x = Boss.x; sp.off = Boss.y < G - 4 || !!Boss._introHide || Boss.hp <= 0 || !!Game.bossDeath;
+            /* 甩殼：騎在背上累計 shakeAfter 秒 → 預警 shakeWarn 秒 → 還站在背上就被震落 */
+            if (live && riding && !Boss._ult && Boss.state !== "staggered" && Player.state !== "execution") Boss._rideT += dt; else if (!riding) Boss._rideT = Math.max(0, Boss._rideT - dt * 0.5);
+            if (Boss._shake > 0) {
+              Boss._shake -= dt;
+              if (Boss._shake <= 0) {
+                Boss._rideT = 0; triggerShake(0, 0.6, 26, 0.3); Sound.play("hit", 0.9, 0.6);
+                if (riding && Player.state !== "execution") { const d = Player.x >= Boss.x ? 1 : -1; if (Player.invulnTimer <= 0) takeDamage(bossDmg(C.shakeDmg), d, "【甩殼震落】"); Player.vy = -520; Player.vx = d * 520; Player.y -= 6; Player.x = Boss.x + d * (C.backW * 0.5 + 50); }
+                else spawnFloatingText(Player.x, Player.y - 95, "躲過甩殼！", "#34d399", 1.0);
+              }
+            } else if (Boss._rideT >= C.shakeAfter && live) { Boss._shake = C.shakeWarn; spawnFloatingText(Boss.x, G - Boss.h - 60, "〔龜背震動——跳！〕", "#fca5a5", 1.25); Sound.play("peril", 0.8, 0.9); }
+          }
+          const stOpen = Boss.state === "recover" || Boss.state === "staggered" || Boss.state === "frozen" || Boss.state === "grounded";
+          const high = Player.y < G - 90;
+          Boss._shellOpen = stOpen || high;
+          if (live && !Boss._shellOpen && mechRefund(1 - C.k)) { Boss._shellT = 0.2; if ((Boss._shMsg = (Boss._shMsg || 0) - 1) <= 0) { Boss._shMsg = 3; spawnFloatingText(Boss.x, G - Boss.h - 40, "硬殼！跳到高處再砍", "#93c5fd", 1.0); } }
           Boss._shellT = Math.max(0, Boss._shellT - dt);
-        }
+        } else if (Boss._plOn) { Boss._plOn = false; Game.plats = []; }
         Boss._mHp = Boss.hp;
       }
       /* 三階段（第 8 關）：二階段血見底後的處決被「天道」彈開 → 進三階段（血條換成 hp3 補滿、換姿態 C） */
@@ -344,10 +366,12 @@
           for (let i = 0; i < gd.n; i++) { const a0 = -0.95 + i * seg + 0.05, a1 = a0 + seg - 0.1; ctx.beginPath(); if (f > 0) ctx.arc(cx, cy, 120, a0, a1); else ctx.arc(cx, cy, 120, Math.PI - a1, Math.PI - a0); ctx.stroke(); }
           ctx.restore();
         }
-        if (stage.shell && Config.bossPhase === 2 && Game.mode === "battle") { /* 玄武：頭上標示 殼／頭 */
-          const open = Boss._shellOpen, y = Boss.y - Boss.h * 1.7 - 20;
-          ctx.save(); ctx.font = "800 20px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(15,23,42,0.85)"; ctx.beginPath(); ctx.arc(Boss.x, y, 22, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = open ? "#fde047" : (Boss._shellT > 0 ? "#ffffff" : "#93c5fd"); ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = open ? "#fde047" : "#93c5fd"; ctx.fillText(open ? "頭" : "殼", Boss.x, y + 7); ctx.restore();
+        if (stage.shell && Config.bossPhase === 2 && Game.mode === "battle") { /* 玄武：頭尾弱點標記（高處才打得到全額） */
+          const open = Boss._shellOpen, y = Boss.y - Boss.h + 26, f = Boss.facing;
+          [[f * (Boss.w * 0.5 + 34), "頭"], [-f * (Boss.w * 0.5 + 34), "尾"]].forEach(([ox, ch]) => {
+            ctx.save(); ctx.font = "800 20px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(15,23,42,0.85)"; ctx.beginPath(); ctx.arc(Boss.x + ox, y, 24, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = open ? "#fde047" : (Boss._shellT > 0 ? "#ffffff" : "#93c5fd"); ctx.lineWidth = open ? 4 : 2.5; ctx.stroke(); ctx.fillStyle = open ? "#fde047" : "#93c5fd"; ctx.fillText(ch, Boss.x + ox, y + 7); ctx.restore();
+          });
         }
       }
       function hpTrigTry(stage) { /* 鏡像 AI（第 9 關）也要能放血量門檻大招 */
@@ -357,4 +381,26 @@
           if (!Boss._hpt[ht.move] && stage.moves[ht.move] && Config.bossPhase >= (ht.phase || 1) && Boss.hp / Boss.maxHp <= ht.at) { Boss._hpt[ht.move] = true; triggerBossMove(ht.move); return true; }
         }
         return false;
+      }
+      /* ---------- v0.8.181 平台（主角可站的單向平台；目前只有第 7 關玄武用） ----------
+         Game.plats=[{x 中心, w 寬, y 頂面, off 停用}]；platResolve 每幀算腳下地面 Player._floor；PG() 取代主角相關的 Config.groundY。
+         單向：從下面跳上去會穿過，往下掉時才會站住；走出邊緣就掉下去。 */
+      Game.plats = [];
+      function PG() { return Player._floor != null ? Player._floor : Config.groundY; }
+      function platResolve(prevY) {
+        let f = Config.groundY;
+        if (Game.plats.length && Game.mode === "battle") for (const p of Game.plats) { if (!p.off && Math.abs(Player.x - p.x) <= p.w * 0.5 && prevY <= p.y + 2 && p.y < f) f = p.y; }
+        Player._floor = f;
+        if (Player.y < f - 6 && (Player.state === "idle" || Player.state === "move")) Player.state = "jump"; /* 走出平台邊緣＝落下 */
+      }
+      function platHighHit() { const st = Stages[Boss.stageId]; return !!(st && st.shell && Config.bossPhase === 2 && Player.y > Boss.y - Boss.h - 200); } /* 巨型 Boss：站在高處也砍得到 */
+      function drawPlats() {
+        if (Game.mode !== "battle" || !Game.plats.length) return;
+        for (const p of Game.plats) {
+          if (p.off) continue;
+          ctx.save();
+          if (p.shell) { const sh = Boss._shake > 0; ctx.strokeStyle = sh ? "#f87171" : "#fde68a"; ctx.lineWidth = sh ? 8 : 5; ctx.setLineDash(sh ? [] : [18, 8]); ctx.beginPath(); ctx.moveTo(p.x - p.w * 0.5, p.y + (sh ? Math.sin(performance.now() / 22) * 5 : 0)); ctx.lineTo(p.x + p.w * 0.5, p.y + (sh ? Math.cos(performance.now() / 22) * 5 : 0)); ctx.stroke(); }
+          else { ctx.fillStyle = "#475569"; ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(p.x - p.w * 0.5, p.y); ctx.lineTo(p.x + p.w * 0.5, p.y); ctx.lineTo(p.x + p.w * 0.36, p.y + 34); ctx.lineTo(p.x - p.w * 0.36, p.y + 34); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+          ctx.restore();
+        }
       }

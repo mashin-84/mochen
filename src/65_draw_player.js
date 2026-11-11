@@ -7,7 +7,7 @@
         const playerEllipse = () => {
           ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
           ctx.beginPath();
-          ctx.ellipse(Player.x, Config.groundY + 3, Player.w * 0.55, 7, 0, 0, Math.PI * 2);
+          ctx.ellipse(Player.x, PG() + 3, Player.w * 0.55, 7, 0, 0, Math.PI * 2);
           ctx.fill();
         };
         if (MC_READY !== 16) playerEllipse();
@@ -29,7 +29,7 @@
           if (dx > 60) dx = 0;
           MC_LASTX = Player.x;
 
-          if (Player.state === "move" && Player.y >= Config.groundY - 2) {
+          if (Player.state === "move" && Player.y >= PG() - 2) {
             MC_PHASE += dx / MC_STRIDE;
             MC_PHASE %= 1;
           }
@@ -39,7 +39,7 @@
           let idleNext = null, idleMix = 0;
           const has = (n) => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); };
           /* v0.8.98 補格是選用美術，沒載到就退回舊格 */
-          const isAirborne = Player.y < Config.groundY - 2;
+          const isAirborne = Player.y < PG() - 2;
 
           if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
             frame = "11_thrust";
@@ -84,7 +84,7 @@
             if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（0.45 秒蓄滿會自動出重斬，所以提早換格） */
           } else if (isAirborne) {
             frame = Player.vy < 0 ? "07_jump" : "08_fall";
-            if (Player.vy < 0 && Config.groundY - Player.y < 40 && has("32_jump_a")) frame = "32_jump_a"; /* v0.8.98 起跳蹲蓄（離地前 40px） */
+            if (Player.vy < 0 && PG() - Player.y < 40 && has("32_jump_a")) frame = "32_jump_a"; /* v0.8.98 起跳蹲蓄（離地前 40px） */
           } else if (Player.state === "move") {
             if (MCR_READY === 10) {
               playerImg = MCR_IMGS[Math.floor(MC_PHASE * 10) % 10];
@@ -107,7 +107,7 @@
             playerImg = MC_IMGS[frame];
           }
 
-          if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, Config.groundY - Player.y)) playerEllipse();
+          if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, PG() - Player.y)) playerEllipse();
           ctx.save();
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
           ctx.translate(Player.x, Player.y + GROUND_SINK);

@@ -114,7 +114,7 @@
             const baseReach = (Player.isChargedAttack ? 175 : Player.comboStep === 3 ? 165 : 140) * CHAR_K;
             const hasEcho11 = Progress.echoes && Progress.echoes.includes(11);
             const reach = Math.round(baseReach * (hasEcho11 ? 1.08 : 1.0)); // 卷三回響11：攻擊範圍+8%
-            if (inFront && Math.abs(dx) <= reach + bossHurt() && Math.abs(Player.y - Boss.y) < 120) {
+            if (inFront && Math.abs(dx) <= reach + bossHurt() && (Math.abs(Player.y - Boss.y) < 120 || platHighHit())) {
               Player.attackHitRegistered = true;
 
               // 隻狼式「打鐵攻防轉換律動」：
@@ -251,13 +251,13 @@
           }
 
           if (Player.stateTimer <= 0) {
-            Player.state = Player.y < Config.groundY - 4 ? "jump" : "idle";
+            Player.state = Player.y < PG() - 4 ? "jump" : "idle";
             Game.camera.targetZoom = 1.0;
           }
         }
 
         // 移動取消：攻擊後搖後半段按方向鍵可直接跑開（出招間隔仍由 atkCd 控制，不會變快）
-        if (Player.state === "attack" && !Player.isChargedAttack && (Keys.left || Keys.right) && Player.stateTimer < (Player.comboStep === 3 ? 0.38 : 0.28) && Player.y >= Config.groundY - 2) {
+        if (Player.state === "attack" && !Player.isChargedAttack && (Keys.left || Keys.right) && Player.stateTimer < (Player.comboStep === 3 ? 0.38 : 0.28) && Player.y >= PG() - 2) {
           Player.state = "move";
         }
 
@@ -274,10 +274,10 @@
           if (dir !== 0) {
             Player.vx = dir * 580;
             Player.facing = dir;
-            if (Player.y >= Config.groundY - 2) Player.state = "move";
+            if (Player.y >= PG() - 2) Player.state = "move";
           } else {
             Player.vx *= Math.pow(0.001, dt);
-            if (Player.y >= Config.groundY - 2) Player.state = "idle";
+            if (Player.y >= PG() - 2) Player.state = "idle";
           }
         } else if (Player.state !== "dash" && !Player.blast) {
           Player.vx *= Math.pow(0.015, dt);
@@ -286,18 +286,20 @@
         Player.x += Player.vx * dt;
         Player.vy += Config.gravity * dt;
         Game._vyBefore = Player.vy;
+        const prevPY = Player.y;
         Player.y += Player.vy * dt;
+        platResolve(prevPY); /* v0.8.181 平台：算出腳下的地面高度 Player._floor */
         if (Player.y < Config.groundY - 22) Player._airMs = performance.now(); /* v0.8.138 落地寬限：離地 22px 以上的最後時刻（第 4 關合圍用） */
 
-        if (Player.y >= Config.groundY) {
-          Player.y = Config.groundY;
+        if (Player.y >= PG() && Player.vy >= 0) {
+          Player.y = PG();
           Player.vy = 0;
           Player.canDoubleJump = true;
           Player.canAirDash = true;
           Player.airAtkUsed = false;
           if (Player.state === "attack" && Player.isDive) {
             Player.stateTimer = Math.min(Player.stateTimer, 0.2);
-            emitDust(Player.x, Config.groundY, 1, 5, 1.4); emitDust(Player.x, Config.groundY, -1, 5, 1.4);
+            emitDust(Player.x, PG(), 1, 5, 1.4); emitDust(Player.x, PG(), -1, 5, 1.4);
             if (Boss.stageId === 1) landingFx(Player.x, 1.0, 3);
             triggerShake(0, 1, 10, 0.18);
           }
@@ -308,7 +310,7 @@
 
         // 揚塵與落地回饋
         {
-          const onGroundD = Player.y >= Config.groundY - 2;
+          const onGroundD = Player.y >= PG() - 2;
           if (onGroundD && Game._wasAir) {
             if (Game._vyBefore > 380) {
               emitDust(Player.x, Config.groundY, 1, 4, 1.3);

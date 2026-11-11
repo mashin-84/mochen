@@ -480,7 +480,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const S7 = Stages[7];
         S7.name = "金甲天將＋玄武神相"; S7.arenaName = "天門玄武陣"; S7.gbox = true; S7.maxPosture = 160;
         S7.guard = { hits: 3, k: 0.15, down: 8 }; /* 盾在：氣血傷害剩 15%；完美招架 3 次＝破盾 8 秒 */
-        S7.shell = { k: 0.3 };
+        S7.shell = { k: 0.3, backW: 400, stones: [520, 1150, 2050, 2680], stoneW: 200, stoneH: 125, shakeAfter: 2.6, shakeWarn: 0.8, shakeDmg: 110 }; /* v0.8.181 平台版：龜背寬 400（頂面＝身高）、四塊浮石高 125（單跳上得去；龜背要二段跳或從浮石跳） */
         S7.moves = {
           a_smash: { name: "天罰金鐧", armor: true, windup: 0.5, active: 0.15, recover: 0.5, range: 190, lunge: 360, damage: 180, parryPostureDmg: 26 },
           a_feint: { name: "降魔金鐧・變速砸 (慢半拍)", isFeint: true, feintPauseAt: 0.42, feintPauseDur: 0.28, windup: 0.62, active: 0.18, recover: 0.5, range: 210, lunge: 320, damage: 200, parryPostureDmg: 28 },
@@ -490,19 +490,20 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           a_sweep: { name: "【危】雷霆萬鈞掃 (起跳踩頭)", pose: "sweep", windup: 0.66, active: 0.22, recover: 0.66, range: 255, lunge: 280, damage: 300, isPerilous: true, perilType: "sweep" },
           u_thunder: U("天罡雷陣", "g_s7a", 7.0),
           b_bite: { name: "玄蛇噬咬", windup: 0.62, active: 0.18, recover: 0.75, range: 340, lunge: 220, damage: 220, parryPostureDmg: 30 },
-          b_stomp: { name: "玄武踏地・二連", isCombo: true, comboTotalHits: 2, comboInterval: 0.42, comboDamagePerHit: 130, windup: 0.6, active: 0.9, recover: 0.8, range: 330, lunge: 260, damage: 260, parryPostureDmg: 24 },
-          b_tail: { name: "【危】蛇尾橫掃 (起跳)", pose: "sweep", isPerilous: true, perilType: "sweep", windup: 0.7, active: 0.24, recover: 0.8, range: 380, lunge: 240, damage: 300 },
+          b_stomp: { name: "玄武踏地・二連 (高處可避)", lowOnly: true, isCombo: true, comboTotalHits: 2, comboInterval: 0.42, comboDamagePerHit: 130, windup: 0.6, active: 0.9, recover: 0.8, range: 330, lunge: 260, damage: 260, parryPostureDmg: 24 },
+          b_tail: { name: "【危】蛇尾橫掃 (起跳或上平台)", lowOnly: true, pose: "sweep", isPerilous: true, perilType: "sweep", windup: 0.7, active: 0.24, recover: 0.8, range: 380, lunge: 240, damage: 300 },
           b_leap: { name: "【危】玄武躍壓 (閃開)", isLeap: true, fxLand: true, isPerilous: true, perilType: "leap", leapH: 220, leapMax: 620, windup: 0.8, active: 0.6, recover: 1.0, range: 300, lunge: 0, damage: 300, parryPostureDmg: 22 },
           b_spin: { name: "縮殼旋撞 (霸體・瞬步穿過)", isCharge: true, armor: true, chargeSpeed: 700, windup: 0.75, active: 0.75, recover: 1.1, range: 260, lunge: 700, damage: 250, parryPostureDmg: 24 },
           b_water: { name: "玄冥水牢 (離開藍圈)", isZone: true, zoneType: "ice", zoneWidth: 320, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, zoneWarn: 0.75, windup: 0.6, active: 0.3, recover: 0.7, range: 600, lunge: 0, damage: 0 },
+          b_tide: { name: "玄冥漲潮 (上平台！)", isZone: true, zoneType: "ice", zoneWidth: 7000, zoneDuration: 2.4, zoneDamagePerSec: 190, zoneWarn: 1.3, armor: true, hintKey: "m_tide", hintText: "【玄冥漲潮】整片地面都會被淹：快跳上浮石或龜背！", windup: 0.8, active: 0.3, recover: 0.9, range: 600, lunge: 0, damage: 0 },
           u_fountain: U("玄冥噴泉", "g_s7b", 7.4)
         };
         scale(S7.moves);
         S7.stances = {
           A: { alias: { thrust_peril: "a_thrust", sweep_peril: "a_sweep" },
             pool: [["a_smash", 24], ["a_feint", 16], ["a_combo", 22], ["a_bash", 12, "push"], ["a_thrust", 13], ["a_sweep", 12], ["u_thunder", 4]], far: [], farP2: [] },
-          B: { alias: { thrust_peril: "b_bite", sweep_peril: "b_tail" }, size: 2.0, bodyW: 280, bodyH: 210, hurtHalf: 110, speed: 170,
-            pool: [["b_bite", 24], ["b_stomp", 18], ["b_tail", 14], ["b_leap", 12, "mobility"], ["b_spin", 10, "chase"], ["b_water", 12, "ranged"], ["u_fountain", 4]], far: ["b_spin", "b_water", "b_leap"], farP2: [] }
+          B: { alias: { thrust_peril: "b_bite", sweep_peril: "b_tail" }, size: 2.0, bodyW: 440, bodyH: 215, hurtHalf: 190, speed: 90,
+            pool: [["b_bite", 24], ["b_stomp", 18], ["b_tail", 14], ["b_leap", 12, "mobility"], ["b_spin", 10, "chase"], ["b_water", 10, "ranged"], ["b_tide", 12, "ranged"], ["u_fountain", 4]], far: ["b_spin", "b_water", "b_leap", "b_tide"], farP2: [] }
         };
         S7.stanceByPhase = { 1: "A", 2: "B" };
         S7.hpTriggers = [{ move: "u_thunder", at: 0.5, phase: 1, stance: "A" }, { move: "u_fountain", at: 0.5, phase: 2, stance: "B" }];

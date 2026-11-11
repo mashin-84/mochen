@@ -130,7 +130,7 @@
           bufferAction("attack");
           return;
         }
-        if (Player.y < Config.groundY - 24) { doAirAttack(); return; }
+        if (Player.y < PG() - 24) { doAirAttack(); return; }
         Player.stamina = Math.max(0, Player.stamina - 15);
 
         Player.facing = aimX() >= Player.x ? 1 : -1;
@@ -152,7 +152,7 @@
         Player.comboWindow = 0.85;
         Player.attackHitRegistered = false;
         Player.vx = Player.facing * (isRiposte ? 440 : Player.comboStep === 3 ? 340 : 220);
-        if (Player.y >= Config.groundY - 2) emitDust(Player.x - Player.facing * 12, Config.groundY, -Player.facing, 3, 0.9);
+        if (Player.y >= PG() - 2) emitDust(Player.x - Player.facing * 12, PG(), -Player.facing, 3, 0.9);
 
         Sound.play("slash", 0.85, 0.95 + Player.comboStep * 0.08);
 
@@ -332,7 +332,7 @@
         }
 
         // 空中二段瞬身判定：解鎖條件 Progress.unlockedStages >= 2，每次騰空限用 1 次
-        const isAirborne = Player.y < Config.groundY - 10;
+        const isAirborne = Player.y < PG() - 10;
         if (isAirborne) {
           if (Progress.unlockedStages < 2) {
             spawnFloatingText(Player.x, Player.y - 95, "空中瞬身未解鎖 (需通關第2難)", "#94a3b8", 1.0);
@@ -360,7 +360,7 @@
 
         Player.facing = dir;
         Player.state = "dash";
-        if (!isAirborne) emitDust(Player.x, Config.groundY, -dir, 6, 1.3);
+        if (!isAirborne) emitDust(Player.x, PG(), -dir, 6, 1.3);
 
         if (isAirborne) {
           // 空中二段瞬身：v0.7.10 速度、距離與地面瞬步相同（780 × 0.22 秒）；無敵 0.15 秒、落地重置、不造成無限滯空
@@ -412,8 +412,8 @@
           return;
         }
 
-        if (Player.y >= Config.groundY - 4) {
-          Player.y = Config.groundY;
+        if (Player.y >= PG() - 4) {
+          Player.y = PG();
           Player.vy = -860; Reader.note("jump");
           Player.state = "jump";
           Player.canDoubleJump = true;
@@ -423,7 +423,7 @@
         }
 
         const horizDist = Math.abs(Player.x - Boss.x);
-        if (horizDist < 140 && Player.y < Config.groundY - 25 && !Player.hasVaulted && !partsBusy()) {
+        if (horizDist < 140 && Player.y < PG() - 25 && !Player.hasVaulted && !partsBusy() && !Game.plats.length) {
           triggerVaultStomp();
           return;
         }
@@ -838,6 +838,7 @@
         const cx = (Player.x + Boss.x) * 0.5;
         const cy = Player.y - 50;
         const dir = Player.x >= Boss.x ? 1 : -1;
+        { const mvL = Stages[Boss.stageId].moves[Boss.moveType]; if (mvL && mvL.lowOnly && Player.y < Config.groundY - 100) { spawnFloatingText(Player.x, Player.y - 95, "高處避開！", "#34d399", 1.0); return; } } /* v0.8.181 貼地招打不到站在平台上的主角 */
 
         if (Boss.isPerilous) {
           if (Boss.perilType === "sweep" && Player.y < Config.groundY - 38) {
