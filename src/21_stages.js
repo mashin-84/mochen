@@ -163,12 +163,12 @@
         /* v0.8.171 招牌大招：雙劍「寒川十字」（一階段）、重劍「玄鐵龍捲」（二階段），55_ult.js b3cross／b3tornado */
         S3.moves.u_cross = { name: "寒川十字", ult: "b3cross", damage: 0, windup: 0.6, active: 1.2, recover: 1.5 };
         S3.moves.u_tornado = { name: "玄鐵龍捲", ult: "b3tornado", damage: 0, windup: 0.5, active: 3.0, recover: 3.3 };
-        S3.stances.A.extras = S3.stances.A.extras.concat(["61_ua_guard", "62_ua_sweep", "63_ua_raise", "64_ua_chop", "65_ua_push", "66_ua_pant", "67_ua_recoil", "68_ua_recover"]);
-        S3.stances.B.extras = S3.stances.B.extras.concat(["71_ub_hold", "72_ub_spinf", "73_ub_spinb", "74_ub_pause", "75_ub_throw", "76_ub_perch", "77_ub_strain", "78_ub_back"]);
+        S3.stances.A.extras = S3.stances.A.extras.concat(["61_ua_guard", "65_ua_push", "66_ua_pant", "67_ua_recoil", "68_ua_recover", "71_ua_sw1", "72_ua_sw2", "73_ua_sw3", "74_ua_r1", "75_ua_r2", "77_ua_x", "78_ua_rel"]);
+        S3.stances.B.extras = S3.stances.B.extras.concat(["71_ub_hold", "74_ub_pause", "75_ub_throw", "81_ub_spinA", "82_ub_spinB", "83_ub_spinC", "84_ub_spinD", "85_ub_catch", "86_ub_pull", "87_ub_land", "88_ub_rise", "89_ub_raise", "90_ub_peak", "91_ub_slam", "92_ub_after"]);
         S3.stances.A.pool.push(["u_cross", 4]); S3.stances.B.poolP2.push(["u_tornado", 5]);
         S3.hpTriggers = [{ move: "u_cross", at: 0.5, phase: 1, stance: "A" }, { move: "u_tornado", at: 0.5, phase: 2, stance: "B" }];
         S3.sigMoves = [{ move: "u_cross", phase: 1, stance: "A" }, { move: "u_tornado", phase: 2, stance: "B" }];
-        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3bwave", "boss3btorn", "cue", "land"); /* v0.8.171 大招 */
+        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3btorn", "boss3bsolid", "cue", "land"); /* v0.8.171 大招 */
         S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
         S3.zoneArt = { fire: ["boss3bfx", 2] }; /* 戒律鎮壓地面區域用陣紋循環 */
         S3.layers = [
