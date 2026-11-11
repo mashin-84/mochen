@@ -62,7 +62,7 @@
         if (cancel) { Ult.waves.length = 0; Ult.b3.length = 0; if (Game.fxList) Game.fxList = Game.fxList.filter(f => f.sheet !== "boss2bind"); return; } /* 中斷時劍陣一起清掉 */
         Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
         if (U && U.m) Boss.ultCd = 18;
-        Boss._sigNext = performance.now() + 20000; /* 招式池 20 秒內不再抽大招 */
+        Boss._sigNext = performance.now() + 15000; /* 招式池 15 秒內不再抽大招（v0.8.172 使用者：20→15） */
       }
       /* 每幀：updateBossAI 開頭呼叫；回傳 true＝本幀 Boss 由大招接管 */
       function ultUpdate(dt) {

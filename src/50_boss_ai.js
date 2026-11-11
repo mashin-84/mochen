@@ -52,7 +52,7 @@
       /* 招式池：[[招式key（可用 + 串接：先出前者、收招後接後者）, 權重, 標籤], …]；標籤 break＝霸體破防、ranged／chase＝遠程追擊、push＝震退、mobility＝走位 */
       function pickFromPool(list, moves) {
         const parry = Reader.count("parry", 8), dash = Reader.count("dash", 8), near = Reader.nearAvg;
-        const pp = list.filter(e => moves[e[0].split("+")[0]] && !(moves[e[0].split("+")[0]].ult && performance.now() < (Boss._sigNext || 0))).map(e => { /* v0.8.171 招牌大招冷卻 20 秒（血量門檻必放不受影響） */
+        const pp = list.filter(e => moves[e[0].split("+")[0]] && !(moves[e[0].split("+")[0]].ult && performance.now() < (Boss._sigNext || 0))).map(e => { /* v0.8.171 招牌大招冷卻（v0.8.172 改 15 秒；血量門檻必放不受影響） */
           let w = e[1]; const tag = e[2];
           if (tag === "break" && parry >= 3) w *= 2.5;
           if ((tag === "ranged" || tag === "chase") && dash >= 3) w *= 2.2;
