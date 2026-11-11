@@ -689,7 +689,7 @@
               else takeDamage(bossDmg(c.dmg), o.dir, "【寒川十字】");
             }
           } else if (o.kind === "wave") {
-            if (rel <= 20 && rel >= -120 && Player.state !== "execution") {
+            if (rel <= 20 && rel >= -200 && Player.state !== "execution") { /* v0.8.177 衝擊波變厚，判定深度 120→200 */
               o.done = true;
               const sx = Boss.x, sp = Boss.isPerilous, st = Boss.perilType, svx = Boss.vx;
               Boss.x = o.x - o.dir * 60; Boss.isPerilous = false; Boss.perilType = null;
@@ -721,7 +721,7 @@
             ctx.drawImage(img, sh * 256, 0, 256, 256, -280, o.yH - 280, 560, 560); /* 橫刀芒（揮出時同尺寸、同高度） */
             ctx.restore();
           } else if (o.kind === "wave" && fxReady("boss3bsolid")) { /* v0.8.176 實體衝擊波（boss3bsolid 第 1 列，洋紅底不發光、source-over＝一整片實體） */
-            const img = fxSheet("boss3bsolid").img, col = 1 + Math.floor(now / 90) % 2, h = 460, w = h * 396 / 336;
+            const img = fxSheet("boss3bsolid").img, col = 1, h = 660, w = h * 396 / 336 * 1.35; /* v0.8.177 只用一格（第 2 格：前緣沒被格子切到；第 3 格塵土碰到格邊會出現垂直硬邊）、加高加厚：高 460→660、寬再 ×1.35 */
             ctx.save(); ctx.translate(o.x, G + GROUND_SINK + h * (1 - 296 / 336)); ctx.scale(o.dir, 1); ctx.drawImage(img, col * 396, 0, 396, 336, -w * 0.88, -h, w, h); ctx.restore();
           } else if (o.kind === "impact" && fxReady("boss3bsolid")) { /* 劈地爆裂（第 2 列第 2～4 格） */
             const img = fxSheet("boss3bsolid").img, f = 1 + Math.min(2, Math.floor(o.age / 0.2)), h = 380, w = h * 396 / 336;
