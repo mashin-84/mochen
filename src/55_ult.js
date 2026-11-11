@@ -656,7 +656,7 @@
             if ((holding || slashing) && rel > -40 && rel < c.reach) { /* 蓄力斬劈碎十字；v0.8.171 寬容：按住蓄力 ≥0.2 秒時十字飛進範圍＝自動放出蓄力斬劈碎 */
               if (holding && !slashing) { Player.isChargingAttack = false; Player.facing = -o.dir; doChargedAttack(); }
               o.done = true; L.splice(i, 1);
-              if (fxReady("boss3ult")) spawnFx("boss3ult", 3, o.x, Player.y - 140, { w: 760, h: 760, dur: 0.55 });
+              if (fxReady("boss3crack")) spawnFx("boss3crack", 3, o.x, Player.y - 140, { w: 760, h: 760, dur: 0.55 }); /* v0.8.173 碎裂沿用舊圖第 4 列 */
               Sound.play("b2_shatter", 1.0, 1.0); Sound.play("parry", 0.9, 0.9); triggerHitstopMs(110); triggerShake(o.dir, 0.5, 26, 0.3); hapticBuzz([40, 20, 60]);
               Game.slowT = 0.3; Game.slowScale = 0.35;
               damageBossPosture(c.post, "【劈碎十字】架勢 +" + c.post + "%");
@@ -694,8 +694,10 @@
         const vt = ultViewTop(), Hv = Math.min(980, (G - vt) + 40);
         for (const o of L) {
           if (o.kind === "cross" && fxReady("boss3ult")) {
-            const img = fxSheet("boss3ult").img, col = Math.floor(now / 70) % 4, w = 640, h = Hv * 1.05, cy = G + 20 - Hv / 2;
-            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(o.x, cy); ctx.scale(o.dir, 1); ctx.drawImage(img, col * 256, 512, 256, 256, -w / 2, -h / 2, w, h); ctx.restore();
+            const img = fxSheet("boss3ult").img, col = Math.floor(now / 70) % 4, h = Hv * 1.05, w = h * 0.85, cy = G + 20 - Hv / 2;
+            ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(o.x, cy); ctx.scale(o.dir, 1);
+            const tw = 1100, th = h * 0.42; ctx.globalAlpha = 0.75; ctx.drawImage(img, ((col + 1) % 4) * 256, 768, 256, 256, -w * 0.05 - tw * 0.95, -th / 2, tw, th); /* v0.8.173 尾霧（第 4 列）：亮的那頭接在十字內凹面後方 */
+            ctx.globalAlpha = 1; ctx.drawImage(img, col * 256, 512, 256, 256, -w / 2, -h / 2, w, h); ctx.restore();
           } else if (o.kind === "wave" && fxReady("boss3bult")) {
             const img = fxSheet("boss3bult").img, col = Math.floor(now / 70) % 4, h = (G - vt) + 160, w = 560;
             ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(o.x, groundFxY("boss3bult", 3, h)); ctx.scale(o.dir, 1); ctx.drawImage(img, col * 256, 768, 256, 256, -w * 0.9, -h, w, h); ctx.restore();
