@@ -45,7 +45,7 @@
         }
         // 按下立即出招 (零延遲)；第 4 關起，按住滿 0.45 秒追加蓄力重斬
         doNormalAttack();
-        if (Progress.unlockedStages >= 4) {
+        if (Progress.unlockedStages >= 3) { /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
           Player.isChargingAttack = true;
           Player.attackChargeStartTime = performance.now();
         }

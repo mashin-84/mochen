@@ -89,7 +89,7 @@
 
         // 蓄力計時：按住滿 0.45 秒觸發蓄力重斬；被打斷或換招則取消
         if (Player.isChargingAttack) {
-          if (Progress.unlockedStages < 4 || ["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) {
+          if (Progress.unlockedStages < 3 || ["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) {
             Player.isChargingAttack = false;
           } else if (performance.now() - Player.attackChargeStartTime >= 450) {
             Player.isChargingAttack = false;

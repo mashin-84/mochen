@@ -58,6 +58,7 @@
         Boss.maxPosture = stage.maxPosture;
         Boss.posture = 0;
         ultEnd(true); /* v0.8.160 換關／重打清掉大招與火牆 */
+        Boss._sigNext = 0;
         Boss.deathblows = stage.deathblows;
         Boss.hasSummonedClone = false;
         Boss.state = "idle";

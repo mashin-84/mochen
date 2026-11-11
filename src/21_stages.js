@@ -160,7 +160,15 @@
         S3.phaseSwitchMove = "stance_switch"; /* 進二階段真的播一次拔重劍（被打斷時直接換姿） */
         S3.stances.A.extras = ["20_hs_wind", "21_hs_hit", "22_hs_rec", "23_x_wind", "24_x_hold", "25_x_hit", "26_spin_wind", "27_spin_hit", "28_spin_rec", "29_dash_wind", "30_dash_hit", "31_dash_rec", "32_low_wind", "33_low_hit", "34_low_rec", "35_draw_a"];
         S3.stances.B.extras = ["20_slam_wind", "21_slam_hit", "22_slam_rec", "23_plunge_jump", "24_plunge_hit", "25_plunge_rec", "26_charge_wind", "27_charge_hit", "28_charge_rec", "29_sweep_wind", "30_sweep_hit", "31_sweep_rec", "35_draw_a", "36_draw_b", "37_draw_c"];
-        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx";
+        /* v0.8.171 招牌大招：雙劍「寒川十字」（一階段）、重劍「玄鐵龍捲」（二階段），55_ult.js b3cross／b3tornado */
+        S3.moves.u_cross = { name: "寒川十字", ult: "b3cross", damage: 0, windup: 0.6, active: 1.2, recover: 1.5 };
+        S3.moves.u_tornado = { name: "玄鐵龍捲", ult: "b3tornado", damage: 0, windup: 0.5, active: 3.0, recover: 3.3 };
+        S3.stances.A.extras = S3.stances.A.extras.concat(["61_ua_guard", "62_ua_sweep", "63_ua_raise", "64_ua_chop", "65_ua_push", "66_ua_pant", "67_ua_recoil", "68_ua_recover"]);
+        S3.stances.B.extras = S3.stances.B.extras.concat(["71_ub_hold", "72_ub_spinf", "73_ub_spinb", "74_ub_pause", "75_ub_throw", "76_ub_perch", "77_ub_strain", "78_ub_back"]);
+        S3.stances.A.pool.push(["u_cross", 4]); S3.stances.B.poolP2.push(["u_tornado", 5]);
+        S3.hpTriggers = [{ move: "u_cross", at: 0.5, phase: 1, stance: "A" }, { move: "u_tornado", at: 0.5, phase: 2, stance: "B" }];
+        S3.sigMoves = [{ move: "u_cross", phase: 1, stance: "A" }, { move: "u_tornado", phase: 2, stance: "B" }];
+        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3bult", "cue", "land"); /* v0.8.171 大招 */
         S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
         S3.zoneArt = { fire: ["boss3bfx", 2] }; /* 戒律鎮壓地面區域用陣紋循環 */
         S3.layers = [
