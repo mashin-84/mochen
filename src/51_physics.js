@@ -106,7 +106,7 @@
             airAttackHit();
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && partsBusy()) {
             if (partsMode() && partsTryHit(false)) Player.attackHitRegistered = true; /* v0.8.83 部位 Boss 一階段：只判部位，本體不可打 */
-          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && (partnerTryHit(false) || illusionTryHit(false))) {
+          } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && (xwTryHit(false) || partnerTryHit(false) || illusionTryHit(false))) {
             Player.attackHitRegistered = true; /* v0.8.55 打到幻影 */
           } else if (Player.state === "attack" && !Player.isAirAtk && !Player.attackHitRegistered && Player.stateTimer > 0.04 && !Boss._ultAir) {
             const dx = Boss.x - Player.x;

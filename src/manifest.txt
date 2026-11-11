@@ -16,6 +16,7 @@
 55_ult.js
 56_partner.js
 57_gult.js
+58_colossus.js
 60_render.js
 61_cine.js
 62_hub.js

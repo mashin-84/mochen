@@ -6,7 +6,7 @@
          光圈倒數畫在主角身上（黃＝可招架、紅＝不能招架），時間與判定同源。
          ⚠ 全部是程式畫的佔位，之後每招換專屬生圖特效與關鍵格。 */
       const GU = { hz: [], msg: 0 };
-      function guStrike(o) { GU.hz.push(Object.assign({ type: "strike", t: 0, w: 160, delay: 0.8, kind: "red", dmg: 200, post: 18, lock: 0.3, label: "大招命中！" }, o)); }
+      function guStrike(o) { const h = Object.assign({ type: "strike", t: 0, w: 160, delay: 0.8, kind: "red", dmg: 200, post: 18, lock: 0.3, label: "大招命中！" }, o); GU.hz.push(h); return h; }
       function guWave(o) { GU.hz.push(Object.assign({ type: "wave", t: 0, speed: 850, depth: 150, low: false, kind: "red", dmg: 220, post: 16, h: 60, label: "大招命中！" }, o)); }
       function guHit(srcX, h) {
         if (Player.state === "execution" || Boss.hp <= 0 || Game.bossDeath) return;
@@ -157,20 +157,18 @@
           };
           return g;
         },
-        /* 第 7 關 玄武「玄冥噴泉」：水柱一格一格從場地一端掃到另一端，只留一格安全（沒有紅圈的那格），來回兩趟 → 玄武躍起壓頂（大紅圈追蹤，跑開）→ 落地左右矮浪（跳）→ 翻肚喘息 */
+        /* 第 7 關 玄武「玄冥噴泉」（v0.8.182 巨型版）：水柱一格一格從場地一端掃到另一端，只留一格安全（沒有紅圈的那格），來回兩趟
+           → 四隻腳連環踩踏追打主角（紅圈，間隔 0.7）→ 四足齊落不動 3 秒：全部可砍（大破綻） */
         g_s7b: (U) => {
           const ev = [], W = Config.worldWidth, cell = 230, n = Math.floor((W - 300) / cell);
-          ev.push([1.4, () => hintOnce("gu7b", "大招【玄冥噴泉】：水柱會一路掃過來，站到「沒有紅圈」的那一格；之後玄武壓頂要跑開，落地的浪要跳！")]);
+          ev.push([1.4, () => hintOnce("gu7b", "大招【玄冥噴泉】：水柱會一路掃過來，站到「沒有紅圈」的那一格；之後四隻腳連環踩下，躲完四下就能一次砍四隻腳！")]);
           const sweep = (t0, rev) => ev.push([t0, () => {
             const pi = Math.max(1, Math.min(n - 2, Math.round((Player.x - 150) / cell) + (Math.random() < 0.5 ? -2 : 2)));
-            for (let i = 0; i < n; i++) { if (i === pi) continue; const k = rev ? n - 1 - i : i; guStrike({ x: 150 + cell * (i + 0.5), w: cell - 14, delay: 1.0 + k * 0.07, kind: "red", dmg: 180, shape: "pillar", label: "【玄冥水柱】", quiet: k % 3 !== 0 }); }
+            for (let i = 0; i < n; i++) { if (i === pi) continue; const k = rev ? n - 1 - i : i; guStrike({ x: 150 + cell * (i + 0.5), w: cell - 14, delay: 1.0 + k * 0.07, kind: "red", dmg: 150, shape: "pillar", label: "【玄冥水柱】", quiet: k % 3 !== 0 }); }
           }]);
           sweep(0.9, false); sweep(3.1, true);
-          ev.push([5.2, () => { Boss._ultAir = true; U.jump = { t: 0, x0: Boss.x }; guStrike({ x: Player.x, track: true, lock: 0.5, w: 480, delay: 1.3, kind: "red", dmg: 300, shape: "pillar", label: "【玄武壓頂】",
-            onFire: (h) => { Boss.x = gClampX(h.x); Boss.y = Config.groundY; Boss._ultAir = false; U.jump = null; triggerShake(0, 0.8, 40, 0.5); guWave({ x: h.x + 200, dir: 1, low: true, kind: "parry", speed: 800, dmg: 130 }); guWave({ x: h.x - 200, dir: -1, low: true, kind: "parry", speed: 800, dmg: 130 }); } }); }]);
-          const g = { ev, dim: [[0, 0.8]], rest: [7.4, 3.0], restText: "〔玄武翻身・頭部外露〕" };
-          g.tick = (dt) => { if (U.jump) { U.jump.t += dt; const hz = GU.hz.find(h => h.w === 480 && !h.done); const p = Math.min(1, U.jump.t / 1.3); if (hz) Boss.x = U.jump.x0 + (hz.x - U.jump.x0) * p; Boss.y = Config.groundY - Math.sin(p * Math.PI) * 420; } };
-          return g;
+          [5.4, 6.1, 6.8, 7.5].forEach((at, i) => ev.push([at, () => { if (!xwOn() || Game.xw.stun > 0) return; xwStompStrike(i, { dmg: 150, delay: 0.8, lock: 0.3, lo: 150, hi: W - 150, onFire: (h) => xwPlant(i, h.x, 11.9 - at) }); }]));
+          return { ev, dim: [[0, 0.8]], rest: [8.7, 3.0], restText: "〔四足齊落・全部可砍！〕" };
         },
         /* 第 8 關一階段（人・劍修）「青雲劍訣・天河」：五把飛劍逐把射出（可折射，間隔 0.45）→ 瞬身突刺收尾（接一般危招「突刺」＝看破）*/
         g_s8a: (U) => {
@@ -283,7 +281,7 @@
       /* ---------- 關卡機制 ---------- */
       function mechInit(stage) {
         Boss._gd = stage.guard ? { n: stage.guard.hits, down: 0, pc: 0 } : null;
-        Boss._form = 1; Boss._mHp = null; Boss._shellT = 0; Boss._bodyStance = null; Boss._shellOpen = false; Game.plats = []; Player._floor = null; Boss._plOn = false; Boss._rideT = 0; Boss._shake = 0;
+        Boss._form = 1; Boss._mHp = null; Boss._shellT = 0; Boss._bodyStance = null; Boss._shellOpen = false; Game.plats = []; Player._floor = null; xwInit(); Boss._plOn = false; Boss._rideT = 0; Boss._shake = 0;
       }
       function mechRefund(k) { /* 把這一幀 Boss 掉的血退還 k（0～1）；回傳是否有掉血 */
         let hit = false;
@@ -293,6 +291,7 @@
       function mechTick(dt) {
         if (Game.mode !== "battle") return;
         const stage = Stages[Boss.stageId]; if (!stage) return;
+        xwTick(dt); /* v0.8.182 玄武巨型部位戰 */
         if (stage.gbox && Boss._bodyStance !== Boss.stance) { Boss._bodyStance = Boss.stance; applyBossBody(stage); } /* 換姿態時同步身體大小（玄武） */
         const live = Boss.hp > 0 && !Game.bossDeath && !Game.dir && Game.introT <= 0;
         /* 第 7 關一階段 金光盾：盾在時氣血傷害只剩 guard.k；完美招架一次裂一道，裂滿＝破盾 guard.down 秒（全額傷害＋架勢 +25） */

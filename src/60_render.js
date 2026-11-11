@@ -60,6 +60,7 @@
         drawPartsBack(); /* v0.8.83 部位 Boss：背景本體與地面預警 */
         drawPools(); /* v0.8.179 第 6 關血池 */
         drawPlats(); /* v0.8.181 平台 */
+        drawXwBack(); /* v0.8.182 玄武身體、腳、尾 */
 
         if (Game.ultDim > 0.01) {
           ctx.save();
@@ -170,6 +171,7 @@
         drawSparks();
         drawHitFx();
         drawFx();
+        drawXwFront();
         drawPartnerTop();
         drawGultTop();
         drawUltTop(); /* v0.8.160 大招火牆的招架光圈 */

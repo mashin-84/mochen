@@ -480,7 +480,15 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const S7 = Stages[7];
         S7.name = "金甲天將＋玄武神相"; S7.arenaName = "天門玄武陣"; S7.gbox = true; S7.maxPosture = 160;
         S7.guard = { hits: 3, k: 0.15, down: 8 }; /* 盾在：氣血傷害剩 15%；完美招架 3 次＝破盾 8 秒 */
-        S7.shell = { k: 0.3, backW: 400, stones: [520, 1150, 2050, 2680], stoneW: 200, stoneH: 125, shakeAfter: 2.6, shakeWarn: 0.8, shakeDmg: 110 }; /* v0.8.181 平台版：龜背寬 400（頂面＝身高）、四塊浮石高 125（單跳上得去；龜背要二段跳或從浮石跳） */
+        /* v0.8.182 二階段＝玄武巨型部位戰（58_colossus.js）。傷害表 [氣血, 架勢, 裂痕進度]；架勢靠折射冰柱（reflectDmg）與完美招架噬咬 */
+        S7.colossus = { cx: 1600, legX: [-630, -210, 210, 630], legReach: 400, legW: 150, legUp: 240, belly: 330, shellTop: 520, shellW: 1500, shellLow: 215, lowDrop: 150, tailX: -640,
+          hover: 300, headW: 190, headH: 130, headDown: 5.0, cd: 0.9,
+          stompW: 220, stompWind: 1.0, stompDmg: 220, plant: 2.4, crackHits: 3,
+          legHit: { normal: [22, 4, 1], third: [34, 6, 1.5], air: [22, 4, 1], charged: [90, 14, 3] },
+          tailHit: { normal: [55, 5, 0], third: [85, 8, 0], air: [55, 5, 0], charged: [320, 22, 0] }, stun: 7.5,
+          tail: { wind: 1.1, dmg: 240 }, ice: { wind: 0.7, count: 3, gap: 0.55, speed: 620, dmg: 110 }, bite: { wind: 0.95, dmg: 230, post: 32 } };
+        S7.reflectDmg = [60, 22]; /* 折射冰柱打頭：氣血 60、架勢 22（架勢上限 160 → 約 7 發；完美招架噬咬 +32） */
+        S7.camZoomP = { 1: 1, 2: 0.72 };
         S7.moves = {
           a_smash: { name: "天罰金鐧", armor: true, windup: 0.5, active: 0.15, recover: 0.5, range: 190, lunge: 360, damage: 180, parryPostureDmg: 26 },
           a_feint: { name: "降魔金鐧・變速砸 (慢半拍)", isFeint: true, feintPauseAt: 0.42, feintPauseDur: 0.28, windup: 0.62, active: 0.18, recover: 0.5, range: 210, lunge: 320, damage: 200, parryPostureDmg: 28 },
@@ -496,14 +504,14 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           b_spin: { name: "縮殼旋撞 (霸體・瞬步穿過)", isCharge: true, armor: true, chargeSpeed: 700, windup: 0.75, active: 0.75, recover: 1.1, range: 260, lunge: 700, damage: 250, parryPostureDmg: 24 },
           b_water: { name: "玄冥水牢 (離開藍圈)", isZone: true, zoneType: "ice", zoneWidth: 320, zoneDuration: 2.4, zoneDamagePerSec: 150, zoneTargetPlayer: true, zoneWarn: 0.75, windup: 0.6, active: 0.3, recover: 0.7, range: 600, lunge: 0, damage: 0 },
           b_tide: { name: "玄冥漲潮 (上平台！)", isZone: true, zoneType: "ice", zoneWidth: 7000, zoneDuration: 2.4, zoneDamagePerSec: 190, zoneWarn: 1.3, armor: true, hintKey: "m_tide", hintText: "【玄冥漲潮】整片地面都會被淹：快跳上浮石或龜背！", windup: 0.8, active: 0.3, recover: 0.9, range: 600, lunge: 0, damage: 0 },
-          u_fountain: U("玄冥噴泉", "g_s7b", 7.4)
+          b_wait: { name: "玄武", isMobility: true, windup: 0.05, active: 0.05, recover: 0.05, range: 0, lunge: 0, damage: 0 },
+          u_fountain: U("玄冥噴泉", "g_s7b", 8.7)
         };
         scale(S7.moves);
         S7.stances = {
           A: { alias: { thrust_peril: "a_thrust", sweep_peril: "a_sweep" },
             pool: [["a_smash", 24], ["a_feint", 16], ["a_combo", 22], ["a_bash", 12, "push"], ["a_thrust", 13], ["a_sweep", 12], ["u_thunder", 4]], far: [], farP2: [] },
-          B: { alias: { thrust_peril: "b_bite", sweep_peril: "b_tail" }, size: 2.0, bodyW: 440, bodyH: 215, hurtHalf: 190, speed: 90,
-            pool: [["b_bite", 24], ["b_stomp", 18], ["b_tail", 14], ["b_leap", 12, "mobility"], ["b_spin", 10, "chase"], ["b_water", 10, "ranged"], ["b_tide", 12, "ranged"], ["u_fountain", 4]], far: ["b_spin", "b_water", "b_leap", "b_tide"], farP2: [] }
+          B: { alias: { thrust_peril: "b_wait", sweep_peril: "b_wait" }, bodyW: 190, bodyH: 130, hurtHalf: 40, speed: 1, pool: [["b_wait", 1]], far: [], farP2: [] } /* 玄武由 58_colossus.js 接管；Boss 物件＝頭 */
         };
         S7.stanceByPhase = { 1: "A", 2: "B" };
         S7.hpTriggers = [{ move: "u_thunder", at: 0.5, phase: 1, stance: "A" }, { move: "u_fountain", at: 0.5, phase: 2, stance: "B" }];

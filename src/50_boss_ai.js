@@ -256,6 +256,7 @@
           }
         }
         if (ultUpdate(dt)) return; /* v0.8.160 招牌大招接管 Boss（55_ult.js） */
+        if (xwAI(dt)) return; /* v0.8.182 第 7 關玄武：巨型部位戰接管 */
         { /* v0.8.146 魔焰獸玉蓄力：畫面壓暗聚焦魔焰球（Boss._cd 0~1，render 畫）、火星向球心收集 */
           const chOn = Boss.state === "windup" && Boss._orbDone && Boss._orbCfg && Boss.hp > 0;
           Boss._cd = (Boss._cd || 0) + ((chOn ? 1 : 0) - (Boss._cd || 0)) * Math.min(1, dt * (chOn ? 3 : 9));
