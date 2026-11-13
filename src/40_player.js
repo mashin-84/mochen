@@ -119,19 +119,13 @@
           return;
         }
 
-        // 隻狼式劍勢體力限制：普攻需消耗 15 劍勢體力，禁止無腦狂按！
-        if (Player.stamina < 15) {
-          spawnFloatingText(Player.x, Player.y - 110, "劍勢耗盡！", "#94a3b8", 1.0);
-          setTelemetry("〔劍勢不繼：普攻需消耗劍勢體力，請暫退調息或精準彈反恢復！〕");
-          return;
-        }
+        /* v0.8.183 普攻不再消耗劍勢（限制連按交給 Boss 格擋第三刀的完美彈刀）；劍勢只給瞬步、蓄力斬、普通格擋用 */
         if (Player.state === "drink") Player.state = "idle";
         if (Player.atkCd > 0.08) {
           bufferAction("attack");
           return;
         }
         if (Player.y < PG() - 24) { doAirAttack(); return; }
-        Player.stamina = Math.max(0, Player.stamina - 15);
 
         Player.facing = aimX() >= Player.x ? 1 : -1;
         const isRiposte = Player.riposteTimer > 0;
@@ -180,9 +174,7 @@
       function doAirAttack() {
         if (Player.airAtkUsed) { bufferAction("attack"); return; }
         Player.airAtkUsed = true;
-        Player.stamina = Math.max(0, Player.stamina - 12);
-        Player.staminaRecoverDelay = 0.35;
-        Player.facing = aimX() >= Player.x ? 1 : -1;
+        Player.facing = aimX() >= Player.x ? 1 : -1; /* v0.8.183 空中攻擊也不扣劍勢 */
         const dxA = Math.abs(aimX() - Player.x);
         const dive = Player.vy > -120 && dxA <= 130 * CHAR_K + bossHurt() && Player.y < Boss.y - 50;
         const isRiposte = Player.riposteTimer > 0;
@@ -260,17 +252,15 @@
         doNormalAttack();
       }
 
-      function getStageParryBonus() {
-        if (Boss.stageId <= 3) return 40;
-        if (Boss.stageId <= 6) return 20;
-        return 0;
-      }
+      function getStageParryBonus() { return 20; } /* v0.8.183 全關統一 130+20＝150ms（原第 1～3 關 170、4～6 關 150、7～9 關 130，玩家看不到；手機觸控有延遲，150 體感約等於主機 120） */
+      const PARRY_SPAM_K = [1, 0.47, 0.23]; /* v0.8.183 隻狼式連按懲罰：0.5 秒內重按招架，完美窗口 150→70→35ms */
 
       function getParryWindowMs(isPerilThrust) {
         let base = Config.parryWindowMs + getStageParryBonus();
         if (Progress.echoes && Progress.echoes.includes(13)) base += 20;
-        if (Progress.equippedSeals.includes("wenxin")) base = Math.round(base * 0.7);
+        /* v0.8.183 問心印（預設裝備）原本把窗口 ×0.7，等於大家實際只有 105ms；改為不縮窗口（保留架勢 ×2），全關實際 150ms。心印系統是否封存待使用者決定 */
         if (isPerilThrust) base = Math.round(base * 0.8);
+        base = Math.round(base * PARRY_SPAM_K[Math.min(2, Player._parrySpam || 0)]);
         return base;
       }
 
@@ -289,16 +279,17 @@
           }
         }
 
-        if (Player.parryCooldown > 0) return;
-
         const now = performance.now();
+        /* v0.8.183 取消 0.55 秒招架冷卻（原本普通格擋後有 0.19 秒按不出來的死區）：永遠舉得起劍，但 0.5 秒內連按會縮小完美窗口；完美招架後重置 */
+        Player._parrySpam = (Player._lastParryPress && now - Player._lastParryPress < 500) ? Math.min(2, (Player._parrySpam || 0) + 1) : 0;
+        Player._lastParryPress = now;
 
         Player.state = "parry";
         { const tx = partsBusy() ? partsThreatX() : null; Player.facing = (tx == null ? Boss.x : tx) >= Player.x ? 1 : -1; } /* v0.8.90 部位 Boss：面向來襲的飛劍／出招部位 */
         Player.stateTimer = Config.guardStanceMs / 1000;
         Player.parryStartMs = now;
         Player.vx *= 0.1;
-        Player.parryCooldown = 0.55; // 招架姿態 0.36s + 0.19s 空檔，狂按會露出破綻
+        Player.parryCooldown = 0;
 
         Sound.play("slash", 0.35, 1.55);
       }
@@ -789,7 +780,10 @@
       }
 
       function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
-        if (fromAtk && Boss._hpOut) return; /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢（普攻、重斬、蓄力、被 Boss 彈刀都不算） */
+        if (fromAtk && Boss._hpOut) { /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢；v0.8.183 例外：Boss 收招／大招喘息／被擊落的破綻中砍，可以慢慢推最後 20%（避免一直出不能招架的招時卡死） */
+          if (!(Boss.state === "recover" || Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen")) { Boss._capFlash = performance.now(); return; }
+          amount *= 0.5; fromAtk = false; cap = null;
+        }
         if (fromAtk) { const c60 = Boss.maxPosture * 0.6; cap = cap ? Math.min(cap, c60) : c60; } /* v0.8.157 攻擊類（普攻、重斬、蓄力、凌空斬／下劈）一律最多把架勢加到 60%；最後 40% 只能靠完美招架、踏劍看破、凌空踩頭、折射 */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
@@ -800,6 +794,7 @@
         if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) postureGain *= 1.8;
         }
 
+        if (cap && Boss.posture >= cap - 0.01) Boss._capFlash = performance.now(); /* v0.8.183 架勢卡在 60%：架勢條刻度閃一下 */
         if (cap) Boss.posture = Math.max(Boss.posture, Math.min(cap, Boss.posture + postureGain));
         else Boss.posture = Math.min(Boss.maxPosture, Boss.posture + postureGain);
         Boss.postureDecayDelay = 3.0;
@@ -912,7 +907,7 @@
       }
 
       function doPerfectDeflect(cx, cy, dir, el, postureGain) {
-        Player.parryCooldown = 0;
+        Player.parryCooldown = 0; Player._parrySpam = 0; Player._lastParryPress = 0; /* v0.8.183 彈成功：連按懲罰歸零（連段招架照常） */
         feel("parry", dir); /* 定格、震屏、震動、雙方閃白 → 回饋表 FEEL */
         // 完美招架不耗體力，且即刻恢復 20 劍勢體力！
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 20);

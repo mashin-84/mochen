@@ -303,7 +303,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ["leap_slam", 16, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],
           ["backstep+halberd_throw", 9, "ranged"], ["shock_push", 8, "push"]
         ];
-        Stages[1].poolP2 = Stages[1].pool.concat([
+        const P1full = Stages[1].pool; /* v0.8.183 教學關減法：一階段只留基本招＋三種危招（招架、跳、看破、側閃躍斬），遲刃、擲戈、震退、怒氣連戟留到二階段 */
+        Stages[1].pool = [["slash1", 16], ["slash2", 12], ["exclusive_combo", 12], ["thrust_peril", 10], ["sweep_peril", 9], ["leap_slam", 12, "mobility"], ["dash_in+slash2", 9, "chase"]];
+        Stages[1].noReader = true; Stages[1].rageP2Only = true;
+        Stages[1].poolP2 = P1full.concat([
           ["charge_rush+thrust_peril", 10, "chase"], ["leap_slam+slash2", 8, "mobility"], ["shadow_strike+exclusive_combo", 8, "chase"]
         ]);
         /* v0.8.160 招牌大招「血煞焚岳戟」（55_ult.js，設計卡見 HANDOFF 第〇節）：只在二階段；血條剩一半必放一次，之後偶爾出現 */

@@ -691,6 +691,9 @@
             if (rel <= 20 && rel >= -70 && Player.state !== "execution") {
               o.done = true;
               if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 8);
+              else if (Player.state === "parry" && performance.now() - Player.parryStartMs <= getParryWindowMs(false)) { /* v0.8.183 次佳解：完美招架＝不扣血，但被震退、扣劍勢、沒有架勢獎勵 */
+                Player._parrySpam = 0; Player.vx = o.dir * 520; Player.stamina = Math.max(0, Player.stamina - 30); Sound.play("parry", 1.0, 0.8); triggerHitstopMs(70); triggerShake(o.dir, 0.3, 18, 0.25); spawnSparks(Player.x + o.dir * 20, Player.y - 80, "parry", -o.dir);
+                spawnFloatingText(Player.x, Player.y - 120, "【架開十字】", "#fde047", 1.1); hintOnce("b3cross_parry", "架開了十字！更好的解法：按住青雲斬蓄力，十字飛進來時劈碎它（大量架勢）"); }
               else if (Player.state === "parry") { takeDamage(bossDmg(c.block), o.dir, "【十字】格擋震傷"); Player.stamina = Math.max(0, Player.stamina - 50); }
               else takeDamage(bossDmg(c.dmg), o.dir, "【寒川十字】");
             }

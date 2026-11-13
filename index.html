@@ -1672,7 +1672,14 @@
 @media (max-height: 460px) and (orientation: landscape) {
   .dpad-cluster { transform: scale(1.0) !important; transform-origin: bottom left !important; margin-left: 42px !important; }
 }
+    /* v0.8.183 架勢條：60% 刻度（從中間往兩邊長，所以在 20%／80% 位置）；卡在上限時刻度閃白；血見底整條轉赤紅脈衝 */
+    .hud-header .cultivation-card .gauge-posture-track { height: 8px !important; overflow: visible !important; }
+    .posture-tick { position: absolute; top: -3px; bottom: -3px; width: 3px; margin-left: -1.5px; background: #e2e8f0; border-radius: 1px; box-shadow: 0 0 3px rgba(0,0,0,0.9); z-index: 2; pointer-events: none; }
+    .gauge-posture-track.capped .posture-tick { background: #ffffff; box-shadow: 0 0 8px #ffffff, 0 0 3px #000; transform: scaleY(1.6); }
+    .gauge-posture-track.capped .gauge-posture-fill { filter: grayscale(0.7) brightness(0.8); }
+    .gauge-posture-fill.hpout { background: linear-gradient(90deg, #7f1d1d 0%, #ef4444 50%, #7f1d1d 100%) !important; box-shadow: 0 0 14px rgba(239, 68, 68, 0.95) !important; animation: pulse-posture 0.22s infinite alternate !important; }
 </style>
+
 </head>
 <body>
   <!-- v0.8.114 載入畫面：主要圖片載完才揭開，避免重新整理時先閃出灰盒介面／方塊人／師妹缺圖 -->
@@ -1786,6 +1793,7 @@
             <span class="bar-title" style="color: var(--amber-light);">架勢</span>
             <div class="gauge-posture-track">
               <div id="boss-posture-bar" class="gauge-posture-fill" style="width: 0%;"></div>
+              <div class="posture-tick" style="left: 20%;"></div><div class="posture-tick" style="left: 80%;"></div>
             </div>
             <span id="boss-posture-txt" style="font-family: var(--font-mono); font-size: 10px; width: 38px; text-align: right; color: var(--amber-light);">0%</span>
           </div>
@@ -3229,7 +3237,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           ["leap_slam", 16, "mobility"], ["dash_in+slash2", 8, "chase"], ["dash_in+combo_delay", 5, "chase"],
           ["backstep+halberd_throw", 9, "ranged"], ["shock_push", 8, "push"]
         ];
-        Stages[1].poolP2 = Stages[1].pool.concat([
+        const P1full = Stages[1].pool; /* v0.8.183 教學關減法：一階段只留基本招＋三種危招（招架、跳、看破、側閃躍斬），遲刃、擲戈、震退、怒氣連戟留到二階段 */
+        Stages[1].pool = [["slash1", 16], ["slash2", 12], ["exclusive_combo", 12], ["thrust_peril", 10], ["sweep_peril", 9], ["leap_slam", 12, "mobility"], ["dash_in+slash2", 9, "chase"]];
+        Stages[1].noReader = true; Stages[1].rageP2Only = true;
+        Stages[1].poolP2 = P1full.concat([
           ["charge_rush+thrust_peril", 10, "chase"], ["leap_slam+slash2", 8, "mobility"], ["shadow_strike+exclusive_combo", 8, "chase"]
         ]);
         /* v0.8.160 招牌大招「血煞焚岳戟」（55_ult.js，設計卡見 HANDOFF 第〇節）：只在二階段；血條剩一半必放一次，之後偶爾出現 */
@@ -4128,19 +4139,13 @@ const Config = {
           return;
         }
 
-        // 隻狼式劍勢體力限制：普攻需消耗 15 劍勢體力，禁止無腦狂按！
-        if (Player.stamina < 15) {
-          spawnFloatingText(Player.x, Player.y - 110, "劍勢耗盡！", "#94a3b8", 1.0);
-          setTelemetry("〔劍勢不繼：普攻需消耗劍勢體力，請暫退調息或精準彈反恢復！〕");
-          return;
-        }
+        /* v0.8.183 普攻不再消耗劍勢（限制連按交給 Boss 格擋第三刀的完美彈刀）；劍勢只給瞬步、蓄力斬、普通格擋用 */
         if (Player.state === "drink") Player.state = "idle";
         if (Player.atkCd > 0.08) {
           bufferAction("attack");
           return;
         }
         if (Player.y < PG() - 24) { doAirAttack(); return; }
-        Player.stamina = Math.max(0, Player.stamina - 15);
 
         Player.facing = aimX() >= Player.x ? 1 : -1;
         const isRiposte = Player.riposteTimer > 0;
@@ -4189,9 +4194,7 @@ const Config = {
       function doAirAttack() {
         if (Player.airAtkUsed) { bufferAction("attack"); return; }
         Player.airAtkUsed = true;
-        Player.stamina = Math.max(0, Player.stamina - 12);
-        Player.staminaRecoverDelay = 0.35;
-        Player.facing = aimX() >= Player.x ? 1 : -1;
+        Player.facing = aimX() >= Player.x ? 1 : -1; /* v0.8.183 空中攻擊也不扣劍勢 */
         const dxA = Math.abs(aimX() - Player.x);
         const dive = Player.vy > -120 && dxA <= 130 * CHAR_K + bossHurt() && Player.y < Boss.y - 50;
         const isRiposte = Player.riposteTimer > 0;
@@ -4269,17 +4272,15 @@ const Config = {
         doNormalAttack();
       }
 
-      function getStageParryBonus() {
-        if (Boss.stageId <= 3) return 40;
-        if (Boss.stageId <= 6) return 20;
-        return 0;
-      }
+      function getStageParryBonus() { return 20; } /* v0.8.183 全關統一 130+20＝150ms（原第 1～3 關 170、4～6 關 150、7～9 關 130，玩家看不到；手機觸控有延遲，150 體感約等於主機 120） */
+      const PARRY_SPAM_K = [1, 0.47, 0.23]; /* v0.8.183 隻狼式連按懲罰：0.5 秒內重按招架，完美窗口 150→70→35ms */
 
       function getParryWindowMs(isPerilThrust) {
         let base = Config.parryWindowMs + getStageParryBonus();
         if (Progress.echoes && Progress.echoes.includes(13)) base += 20;
-        if (Progress.equippedSeals.includes("wenxin")) base = Math.round(base * 0.7);
+        /* v0.8.183 問心印（預設裝備）原本把窗口 ×0.7，等於大家實際只有 105ms；改為不縮窗口（保留架勢 ×2），全關實際 150ms。心印系統是否封存待使用者決定 */
         if (isPerilThrust) base = Math.round(base * 0.8);
+        base = Math.round(base * PARRY_SPAM_K[Math.min(2, Player._parrySpam || 0)]);
         return base;
       }
 
@@ -4298,16 +4299,17 @@ const Config = {
           }
         }
 
-        if (Player.parryCooldown > 0) return;
-
         const now = performance.now();
+        /* v0.8.183 取消 0.55 秒招架冷卻（原本普通格擋後有 0.19 秒按不出來的死區）：永遠舉得起劍，但 0.5 秒內連按會縮小完美窗口；完美招架後重置 */
+        Player._parrySpam = (Player._lastParryPress && now - Player._lastParryPress < 500) ? Math.min(2, (Player._parrySpam || 0) + 1) : 0;
+        Player._lastParryPress = now;
 
         Player.state = "parry";
         { const tx = partsBusy() ? partsThreatX() : null; Player.facing = (tx == null ? Boss.x : tx) >= Player.x ? 1 : -1; } /* v0.8.90 部位 Boss：面向來襲的飛劍／出招部位 */
         Player.stateTimer = Config.guardStanceMs / 1000;
         Player.parryStartMs = now;
         Player.vx *= 0.1;
-        Player.parryCooldown = 0.55; // 招架姿態 0.36s + 0.19s 空檔，狂按會露出破綻
+        Player.parryCooldown = 0;
 
         Sound.play("slash", 0.35, 1.55);
       }
@@ -4798,7 +4800,10 @@ const Config = {
       }
 
       function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
-        if (fromAtk && Boss._hpOut) return; /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢（普攻、重斬、蓄力、被 Boss 彈刀都不算） */
+        if (fromAtk && Boss._hpOut) { /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢；v0.8.183 例外：Boss 收招／大招喘息／被擊落的破綻中砍，可以慢慢推最後 20%（避免一直出不能招架的招時卡死） */
+          if (!(Boss.state === "recover" || Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen")) { Boss._capFlash = performance.now(); return; }
+          amount *= 0.5; fromAtk = false; cap = null;
+        }
         if (fromAtk) { const c60 = Boss.maxPosture * 0.6; cap = cap ? Math.min(cap, c60) : c60; } /* v0.8.157 攻擊類（普攻、重斬、蓄力、凌空斬／下劈）一律最多把架勢加到 60%；最後 40% 只能靠完美招架、踏劍看破、凌空踩頭、折射 */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
@@ -4809,6 +4814,7 @@ const Config = {
         if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) postureGain *= 1.8;
         }
 
+        if (cap && Boss.posture >= cap - 0.01) Boss._capFlash = performance.now(); /* v0.8.183 架勢卡在 60%：架勢條刻度閃一下 */
         if (cap) Boss.posture = Math.max(Boss.posture, Math.min(cap, Boss.posture + postureGain));
         else Boss.posture = Math.min(Boss.maxPosture, Boss.posture + postureGain);
         Boss.postureDecayDelay = 3.0;
@@ -4921,7 +4927,7 @@ const Config = {
       }
 
       function doPerfectDeflect(cx, cy, dir, el, postureGain) {
-        Player.parryCooldown = 0;
+        Player.parryCooldown = 0; Player._parrySpam = 0; Player._lastParryPress = 0; /* v0.8.183 彈成功：連按懲罰歸零（連段招架照常） */
         feel("parry", dir); /* 定格、震屏、震動、雙方閃白 → 回饋表 FEEL */
         // 完美招架不耗體力，且即刻恢復 20 劍勢體力！
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 20);
@@ -5112,7 +5118,8 @@ const Config = {
         reset() { this.parry = []; this.dash = []; this.jump = []; this.atk = []; this.nearAvg = 0; } };
       /* 招式池：[[招式key（可用 + 串接：先出前者、收招後接後者）, 權重, 標籤], …]；標籤 break＝霸體破防、ranged／chase＝遠程追擊、push＝震退、mobility＝走位 */
       function pickFromPool(list, moves) {
-        const parry = Reader.count("parry", 8), dash = Reader.count("dash", 8), near = Reader.nearAvg;
+        const noR = Stages[Boss.stageId] && Stages[Boss.stageId].noReader; /* v0.8.183 第 1 關（教學）不讀玩家習慣 */
+        const parry = noR ? 0 : Reader.count("parry", 8), dash = noR ? 0 : Reader.count("dash", 8), near = noR ? 0 : Reader.nearAvg;
         const pp = list.filter(e => moves[e[0].split("+")[0]] && !(moves[e[0].split("+")[0]].ult && performance.now() < (Boss._sigNext || 0))).map(e => { /* v0.8.171 招牌大招冷卻（v0.8.172 改 15 秒；血量門檻必放不受影響） */
           let w = e[1]; const tag = e[2];
           if (tag === "break" && parry >= 3) w *= 2.5;
@@ -5232,6 +5239,11 @@ const Config = {
         (Game.illusions || []).forEach(il => { if (!il.dead) at(il.x, Player.x >= il.x ? 1 : -1, [0, 1].map(i => m.bulletY[(i * 2) % m.bulletY.length])); });
       }
       function triggerBossMove(moveKey, queue = []) {
+        if (moveKey === "b_breath" && !Boss._breathHop && Boss.stageId === 5) { /* v0.8.183 魔焰獸玉：背後離牆不到 350 時先衝向場中一步，否則玩家繞不到狼身後 */
+          const back = Boss.facing > 0 ? Boss.x : Config.worldWidth - Boss.x;
+          if (back < 350 && Stages[5].moves.dash_in) { Boss._breathHop = true; triggerBossMove("dash_in", ["b_breath"]); return; }
+        }
+        if (moveKey === "b_breath") Boss._breathHop = false;
         if (Boss.state === "staggered" || Boss.state === "frozen") return;
         if (Boss._ult) return; /* v0.8.160 招牌大招進行中：不接其他招（反斬、怒氣招等） */
         const stage = Stages[Boss.stageId];
@@ -5890,7 +5902,7 @@ const Config = {
           const ultKey = moveKeys.find(k => stage.moves[k].ultimate);
           if (ultKey && Boss.ultCd <= 0 && Math.random() < 0.6) {
             triggerBossMove(ultKey);
-          } else if (((stn && stn.rageMove) || stage.rageMove) && stage.moves[(stn && stn.rageMove) || stage.rageMove] && Boss.rage >= stage.maxHp * (stage.rageEvery || 0.18)) {
+          } else if (((stn && stn.rageMove) || stage.rageMove) && !(stage.rageP2Only && Config.bossPhase !== 2) && stage.moves[(stn && stn.rageMove) || stage.rageMove] && Boss.rage >= stage.maxHp * (stage.rageEvery || 0.18)) {
             Boss.rage = 0; triggerBossMove((stn && stn.rageMove) || stage.rageMove);
           } else if (!stn && stage.pool) {
             triggerMacro(pickFromPool(Config.bossPhase === 2 && stage.poolP2 ? stage.poolP2 : stage.pool, stage.moves));
@@ -6329,7 +6341,7 @@ const Config = {
             if (d < 42 && sw.y > Player.y - Player.h * 2.05 && sw.y < Player.y + 6) { /* v0.8.65 判定改為圖上整個身體（約腳底上 230；原 -90～0 只到大腿，飛劍拉高後胸口也要能中） */
               if (Player.state === "parry") {
                 sw.reflected = true;
-                Player.parryCooldown = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
+                Player.parryCooldown = 0; Player._parrySpam = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
                 sw.vx = -sw.dir * 950;
                 sw.dir = -sw.dir;
                 Progress.parryCount++;
@@ -8955,6 +8967,9 @@ const Config = {
             if (rel <= 20 && rel >= -70 && Player.state !== "execution") {
               o.done = true;
               if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 8);
+              else if (Player.state === "parry" && performance.now() - Player.parryStartMs <= getParryWindowMs(false)) { /* v0.8.183 次佳解：完美招架＝不扣血，但被震退、扣劍勢、沒有架勢獎勵 */
+                Player._parrySpam = 0; Player.vx = o.dir * 520; Player.stamina = Math.max(0, Player.stamina - 30); Sound.play("parry", 1.0, 0.8); triggerHitstopMs(70); triggerShake(o.dir, 0.3, 18, 0.25); spawnSparks(Player.x + o.dir * 20, Player.y - 80, "parry", -o.dir);
+                spawnFloatingText(Player.x, Player.y - 120, "【架開十字】", "#fde047", 1.1); hintOnce("b3cross_parry", "架開了十字！更好的解法：按住青雲斬蓄力，十字飛進來時劈碎它（大量架勢）"); }
               else if (Player.state === "parry") { takeDamage(bossDmg(c.block), o.dir, "【十字】格擋震傷"); Player.stamina = Math.max(0, Player.stamina - 50); }
               else takeDamage(bossDmg(c.dmg), o.dir, "【寒川十字】");
             }
@@ -13887,6 +13902,8 @@ const Config = {
         const pPct = Math.min(100, Math.round((Boss.posture / Boss.maxPosture) * 100));
         elBossPostureBar.style.width = `${pPct}%`;
         elBossPostureBar.classList.toggle("critical", pPct >= 80 || Boss.state === "staggered");
+        elBossPostureBar.classList.toggle("hpout", !!Boss._hpOut && Boss.state !== "staggered"); /* v0.8.183 */
+        elBossPostureBar.parentElement.classList.toggle("capped", performance.now() - (Boss._capFlash || 0) < 220);
         elBossPostureTxt.textContent = `${pPct}%`;
 
         elBossState.textContent =

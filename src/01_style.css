@@ -1661,4 +1661,10 @@
 @media (max-height: 460px) and (orientation: landscape) {
   .dpad-cluster { transform: scale(1.0) !important; transform-origin: bottom left !important; margin-left: 42px !important; }
 }
+    /* v0.8.183 架勢條：60% 刻度（從中間往兩邊長，所以在 20%／80% 位置）；卡在上限時刻度閃白；血見底整條轉赤紅脈衝 */
+    .hud-header .cultivation-card .gauge-posture-track { height: 8px !important; overflow: visible !important; }
+    .posture-tick { position: absolute; top: -3px; bottom: -3px; width: 3px; margin-left: -1.5px; background: #e2e8f0; border-radius: 1px; box-shadow: 0 0 3px rgba(0,0,0,0.9); z-index: 2; pointer-events: none; }
+    .gauge-posture-track.capped .posture-tick { background: #ffffff; box-shadow: 0 0 8px #ffffff, 0 0 3px #000; transform: scaleY(1.6); }
+    .gauge-posture-track.capped .gauge-posture-fill { filter: grayscale(0.7) brightness(0.8); }
+    .gauge-posture-fill.hpout { background: linear-gradient(90deg, #7f1d1d 0%, #ef4444 50%, #7f1d1d 100%) !important; box-shadow: 0 0 14px rgba(239, 68, 68, 0.95) !important; animation: pulse-posture 0.22s infinite alternate !important; }
 </style>

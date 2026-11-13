@@ -257,6 +257,8 @@
         const pPct = Math.min(100, Math.round((Boss.posture / Boss.maxPosture) * 100));
         elBossPostureBar.style.width = `${pPct}%`;
         elBossPostureBar.classList.toggle("critical", pPct >= 80 || Boss.state === "staggered");
+        elBossPostureBar.classList.toggle("hpout", !!Boss._hpOut && Boss.state !== "staggered"); /* v0.8.183 */
+        elBossPostureBar.parentElement.classList.toggle("capped", performance.now() - (Boss._capFlash || 0) < 220);
         elBossPostureTxt.textContent = `${pPct}%`;
 
         elBossState.textContent =

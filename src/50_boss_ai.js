@@ -51,7 +51,8 @@
         reset() { this.parry = []; this.dash = []; this.jump = []; this.atk = []; this.nearAvg = 0; } };
       /* 招式池：[[招式key（可用 + 串接：先出前者、收招後接後者）, 權重, 標籤], …]；標籤 break＝霸體破防、ranged／chase＝遠程追擊、push＝震退、mobility＝走位 */
       function pickFromPool(list, moves) {
-        const parry = Reader.count("parry", 8), dash = Reader.count("dash", 8), near = Reader.nearAvg;
+        const noR = Stages[Boss.stageId] && Stages[Boss.stageId].noReader; /* v0.8.183 第 1 關（教學）不讀玩家習慣 */
+        const parry = noR ? 0 : Reader.count("parry", 8), dash = noR ? 0 : Reader.count("dash", 8), near = noR ? 0 : Reader.nearAvg;
         const pp = list.filter(e => moves[e[0].split("+")[0]] && !(moves[e[0].split("+")[0]].ult && performance.now() < (Boss._sigNext || 0))).map(e => { /* v0.8.171 招牌大招冷卻（v0.8.172 改 15 秒；血量門檻必放不受影響） */
           let w = e[1]; const tag = e[2];
           if (tag === "break" && parry >= 3) w *= 2.5;
@@ -171,6 +172,11 @@
         (Game.illusions || []).forEach(il => { if (!il.dead) at(il.x, Player.x >= il.x ? 1 : -1, [0, 1].map(i => m.bulletY[(i * 2) % m.bulletY.length])); });
       }
       function triggerBossMove(moveKey, queue = []) {
+        if (moveKey === "b_breath" && !Boss._breathHop && Boss.stageId === 5) { /* v0.8.183 魔焰獸玉：背後離牆不到 350 時先衝向場中一步，否則玩家繞不到狼身後 */
+          const back = Boss.facing > 0 ? Boss.x : Config.worldWidth - Boss.x;
+          if (back < 350 && Stages[5].moves.dash_in) { Boss._breathHop = true; triggerBossMove("dash_in", ["b_breath"]); return; }
+        }
+        if (moveKey === "b_breath") Boss._breathHop = false;
         if (Boss.state === "staggered" || Boss.state === "frozen") return;
         if (Boss._ult) return; /* v0.8.160 招牌大招進行中：不接其他招（反斬、怒氣招等） */
         const stage = Stages[Boss.stageId];
@@ -829,7 +835,7 @@
           const ultKey = moveKeys.find(k => stage.moves[k].ultimate);
           if (ultKey && Boss.ultCd <= 0 && Math.random() < 0.6) {
             triggerBossMove(ultKey);
-          } else if (((stn && stn.rageMove) || stage.rageMove) && stage.moves[(stn && stn.rageMove) || stage.rageMove] && Boss.rage >= stage.maxHp * (stage.rageEvery || 0.18)) {
+          } else if (((stn && stn.rageMove) || stage.rageMove) && !(stage.rageP2Only && Config.bossPhase !== 2) && stage.moves[(stn && stn.rageMove) || stage.rageMove] && Boss.rage >= stage.maxHp * (stage.rageEvery || 0.18)) {
             Boss.rage = 0; triggerBossMove((stn && stn.rageMove) || stage.rageMove);
           } else if (!stn && stage.pool) {
             triggerMacro(pickFromPool(Config.bossPhase === 2 && stage.poolP2 ? stage.poolP2 : stage.pool, stage.moves));
