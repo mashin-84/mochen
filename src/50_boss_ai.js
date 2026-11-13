@@ -171,6 +171,21 @@
         at(Boss.x, Boss.facing, m.bulletY);
         (Game.illusions || []).forEach(il => { if (!il.dead) at(il.x, Player.x >= il.x ? 1 : -1, [0, 1].map(i => m.bulletY[(i * 2) % m.bulletY.length])); });
       }
+      /* v0.8.186 Boss 彈開主角第三刀後的反擊招：各關／各姿態可用 counter:[招式鍵…] 指定；沒指定時，
+         沒有姿態的關沿用舊規則（slash1 65%／thrust_peril 35%），其餘從目前姿態的招式池挑「前搖最短的近戰單發／連段招」。 */
+      function pickCounterMove(stage) {
+        const st = stanceOf(stage), M = stage.moves || {};
+        const C = (st && st.counter) || stage.counter;
+        if (C && C.length) { const k = C[Math.floor(Math.random() * C.length)]; if (M[k]) return k; }
+        if (!st || (Boss.stageId === 3 && Boss.stance === "A")) { if (M.slash1) return (Math.random() < 0.65 || !M.thrust_peril) ? "slash1" : "thrust_peril"; }
+        const melee = k => { const m = M[k]; return m && !m.ult && !m.isRanged && !m.isZone && !m.isMobility && !m.isSwitch && !m.isTeleport && !m.isLeap && !m.isCharge && !m.isRage && !m.isSplit && !m.isFeint && !m.isCounter && !m.isHeal && !m.isPerilous && !m.partsCall && !m.lowOnly && !m.armor && m.range > 0; };
+        const lists = st ? [st.pool, st.poolP2] : [stage.pool, stage.p1Pool, stage.p2Pool];
+        const keys = [];
+        lists.forEach(L => (L || []).forEach(e => String(e[0]).split("+").forEach(k => { if (melee(k) && keys.indexOf(k) < 0) keys.push(k); })));
+        if (!keys.length && !st) Object.keys(M).forEach(k => { if (melee(k)) keys.push(k); });
+        keys.sort((a, b) => M[a].windup - M[b].windup);
+        return keys[0] || ""; /* 沒有合適的招（例：玄武）就不反擊 */
+      }
       function triggerBossMove(moveKey, queue = []) {
         if (moveKey === "b_breath" && !Boss._breathHop && Boss.stageId === 5) { /* v0.8.183 魔焰獸玉：背後離牆不到 350 時先衝向場中一步，否則玩家繞不到狼身後 */
           const back = Boss.facing > 0 ? Boss.x : Config.worldWidth - Boss.x;
@@ -224,6 +239,7 @@
         Boss.aerialTimer = 0;
         Boss.aerialShotTimer = m.aerialShotInterval || 1.1;
         Boss.jumpedOver = false;
+        if (m.armor && !m.isCharge && !m.isSwitch && !m.isSplit && Progress.unlockedStages >= 3) hintOnce("armor_charge", "【霸體】藍色光圈＝普攻打不斷：按住攻擊 0.45 秒放【蓄力斬】才能打斷"); /* v0.8.186 第 3 關起第一次遇到霸體招時教蓄力斬 */
         if (m.isCharge) hintOnce("charge", "【衝鋒】跳躍越過，或在它貼近時瞬步閃開");
 
         if (m.isAerial) {
@@ -492,7 +508,12 @@
             Boss.state = "active";
             const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
             Boss.stateTimer = move.active * phaseMod * volSpeedMod;
-            Boss.stateDur = move.active * phaseMod * volSpeedMod;
+            if (move.isCombo) { /* v0.8.186 連段的出刀間隔不吃階段／卷數加速，active 被壓短後最後一刀會出不來（第 4 關環劍旋斬、第 8 關三絕劍與魔爪四連、第 9 關青雲斬三連）→ active 至少撐到最後一刀之後 0.08 秒 */
+              const n = move.comboTotalHits || 3, iv = move.comboInterval || 0.20;
+              const lastAt = n <= 1 ? 0 : iv * (n - 2) + (move.comboLastDelay || iv);
+              Boss.stateTimer = Math.max(Boss.stateTimer, lastAt + 0.08);
+            }
+            Boss.stateDur = Boss.stateTimer;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
             spawnMoveFx(move.fxAct); illusionMoveFx(move.fxAct); /* 幻影也出同樣的特效，否則特效會洩漏真身 */
             if (move.isSplit) illusionSplit();
@@ -666,6 +687,7 @@
 
           // 原語 (3) 多段連擊：依間隔連續揮斬判定
           if (move.isCombo && Boss.comboHitsLeft > 0) {
+            Boss.stateTimer = Math.max(Boss.stateTimer, Boss.comboHitTimer + 0.08); /* v0.8.186 還有刀沒出完就不收招（保險：不管 active 被什麼倍率壓短） */
             Boss.comboHitTimer -= dt;
             if (Boss.comboHitTimer <= 0) {
               Boss.comboHitTimer = move.comboInterval || 0.20;

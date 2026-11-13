@@ -235,16 +235,12 @@
                   // 墨塵長劍被彈開受阻
                   Player.vx = -Player.facing * 160;
                   Player.state = "idle";
+                  Player.isChargingAttack = false; Player.atkCd = Math.max(Player.atkCd || 0, 0.35); /* v0.8.186 被彈刀＝攻勢中斷：取消正在蓄的蓄力斬（原本 0.45 秒一到照樣砍出去），0.35 秒內不能再出刀 */
                   spawnFloatingText(Player.x, Player.y - 120, "【敵將完美彈刀！】立即招架！", "#fde047", 1.35);
                   setTelemetry("⚠️ 敵將完美彈刀！攻防互換，敵將霸體反斬，立即按 K 招架！");
 
                   // 敵將立即強行切入霸體反擊！懲罰盲目狂按普攻的玩家！
-                  const counterRoll = Math.random();
-                  if (counterRoll < 0.65) {
-                    triggerBossMove("slash1");
-                  } else {
-                    triggerBossMove("thrust_peril");
-                  }
+                  triggerBossMove(pickCounterMove(Stages[Boss.stageId])); /* v0.8.186 原本寫死 slash1／thrust_peril：第 5～9 關沒有這兩招（Boss 彈完站著不動）、第 3 關重劍姿態會用到雙劍的圖 */
                 }
               }
             }
@@ -271,13 +267,21 @@
           if (Game.mode === "enter") dir = Game.loadHold ? 0 : 1; /* v0.8.156 等圖載完時原地站著 */
           if (Game.ultBind) dir = 0; /* v0.8.168 大招劍陣鎖身：不能移動 */
 
+          if (Keys.left && Keys.right && Keys.last) dir = Keys.last; /* v0.8.186 左右同時按：以後按的為準（原本互相抵消會頓一下） */
+          const onG = Player.y >= PG() - 2;
           if (dir !== 0) {
-            Player.vx = dir * 580;
+            /* v0.8.186 起步／轉身用很短的加速（地面約 0.07 秒到全速、轉身約 0.05 秒過零），取代瞬間 0→580：跑步格是依位移推進的，起步與轉身不再滑一格；空中轉向稍慢，有一點慣性 */
+            const tgt = dir * MOVE.speed, turning = Player.vx * dir < 0;
+            const acc = (onG ? MOVE.accel : MOVE.airAccel) * (turning ? MOVE.turnK : 1);
+            if (Game.mode === "enter") Player.vx = tgt;
+            else Player.vx = tgt > Player.vx ? Math.min(tgt, Player.vx + acc * dt) : Math.max(tgt, Player.vx - acc * dt);
             Player.facing = dir;
-            if (Player.y >= PG() - 2) Player.state = "move";
+            if (onG) Player.state = "move";
           } else {
-            Player.vx *= Math.pow(0.001, dt);
-            if (Player.y >= PG() - 2) Player.state = "idle";
+            /* 放開方向：地面等減速煞停（約 0.08 秒）；空中保留一點慣性 */
+            const dec = (onG ? MOVE.decel : MOVE.airDecel) * dt;
+            Player.vx = Math.abs(Player.vx) <= dec ? 0 : Player.vx - Math.sign(Player.vx) * dec;
+            if (onG) Player.state = "idle";
           }
         } else if (Player.state !== "dash" && !Player.blast) {
           Player.vx *= Math.pow(0.015, dt);
@@ -304,7 +308,9 @@
             triggerShake(0, 1, 10, 0.18);
           }
           Player.hasVaulted = false; if (Player.state === "jump") Player.state = "idle";
+          if (Player._jumpBuf && performance.now() - Player._jumpBuf < MOVE.jumpBufMs && Player.state === "idle") { Player._jumpBuf = 0; doJump(); } /* v0.8.186 落地前一瞬間按跳：落地立刻起跳 */
         }
+        if (Player.y >= PG() - 2) Player._groundMs = performance.now(); /* v0.8.186 離地寬限用：最後一次踩在地面／平台的時刻 */
 
         Player.x = Math.max(Game.mode === "battle" ? 70 : -1210, Math.min(Config.worldWidth - 70, Player.x));
 
@@ -361,7 +367,7 @@
             hz.duration -= dt;
             if (hz.warningTimer <= 0) {
               const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && (hz.tall || Player.y >= Config.groundY - 20);
-              if (hz.tall && !hz.hb) { hz.hb = true; if (inZone && Player.invulnTimer <= 0 && ultHardBlock(hz.damagePerSec * 0.5, Player.x >= Boss.x ? 1 : -1, "【硬接火柱】")) hz.k = 0.25; } /* v0.8.184 魔焰獸玉次佳解：火柱噴出瞬間完美招架＝整段只受 25% */ /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
+              if (hz.tall && !hz.hb && inZone && Player.invulnTimer <= 0) { hz.hb = true; /* v0.8.186 改成「第一次碰到火柱的那一刻」判硬接（原本只判噴出的第一幀，晚一幀進火柱就永遠接不到） */ if (ultHardBlock(hz.damagePerSec * 0.5, Player.x >= Boss.x ? 1 : -1, "【硬接火柱】")) hz.k = 0.25; } /* v0.8.184 魔焰獸玉次佳解：火柱噴出瞬間完美招架＝整段只受 25% */ /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
               if (inZone && Player.invulnTimer <= 0 && Player.state !== "execution") {
                 /* v0.7.8 煞氣地形是持續傷害：每 0.3 秒結算一次、不硬直不停頓，可以走出去（以前每幀 takeDamage 會一直硬直卡死） */
                 hz.tickT = (hz.tickT || 0) - dt;
@@ -391,7 +397,7 @@
             if (d < 42 && sw.y > Player.y - Player.h * 2.05 && sw.y < Player.y + 6) { /* v0.8.65 判定改為圖上整個身體（約腳底上 230；原 -90～0 只到大腿，飛劍拉高後胸口也要能中） */
               if (Player.state === "parry") {
                 sw.reflected = true;
-                Player.parryCooldown = 0; Player._parrySpam = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
+                Player.parryCooldown = 0; Player._parrySpam = 0; Player._lastParryPress = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
                 sw.vx = -sw.dir * 950;
                 sw.dir = -sw.dir;
                 Progress.parryCount++;

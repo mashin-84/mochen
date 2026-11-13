@@ -5,10 +5,10 @@
         if (e.repeat) return;
         const c = e.code;
         if (c === "KeyA" || c === "ArrowLeft") {
-          Keys.left = true;
+          Keys.left = true; Keys.last = -1;
           document.getElementById("touch-left").classList.add("active");
         } else if (c === "KeyD" || c === "ArrowRight") {
-          Keys.right = true;
+          Keys.right = true; Keys.last = 1;
           document.getElementById("touch-right").classList.add("active");
         } else if (c === "KeyJ") {
           document.getElementById("touch-attack").classList.add("active");
@@ -104,8 +104,8 @@
         }
       });
 
-      bindHoldBtn(document.getElementById("touch-left"), () => { Keys.left = true; }, () => { Keys.left = false; });
-      bindHoldBtn(document.getElementById("touch-right"), () => { Keys.right = true; }, () => { Keys.right = false; });
+      bindHoldBtn(document.getElementById("touch-left"), () => { Keys.left = true; Keys.last = -1; }, () => { Keys.left = false; });
+      bindHoldBtn(document.getElementById("touch-right"), () => { Keys.right = true; Keys.last = 1; }, () => { Keys.right = false; });
       bindHoldBtn(document.getElementById("touch-attack"), startAttackCharge, releaseAttackCharge);
       bindHoldBtn(document.getElementById("touch-parry"), doParry);
       bindHoldBtn(document.getElementById("touch-dash"), doDash);

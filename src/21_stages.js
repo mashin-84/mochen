@@ -490,7 +490,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           legHit: { normal: [22, 4, 1], third: [34, 6, 1.5], air: [22, 4, 1], charged: [90, 14, 3] },
           tailHit: { normal: [55, 5, 0], third: [85, 8, 0], air: [55, 5, 0], charged: [320, 22, 0] }, stun: 7.5,
           tail: { wind: 1.1, dmg: 240 }, ice: { wind: 0.7, count: 3, gap: 0.55, speed: 620, dmg: 110 }, bite: { wind: 0.95, dmg: 230, post: 32 } };
-        S7.reflectDmg = [60, 22]; /* 折射冰柱打頭：氣血 60、架勢 22（架勢上限 160 → 約 7 發；完美招架噬咬 +32） */
+        S7.reflectDmg = [60, 11]; /* v0.8.186 架勢基準 ×2 之後 22 實際是 44（4 發就破防）；改 11 才是原設計的約 7 發 */ // /* 折射冰柱打頭：氣血 60、架勢 22（架勢上限 160 → 約 7 發；完美招架噬咬 +32） */
         S7.camZoomP = { 1: 1, 2: 0.72 };
         S7.moves = {
           a_smash: { name: "天罰金鐧", armor: true, windup: 0.5, active: 0.15, recover: 0.5, range: 190, lunge: 360, damage: 180, parryPostureDmg: 26 },
@@ -569,6 +569,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
 
       /* v0.8.185 心印、通關回響封存後，第 5～8 關結算的「解鎖」文字改成中性（劇情之後會整體重寫） */
+      /* v0.8.186 蓄力斬在進第 3 關時解鎖，但舊 15 關對照表跳過了原本寫解鎖說明的那一關：補在第 2 關結算 */
+      Stages[2].unlockText = "【機制解鎖：青雲蓄力斬 & 空中二段瞬身】按住攻擊 0.45 秒放出蓄力斬（耗 25 劍勢），能打斷藍色光圈的霸體招、劈碎部分大招；滯空時可再瞬步一次，完美招架可反彈飛劍！";
       Stages[5].unlockText = "【戰果】九幽魔狼伏誅，墨塵劍心更加沉穩。";
       Stages[6].unlockText = "【戰果】血池乾涸，魅月遁走，萬毒魔宗就此瓦解。";
       Stages[7].unlockText = "【戰果】破開天門鎮守，金甲與玄武皆退，天梯盡頭已在眼前。";

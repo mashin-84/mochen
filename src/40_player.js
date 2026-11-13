@@ -1,7 +1,9 @@
       /* =========================================================================
        * 4. 墨塵招式派生與按鍵邏輯
        * ========================================================================= */
-      const Keys = { left: false, right: false };
+      const Keys = { left: false, right: false, last: 0 };
+      /* v0.8.186 主角移動手感（集中調整）：speed 全速；accel／decel 地面加減速（px/s²）；turnK 轉身時加速倍率；air* 空中；jumpBufMs 落地前預按跳；coyoteMs 離開平台邊緣後仍可起跳 */
+      const MOVE = { speed: 580, accel: 8500, decel: 7500, turnK: 2.6, airAccel: 5200, airDecel: 2600, jumpBufMs: 130, coyoteMs: 90 };
 
       function bufferAction(actionName) {
         Player.inputBuffer = { action: actionName, time: performance.now() };
@@ -44,8 +46,9 @@
           return;
         }
         // 按下立即出招 (零延遲)；第 4 關起，按住滿 0.45 秒追加蓄力重斬
+        Player._atkBuffered = false;
         doNormalAttack();
-        if (Progress.unlockedStages >= 3) { /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
+        if (Progress.unlockedStages >= 3 && !Player._atkBuffered) { /* v0.8.186 這一下只是記進緩衝（上一刀還在收招）就不開始蓄力，連按時不會誤放蓄力斬 */ /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
           Player.isChargingAttack = true;
           Player.attackChargeStartTime = performance.now();
         }
@@ -122,7 +125,7 @@
         /* v0.8.183 普攻不再消耗劍勢（限制連按交給 Boss 格擋第三刀的完美彈刀）；劍勢只給瞬步、蓄力斬、普通格擋用 */
         if (Player.state === "drink") Player.state = "idle";
         if (Player.atkCd > 0.08) {
-          bufferAction("attack");
+          bufferAction("attack"); Player._atkBuffered = true;
           return;
         }
         if (Player.y < PG() - 24) { doAirAttack(); return; }
@@ -280,8 +283,8 @@
         }
 
         const now = performance.now();
-        /* v0.8.183 取消 0.55 秒招架冷卻（原本普通格擋後有 0.19 秒按不出來的死區）：永遠舉得起劍，但 0.5 秒內連按會縮小完美窗口；完美招架後重置 */
-        Player._parrySpam = (Player._lastParryPress && now - Player._lastParryPress < 500) ? Math.min(2, (Player._parrySpam || 0) + 1) : 0;
+        /* v0.8.186 連按判定 500ms → 招架姿勢長度（360ms）：姿勢還沒結束就重按才算連按；普通格擋後隔 0.4 秒認真再按下一刀不受罰 */ /* v0.8.183 取消 0.55 秒招架冷卻（原本普通格擋後有 0.19 秒按不出來的死區）：永遠舉得起劍，但 0.5 秒內連按會縮小完美窗口；完美招架後重置 */
+        Player._parrySpam = (Player._lastParryPress && now - Player._lastParryPress < Config.guardStanceMs) ? Math.min(2, (Player._parrySpam || 0) + 1) : 0;
         Player._lastParryPress = now;
 
         Player.state = "parry";
@@ -403,8 +406,10 @@
           return;
         }
 
-        if (Player.y >= PG() - 4) {
-          Player.y = PG();
+        const coyote = Player.y < PG() - 4 && Player.vy >= 0 && !Player._coyoteUsed && Player.canDoubleJump && performance.now() - (Player._groundMs || 0) < MOVE.coyoteMs && Game.plats.length > 0; /* v0.8.186 離地寬限：走出平台邊緣 0.09 秒內按跳仍算第一段跳（只在有平台的關卡有意義） */
+        if (Player.y >= PG() - 4 || coyote) {
+          if (!coyote) Player.y = PG();
+          Player._coyoteUsed = coyote;
           Player.vy = -860; Reader.note("jump");
           Player.state = "jump";
           Player.canDoubleJump = true;
@@ -419,6 +424,7 @@
           return;
         }
 
+        if (!Player.canDoubleJump && Player.vy > 0) Player._jumpBuf = performance.now(); /* v0.8.186 兩段跳都用完、正在下落時按跳：記住，落地瞬間起跳 */
         if (Player.canDoubleJump) {
           Player.canDoubleJump = false;
           Player.vy = -740;
@@ -781,8 +787,9 @@
 
       function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
         if (fromAtk && Boss._hpOut) { /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢；v0.8.183 例外：Boss 收招／大招喘息／被擊落的破綻中砍，可以慢慢推最後 20%（避免一直出不能招架的招時卡死） */
-          if (!(Boss.state === "recover" || Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen")) { Boss._capFlash = performance.now(); return; }
-          amount *= 0.5; fromAtk = false; cap = null;
+          const big = Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen";
+          if (!(Boss.state === "recover" || big)) { Boss._capFlash = performance.now(); return; }
+          amount *= 0.5; fromAtk = false; cap = big ? null : Boss.maxPosture * 0.95; /* v0.8.186 一般收招只能推到 95%（原本一輪普攻就補滿，等於不用防守）；最後一下仍要彈刀／看破／踩頭，或等大招喘息、擊落、定身的大破綻 */
         }
         if (fromAtk) { const c60 = Boss.maxPosture * 0.6; cap = cap ? Math.min(cap, c60) : c60; } /* v0.8.157 攻擊類（普攻、重斬、蓄力、凌空斬／下劈）一律最多把架勢加到 60%；最後 40% 只能靠完美招架、踏劍看破、凌空踩頭、折射 */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */

@@ -3424,7 +3424,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           legHit: { normal: [22, 4, 1], third: [34, 6, 1.5], air: [22, 4, 1], charged: [90, 14, 3] },
           tailHit: { normal: [55, 5, 0], third: [85, 8, 0], air: [55, 5, 0], charged: [320, 22, 0] }, stun: 7.5,
           tail: { wind: 1.1, dmg: 240 }, ice: { wind: 0.7, count: 3, gap: 0.55, speed: 620, dmg: 110 }, bite: { wind: 0.95, dmg: 230, post: 32 } };
-        S7.reflectDmg = [60, 22]; /* 折射冰柱打頭：氣血 60、架勢 22（架勢上限 160 → 約 7 發；完美招架噬咬 +32） */
+        S7.reflectDmg = [60, 11]; /* v0.8.186 架勢基準 ×2 之後 22 實際是 44（4 發就破防）；改 11 才是原設計的約 7 發 */ // /* 折射冰柱打頭：氣血 60、架勢 22（架勢上限 160 → 約 7 發；完美招架噬咬 +32） */
         S7.camZoomP = { 1: 1, 2: 0.72 };
         S7.moves = {
           a_smash: { name: "天罰金鐧", armor: true, windup: 0.5, active: 0.15, recover: 0.5, range: 190, lunge: 360, damage: 180, parryPostureDmg: 26 },
@@ -3503,6 +3503,8 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       }
 
       /* v0.8.185 心印、通關回響封存後，第 5～8 關結算的「解鎖」文字改成中性（劇情之後會整體重寫） */
+      /* v0.8.186 蓄力斬在進第 3 關時解鎖，但舊 15 關對照表跳過了原本寫解鎖說明的那一關：補在第 2 關結算 */
+      Stages[2].unlockText = "【機制解鎖：青雲蓄力斬 & 空中二段瞬身】按住攻擊 0.45 秒放出蓄力斬（耗 25 劍勢），能打斷藍色光圈的霸體招、劈碎部分大招；滯空時可再瞬步一次，完美招架可反彈飛劍！";
       Stages[5].unlockText = "【戰果】九幽魔狼伏誅，墨塵劍心更加沉穩。";
       Stages[6].unlockText = "【戰果】血池乾涸，魅月遁走，萬毒魔宗就此瓦解。";
       Stages[7].unlockText = "【戰果】破開天門鎮守，金甲與玄武皆退，天梯盡頭已在眼前。";
@@ -4029,7 +4031,9 @@ const Config = {
       /* =========================================================================
        * 4. 墨塵招式派生與按鍵邏輯
        * ========================================================================= */
-      const Keys = { left: false, right: false };
+      const Keys = { left: false, right: false, last: 0 };
+      /* v0.8.186 主角移動手感（集中調整）：speed 全速；accel／decel 地面加減速（px/s²）；turnK 轉身時加速倍率；air* 空中；jumpBufMs 落地前預按跳；coyoteMs 離開平台邊緣後仍可起跳 */
+      const MOVE = { speed: 580, accel: 8500, decel: 7500, turnK: 2.6, airAccel: 5200, airDecel: 2600, jumpBufMs: 130, coyoteMs: 90 };
 
       function bufferAction(actionName) {
         Player.inputBuffer = { action: actionName, time: performance.now() };
@@ -4072,8 +4076,9 @@ const Config = {
           return;
         }
         // 按下立即出招 (零延遲)；第 4 關起，按住滿 0.45 秒追加蓄力重斬
+        Player._atkBuffered = false;
         doNormalAttack();
-        if (Progress.unlockedStages >= 3) { /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
+        if (Progress.unlockedStages >= 3 && !Player._atkBuffered) { /* v0.8.186 這一下只是記進緩衝（上一刀還在收招）就不開始蓄力，連按時不會誤放蓄力斬 */ /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
           Player.isChargingAttack = true;
           Player.attackChargeStartTime = performance.now();
         }
@@ -4150,7 +4155,7 @@ const Config = {
         /* v0.8.183 普攻不再消耗劍勢（限制連按交給 Boss 格擋第三刀的完美彈刀）；劍勢只給瞬步、蓄力斬、普通格擋用 */
         if (Player.state === "drink") Player.state = "idle";
         if (Player.atkCd > 0.08) {
-          bufferAction("attack");
+          bufferAction("attack"); Player._atkBuffered = true;
           return;
         }
         if (Player.y < PG() - 24) { doAirAttack(); return; }
@@ -4308,8 +4313,8 @@ const Config = {
         }
 
         const now = performance.now();
-        /* v0.8.183 取消 0.55 秒招架冷卻（原本普通格擋後有 0.19 秒按不出來的死區）：永遠舉得起劍，但 0.5 秒內連按會縮小完美窗口；完美招架後重置 */
-        Player._parrySpam = (Player._lastParryPress && now - Player._lastParryPress < 500) ? Math.min(2, (Player._parrySpam || 0) + 1) : 0;
+        /* v0.8.186 連按判定 500ms → 招架姿勢長度（360ms）：姿勢還沒結束就重按才算連按；普通格擋後隔 0.4 秒認真再按下一刀不受罰 */ /* v0.8.183 取消 0.55 秒招架冷卻（原本普通格擋後有 0.19 秒按不出來的死區）：永遠舉得起劍，但 0.5 秒內連按會縮小完美窗口；完美招架後重置 */
+        Player._parrySpam = (Player._lastParryPress && now - Player._lastParryPress < Config.guardStanceMs) ? Math.min(2, (Player._parrySpam || 0) + 1) : 0;
         Player._lastParryPress = now;
 
         Player.state = "parry";
@@ -4431,8 +4436,10 @@ const Config = {
           return;
         }
 
-        if (Player.y >= PG() - 4) {
-          Player.y = PG();
+        const coyote = Player.y < PG() - 4 && Player.vy >= 0 && !Player._coyoteUsed && Player.canDoubleJump && performance.now() - (Player._groundMs || 0) < MOVE.coyoteMs && Game.plats.length > 0; /* v0.8.186 離地寬限：走出平台邊緣 0.09 秒內按跳仍算第一段跳（只在有平台的關卡有意義） */
+        if (Player.y >= PG() - 4 || coyote) {
+          if (!coyote) Player.y = PG();
+          Player._coyoteUsed = coyote;
           Player.vy = -860; Reader.note("jump");
           Player.state = "jump";
           Player.canDoubleJump = true;
@@ -4447,6 +4454,7 @@ const Config = {
           return;
         }
 
+        if (!Player.canDoubleJump && Player.vy > 0) Player._jumpBuf = performance.now(); /* v0.8.186 兩段跳都用完、正在下落時按跳：記住，落地瞬間起跳 */
         if (Player.canDoubleJump) {
           Player.canDoubleJump = false;
           Player.vy = -740;
@@ -4809,8 +4817,9 @@ const Config = {
 
       function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
         if (fromAtk && Boss._hpOut) { /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢；v0.8.183 例外：Boss 收招／大招喘息／被擊落的破綻中砍，可以慢慢推最後 20%（避免一直出不能招架的招時卡死） */
-          if (!(Boss.state === "recover" || Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen")) { Boss._capFlash = performance.now(); return; }
-          amount *= 0.5; fromAtk = false; cap = null;
+          const big = Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen";
+          if (!(Boss.state === "recover" || big)) { Boss._capFlash = performance.now(); return; }
+          amount *= 0.5; fromAtk = false; cap = big ? null : Boss.maxPosture * 0.95; /* v0.8.186 一般收招只能推到 95%（原本一輪普攻就補滿，等於不用防守）；最後一下仍要彈刀／看破／踩頭，或等大招喘息、擊落、定身的大破綻 */
         }
         if (fromAtk) { const c60 = Boss.maxPosture * 0.6; cap = cap ? Math.min(cap, c60) : c60; } /* v0.8.157 攻擊類（普攻、重斬、蓄力、凌空斬／下劈）一律最多把架勢加到 60%；最後 40% 只能靠完美招架、踏劍看破、凌空踩頭、折射 */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
@@ -5246,6 +5255,21 @@ const Config = {
         at(Boss.x, Boss.facing, m.bulletY);
         (Game.illusions || []).forEach(il => { if (!il.dead) at(il.x, Player.x >= il.x ? 1 : -1, [0, 1].map(i => m.bulletY[(i * 2) % m.bulletY.length])); });
       }
+      /* v0.8.186 Boss 彈開主角第三刀後的反擊招：各關／各姿態可用 counter:[招式鍵…] 指定；沒指定時，
+         沒有姿態的關沿用舊規則（slash1 65%／thrust_peril 35%），其餘從目前姿態的招式池挑「前搖最短的近戰單發／連段招」。 */
+      function pickCounterMove(stage) {
+        const st = stanceOf(stage), M = stage.moves || {};
+        const C = (st && st.counter) || stage.counter;
+        if (C && C.length) { const k = C[Math.floor(Math.random() * C.length)]; if (M[k]) return k; }
+        if (!st || (Boss.stageId === 3 && Boss.stance === "A")) { if (M.slash1) return (Math.random() < 0.65 || !M.thrust_peril) ? "slash1" : "thrust_peril"; }
+        const melee = k => { const m = M[k]; return m && !m.ult && !m.isRanged && !m.isZone && !m.isMobility && !m.isSwitch && !m.isTeleport && !m.isLeap && !m.isCharge && !m.isRage && !m.isSplit && !m.isFeint && !m.isCounter && !m.isHeal && !m.isPerilous && !m.partsCall && !m.lowOnly && !m.armor && m.range > 0; };
+        const lists = st ? [st.pool, st.poolP2] : [stage.pool, stage.p1Pool, stage.p2Pool];
+        const keys = [];
+        lists.forEach(L => (L || []).forEach(e => String(e[0]).split("+").forEach(k => { if (melee(k) && keys.indexOf(k) < 0) keys.push(k); })));
+        if (!keys.length && !st) Object.keys(M).forEach(k => { if (melee(k)) keys.push(k); });
+        keys.sort((a, b) => M[a].windup - M[b].windup);
+        return keys[0] || ""; /* 沒有合適的招（例：玄武）就不反擊 */
+      }
       function triggerBossMove(moveKey, queue = []) {
         if (moveKey === "b_breath" && !Boss._breathHop && Boss.stageId === 5) { /* v0.8.183 魔焰獸玉：背後離牆不到 350 時先衝向場中一步，否則玩家繞不到狼身後 */
           const back = Boss.facing > 0 ? Boss.x : Config.worldWidth - Boss.x;
@@ -5299,6 +5323,7 @@ const Config = {
         Boss.aerialTimer = 0;
         Boss.aerialShotTimer = m.aerialShotInterval || 1.1;
         Boss.jumpedOver = false;
+        if (m.armor && !m.isCharge && !m.isSwitch && !m.isSplit && Progress.unlockedStages >= 3) hintOnce("armor_charge", "【霸體】藍色光圈＝普攻打不斷：按住攻擊 0.45 秒放【蓄力斬】才能打斷"); /* v0.8.186 第 3 關起第一次遇到霸體招時教蓄力斬 */
         if (m.isCharge) hintOnce("charge", "【衝鋒】跳躍越過，或在它貼近時瞬步閃開");
 
         if (m.isAerial) {
@@ -5567,7 +5592,12 @@ const Config = {
             Boss.state = "active";
             const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
             Boss.stateTimer = move.active * phaseMod * volSpeedMod;
-            Boss.stateDur = move.active * phaseMod * volSpeedMod;
+            if (move.isCombo) { /* v0.8.186 連段的出刀間隔不吃階段／卷數加速，active 被壓短後最後一刀會出不來（第 4 關環劍旋斬、第 8 關三絕劍與魔爪四連、第 9 關青雲斬三連）→ active 至少撐到最後一刀之後 0.08 秒 */
+              const n = move.comboTotalHits || 3, iv = move.comboInterval || 0.20;
+              const lastAt = n <= 1 ? 0 : iv * (n - 2) + (move.comboLastDelay || iv);
+              Boss.stateTimer = Math.max(Boss.stateTimer, lastAt + 0.08);
+            }
+            Boss.stateDur = Boss.stateTimer;
             Boss.vx = Boss.facing * move.lunge * (Config.bossPhase === 2 ? 1.2 : 1.0);
             spawnMoveFx(move.fxAct); illusionMoveFx(move.fxAct); /* 幻影也出同樣的特效，否則特效會洩漏真身 */
             if (move.isSplit) illusionSplit();
@@ -5741,6 +5771,7 @@ const Config = {
 
           // 原語 (3) 多段連擊：依間隔連續揮斬判定
           if (move.isCombo && Boss.comboHitsLeft > 0) {
+            Boss.stateTimer = Math.max(Boss.stateTimer, Boss.comboHitTimer + 0.08); /* v0.8.186 還有刀沒出完就不收招（保險：不管 active 被什麼倍率壓短） */
             Boss.comboHitTimer -= dt;
             if (Boss.comboHitTimer <= 0) {
               Boss.comboHitTimer = move.comboInterval || 0.20;
@@ -6194,16 +6225,12 @@ const Config = {
                   // 墨塵長劍被彈開受阻
                   Player.vx = -Player.facing * 160;
                   Player.state = "idle";
+                  Player.isChargingAttack = false; Player.atkCd = Math.max(Player.atkCd || 0, 0.35); /* v0.8.186 被彈刀＝攻勢中斷：取消正在蓄的蓄力斬（原本 0.45 秒一到照樣砍出去），0.35 秒內不能再出刀 */
                   spawnFloatingText(Player.x, Player.y - 120, "【敵將完美彈刀！】立即招架！", "#fde047", 1.35);
                   setTelemetry("⚠️ 敵將完美彈刀！攻防互換，敵將霸體反斬，立即按 K 招架！");
 
                   // 敵將立即強行切入霸體反擊！懲罰盲目狂按普攻的玩家！
-                  const counterRoll = Math.random();
-                  if (counterRoll < 0.65) {
-                    triggerBossMove("slash1");
-                  } else {
-                    triggerBossMove("thrust_peril");
-                  }
+                  triggerBossMove(pickCounterMove(Stages[Boss.stageId])); /* v0.8.186 原本寫死 slash1／thrust_peril：第 5～9 關沒有這兩招（Boss 彈完站著不動）、第 3 關重劍姿態會用到雙劍的圖 */
                 }
               }
             }
@@ -6230,13 +6257,21 @@ const Config = {
           if (Game.mode === "enter") dir = Game.loadHold ? 0 : 1; /* v0.8.156 等圖載完時原地站著 */
           if (Game.ultBind) dir = 0; /* v0.8.168 大招劍陣鎖身：不能移動 */
 
+          if (Keys.left && Keys.right && Keys.last) dir = Keys.last; /* v0.8.186 左右同時按：以後按的為準（原本互相抵消會頓一下） */
+          const onG = Player.y >= PG() - 2;
           if (dir !== 0) {
-            Player.vx = dir * 580;
+            /* v0.8.186 起步／轉身用很短的加速（地面約 0.07 秒到全速、轉身約 0.05 秒過零），取代瞬間 0→580：跑步格是依位移推進的，起步與轉身不再滑一格；空中轉向稍慢，有一點慣性 */
+            const tgt = dir * MOVE.speed, turning = Player.vx * dir < 0;
+            const acc = (onG ? MOVE.accel : MOVE.airAccel) * (turning ? MOVE.turnK : 1);
+            if (Game.mode === "enter") Player.vx = tgt;
+            else Player.vx = tgt > Player.vx ? Math.min(tgt, Player.vx + acc * dt) : Math.max(tgt, Player.vx - acc * dt);
             Player.facing = dir;
-            if (Player.y >= PG() - 2) Player.state = "move";
+            if (onG) Player.state = "move";
           } else {
-            Player.vx *= Math.pow(0.001, dt);
-            if (Player.y >= PG() - 2) Player.state = "idle";
+            /* 放開方向：地面等減速煞停（約 0.08 秒）；空中保留一點慣性 */
+            const dec = (onG ? MOVE.decel : MOVE.airDecel) * dt;
+            Player.vx = Math.abs(Player.vx) <= dec ? 0 : Player.vx - Math.sign(Player.vx) * dec;
+            if (onG) Player.state = "idle";
           }
         } else if (Player.state !== "dash" && !Player.blast) {
           Player.vx *= Math.pow(0.015, dt);
@@ -6263,7 +6298,9 @@ const Config = {
             triggerShake(0, 1, 10, 0.18);
           }
           Player.hasVaulted = false; if (Player.state === "jump") Player.state = "idle";
+          if (Player._jumpBuf && performance.now() - Player._jumpBuf < MOVE.jumpBufMs && Player.state === "idle") { Player._jumpBuf = 0; doJump(); } /* v0.8.186 落地前一瞬間按跳：落地立刻起跳 */
         }
+        if (Player.y >= PG() - 2) Player._groundMs = performance.now(); /* v0.8.186 離地寬限用：最後一次踩在地面／平台的時刻 */
 
         Player.x = Math.max(Game.mode === "battle" ? 70 : -1210, Math.min(Config.worldWidth - 70, Player.x));
 
@@ -6320,7 +6357,7 @@ const Config = {
             hz.duration -= dt;
             if (hz.warningTimer <= 0) {
               const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && (hz.tall || Player.y >= Config.groundY - 20);
-              if (hz.tall && !hz.hb) { hz.hb = true; if (inZone && Player.invulnTimer <= 0 && ultHardBlock(hz.damagePerSec * 0.5, Player.x >= Boss.x ? 1 : -1, "【硬接火柱】")) hz.k = 0.25; } /* v0.8.184 魔焰獸玉次佳解：火柱噴出瞬間完美招架＝整段只受 25% */ /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
+              if (hz.tall && !hz.hb && inZone && Player.invulnTimer <= 0) { hz.hb = true; /* v0.8.186 改成「第一次碰到火柱的那一刻」判硬接（原本只判噴出的第一幀，晚一幀進火柱就永遠接不到） */ if (ultHardBlock(hz.damagePerSec * 0.5, Player.x >= Boss.x ? 1 : -1, "【硬接火柱】")) hz.k = 0.25; } /* v0.8.184 魔焰獸玉次佳解：火柱噴出瞬間完美招架＝整段只受 25% */ /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
               if (inZone && Player.invulnTimer <= 0 && Player.state !== "execution") {
                 /* v0.7.8 煞氣地形是持續傷害：每 0.3 秒結算一次、不硬直不停頓，可以走出去（以前每幀 takeDamage 會一直硬直卡死） */
                 hz.tickT = (hz.tickT || 0) - dt;
@@ -6350,7 +6387,7 @@ const Config = {
             if (d < 42 && sw.y > Player.y - Player.h * 2.05 && sw.y < Player.y + 6) { /* v0.8.65 判定改為圖上整個身體（約腳底上 230；原 -90～0 只到大腿，飛劍拉高後胸口也要能中） */
               if (Player.state === "parry") {
                 sw.reflected = true;
-                Player.parryCooldown = 0; Player._parrySpam = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
+                Player.parryCooldown = 0; Player._parrySpam = 0; Player._lastParryPress = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
                 sw.vx = -sw.dir * 950;
                 sw.dir = -sw.dir;
                 Progress.parryCount++;
@@ -13968,10 +14005,10 @@ const Config = {
         if (e.repeat) return;
         const c = e.code;
         if (c === "KeyA" || c === "ArrowLeft") {
-          Keys.left = true;
+          Keys.left = true; Keys.last = -1;
           document.getElementById("touch-left").classList.add("active");
         } else if (c === "KeyD" || c === "ArrowRight") {
-          Keys.right = true;
+          Keys.right = true; Keys.last = 1;
           document.getElementById("touch-right").classList.add("active");
         } else if (c === "KeyJ") {
           document.getElementById("touch-attack").classList.add("active");
@@ -14067,8 +14104,8 @@ const Config = {
         }
       });
 
-      bindHoldBtn(document.getElementById("touch-left"), () => { Keys.left = true; }, () => { Keys.left = false; });
-      bindHoldBtn(document.getElementById("touch-right"), () => { Keys.right = true; }, () => { Keys.right = false; });
+      bindHoldBtn(document.getElementById("touch-left"), () => { Keys.left = true; Keys.last = -1; }, () => { Keys.left = false; });
+      bindHoldBtn(document.getElementById("touch-right"), () => { Keys.right = true; Keys.last = 1; }, () => { Keys.right = false; });
       bindHoldBtn(document.getElementById("touch-attack"), startAttackCharge, releaseAttackCharge);
       bindHoldBtn(document.getElementById("touch-parry"), doParry);
       bindHoldBtn(document.getElementById("touch-dash"), doDash);
