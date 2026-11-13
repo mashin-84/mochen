@@ -3,7 +3,8 @@
 橫版動作 RPG（Boss Rush，隻狼式彈刀與架勢）。上線檔是單檔 `index.html`（Canvas 2D、Web Audio、無外部依賴）＋ `assets/` 圖片音檔；**原始碼在 `src/`，`index.html` 由 `tools/build.py` 組出，不要直接改 `index.html`**。使用者在手機（Android Chrome，橫向）測試。
 - 網址：https://mashin-84.github.io/mochen/（GitHub Pages，main 分支根目錄）
 - **開工順序**：讀本檔 → 讀 `HANDOFF.md` 第〇節「現況總覽」（目前進度、待辦、各關狀態）→ 做新關卡再讀 `STAGE_PIPELINE.md`（單關標準流程、提示詞模板、驗收清單）。
-- 劇情來源：`mashin-84/Cultivation` 的 `source` 分支。
+- 劇情來源：`mashin-84/Cultivation` 的 `source` 分支（劇情之後由使用者在 Gemini 討論後提供，重寫前不要動對白）。
+- 外部顧問（Gemini）評估資料放 `review/`；Gemini 的意見一律先對原始碼查證、標出屬實／誇大／與使用者已定案衝突，再提方案。
 
 ## 與使用者合作的規則
 - 回覆要短、先給結論，手機閱讀，每段一個螢幕內。繁體中文。
@@ -73,6 +74,10 @@
 - 部位 Boss（第 4、7 關）：`53_parts.js`（`Stages[n].parts`、`Boss._pp`、`partsUpdate`／`partsTryHit`／`partStrike`／`drawPartsBack`／`drawPartsFront`）
 - **戰場上導演演出**（登場／階段轉換，取代影片）：`54_director.js`（`DIR_CFG[n] = {intro, phase, form, phase3, p2Aura}`、`dirStart`／`dirUpdate`／`dirEnd`／`dirBurst`、各 kind 的 step：drop／mirror／dash／graveyard／formtrans／descend／wolf／morph、`drawDirWorld`、`stMovie`）。**新增登場 kind 時，要把它加進 `src/80_flow.js` 的 `_introHide` 清單（登場前 Boss 不可站在場上）**。
 - **招牌大招**（演出型，每關一招）：`55_ult.js`（`ULT_CFG[種類]` 時間軸、`ultStart`／`ultUpdate`／`ultWavesTick`／`drawUltWorld`／`drawUltTop`），招式資料 `moves.X.ult = "種類"`；**齒輪「大招測試」**直接進二階段放大招，新關做好後加 `Stages[n].sigMove = "招式鍵"`（一關多招／一階段大招用 `sigMoves:[{move,phase,stance}]`）就會列出；招牌大招有 15 秒冷卻（`Boss._sigNext`）。特效貼地用 `groundFxY(sheet,row,h)`（`70_fx.js` 的 `FX_FOOT` 表要補新圖各列的腳底 y）。
+- **雙 Boss 同伴**（第 6 關）：`56_partner.js`（`Stages[6].partner`、`partnerUpdate`／`partnerTryHit`、血池 `Stages[n].pools`）。
+- **灰盒大招與關卡機制**（第 4～9 關）：`57_gult.js`（`GULT[種類]` 時間軸、`guStrike`／`guWave`、`ultHardBlock` 大招次佳解＝完美招架硬接 25%、`mechTick` 金光盾／三階段 `mechPhase3Intercept`、平台 `Game.plats`＋`PG()`＝主角腳下地面，主角相關「是否在地面」一律用 `PG()`）。
+- **超大型部位戰**（第 7 關玄武）：`58_colossus.js`（`Stages[7].colossus`、`xwAI`／`xwTick`／`xwTryHit`、`drawXwBack`／`drawXwFront`）。
+- **主角性能固定**（v0.8.183～185）：招架 150ms、普攻不扣劍勢、招架無冷卻但連按縮窗口（`PARRY_SPAM_K`）；心印 `SEALS_FROZEN`、通關回響 `ECHOES_FROZEN` 已封存（原問心印架勢 ×2 併入基準）。
 - 玄天珠（輔助技）：`assistStart`／`activateAssist`／`applyAssistEffect`（靈光／替身兩種，營地選擇）
 - 美術特效：`spawnFx(sheet,row,x,y,{w,h,dur,loop,fps,facing,follow,c0,nf,vx,vy,alpha,anchor})`／`updateFx`／`drawFx`（`assets/fx/*.webp`，4×4 格、每格 256px）、`spawnMoveFx`、`executionFx`、`drawUltArt`、`landingFx`
 - Boss 繪製：`drawBossEntity`、`getBossSprite`、`bossVis`、`getWalkNorm`；玩家：`drawPlayer`
