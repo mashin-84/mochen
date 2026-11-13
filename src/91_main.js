@@ -180,7 +180,7 @@
         try {
           const raw = localStorage.getItem("qingyun_echoes");
           const arr = raw ? JSON.parse(raw) : [];
-          Progress.echoes = Array.isArray(arr) ? arr.filter((n) => n >= 11 && n <= 14) : [];
+          Progress.echoes = ECHOES_FROZEN ? [] : (Array.isArray(arr) ? arr.filter((n) => n >= 11 && n <= 14) : []); /* v0.8.185 通關回響封存：舊存檔的回響也不生效 */
         } catch (e) {
           Progress.echoes = [];
         }

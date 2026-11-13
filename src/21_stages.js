@@ -567,3 +567,9 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S9.moves.u_sannian = U("三念歸一", "g_s9", 7.5);
         S9.hpTriggers = [{ move: "u_sannian", at: 0.5, phase: 2 }]; S9.sigMove = "u_sannian"; addCue(S9);
       }
+
+      /* v0.8.185 心印、通關回響封存後，第 5～8 關結算的「解鎖」文字改成中性（劇情之後會整體重寫） */
+      Stages[5].unlockText = "【戰果】九幽魔狼伏誅，墨塵劍心更加沉穩。";
+      Stages[6].unlockText = "【戰果】血池乾涸，魅月遁走，萬毒魔宗就此瓦解。";
+      Stages[7].unlockText = "【戰果】破開天門鎮守，金甲與玄武皆退，天梯盡頭已在眼前。";
+      Stages[8].unlockText = "【戰果】司徒衡伏誅，天道劫眼卻已睜開……";

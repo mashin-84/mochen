@@ -298,7 +298,7 @@
         }
 
         // 通關回響解鎖（第5~8關）
-        if (clearedStageId >= 5 && clearedStageId <= 8) {
+        if (!ECHOES_FROZEN && clearedStageId >= 5 && clearedStageId <= 8) {
           const echoId = clearedStageId + 6; /* 第5~8關 → 回響 11~14（效果編號沿用） */
           if (!Progress.echoes) Progress.echoes = [];
           if (!Progress.echoes.includes(echoId)) {

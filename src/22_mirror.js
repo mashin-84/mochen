@@ -70,6 +70,7 @@
       });
 
       const SEALS_FROZEN = true;
+      const ECHOES_FROZEN = true; /* v0.8.185 通關回響封存（使用者）：主角性能固定，方便平衡；程式保留 */
       /* Mind Seals System (心印系統 - 5 Types, Max 2 Equipped) */
       const MindSeals = {
         wenxin: {

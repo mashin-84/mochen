@@ -3502,6 +3502,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S9.hpTriggers = [{ move: "u_sannian", at: 0.5, phase: 2 }]; S9.sigMove = "u_sannian"; addCue(S9);
       }
 
+      /* v0.8.185 心印、通關回響封存後，第 5～8 關結算的「解鎖」文字改成中性（劇情之後會整體重寫） */
+      Stages[5].unlockText = "【戰果】九幽魔狼伏誅，墨塵劍心更加沉穩。";
+      Stages[6].unlockText = "【戰果】血池乾涸，魅月遁走，萬毒魔宗就此瓦解。";
+      Stages[7].unlockText = "【戰果】破開天門鎮守，金甲與玄武皆退，天梯盡頭已在眼前。";
+      Stages[8].unlockText = "【戰果】司徒衡伏誅，天道劫眼卻已睜開……";
+
       /* 心魔「適應」記錄：依玩家近期習慣挑招 */
       const Mirror = {
         atkStreak: 0, atkT: 0, dashTimes: [], farT: 0, nearT: 0, lastAct: null, healCd: 0, t: 0,
@@ -3574,6 +3580,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       });
 
       const SEALS_FROZEN = true;
+      const ECHOES_FROZEN = true; /* v0.8.185 通關回響封存（使用者）：主角性能固定，方便平衡；程式保留 */
       /* Mind Seals System (心印系統 - 5 Types, Max 2 Equipped) */
       const MindSeals = {
         wenxin: {
@@ -13080,7 +13087,7 @@ const Config = {
         }
 
         // 通關回響解鎖（第5~8關）
-        if (clearedStageId >= 5 && clearedStageId <= 8) {
+        if (!ECHOES_FROZEN && clearedStageId >= 5 && clearedStageId <= 8) {
           const echoId = clearedStageId + 6; /* 第5~8關 → 回響 11~14（效果編號沿用） */
           if (!Progress.echoes) Progress.echoes = [];
           if (!Progress.echoes.includes(echoId)) {
@@ -14448,7 +14455,7 @@ const Config = {
         try {
           const raw = localStorage.getItem("qingyun_echoes");
           const arr = raw ? JSON.parse(raw) : [];
-          Progress.echoes = Array.isArray(arr) ? arr.filter((n) => n >= 11 && n <= 14) : [];
+          Progress.echoes = ECHOES_FROZEN ? [] : (Array.isArray(arr) ? arr.filter((n) => n >= 11 && n <= 14) : []); /* v0.8.185 通關回響封存：舊存檔的回響也不生效 */
         } catch (e) {
           Progress.echoes = [];
         }
