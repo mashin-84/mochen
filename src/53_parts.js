@@ -159,7 +159,7 @@
       }
       function handPosture(h, amt, label) {
         if (h.brokenT > 0) return;
-        if (Progress.equippedSeals.includes("wenxin")) amt *= 2.0;
+        amt *= 2.0; /* v0.8.184 原預設問心印 ×2 併入基準 */
         h.posture = Math.min(partsDef().handPosture, h.posture + amt);
         h.pdelay = 3.0;
         if (label) spawnFloatingText(h.x, h.y - 190, label, "#fde047", 1.0);

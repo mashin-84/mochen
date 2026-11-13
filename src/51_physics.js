@@ -360,11 +360,12 @@
             hz.warningTimer -= dt;
             hz.duration -= dt;
             if (hz.warningTimer <= 0) {
-              const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && (hz.tall || Player.y >= Config.groundY - 20); /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
+              const inZone = Math.abs(Player.x - hz.x) <= hz.w * 0.5 && (hz.tall || Player.y >= Config.groundY - 20);
+              if (hz.tall && !hz.hb) { hz.hb = true; if (inZone && Player.invulnTimer <= 0 && ultHardBlock(hz.damagePerSec * 0.5, Player.x >= Boss.x ? 1 : -1, "【硬接火柱】")) hz.k = 0.25; } /* v0.8.184 魔焰獸玉次佳解：火柱噴出瞬間完美招架＝整段只受 25% */ /* tall：魔焰獸玉的火柱又高又長，跳起也躲不掉 */
               if (inZone && Player.invulnTimer <= 0 && Player.state !== "execution") {
                 /* v0.7.8 煞氣地形是持續傷害：每 0.3 秒結算一次、不硬直不停頓，可以走出去（以前每幀 takeDamage 會一直硬直卡死） */
                 hz.tickT = (hz.tickT || 0) - dt;
-                if (hz.tickT <= 0) { hz.tickT = 0.3; zoneDamage(hz.damagePerSec * 0.3, "身陷煞氣絕地！"); }
+                if (hz.tickT <= 0) { hz.tickT = 0.3; zoneDamage(hz.damagePerSec * 0.3 * (hz.k || 1), "身陷煞氣絕地！"); }
               }
             }
             if (hz.duration <= 0) {

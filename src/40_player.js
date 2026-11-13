@@ -790,7 +790,7 @@
         
         let postureGain = amount;
         if (!noSeal) { /* v0.8.120 協助技（符陣定身）不吃封印倍率 */
-        if (Progress.equippedSeals.includes("wenxin")) postureGain *= 2.0;
+        postureGain *= 2.0; /* v0.8.184 原預設問心印的架勢 ×2，封存心印後保留為基準（數值手感不變） */
         if (Progress.equippedSeals.includes("juemai") && Player.hp / Player.maxHp <= 0.35) postureGain *= 1.8;
         }
 

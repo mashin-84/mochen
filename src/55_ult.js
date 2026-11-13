@@ -164,6 +164,7 @@
         const dir = w.dir;
         if (w.big) {
           if (Player.invulnTimer > 0) { perfectDodgeFx("【瞬步穿火】", 10); spawnFloatingText(Player.x, Player.y - 120, "穿過高火牆！", "#7dd3fc", 1.15); return; }
+          if (ultHardBlock(cfg.dmg, dir, "【硬接火牆】")) return; /* v0.8.184 次佳解 */
           takeDamage(bossDmg(cfg.dmg), dir, "【焚岳火牆】");
           return;
         }
@@ -311,7 +312,7 @@
             if (fxReady("boss2ult")) spawnFx("boss2ult", 2, s.x, groundFxY("boss2ult", 2, 300), { anchor: "b", w: 300, h: 300, dur: 0.5 });
             Sound.play("b2_shard_hit", 0.6, 0.9 + Math.random() * 0.2); triggerShake(0, 0.15, 6, 0.1);
             if (Math.abs(Player.x - s.x) < c.rain.r && Player.state !== "execution") {
-              if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 4); else takeDamage(bossDmg(c.rain.dmg), Player.x >= s.x ? 1 : -1, "【萬劍落】");
+              if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 4); else if (!ultHardBlock(c.rain.dmg, Player.x >= s.x ? 1 : -1, "【硬接落劍】")) takeDamage(bossDmg(c.rain.dmg), Player.x >= s.x ? 1 : -1, "【萬劍落】");
             }
           }
           if (s.done && t > s.tf + 0.05) R.splice(i, 1);
@@ -665,7 +666,7 @@
             o.x += o.dir * o.speed * dt; o.rot += 11 * dt;
             if (!o.done && Math.abs(Player.x - o.x) < 80 && Player.state !== "execution") {
               if (Player.y < G - 70) { /* 跳過（離地 70px 以上；飛劍在腰高，判定比圖寬容） */ }
-              else { o.done = true; if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 8); else takeDamage(bossDmg(c.throwDmg), o.dir, "【玄鐵飛劍】"); }
+              else { o.done = true; if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 8); else if (!ultHardBlock(c.throwDmg, o.dir, "【硬接飛劍】")) takeDamage(bossDmg(c.throwDmg), o.dir, "【玄鐵飛劍】"); }
             }
             if ((o.x - o.stopX) * o.dir >= 0) { o.x = o.stopX; o.reached = true; } /* v0.8.176 不再插地：到點停在空中，Boss 瞬移過去接 */
             continue;

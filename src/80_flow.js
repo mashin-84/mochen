@@ -212,6 +212,7 @@
       }
 
       function renderMindSealsUI() {
+        if (SEALS_FROZEN) { const tb = document.querySelector('[data-tab="tab-seals"]'); if (tb) tb.style.display = "none"; return; } /* v0.8.184 心印系統封存（程式保留，SEALS_FROZEN=false 可恢復） */
         const container = document.getElementById("mind-seals-container");
         container.innerHTML = "";
 

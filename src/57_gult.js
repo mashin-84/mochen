@@ -21,6 +21,7 @@
           return;
         }
         if (Player.invulnTimer > 0) { perfectDodgeFx("【瞬步閃過】", 8); return; }
+        if (ultHardBlock(h.dmg, dir, h.label)) return; /* v0.8.184 次佳解 */
         takeDamage(bossDmg(h.dmg), dir, h.label);
       }
       function gultTick(dt) {
@@ -125,7 +126,7 @@
           ev.push([CH, () => {
             if (U.stop) return;
             Game.flashWhiteOverlay = 0.9; triggerShake(0, 0.8, 44, 0.6); hapticBuzz([60, 30, 90]); Sound.play("execution", 0.9, 0.6); U.blastT = 0.5;
-            if (Player.state !== "execution") { if (Player.invulnTimer > 0) perfectDodgeFx("【瞬步避過血爆】", 10); else takeDamage(bossDmg(240), gSide(), "【血神爆】"); }
+            if (Player.state !== "execution") { if (Player.invulnTimer > 0) perfectDodgeFx("【瞬步避過血爆】", 10); else if (!ultHardBlock(240, gSide(), "【硬接血爆】")) takeDamage(bossDmg(240), gSide(), "【血神爆】"); }
           }]);
           g.tick = (dt) => {
             if (U.blastT) U.blastT -= dt;
@@ -402,4 +403,16 @@
           else { ctx.fillStyle = "#475569"; ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(p.x - p.w * 0.5, p.y); ctx.lineTo(p.x + p.w * 0.5, p.y); ctx.lineTo(p.x + p.w * 0.36, p.y + 34); ctx.lineTo(p.x - p.w * 0.36, p.y + 34); ctx.closePath(); ctx.fill(); ctx.stroke(); }
           ctx.restore();
         }
+      }
+      /* v0.8.184 大招次佳解（使用者）：原本「只能瞬步／只能跳」的大招段，完美招架＝硬接：只受 25% 傷害、不硬直、被震退，沒有任何獎勵。
+         正解（瞬步穿過、跳過、劈碎…）仍然是唯一能換到破綻或架勢的解法。回傳 true＝已硬接。 */
+      function ultHardBlock(dmg, dir, label) {
+        if (Player.state !== "parry" || performance.now() - Player.parryStartMs > getParryWindowMs(false) || Player.state === "execution") return false;
+        zoneDamage(bossDmg(dmg) * 0.25, label || "【硬接】");
+        Player.vx = (dir || -Player.facing) * 460; Player.stamina = Math.max(0, Player.stamina - 25); Player.staminaRecoverDelay = 0.6;
+        Sound.play("block", 1.0, 0.75); Sound.play("parry", 0.6, 0.7); triggerHitstopMs(60); triggerShake(dir || 0, 0.3, 18, 0.25); hapticBuzz(30);
+        spawnSparks(Player.x + (dir || 1) * -20, Player.y - 80, "block", dir || 1);
+        spawnFloatingText(Player.x, Player.y - 125, "【硬接】只受輕傷", "#cbd5e1", 1.05);
+        hintOnce("ult_hard", "完美招架能硬接大招、只受輕傷；但要換到破綻，還是得用正解（瞬步、跳、蓄力斬…）");
+        return true;
       }

@@ -69,6 +69,7 @@
         Object.values(st.moves || {}).forEach(m => { if (m && m.range) m.range = Math.round(m.range * CHAR_K); });
       });
 
+      const SEALS_FROZEN = true;
       /* Mind Seals System (心印系統 - 5 Types, Max 2 Equipped) */
       const MindSeals = {
         wenxin: {
@@ -106,7 +107,7 @@
         currentStage: 1,
         unlockedStages: 1, // 依進度解鎖；設定裡的「測試：全解鎖」可全開
         airDashUnlocked: true,
-        equippedSeals: ["wenxin"],
+        equippedSeals: [], /* v0.8.184 心印系統封存（使用者）：不裝任何心印；原預設問心印的架勢 ×2 已併入基準（damageBossPosture） */
         battleStartTime: 0,
         parryCount: 0,
         mikiriCount: 0,
