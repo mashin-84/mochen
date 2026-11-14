@@ -643,3 +643,12 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         for (let i = 1; i <= 6; i++) names.push(`sm_dl_${i}`);
         Stages[1].spriteExtras = (Stages[1].spriteExtras || []).concat(names);
       })();
+      /* v0.8.192 第 1 關二連擊補間格（Gemini 一列一張 S1a3；重劈／橫戟那兩張橫條切不乾淨，維持舊 3 格）：exclusive_combo 6 格；遲刃連戟＝二連擊 4 格＋遲刃重砸 sm_dl；怒煞連戟＝二連擊＋重砸落地格 */
+      (function () {
+        const M = Stages[1].moves, C = i => `sm_cb_${i}`, D = i => `sm_dl_${i}`;
+        if (M.exclusive_combo) M.exclusive_combo.frames = { windup: [C(1), C(2)], active: [C(3), C(4)], recover: [C(5), C(6)] };
+        if (M.combo_delay) M.combo_delay.frames = { windup: [C(1), C(2)], active: [C(3), C(4), D(2), D(3), D(4)], recover: [D(5), D(6)] };
+        if (M.rage_chain) M.rage_chain.frames = { windup: [C(1), C(2)], active: [C(3), C(4), D(4)], recover: [C(5), C(6)] };
+        const ex = []; for (let i = 1; i <= 6; i++) ex.push(C(i));
+        Stages[1].spriteExtras = (Stages[1].spriteExtras || []).concat(ex);
+      })();

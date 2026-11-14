@@ -49,7 +49,7 @@ if cfg.get('seeds'):  # 武器伸進隔壁格、兩格武器相連時：先找�
 else:
   lab, n = ndi.label(ndi.binary_dilation(m, iterations=cfg.get('dil', 6))); objs = ndi.find_objects(lab)
   rr_ = cfg.get('seed_r', 21) // 2; yy_, xx_ = np.ogrid[-rr_:rr_ + 1, -rr_:rr_ + 1]; se_ = (yy_ * yy_ + xx_ * xx_) <= rr_ * rr_
-  body_ = ndi.binary_opening(m, structure=se_) if cfg.get('split_merged') else None
+  body_ = ndi.binary_opening(m, structure=se_) if cfg.get('split_merged') else None; allc = []
   for i in range(1, n + 1):
     comp = (lab == i) & m; area = comp.sum()
     if area < 400: continue
@@ -58,7 +58,7 @@ else:
         bl_, bn_ = ndi.label(body_ & comp); cs = []
         for j in range(1, bn_ + 1):
             yb, xb = np.where(bl_ == j)
-            if len(yb) >= 800: cs.append((xb.mean(), yb.mean(), len(yb)))
+            if len(yb) >= cfg.get('body_min', 3000): cs.append((xb.mean(), yb.mean(), len(yb)))
         cs.sort(); grp = [cs[0]] if cs else []; same_row = []
         for c_ in cs[1:]:
             if int(c_[1] // ch) == int(grp[-1][1] // ch) and int(c_[0] // cw) != int(grp[-1][0] // cw): same_row.append((grp[-1][0], c_[0])); grp.append(c_)
@@ -76,7 +76,20 @@ else:
         area = comp.sum()
         if area < 400: continue
         ys, xs = np.where(comp); c = int(xs.mean() // cw); r = int(ys.mean() // ch)
-        cells.setdefault((r, c), []).append((area, comp, ys.max()))
+        if cfg.get('drop_below') and ys.mean() > cfg['drop_below'] * Hi: continue  # 圖底下多畫的多餘人物
+        allc.append([area, comp, ys.max(), (r, c), bool(body_ is not None and (body_ & comp).sum() >= cfg.get('body_min', 3000))])
+  if body_ is not None and allc:  # 戟頭這類「沒有身體」的小塊（常與戟桿分離）：分給距離最近的有身體的塊，而不是依畫面格位置（跨格線時會分錯）
+    bigs = [a for a in allc if a[4]]
+    if bigs:
+        idmap = np.zeros(m.shape, np.int32)
+        for k, a in enumerate(bigs): idmap[a[1]] = k + 1
+        dist, ind = ndi.distance_transform_edt(idmap == 0, return_indices=True)
+        for a in allc:
+            if a[4]: continue
+            ysm, xsm = np.where(a[1]); j = int(np.argmin(dist[ysm, xsm])); own = idmap[ind[0][ysm[j], xsm[j]], ind[1][ysm[j], xsm[j]]]
+            if own: a[3] = bigs[own - 1][3]
+  for area, comp, ymax_, key, _b in allc:
+    cells.setdefault(key, []).append((area, comp, ymax_))
 def bb(mask): ys, xs = np.where(mask); return xs.min(), ys.min(), xs.max(), ys.max()
 cut = {}
 for key, lst in cells.items():
