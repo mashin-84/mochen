@@ -633,3 +633,13 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       })();
       /* v0.8.189 第 5 關走路／站立改影片抽幀（小狼 walk 12 格＋idle 32 格往返、大狼 walk 24 格＋idle 32 格往返；SPRITE_ANIM 在 64_draw_boss.js）：stride＝走完一個步態週期的距離，原 4 格走路是 170／330，換 12／24 格整週期後改 300／420（待實測腳滑） */
       Stages[5].stances.A.stride = 300; Stages[5].stances.B.stride = 420;
+      /* ===== v0.8.191 第 1 關絲滑補間格（Gemini 生圖 S1b～S1d 切圖；S1a 重劈／橫戟／二連擊待重生，那三招與用到二連擊格的遲刃連戟、怒煞連戟先維持舊格）=====
+         每招一列 6 格 sm_<招>_<1..6>：windup:[1,2]、active:[3,4]、recover:[5,6] */
+      (function () {
+        const M = Stages[1].moves, P = (mv, ...n) => n.map(i => `sm_${mv}_${i}`), F = mv => ({ windup: P(mv, 1, 2), active: P(mv, 3, 4), recover: P(mv, 5, 6) });
+        const map = { thrust_peril: "thr", sweep_peril: "swp", halberd_throw: "tw", shock_push: "sp", charge_rush: "ch", shadow_strike: "shadow", leap_slam: "leap" };
+        const names = [];
+        Object.keys(map).forEach(k => { if (!M[k]) return; M[k].frames = F(map[k]); for (let i = 1; i <= 6; i++) names.push(`sm_${map[k]}_${i}`); });
+        for (let i = 1; i <= 6; i++) names.push(`sm_dl_${i}`);
+        Stages[1].spriteExtras = (Stages[1].spriteExtras || []).concat(names);
+      })();

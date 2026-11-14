@@ -48,11 +48,35 @@ if cfg.get('seeds'):  # 武器伸進隔壁格、兩格武器相連時：先找�
         comp = (ws == j) & m; ys, xs = np.where(comp); cells[k] = [(comp.sum(), comp, ys.max())]
 else:
   lab, n = ndi.label(ndi.binary_dilation(m, iterations=cfg.get('dil', 6))); objs = ndi.find_objects(lab)
+  rr_ = cfg.get('seed_r', 21) // 2; yy_, xx_ = np.ogrid[-rr_:rr_ + 1, -rr_:rr_ + 1]; se_ = (yy_ * yy_ + xx_ * xx_) <= rr_ * rr_
+  body_ = ndi.binary_opening(m, structure=se_) if cfg.get('split_merged') else None
   for i in range(1, n + 1):
     comp = (lab == i) & m; area = comp.sum()
     if area < 400: continue
-    ys, xs = np.where(comp); c = int(xs.mean() // cw); r = int(ys.mean() // ch)
-    cells.setdefault((r, c), []).append((area, comp, ys.max()))
+    parts = [comp]
+    if body_ is not None:  # 兩格的長武器相連成一塊：找各格身體的 x 位置，在兩身體之間「像素最少的那一欄」切開（相連處多半只是戟尖碰到另一格的桿尾）
+        bl_, bn_ = ndi.label(body_ & comp); cs = []
+        for j in range(1, bn_ + 1):
+            yb, xb = np.where(bl_ == j)
+            if len(yb) >= 800: cs.append((xb.mean(), yb.mean(), len(yb)))
+        cs.sort(); grp = [cs[0]] if cs else []; same_row = []
+        for c_ in cs[1:]:
+            if int(c_[1] // ch) == int(grp[-1][1] // ch) and int(c_[0] // cw) != int(grp[-1][0] // cw): same_row.append((grp[-1][0], c_[0])); grp.append(c_)
+        if same_row:
+            xsall = np.where(comp.any(axis=0))[0]; cuts = []
+            colc = comp.sum(axis=0)
+            for xa, xb in same_row:
+                lo, hi = int(xa) + 40, int(xb) - 40
+                if hi > lo: cuts.append(lo + int(np.argmin(colc[lo:hi])))
+            if cuts:
+                edges = [0] + cuts + [comp.shape[1]]; parts = []
+                for a_, b_ in zip(edges[:-1], edges[1:]):
+                    pc = np.zeros_like(comp); pc[:, a_:b_] = comp[:, a_:b_]; parts.append(pc)
+    for comp in parts:
+        area = comp.sum()
+        if area < 400: continue
+        ys, xs = np.where(comp); c = int(xs.mean() // cw); r = int(ys.mean() // ch)
+        cells.setdefault((r, c), []).append((area, comp, ys.max()))
 def bb(mask): ys, xs = np.where(mask); return xs.min(), ys.min(), xs.max(), ys.max()
 cut = {}
 for key, lst in cells.items():
