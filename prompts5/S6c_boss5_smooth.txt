@@ -1,0 +1,19 @@
+Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
+
+Create ONE wide landscape image: a character animation sheet of EXACTLY 12 cells in a 6 columns x 2 rows grid, each cell the same size, with generous empty margin inside each cell so no part of the figure or the claws and jaws touches a cell edge. Each ROW is ONE move drawn as 6 consecutive animation frames from left to right. Background: pure solid magenta #FF00FF everywhere, no gradient, no grid lines, no borders, no text, no labels. I attach a reference image of the character: a small dark grey-purple wolf with a cream belly, a crimson scarf around the neck, thin red slit marks by the eyes, and purple-tinted paws and tail. I also attach the existing key frames of each move (file names are listed per row; use them as pose references). Where a cell is marked A it must reproduce the pose of that attached frame (same pose, redrawn cleanly in this sheet's style); the other cells are smooth in-between frames that connect the neighbouring poses (halfway poses, never a copy of a neighbour). Keep the exact same character design, colors, proportions and line style in every cell, ONE character per cell, the same body size and the same ground line (paws touching the same horizontal line) in every cell, side view, always facing RIGHT. Cells where the character is airborne keep the same body size; only grounded cells touch the ground line. Do NOT draw any glow, aura, flame, smoke, dust, motion lines, slash arcs, speed lines or energy effects anywhere (spirit flames that are part of the character design stay); effects are added separately. The claws and jaws must always be fully visible where the character has it. The six cells of each row must read as ONE continuous fluid movement when played at 12 frames per second: limbs, weapon, hair and robe travel along believable arcs between neighbouring cells, with no sudden jumps.
+
+Row 1 (1st row): Shadow strike (leap out of a crouch). Attached key frames: 40_sb_wind, 55_ss_hit, 47_sc_rec.
+Row 1 Cell 1: dropping into a crouch (in-between).
+Row 1 Cell 2: A: crouched snarling (matches 40_sb_wind).
+Row 1 Cell 3: springing out of the crouch, low (in-between).
+Row 1 Cell 4: A: a leaping strike, one front paw out, the body twisted (matches 55_ss_hit).
+Row 1 Cell 5: landing (in-between).
+Row 1 Cell 6: A: settling low (matches 47_sc_rec).
+
+Row 2 (2nd row): Blood rage (howl then four attacks). Attached key frames: 59_s_howl, 45_sc_a, 41_sb_open, 46_sc_b, 42_sb_snap.
+Row 2 Cell 1: the head tilting back (in-between).
+Row 2 Cell 2: A: howling upward, reared (matches 59_s_howl).
+Row 2 Cell 3: a slashing right paw (like 45_sc_a).
+Row 2 Cell 4: a snapping bite lunging forward (like 41_sb_open and 42_sb_snap).
+Row 2 Cell 5: a slashing left paw (like 46_sc_b).
+Row 2 Cell 6: a final jaw snap, the body stretched (like 42_sb_snap).

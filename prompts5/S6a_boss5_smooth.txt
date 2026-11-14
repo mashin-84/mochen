@@ -1,0 +1,27 @@
+Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
+
+Create ONE wide landscape image: a character animation sheet of EXACTLY 18 cells in a 6 columns x 3 rows grid, each cell the same size, with generous empty margin inside each cell so no part of the figure or the claws and jaws touches a cell edge. Each ROW is ONE move drawn as 6 consecutive animation frames from left to right. Background: pure solid magenta #FF00FF everywhere, no gradient, no grid lines, no borders, no text, no labels. I attach a reference image of the character: a small dark grey-purple wolf with a cream belly, a crimson scarf around the neck, thin red slit marks by the eyes, and purple-tinted paws and tail. I also attach the existing key frames of each move (file names are listed per row; use them as pose references). Where a cell is marked A it must reproduce the pose of that attached frame (same pose, redrawn cleanly in this sheet's style); the other cells are smooth in-between frames that connect the neighbouring poses (halfway poses, never a copy of a neighbour). Keep the exact same character design, colors, proportions and line style in every cell, ONE character per cell, the same body size and the same ground line (paws touching the same horizontal line) in every cell, side view, always facing RIGHT. Cells where the character is airborne keep the same body size; only grounded cells touch the ground line. Do NOT draw any glow, aura, flame, smoke, dust, motion lines, slash arcs, speed lines or energy effects anywhere (spirit flames that are part of the character design stay); effects are added separately. The claws and jaws must always be fully visible where the character has it. The six cells of each row must read as ONE continuous fluid movement when played at 12 frames per second: limbs, weapon, hair and robe travel along believable arcs between neighbouring cells, with no sudden jumps.
+
+Row 1 (1st row): Bite (lunge and snap). Attached key frames: 40_sb_wind, 41_sb_open, 42_sb_snap, 43_sb_rec.
+Row 1 Cell 1: creeping lower, the head dropping, the haunches rising (in-between).
+Row 1 Cell 2: A: crouched snarling, ready to spring (matches 40_sb_wind).
+Row 1 Cell 3: A: lunging forward with the jaws wide open (matches 41_sb_open).
+Row 1 Cell 4: A: the jaws snapping shut mid-lunge (matches 42_sb_snap).
+Row 1 Cell 5: sliding to a stop, the head lifting (in-between).
+Row 1 Cell 6: A: settled, head low, ready (matches 43_sb_rec).
+
+Row 2 (2nd row): Double bite. Attached key frames: 40_sb_wind, 41_sb_open, 42_sb_snap, 43_sb_rec.
+Row 2 Cell 1: A: crouched snarling, ready to spring (matches 40_sb_wind).
+Row 2 Cell 2: A: first lunge with the jaws wide open (matches 41_sb_open).
+Row 2 Cell 3: A: the first snap (matches 42_sb_snap).
+Row 2 Cell 4: a quick recoil step back, the head low (in-between).
+Row 2 Cell 5: a second lunge with the jaws wide open, slightly further forward (in-between).
+Row 2 Cell 6: the second snap, the body fully stretched (in-between).
+
+Row 3 (3rd row): Claw triple (rear up and swipe). Attached key frames: 44_sc_rear, 45_sc_a, 46_sc_b, 47_sc_rec.
+Row 3 Cell 1: rising onto the hind legs, the front paws lifting (in-between).
+Row 3 Cell 2: A: fully reared up, both front paws raised (matches 44_sc_rear).
+Row 3 Cell 3: A: the right front paw swiping down (matches 45_sc_a).
+Row 3 Cell 4: A: the left front paw swiping across, the body twisting (matches 46_sc_b).
+Row 3 Cell 5: a third heavy swipe with both paws slamming down, leaning forward (in-between).
+Row 3 Cell 6: A: dropping back onto four legs, the head low (matches 47_sc_rec).

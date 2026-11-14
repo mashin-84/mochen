@@ -1,0 +1,25 @@
+絲滑動作補圖總索引（v0.8.187 之後）
+做法：每個角色先做影片（站立呼吸、走路），再做招式補間生圖。全部檔案都已過 tools/check_prompt.py。
+生圖：Gemini 洋紅底，6 欄 x N 列，每列 1 招 6 格（錨點格必須重現附圖姿勢，其餘為補間）。使用者貼提示詞時要一併附：①角色參考圖 ②該列「Attached key frames」列出的現有格（assets/ 內同名 webp，先墊洋紅底）。
+影片：Gemini 圖生影片，附 prompts_smooth/refs/ 對應的綠幕參考圖，4 秒 24fps、固定鏡頭、綠幕 #00FF00，之後用 tools/proc.py 抽幀。
+
+【影片 10 支】
+prompts1/V1a_boss1_idle_video.txt      第1關 站立
+prompts2/V2a_boss2_idle_video.txt      第2關 站立
+prompts3/V3a_boss3A_idle_video.txt     第3關 雙劍 站立
+prompts3/V4a_boss3B_idle_video.txt     第3關 重劍 站立
+prompts4/V5a_boss4s_idle_video.txt     第4關 人形劍魂 站立
+prompts4/V5b_boss4s_walk_video.txt     第4關 人形劍魂 走路
+prompts5/V6a_boss5_idle_video.txt      第5關 小狼 站立
+prompts5/V6b_boss5_walk_video.txt      第5關 小狼 走路
+prompts5/V7a_boss5b_idle_video.txt     第5關 大狼 站立
+prompts5/V7b_boss5b_walk_video.txt     第5關 大狼 走路
+
+【招式補間生圖 26 張】（建議順序：小狼 → 大狼 → 其他 Boss → 主角）
+小狼   prompts5/S6a_boss5_smooth.txt  S6b  S6c   ＋ S6d_boss5_down.txt（倒地 4 格）
+大狼   prompts5/S7a_boss5b_smooth.txt S7b  S7c
+第1關  prompts1/S1a～S1d_boss1_smooth.txt
+第2關  prompts2/S2a～S2d_boss2_smooth.txt
+第3關  prompts3/S3a～S3c_boss3A_smooth.txt（雙劍）、S4a～S4b_boss3B_smooth.txt（重劍）
+第4關  prompts4/S5a～S5b_boss4s_smooth.txt（人形劍魂；部位階段不用）
+主角   prompts_smooth/S8a～S8c_mc_smooth.txt、S8d_mc_locomotion.txt（起跑／煞停／轉身／落地）

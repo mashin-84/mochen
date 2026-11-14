@@ -1,0 +1,27 @@
+Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
+
+Create ONE wide landscape image: a character animation sheet of EXACTLY 18 cells in a 6 columns x 3 rows grid, each cell the same size, with generous empty margin inside each cell so no part of the figure or the claws and jaws touches a cell edge. Each ROW is ONE move drawn as 6 consecutive animation frames from left to right. Background: pure solid magenta #FF00FF everywhere, no gradient, no grid lines, no borders, no text, no labels. I attach a reference image of the character: a small dark grey-purple wolf with a cream belly, a crimson scarf around the neck, thin red slit marks by the eyes, and purple-tinted paws and tail. I also attach the existing key frames of each move (file names are listed per row; use them as pose references). Where a cell is marked A it must reproduce the pose of that attached frame (same pose, redrawn cleanly in this sheet's style); the other cells are smooth in-between frames that connect the neighbouring poses (halfway poses, never a copy of a neighbour). Keep the exact same character design, colors, proportions and line style in every cell, ONE character per cell, the same body size and the same ground line (paws touching the same horizontal line) in every cell, side view, always facing RIGHT. Cells where the character is airborne keep the same body size; only grounded cells touch the ground line. Do NOT draw any glow, aura, flame, smoke, dust, motion lines, slash arcs, speed lines or energy effects anywhere (spirit flames that are part of the character design stay); effects are added separately. The claws and jaws must always be fully visible where the character has it. The six cells of each row must read as ONE continuous fluid movement when played at 12 frames per second: limbs, weapon, hair and robe travel along believable arcs between neighbouring cells, with no sudden jumps.
+
+Row 1 (1st row): Pounce. Attached key frames: 48_sp_coil, 49_sp_rise, 50_sp_dive, 51_sp_land.
+Row 1 Cell 1: coiling lower, the hind legs gathering (in-between).
+Row 1 Cell 2: A: coiled very low (matches 48_sp_coil).
+Row 1 Cell 3: A: leaping upward, the body stretched (matches 49_sp_rise).
+Row 1 Cell 4: A: diving down head first with the tail up (matches 50_sp_dive).
+Row 1 Cell 5: touching down front paws first (in-between).
+Row 1 Cell 6: A: landed low and skidding (matches 51_sp_land).
+
+Row 2 (2nd row): Rush (peril: dash through). Attached key frames: 52_sr_tell, 53_sr_dart, 54_sr_skid.
+Row 2 Cell 1: lowering the body, the ears starting to flatten (in-between).
+Row 2 Cell 2: A: head and body very low, ears flat, leaning to charge (matches 52_sr_tell).
+Row 2 Cell 3: bursting forward, stretching out (in-between).
+Row 2 Cell 4: A: a full dart, the body stretched flat and horizontal (matches 53_sr_dart).
+Row 2 Cell 5: braking, the front legs sliding (in-between).
+Row 2 Cell 6: A: a skid stop, upright, ears back (matches 54_sr_skid).
+
+Row 3 (3rd row): Tail whip (peril: jump). Attached key frames: 56_st_wind, 57_st_spin, 58_st_rec.
+Row 3 Cell 1: in-between: the ready stance moving toward cell 2, about halfway (anticipation beginning).
+Row 3 Cell 2: A: standing, the tail raised high and curled, looking back (matches the first attached frame).
+Row 3 Cell 3: in-between: exactly halfway between cell 2 and cell 4, the fastest and most stretched moment of the motion.
+Row 3 Cell 4: A: the body twisting with the tail whipping curled over the back (matches the second attached frame).
+Row 3 Cell 5: in-between: the follow-through settling, halfway between cell 4 and cell 6.
+Row 3 Cell 6: A: lowering, the tail low, standing guard (matches the third attached frame).
