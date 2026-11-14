@@ -133,9 +133,11 @@ for r, rd in enumerate(cfg["rows_def"]):
         f = sub[..., :3].astype(float) * gain
         if bgain is not None: f = np.where(bm[..., None], sub[..., :3].astype(float) * bgain, f)
         sub[..., :3] = np.clip(f, 0, 255).astype(np.uint8); crop = Image.fromarray(sub, 'RGBA')
-        crop = crop.resize((max(1, round(crop.width * sc)), max(1, round(crop.height * sc))), Image.LANCZOS)
+        scc = sc
+        if cfg.get('fit'): scc = min(sc, cfg['fit'] / max(1, crop.height))  # 畫布高度上限（舊格是貼底對齊的高格：戟尖頂到畫布上緣）
+        crop = crop.resize((max(1, round(crop.width * scc)), max(1, round(crop.height * scc))), Image.LANCZOS)
         al = np.asarray(crop)[..., 3]; cx = np.where(al > 40)[1].mean()
-        foot = 560 if base is None else round((b[3] - base) * sc + 560)
+        foot = 560 if (base is None or cfg.get('ground_all')) else round((b[3] - base) * sc + 560)
         o = Image.new('RGBA', (900, 600), (0, 0, 0, 0)); ox = round(450 - cx); oy = foot - crop.height + 1
         if oy < 0 or ox < 0 or ox + crop.width > 900: print("警告：超出畫布", rd["move"], c + 1, (ox, oy, crop.width, crop.height))
         o.alpha_composite(crop, (max(ox, 0), max(oy, 0))); name = f'{prefix}{rd["move"]}_{c + 1}'
