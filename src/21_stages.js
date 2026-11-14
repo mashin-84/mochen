@@ -597,3 +597,37 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         Object.assign(M5.s_claw3, { comboInterval: 0.30, active: 0.78, hitStep: 240 });
         Object.assign(M5.s_rage, { comboInterval: 0.26, active: 1.0, hitStep: 200 });
       })();
+      /* ===== v0.8.188 第 5 關絲滑補間格（Gemini 生圖 S6a～S6d、S7a～S7c；tools/smooth_cut.py 切圖）=====
+         每招一列 6 格 sm_<招>_<1..6>：原 3 格當錨點重畫＋3 個補間格。小狼倒地三格 17_kneel／18_fall／19_lie（引擎自動讀）。 */
+      (function () {
+        const S5 = Stages[5], M = S5.moves, P = (mv, ...n) => n.map(i => `sm_${mv}_${i}`);
+        const F = (mv, w, a, r) => ({ windup: P(mv, ...w), active: P(mv, ...a), recover: P(mv, ...r) });
+        const small = {
+          s_bite: F("s_bite", [1, 2], [3, 4], [5, 6]),
+          s_bite2: { windup: P("s_bite2", 1), active: P("s_bite2", 2, 3, 4, 5, 6), recover: P("s_bite", 5, 6) },
+          s_claw3: F("s_claw3", [1, 2], [3, 4, 5], [6]),
+          s_pounce: F("s_pounce", [1, 2], [3, 4], [5, 6]),
+          s_rush: F("s_rush", [1, 2], [3, 4], [5, 6]),
+          s_tail: F("s_tail", [1, 2], [3, 4], [5, 6]),
+          s_shadow: F("s_shadow", [1, 2], [3, 4], [5, 6]),
+          s_rage: { windup: P("s_rage", 1, 2), active: P("s_rage", 3, 4, 5, 6), recover: ["43_sb_rec"] },
+          s_decoy: F("s_bite", [1, 2], [3, 4], [5, 6])
+        };
+        const big = {
+          b_swipe: F("b_swipe", [1, 2], [3, 4], [5, 6]),
+          b_stomp: F("b_stomp", [1, 2], [3, 4, 5], [6]),
+          b_leap: F("b_leap", [1, 2], [3, 4], [5, 6]),
+          b_bite: F("b_bite", [1, 2], [3, 4], [5, 6]),
+          b_rush: F("b_rush", [1, 2], [3, 4], [5, 6]),
+          b_tail: F("b_tail", [1, 2], [3, 4], [5, 6]),
+          b_howl: { windup: P("b_howl", 1, 2, 3), active: P("b_howl", 4, 5), recover: P("b_howl", 6).concat(["43_bw_rec"]) },
+          b_rage: F("b_rage", [1, 2], [3, 4, 5], [6])
+        };
+        const used = { A: new Set(), B: new Set() };
+        [[small, "A"], [big, "B"]].forEach(([tbl, st]) => Object.keys(tbl).forEach(k => {
+          if (!M[k]) return; M[k].frames = tbl[k];
+          ["windup", "active", "recover"].forEach(ph => tbl[k][ph].forEach(n => { if (n.indexOf("sm_") === 0) used[st].add(n); }));
+        }));
+        S5.stances.A.extras = S5.stances.A.extras.concat(Array.from(used.A));
+        S5.stances.B.extras = S5.stances.B.extras.concat(Array.from(used.B));
+      })();
