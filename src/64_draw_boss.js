@@ -33,7 +33,7 @@
             return top < 0 ? 0 : bot - top + 1;
           }
           /* v0.8.189 各 sprite 的影片抽幀格數：walk＝走路格數（預設 12）、idle＝站立循環格數（無則沿用 01／02 兩格）、normOne＝走路格已直接對齊 01_idle1 尺寸，不再用高度比校正 */
-          const SPRITE_ANIM = { boss5: { walk: 12, idle: 32, normOne: true }, boss5b: { walk: 24, idle: 32, normOne: true } };
+          const SPRITE_ANIM = { boss1: { idle: 64 }, boss5: { walk: 12, idle: 32, normOne: true }, boss5b: { walk: 24, idle: 32, normOne: true } };
           function getWalkNorm(SP) {
             if (SP.walkNorm) return SP.walkNorm;
             let k = 1;

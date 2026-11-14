@@ -27,9 +27,28 @@ if cfg.get('kill_text'):  # 格下標籤文字（白字黑邊）：白色填字�
 white = (a[..., 0] > 235) & (a[..., 2] > 235) & (a[..., 1] > 150)
 wl = ndi.binary_dilation(ndi.binary_opening(white, structure=np.ones((1, 60))) | ndi.binary_opening(white, structure=np.ones((60, 1))), iterations=2)
 m &= ~wl; rgba[..., 3] = np.where(wl, 0, rgba[..., 3])
-lab, n = ndi.label(ndi.binary_dilation(m, iterations=cfg.get('dil', 6))); objs = ndi.find_objects(lab)
+if cfg.get('thin_lines'):  # 任何顏色的細長格線（厚度≤5、長≥80）：開運算分離後移除（桿身這類粗線不受影響）
+    tl = (ndi.binary_opening(m, structure=np.ones((1, 80))) & ~ndi.binary_opening(m, structure=np.ones((7, 80)))) | (ndi.binary_opening(m, structure=np.ones((80, 1))) & ~ndi.binary_opening(m, structure=np.ones((80, 7))))
+    tl = ndi.binary_dilation(tl, iterations=2); m &= ~tl; rgba[..., 3] = np.where(tl, 0, rgba[..., 3])
 cw, ch = Wi / cols, Hi / rows; cells = {}
-for i in range(1, n + 1):
+if cfg.get('seeds'):  # 武器伸進隔壁格、兩格武器相連時：先找「身體」種子（開運算去掉細長武器），再用分水嶺沿遮罩把每個像素分給最近（路徑最短）的身體
+    from skimage.segmentation import watershed
+    se = np.zeros((cfg.get('seed_r', 21),) * 2, bool); rr = cfg.get('seed_r', 21) // 2
+    yy, xx = np.ogrid[-rr:rr + 1, -rr:rr + 1]; se = (yy * yy + xx * xx) <= rr * rr
+    body = ndi.binary_opening(m, structure=se); bl, bn = ndi.label(body); mk = np.zeros(m.shape, np.int32); best = {}
+    for i in range(1, bn + 1):
+        ys, xs = np.where(bl == i)
+        if len(ys) < 800: continue
+        k = (int(ys.mean() // ch), int(xs.mean() // cw))
+        if k not in best or len(ys) > best[k][0]: best[k] = (len(ys), i)
+    ids = {}
+    for j, (k, (_, i)) in enumerate(sorted(best.items())): mk[bl == i] = j + 1; ids[j + 1] = k
+    ws = watershed(np.zeros(m.shape, np.uint8), markers=mk, mask=ndi.binary_dilation(m, iterations=1))
+    for j, k in ids.items():
+        comp = (ws == j) & m; ys, xs = np.where(comp); cells[k] = [(comp.sum(), comp, ys.max())]
+else:
+  lab, n = ndi.label(ndi.binary_dilation(m, iterations=cfg.get('dil', 6))); objs = ndi.find_objects(lab)
+  for i in range(1, n + 1):
     comp = (lab == i) & m; area = comp.sum()
     if area < 400: continue
     ys, xs = np.where(comp); c = int(xs.mean() // cw); r = int(ys.mean() // ch)
