@@ -1,6 +1,7 @@
 絲滑動作補圖總索引（v0.8.187 之後）
 做法：每個角色先做影片（站立呼吸、走路），再做招式補間生圖。全部檔案都已過 tools/check_prompt.py。
 生圖：Gemini 洋紅底，6 欄 x N 列，每列 1 招 6 格（錨點格必須重現附圖姿勢，其餘為補間）。使用者貼提示詞時要一併附：①角色參考圖 ②該列「Attached key frames」列出的現有格（assets/ 內同名 webp，先墊洋紅底）。
+參考圖包：prompts_smooth/refs/pack_S*.png（每張生圖一包，洋紅底、標好檔名，第一格是角色參考圖，直接附給 Gemini）。
 影片：Gemini 圖生影片，附 prompts_smooth/refs/ 對應的綠幕參考圖，4 秒 24fps、固定鏡頭、綠幕 #00FF00，之後用 tools/proc.py 抽幀。
 
 【影片 10 支】
