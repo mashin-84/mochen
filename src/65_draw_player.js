@@ -1,6 +1,3 @@
-      /* v0.8.193 主角移動過渡（只影響繪製）：起跑、煞停、轉身、落地 */
-      const MC_LOCO = { kind: null, t0: 0, from: 1, prevMove: false, prevAir: false, prevFacing: 1 };
-      function mcSmOk(m) { for (let i = 1; i <= 6; i++) { const im = MC_IMGS["sm_" + m + "_" + i]; if (!(im && im.complete && im.naturalWidth)) return false; } return true; }
       function drawPlayer() {
         ctx.save();
         if (Player.hurtInv > 0 && !Player.blast && Math.floor(performance.now() / 50) % 2 === 0) ctx.globalAlpha = 0.4; /* 受擊無敵閃爍 10Hz */
@@ -43,29 +40,6 @@
           const has = (n) => { const im = MC_IMGS[n]; return !!(im && im.complete && im.naturalWidth); };
           /* v0.8.98 補格是選用美術，沒載到就退回舊格 */
           const isAirborne = Player.y < PG() - 2;
-          const SM = (m, i) => "sm_" + m + "_" + i;
-          let drawFacing = Player.facing;
-          { /* 移動過渡偵測 */
-            const nowL = performance.now(), mv = Player.state === "move", L = MC_LOCO;
-            const calm = Player.state === "move" || Player.state === "idle" || Player.state === "normal" || Player.state === undefined;
-            if (L.prevAir && !isAirborne && calm) { L.kind = "land"; L.t0 = nowL; }
-            else if (!isAirborne && calm && Player.facing !== L.prevFacing) { L.kind = "turn"; L.t0 = nowL; L.from = L.prevFacing; }
-            else if (!isAirborne && mv && !L.prevMove && L.kind !== "land") { L.kind = "runstart"; L.t0 = nowL; }
-            else if (!isAirborne && !mv && L.prevMove && calm) { L.kind = "brake"; L.t0 = nowL; }
-            if (!calm || isAirborne) L.kind = null;
-            L.prevMove = mv; L.prevAir = isAirborne; L.prevFacing = Player.facing;
-          }
-          const locoFrame = (moving) => { /* 回傳過渡格名稱或 null */
-            const L = MC_LOCO; if (!L.kind) return null; const el = (performance.now() - L.t0) / 1000;
-            if (L.kind === "turn" && el < 0.15 && mcSmOk("turn")) { /* 轉身：原朝向 1→3（轉到正面），再以新朝向 3→1 */
-              if (el < 0.075) { drawFacing = L.from; return SM("turn", 1 + Math.min(2, Math.floor(el / 0.025))); }
-              return SM("turn", 3 - Math.min(2, Math.floor((el - 0.075) / 0.025)));
-            }
-            if (L.kind === "land" && !moving && el < 0.22 && mcSmOk("land")) return SM("land", 2 + Math.min(4, Math.floor(el / 0.044)));
-            if (L.kind === "runstart" && moving && el < 0.2 && mcSmOk("runstart")) return SM("runstart", 2 + Math.min(4, Math.floor(el / 0.04)));
-            if (L.kind === "brake" && !moving && el < 0.22 && mcSmOk("brake")) return SM("brake", 2 + Math.min(4, Math.floor(el / 0.044)));
-            return null;
-          };
 
           if (Player.state === "execution" || (Player.riposteAtk && !Player.isAirAtk && Player.state === "attack")) {
             frame = "11_thrust";
@@ -80,11 +54,6 @@
               if (Player.state === "hitstun") frame = Player.stateTimer > 0.16 ? "36_hurt_a" : "37_hurt_b";
               else if (Player.state === "staggered") frame = "37_hurt_b";
             }
-            if (mcSmOk("hurt")) { /* v0.8.193 受擊 6 格（hitstun 0.28 秒） */
-              const st = Player.stateTimer;
-              if (Player.state === "hitstun") frame = SM("hurt", st > 0.23 ? 1 : st > 0.17 ? 2 : st > 0.11 ? 3 : st > 0.05 ? 4 : 5);
-              else if (Player.state === "staggered") frame = SM("hurt", 4);
-            }
           } else if (Player.state === "drink") {
             frame = "15_drink";
           } else if (Player.state === "dash") {
@@ -93,16 +62,11 @@
               const pr = 1 - Player.stateTimer / 0.22;
               frame = isAirborne ? "34_dash_b" : pr < 0.25 ? "33_dash_a" : pr < 0.75 ? "34_dash_b" : "35_dash_c";
             }
-            if (mcSmOk("dash")) { const pr = Math.max(0, Math.min(0.999, 1 - Player.stateTimer / 0.22)); frame = isAirborne ? SM("dash", 4) : SM("dash", 1 + Math.floor(pr * 6)); }
           } else if (Player.state === "parry") {
             frame = "13_parry";
             if (has("29_parry_a") && has("30_parry_b")) { /* v0.8.98 招架：預備（前 90ms，涵蓋完美窗口）→ 架開（剛彈開時一律用架開格） */
               const nowT = performance.now();
               frame = (Player.lastDeflectMs && nowT - Player.lastDeflectMs < 220) || nowT - Player.parryStartMs >= 90 ? "30_parry_b" : "29_parry_a";
-            }
-            if (mcSmOk("parry")) { /* v0.8.193 招架 6 格：預備 1→2（前 90ms 涵蓋完美窗口）→ 3 → 架開 4；剛彈開一律 4 */
-              const nowT = performance.now(), pt = nowT - Player.parryStartMs;
-              frame = (Player.lastDeflectMs && nowT - Player.lastDeflectMs < 220) ? SM("parry", 4) : SM("parry", pt < 30 ? 1 : pt < 90 ? 2 : pt < 130 ? 3 : 4);
             }
           } else if (Player.state === "attack" && Player.isDive) {
             frame = "08_fall";
@@ -115,20 +79,12 @@
               const dur = Player.comboStep === 4 ? 0.32 : Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
               frame = isAirborne ? seq[1] : el < 0.05 ? seq[0] : el < dur * 0.45 ? seq[1] : seq[2];
             }
-            const smk = { 1: "s1", 2: "s2", 3: "t", 4: "hv" }[Player.comboStep] || "s1";
-            if (mcSmOk(smk)) { /* v0.8.193 6 格：判定在出手瞬間，所以起手 2→3 只佔 0.07 秒（第 1 格略過），出刀格撐到 45%，之後隨勢 5、收招 6 */
-              const dur = Player.comboStep === 4 ? 0.32 : Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
-              frame = isAirborne ? SM(smk, 4) : SM(smk, el < 0.03 ? 2 : el < 0.07 ? 3 : el < dur * 0.45 ? 4 : el < dur * 0.72 ? 5 : 6);
-            }
           } else if (Player.isChargingAttack) {
             frame = "12_charge";
             if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（0.45 秒蓄滿會自動出重斬，所以提早換格） */
-            if (mcSmOk("charge")) { const ce = performance.now() - Player.attackChargeStartTime; frame = SM("charge", ce < 50 ? 1 : ce < 100 ? 2 : ce < 150 ? 3 : [4, 5, 6, 5][Math.floor((ce - 150) / 100) % 4]); }
           } else if (isAirborne) {
             frame = Player.vy < 0 ? "07_jump" : "08_fall";
             if (Player.vy < 0 && PG() - Player.y < 40 && has("32_jump_a")) frame = "32_jump_a"; /* v0.8.98 起跳蹲蓄（離地前 40px） */
-          } else if (Player.state === "move" && locoFrame(true)) {
-            frame = locoFrame(true);
           } else if (Player.state === "move") {
             if (MCR_READY === 10) {
               playerImg = MCR_IMGS[Math.floor(MC_PHASE * 10) % 10];
@@ -139,10 +95,7 @@
           } else {
             frame = Math.floor(performance.now() / 600) % 2 === 0 ? "01_idle1" : "02_idle2";
             const pSince = performance.now() - Player.parryStartMs;
-            const lf = locoFrame(false);
-            if (mcSmOk("parry") && pSince >= Config.guardStanceMs && pSince < Config.guardStanceMs + 170) frame = SM("parry", pSince < Config.guardStanceMs + 85 ? 5 : 6); /* v0.8.193 招架收勢 2 格 */
-            else if (lf) frame = lf;
-            else if (has("31_parry_c") && pSince >= Config.guardStanceMs && pSince < Config.guardStanceMs + 170) frame = "31_parry_c"; /* v0.8.98 招架收勢（架勢結束後 170ms） */
+            if (has("31_parry_c") && pSince >= Config.guardStanceMs && pSince < Config.guardStanceMs + 170) frame = "31_parry_c"; /* v0.8.98 招架收勢（架勢結束後 170ms） */
             else if (MCI_READY === MCI_N) { /* v0.8.97 待機影片格：相鄰兩格淡入淡出 */
               const ph = ((performance.now() / 1000) % MCI_PERIOD) / MCI_PERIOD * MCI_N, i0 = Math.floor(ph) % MCI_N;
               playerImg = MCI_IMGS[i0]; idleNext = MCI_IMGS[(i0 + 1) % MCI_N]; idleMix = ph - Math.floor(ph);
@@ -154,7 +107,7 @@
             playerImg = MC_IMGS[frame];
           }
 
-          if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), drawFacing, PG() - Player.y)) playerEllipse();
+          if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, PG() - Player.y)) playerEllipse();
           ctx.save();
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
           ctx.translate(Player.x, Player.y + GROUND_SINK);
@@ -164,10 +117,10 @@
             const k = Game._squashT / 0.15, a = (Game._squashAmt || 0) * k * k;
             sqY = 1 - a; sqX = 1 + a * 0.6;
           }
-          ctx.scale((drawFacing > 0 ? S : -S) * sqX, S * sqY);
+          ctx.scale((Player.facing > 0 ? S : -S) * sqX, S * sqY);
           ctx.drawImage(playerImg, -450, -529);
           if (idleNext && idleMix > 0.02) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * idleMix; ctx.drawImage(idleNext, -450, -529); ctx.globalAlpha = ga; }
-          Player._mcSpr = playerImg; Player._mcS = S; Player._mcFrame = frame; /* 殘影取樣（v0.8.96）；_mcFrame 供測試 */
+          Player._mcSpr = playerImg; Player._mcS = S; /* 殘影取樣（v0.8.96） */
           if (Player.flashFrames > 0) ctx.filter = "none";
           ctx.restore();
         } else {
