@@ -92,6 +92,7 @@ else:
     cells.setdefault(key, []).append((area, comp, ymax_))
 def bb(mask): ys, xs = np.where(mask); return xs.min(), ys.min(), xs.max(), ys.max()
 cut = {}
+CW_, CH_ = cfg.get('canvas', [900, 600]); BY_ = cfg.get('base', 560)  # 主角格是 900×560、腳底 529
 for key, lst in cells.items():
     lst.sort(key=lambda t: -t[0]); big = lst[0]; keep = big[1].copy()
     for ar, comp, yb in lst[1:]:
@@ -120,7 +121,7 @@ for r, rd in enumerate(cfg["rows_def"]):
     sc = float(np.median([x[0] for x in ratios])) if ratios else rd.get("scale", cfg.get("scale", 0.5))
     for c, nm in anchors.items():  # 該列地平線：錨點格腳底（新圖座標）換算成「現有格腳底 = 560 + 其垂直偏移」
         if (r, c - 1) not in cut: continue
-        nb = cut[(r, c - 1)][1]; eb = exist_bbox(nm); bases.append(nb[3] - (eb[3] - 560) / sc)
+        nb = cut[(r, c - 1)][1]; eb = exist_bbox(nm); bases.append(nb[3] - (eb[3] - BY_) / sc)
     base = float(np.median(bases)) if bases else None
     gain = np.ones(3); bgain = None
     if cfg.get("colormatch") and anchors:  # 色調校正：錨點格新圖 vs 現有格的 RGB 平均比（限 0.8～1.25），整列套用
@@ -150,9 +151,9 @@ for r, rd in enumerate(cfg["rows_def"]):
         if cfg.get('fit'): scc = min(sc, cfg['fit'] / max(1, crop.height))  # 畫布高度上限（舊格是貼底對齊的高格：戟尖頂到畫布上緣）
         crop = crop.resize((max(1, round(crop.width * scc)), max(1, round(crop.height * scc))), Image.LANCZOS)
         al = np.asarray(crop)[..., 3]; cx = np.where(al > 40)[1].mean()
-        foot = 560 if (base is None or cfg.get('ground_all')) else round((b[3] - base) * sc + 560)
-        o = Image.new('RGBA', (900, 600), (0, 0, 0, 0)); ox = round(450 - cx); oy = foot - crop.height + 1
-        if oy < 0 or ox < 0 or ox + crop.width > 900: print("警告：超出畫布", rd["move"], c + 1, (ox, oy, crop.width, crop.height))
+        foot = BY_ if (base is None or cfg.get('ground_all')) else round((b[3] - base) * sc + BY_)
+        o = Image.new('RGBA', (CW_, CH_), (0, 0, 0, 0)); ox = round(CW_ / 2 - cx); oy = foot - crop.height + 1
+        if oy < 0 or ox < 0 or ox + crop.width > CW_: print("警告：超出畫布", rd["move"], c + 1, (ox, oy, crop.width, crop.height))
         o.alpha_composite(crop, (max(ox, 0), max(oy, 0))); name = f'{prefix}{rd["move"]}_{c + 1}'
         o.save(os.path.join(asset, name + ".webp"), 'WEBP', quality=92, method=6); row_imgs.append(o)
     preview.append(row_imgs)
@@ -161,5 +162,5 @@ if cfg.get("preview") and preview:
     w, h = 300, 200; P = Image.new('RGB', (w * cols, h * len(preview)), (200, 200, 200))
     for r, ri in enumerate(preview):
         for c, o in enumerate(ri):
-            bg = Image.new('RGBA', (900, 600), (200, 200, 200, 255)); bg.alpha_composite(o); P.paste(bg.convert('RGB').resize((w, h)), (c * w, r * h))
+            bg = Image.new('RGBA', (CW_, CH_), (200, 200, 200, 255)); bg.alpha_composite(o); P.paste(bg.convert('RGB').resize((w, h)), (c * w, r * h))
     P.save(cfg["preview"])

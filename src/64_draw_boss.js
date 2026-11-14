@@ -796,6 +796,9 @@
       });
 
       /* M2 主角攻擊關鍵格：每一刀「預備 a → 出刀 b → 收招 c」三拍（v0.8.45 生圖，900×560、腳底 y=529、x=450） */
+      /* v0.8.193 主角絲滑補間格（Gemini 生圖 S8a～S8d，tools/smooth_cut.py 切成 900×560、腳底 529）：每招 6 格 sm_<招>_1～6；沒載到就退回舊三拍 */
+      const MC_SM = ["s1", "s2", "t", "hv", "parry", "dash", "hurt", "charge", "runstart", "brake", "turn", "land"];
+      MC_SM.forEach(m => { for (let i = 1; i <= 6; i++) { const n = "sm_" + m + "_" + i, img = new Image(); img.src = "assets/mc/" + n + ".webp"; MC_IMGS[n] = img; } });
       const MC_ATK = { 1: ["20_s1a", "21_s1b", "22_s1c"], 2: ["23_s2a", "24_s2b", "25_s2c"], 3: ["26_t_a", "27_t_b", "28_t_c"], 4: ["38_hv_a", "39_hv_b", "40_hv_c"] /* v0.8.98 蓄力重斬 */ };
       ['41_point_a', '42_point_b', '43_point_c', '17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
       const MC_STRIDE = 250;
