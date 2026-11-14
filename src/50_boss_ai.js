@@ -698,6 +698,7 @@
               if (move.sfx && move.sfx.h && Sound.buffers[move.sfx.h]) Sound.play(move.sfx.h, 0.85, (move.sfx.p || 1) * (0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05)); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
               spawnMoveFx(move.fxHit);
               if (move.kickHit) addTrauma(move.kickHit);
+              if (move.hitStep) Boss.vx = Boss.facing * move.hitStep; /* v0.8.187 連擊每一下往前踏一步，讓「一下、一下」看得出來 */
               const bType = Stages[Boss.stageId].bodyType || "human";
               const anim = move.anim || "slash";
               const aType = bType === "beast" ? "claw" : bType === "eye" ? "beam" : anim;
@@ -808,7 +809,7 @@
               triggerBossMove(next, Boss.comboChain);
             } else {
               Boss.state = "idle";
-              Boss.aiCooldown = Config.bossPhase === 2 ? 0.25 : 0.45; /* v0.8.159 出招間隔 0.60／0.32 → 0.45／0.25 */
+              { const gp = stage.aiGap || [0.45, 0.25]; Boss.aiCooldown = Config.bossPhase === 2 ? gp[1] : gp[0]; } /* v0.8.159 出招間隔 0.45／0.25；v0.8.187 各關可用 stage.aiGap=[一階段,二階段] 收緊（第 2～4 關） */
             }
           }
           return;

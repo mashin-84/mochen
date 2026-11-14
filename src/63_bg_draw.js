@@ -224,6 +224,30 @@
         drawThreatMarker(m);
       }
 
+      /* v0.8.187 連擊段數提示（程式畫，待換生圖）：頭上 N 道爪痕／刀痕，起手時全亮，出一下滅一下；最後一下放大 */
+      function drawComboPips() {
+        if (Boss.state !== "windup" && Boss.state !== "active") return;
+        const stC = Stages[Boss.stageId], m = stC && stC.moves[Boss.moveType];
+        if (!m) return;
+        const n = m.isCombo ? (m.comboTotalHits || 3) : 0;
+        if (n < 2 || Boss._ilDraw) return;
+        const left = Boss.state === "windup" ? n : Math.max(0, Boss.comboHitsLeft | 0);
+        if (Boss.state === "active" && left <= 0) return;
+        const col = m.armor ? "96,165,250" : "250,204,21", gap = 30, x0 = Boss.x - (n - 1) * gap / 2, y = Boss.y - Math.max(Boss.h, 165) - 60;
+        const t = performance.now() / 1000;
+        ctx.save();
+        ctx.lineCap = "round";
+        for (let i = 0; i < n; i++) {
+          const used = i < n - left, last = i === n - 1, x = x0 + i * gap, s = (last ? 1.35 : 1) * (used ? 0.8 : 1 + 0.08 * Math.sin(t * 14));
+          ctx.globalAlpha = used ? 0.22 : 0.95;
+          ctx.strokeStyle = used ? "rgba(203,213,225,1)" : `rgba(${col},1)`;
+          ctx.shadowColor = `rgba(${col},0.9)`; ctx.shadowBlur = used ? 0 : 10;
+          ctx.lineWidth = 5 * s;
+          ctx.beginPath(); ctx.moveTo(x - 7 * s, y - 13 * s); ctx.lineTo(x + 7 * s, y + 13 * s); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
       /* v0.8.1 預警顏色統一：黃＝可招架、紅＝危（閃／跳／側閃）、藍＝霸體（打不斷，用蓄力重斬破、或閃開） */
       function drawThreatMarker(m) {
         if (Boss.state !== "windup" || !m || m.isMobility || !(m.damage > 0 || m.isCombo || m.isZone)) return;

@@ -3509,6 +3509,28 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       Stages[6].unlockText = "【戰果】血池乾涸，魅月遁走，萬毒魔宗就此瓦解。";
       Stages[7].unlockText = "【戰果】破開天門鎮守，金甲與玄武皆退，天梯盡頭已在眼前。";
       Stages[8].unlockText = "【戰果】司徒衡伏誅，天道劫眼卻已睜開……";
+      /* ===== v0.8.187 難度曲線（使用者實測：1～4 關偏簡單、第 5 關合適）=====
+         ① 出招間隔分關（預設 0.45／0.25）；② 第 2～4 關補「接招」；③ 第 3、4 關普通招收招 ×0.8（危招、大招、霸體、陣法不動）；④ 第 4 關危招起手 → 0.65 */
+      (function () {
+        Stages[2].aiGap = [0.40, 0.22]; Stages[3].aiGap = [0.35, 0.20]; Stages[4].aiGap = [0.32, 0.18];
+        Stages[2].pool.push(["slash1+exclusive_teleport", 10]); Stages[2].p1Pool.push(["slash1+exclusive_teleport", 10]);
+        Stages[2].poolP2.push(["exclusive_zone+teleport_combo", 8]);
+        const A3 = Stages[3].stances.A, B3 = Stages[3].stances.B;
+        A3.pool.push(["dash_rush+exclusive_combo", 9, "chase"], ["slash1+exclusive_feint", 9]);
+        B3.pool.push(["heavy_slash+heavy_slam", 9]); B3.poolP2.push(["heavy_slash+heavy_thrust", 8]);
+        const S4 = Stages[4];
+        S4.pool.push(["ring_slash+thrust_peril", 10], ["flyswords+slash1", 9, "ranged"]); S4.poolP2 = S4.pool;
+        S4.moves.thrust_peril.windup = 0.65; S4.moves.sweep_peril.windup = 0.65;
+        [3, 4].forEach(n => Object.values(Stages[n].moves).forEach(m => {
+          if (!(m.damage > 0) || m.isPerilous || m.ult || m.armor || m.isZone || m.isSwitch || m.isMobility || m.isRanged) return;
+          m.recover = Math.round(m.recover * 0.8 * 100) / 100;
+        }));
+        /* 第 5 關小狼連擊看得清楚：間隔拉開、每下往前踏、頭上爪痕數（drawComboPips） */
+        const M5 = Stages[5].moves;
+        Object.assign(M5.s_bite2, { comboInterval: 0.28, active: 0.45, hitStep: 240 });
+        Object.assign(M5.s_claw3, { comboInterval: 0.30, active: 0.78, hitStep: 240 });
+        Object.assign(M5.s_rage, { comboInterval: 0.26, active: 1.0, hitStep: 200 });
+      })();
 
       /* 心魔「適應」記錄：依玩家近期習慣挑招 */
       const Mirror = {
@@ -5782,6 +5804,7 @@ const Config = {
               if (move.sfx && move.sfx.h && Sound.buffers[move.sfx.h]) Sound.play(move.sfx.h, 0.85, (move.sfx.p || 1) * (0.95 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.05)); else Sound.play("slash", 0.85, 0.9 + (move.comboTotalHits - Boss.comboHitsLeft) * 0.08);
               spawnMoveFx(move.fxHit);
               if (move.kickHit) addTrauma(move.kickHit);
+              if (move.hitStep) Boss.vx = Boss.facing * move.hitStep; /* v0.8.187 連擊每一下往前踏一步，讓「一下、一下」看得出來 */
               const bType = Stages[Boss.stageId].bodyType || "human";
               const anim = move.anim || "slash";
               const aType = bType === "beast" ? "claw" : bType === "eye" ? "beam" : anim;
@@ -5892,7 +5915,7 @@ const Config = {
               triggerBossMove(next, Boss.comboChain);
             } else {
               Boss.state = "idle";
-              Boss.aiCooldown = Config.bossPhase === 2 ? 0.25 : 0.45; /* v0.8.159 出招間隔 0.60／0.32 → 0.45／0.25 */
+              { const gp = stage.aiGap || [0.45, 0.25]; Boss.aiCooldown = Config.bossPhase === 2 ? gp[1] : gp[0]; } /* v0.8.159 出招間隔 0.45／0.25；v0.8.187 各關可用 stage.aiGap=[一階段,二階段] 收緊（第 2～4 關） */
             }
           }
           return;
@@ -10150,6 +10173,7 @@ const Config = {
         drawIntroGhosts(); /* v0.8.127 鏡花水月：分身殘影（畫在 Boss 後面） */
         drawBossAura(); /* v0.8.125 危招／霸體光暈（畫在 Boss 後面） */
         drawBossEntity();
+        drawComboPips(); /* v0.8.187 連擊段數（畫在 Boss 之上） */
         drawAssistDark(); /* v0.8.115 玄天珠演出的聚光暗角（暗化場景與敵人，主角與珠子在上） */
         drawTishenAura(false);
         drawXtzOrb(false); /* 珠子在主角背後那半圈 */
@@ -11331,6 +11355,30 @@ const Config = {
         }
         ctx.restore();
         drawThreatMarker(m);
+      }
+
+      /* v0.8.187 連擊段數提示（程式畫，待換生圖）：頭上 N 道爪痕／刀痕，起手時全亮，出一下滅一下；最後一下放大 */
+      function drawComboPips() {
+        if (Boss.state !== "windup" && Boss.state !== "active") return;
+        const stC = Stages[Boss.stageId], m = stC && stC.moves[Boss.moveType];
+        if (!m) return;
+        const n = m.isCombo ? (m.comboTotalHits || 3) : 0;
+        if (n < 2 || Boss._ilDraw) return;
+        const left = Boss.state === "windup" ? n : Math.max(0, Boss.comboHitsLeft | 0);
+        if (Boss.state === "active" && left <= 0) return;
+        const col = m.armor ? "96,165,250" : "250,204,21", gap = 30, x0 = Boss.x - (n - 1) * gap / 2, y = Boss.y - Math.max(Boss.h, 165) - 60;
+        const t = performance.now() / 1000;
+        ctx.save();
+        ctx.lineCap = "round";
+        for (let i = 0; i < n; i++) {
+          const used = i < n - left, last = i === n - 1, x = x0 + i * gap, s = (last ? 1.35 : 1) * (used ? 0.8 : 1 + 0.08 * Math.sin(t * 14));
+          ctx.globalAlpha = used ? 0.22 : 0.95;
+          ctx.strokeStyle = used ? "rgba(203,213,225,1)" : `rgba(${col},1)`;
+          ctx.shadowColor = `rgba(${col},0.9)`; ctx.shadowBlur = used ? 0 : 10;
+          ctx.lineWidth = 5 * s;
+          ctx.beginPath(); ctx.moveTo(x - 7 * s, y - 13 * s); ctx.lineTo(x + 7 * s, y + 13 * s); ctx.stroke();
+        }
+        ctx.restore();
       }
 
       /* v0.8.1 預警顏色統一：黃＝可招架、紅＝危（閃／跳／側閃）、藍＝霸體（打不斷，用蓄力重斬破、或閃開） */

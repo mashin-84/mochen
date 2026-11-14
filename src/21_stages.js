@@ -575,3 +575,25 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       Stages[6].unlockText = "【戰果】血池乾涸，魅月遁走，萬毒魔宗就此瓦解。";
       Stages[7].unlockText = "【戰果】破開天門鎮守，金甲與玄武皆退，天梯盡頭已在眼前。";
       Stages[8].unlockText = "【戰果】司徒衡伏誅，天道劫眼卻已睜開……";
+      /* ===== v0.8.187 難度曲線（使用者實測：1～4 關偏簡單、第 5 關合適）=====
+         ① 出招間隔分關（預設 0.45／0.25）；② 第 2～4 關補「接招」；③ 第 3、4 關普通招收招 ×0.8（危招、大招、霸體、陣法不動）；④ 第 4 關危招起手 → 0.65 */
+      (function () {
+        Stages[2].aiGap = [0.40, 0.22]; Stages[3].aiGap = [0.35, 0.20]; Stages[4].aiGap = [0.32, 0.18];
+        Stages[2].pool.push(["slash1+exclusive_teleport", 10]); Stages[2].p1Pool.push(["slash1+exclusive_teleport", 10]);
+        Stages[2].poolP2.push(["exclusive_zone+teleport_combo", 8]);
+        const A3 = Stages[3].stances.A, B3 = Stages[3].stances.B;
+        A3.pool.push(["dash_rush+exclusive_combo", 9, "chase"], ["slash1+exclusive_feint", 9]);
+        B3.pool.push(["heavy_slash+heavy_slam", 9]); B3.poolP2.push(["heavy_slash+heavy_thrust", 8]);
+        const S4 = Stages[4];
+        S4.pool.push(["ring_slash+thrust_peril", 10], ["flyswords+slash1", 9, "ranged"]); S4.poolP2 = S4.pool;
+        S4.moves.thrust_peril.windup = 0.65; S4.moves.sweep_peril.windup = 0.65;
+        [3, 4].forEach(n => Object.values(Stages[n].moves).forEach(m => {
+          if (!(m.damage > 0) || m.isPerilous || m.ult || m.armor || m.isZone || m.isSwitch || m.isMobility || m.isRanged) return;
+          m.recover = Math.round(m.recover * 0.8 * 100) / 100;
+        }));
+        /* 第 5 關小狼連擊看得清楚：間隔拉開、每下往前踏、頭上爪痕數（drawComboPips） */
+        const M5 = Stages[5].moves;
+        Object.assign(M5.s_bite2, { comboInterval: 0.28, active: 0.45, hitStep: 240 });
+        Object.assign(M5.s_claw3, { comboInterval: 0.30, active: 0.78, hitStep: 240 });
+        Object.assign(M5.s_rage, { comboInterval: 0.26, active: 1.0, hitStep: 200 });
+      })();
