@@ -32,6 +32,8 @@
             }
             return top < 0 ? 0 : bot - top + 1;
           }
+          /* v0.8.189 各 sprite 的影片抽幀格數：walk＝走路格數（預設 12）、idle＝站立循環格數（無則沿用 01／02 兩格）、normOne＝走路格已直接對齊 01_idle1 尺寸，不再用高度比校正 */
+          const SPRITE_ANIM = { boss5: { walk: 12, idle: 32, normOne: true }, boss5b: { walk: 24, idle: 32, normOne: true } };
           function getWalkNorm(SP) {
             if (SP.walkNorm) return SP.walkNorm;
             let k = 1;
@@ -66,7 +68,14 @@
               d.img.onload = () => { d.ok = true; };
               d.img.src = dir + f + ".webp";
             });
-            for (let i = 1; i <= 12; i++) {
+            const AN = SPRITE_ANIM[key] || {}; sp.walkN = AN.walk || 12; sp.idleN = AN.idle || 0; sp.idle = []; sp.idleReady = 0; if (AN.normOne) sp.walkNorm = 1; /* v0.8.189 影片抽幀的站立循環／走路格數可依 sprite 指定 */
+            for (let i = 1; i <= sp.idleN; i++) {
+              const img = new Image();
+              img.onload = () => { sp.idleReady++; };
+              img.src = dir + "idle_" + String(i).padStart(2, "0") + ".webp";
+              sp.idle.push(img);
+            }
+            for (let i = 1; i <= sp.walkN; i++) {
               const img = new Image();
               img.onload = () => { sp.walkReady++; };
               img.src = dir + "walk_" + String(i).padStart(2, "0") + ".webp";
@@ -283,13 +292,17 @@
               /* v0.7.6 姿態可指定用動作表內的格子循環走路（影片抽幀畫風和動作表差太多時用） */
               imgKey = stnD.walkSeq[Math.floor(SP.phase * stnD.walkSeq.length) % stnD.walkSeq.length];
               if (stnD.walkBob) Boss._walkBob = Math.abs(Math.sin(SP.phase * Math.PI * 2 * stnD.walkSeq.length * 0.5)) * stnD.walkBob; /* 重步上下起伏（落腳最低） */
-            } else if (SP.walkReady === 12) {
-              bossImg = SP.walk[Math.floor(SP.phase * 12) % 12];
+            } else if (SP.walkReady === SP.walkN) {
+              bossImg = SP.walk[Math.floor(SP.phase * SP.walkN) % SP.walkN];
               isWalkFrame = true;
             } else {
               const walkIdx = Math.floor(performance.now() / 140) % 4;
               imgKey = ["03_walk1", "04_walk2", "05_walk3", "06_walk4"][walkIdx];
             }
+          } else if (SP.idleN && SP.idleReady === SP.idleN) {
+            /* v0.8.189 站立循環（影片抽幀）：往返播放（ping-pong）所以首尾必定接得上；8 格/秒 */
+            const nI = SP.idleN, cyc = 2 * nI - 2, ti = Math.floor(performance.now() / 125) % cyc;
+            bossImg = SP.idle[ti < nI ? ti : cyc - ti];
           } else {
             imgKey = Math.floor(performance.now() / 700) % 2 === 0 ? "01_idle1" : "02_idle2";
           }

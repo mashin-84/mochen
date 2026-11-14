@@ -631,3 +631,5 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S5.stances.A.extras = S5.stances.A.extras.concat(Array.from(used.A));
         S5.stances.B.extras = S5.stances.B.extras.concat(Array.from(used.B));
       })();
+      /* v0.8.189 第 5 關走路／站立改影片抽幀（小狼 walk 12 格＋idle 32 格往返、大狼 walk 24 格＋idle 32 格往返；SPRITE_ANIM 在 64_draw_boss.js）：stride＝走完一個步態週期的距離，原 4 格走路是 170／330，換 12／24 格整週期後改 300／420（待實測腳滑） */
+      Stages[5].stances.A.stride = 300; Stages[5].stances.B.stride = 420;
