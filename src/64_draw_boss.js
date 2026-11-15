@@ -86,6 +86,8 @@
             return sp;
           }
 
+      /* v0.8.200 敵人刀光版（空洞騎士式，與主角 MC_STYLE 同開關）：出招期間換格交叉淡化 70ms；進入出手（windup→active）留 3 道淡紅剪影殘影、出手中換格留 2 道 */
+      const BOSS_XF = { img: null, prev: null, t: 0, st: null };
                 function drawBossEntity() {
         if (Boss._introHide) return; /* v0.8.112 從天而降登場前，Boss 不先站在右邊 */
         if (Boss._pp && Game.mode === "battle") { drawPartsFront(); if (Boss._pp.phase !== 2 || !Stages[Boss.stageId].sprite) return; } /* v0.8.83 部位 Boss；v0.8.90 二階段有人形 sprite 照一般 Boss 畫 */
@@ -357,6 +359,18 @@
             if (Boss._ilDraw) { /* 幻影沒有影子 */ } else if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
           }
 
+          if (!Boss._ilDraw) { /* v0.8.200 敵人刀光版：記錄換格 */
+            const act = typeof MC_STYLE !== "undefined" && MC_STYLE === "smear" && !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered"].includes(Boss.state);
+            if (act && BOSS_XF.img && BOSS_XF.img !== bossImg && bossImg && bossImg.naturalWidth) {
+              BOSS_XF.prev = BOSS_XF.img; BOSS_XF.t = performance.now();
+              if (Boss.state === "active") {
+                const n = BOSS_XF.st === "windup" ? 3 : 2, kS = bossVis(stage).k;
+                for (let i = 1; i <= n; i++) Game.afterimages.push({ x: Boss.x - Boss.facing * 22 * i, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.4 / i, spr: BOSS_XF.prev, s: kS, f: Boss.facing, color: "#fecaca", by: 40 });
+              }
+            }
+            if (!act) BOSS_XF.prev = null;
+            BOSS_XF.img = act ? bossImg : null; BOSS_XF.st = Boss.state;
+          }
           ctx.save();
           if (deathAlpha < 1) ctx.globalAlpha = deathAlpha;
           if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
@@ -385,6 +399,9 @@
             ctx.globalAlpha = keepA; ctx.filter = keepF;
           }
           ctx.drawImage(bossImg, -450, -560);
+          if (BOSS_XF.prev && !Boss._ilDraw && BOSS_XF.prev !== bossImg && performance.now() - BOSS_XF.t < 70) {
+            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - BOSS_XF.t) / 70); ctx.drawImage(BOSS_XF.prev, -450, -560); ctx.globalAlpha = ga;
+          }
           if (!Boss._ilDraw && !deathRot) { const hy = Boss.y + GROUND_SINK - (560 - opaqueTop(bossImg)) * bossK; Boss._headY = Boss._headY == null ? hy : Boss._headY + (hy - Boss._headY) * 0.25; } /* v0.8.84 頭頂高度（平滑，換格不跳） */
           
           ctx.filter = "none";

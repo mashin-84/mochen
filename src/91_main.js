@@ -129,7 +129,7 @@
 
       { /* v0.8.199 主角動作風格比較：影片版 ↔ 刀光版（空洞騎士式） */
         const b = document.getElementById("btn-mcstyle"), t = document.getElementById("menu-mcstyle-txt");
-        const sync = () => { if (t) t.textContent = MC_STYLE === "smear" ? "主角動作：刀光版" : "主角動作：影片版"; };
+        const sync = () => { if (t) t.textContent = MC_STYLE === "smear" ? "動作風格：刀光版" : "動作風格：影片版"; };
         sync();
         if (b) b.addEventListener("click", () => { MC_STYLE = MC_STYLE === "smear" ? "video" : "smear"; try { localStorage.setItem("qingyun_mcstyle", MC_STYLE); } catch (e) { } sync(); hapticBuzz(20); });
       }

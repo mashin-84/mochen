@@ -1,7 +1,7 @@
       /* v0.8.196 主角動作加順試驗（只套普攻第一刀 comboStep 1、地面、非反擊）：①換格時前一格淡出 60ms（交叉淡化）②從起手換到出刀那一刻，留兩道淡藍剪影殘影（smear），讓眼睛自己補中間動作。MC_SMOOTH 關掉即恢復 */
       const MC_SMOOTH = { s1: true };
       /* v0.8.199 主角動作風格比較（齒輪選單切換，localStorage qingyun_mcstyle）："video"＝影片抽幀（v0.8.198）；"smear"＝空洞騎士式：原本三拍關鍵格＋所有換格淡化＋出刀／瞬步剪影殘影 */
-      let MC_STYLE = (() => { try { return localStorage.getItem("qingyun_mcstyle") === "smear" ? "smear" : "video"; } catch (e) { return "video"; } })();
+      let MC_STYLE = (() => { try { return localStorage.getItem("qingyun_mcstyle") === "video" ? "video" : "smear"; /* v0.8.200 使用者選定刀光版為預設 */ } catch (e) { return "smear"; } })();
       const MC_SMEAR_ON = { "21_s1b": "20_s1a", "24_s2b": "23_s2a", "27_t_b": "26_t_a", "39_hv_b": "38_hv_a", "34_dash_b": "33_dash_a" }; /* 換到這些「出手格」時，用前一格留殘影 */
       const MC_XF = { img: null, prev: null, t: 0, f: 1 };
       /* v0.8.198 影片格選格：T＝換格時間點（秒），回傳第幾格 */

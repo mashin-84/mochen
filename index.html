@@ -2082,7 +2082,7 @@
           </button>
           <button type="button" id="btn-mcstyle" class="menu-tile-btn">
             <span>🎞️</span>
-            <span id="menu-mcstyle-txt">主角動作：影片版</span>
+            <span id="menu-mcstyle-txt">動作風格：刀光版</span>
           </button>
           <button type="button" id="btn-ult-test" class="menu-tile-btn">
             <span>🔥</span>
@@ -10193,7 +10193,7 @@ const Config = {
             if (sil) {
               ctx.save(); ctx.globalAlpha = Math.max(0, img.alpha * 0.85);
               ctx.translate(img.x, img.y + GROUND_SINK); ctx.scale(img.f > 0 ? img.s : -img.s, img.s);
-              ctx.drawImage(sil, -sil.width / 2, 31 - sil.height); ctx.restore();
+              ctx.drawImage(sil, -sil.width / 2, (img.by || 31) - sil.height); ctx.restore(); /* by＝腳底距圖下緣（主角 31、Boss 40） */
             }
           } else if (MC_READY !== 16) { /* 沒有角色圖時才畫舊方塊 */
             ctx.fillStyle = `rgba(56, 189, 248, ${img.alpha * 0.45})`;
@@ -11578,6 +11578,8 @@ const Config = {
             return sp;
           }
 
+      /* v0.8.200 敵人刀光版（空洞騎士式，與主角 MC_STYLE 同開關）：出招期間換格交叉淡化 70ms；進入出手（windup→active）留 3 道淡紅剪影殘影、出手中換格留 2 道 */
+      const BOSS_XF = { img: null, prev: null, t: 0, st: null };
                 function drawBossEntity() {
         if (Boss._introHide) return; /* v0.8.112 從天而降登場前，Boss 不先站在右邊 */
         if (Boss._pp && Game.mode === "battle") { drawPartsFront(); if (Boss._pp.phase !== 2 || !Stages[Boss.stageId].sprite) return; } /* v0.8.83 部位 Boss；v0.8.90 二階段有人形 sprite 照一般 Boss 畫 */
@@ -11849,6 +11851,18 @@ const Config = {
             if (Boss._ilDraw) { /* 幻影沒有影子 */ } else if (deathRot || !drawSpriteShadow(bossImg, Boss.x, 560, sk, Boss.facing, Config.groundY - Boss.y, cineK)) bossEllipse();
           }
 
+          if (!Boss._ilDraw) { /* v0.8.200 敵人刀光版：記錄換格 */
+            const act = typeof MC_STYLE !== "undefined" && MC_STYLE === "smear" && !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered"].includes(Boss.state);
+            if (act && BOSS_XF.img && BOSS_XF.img !== bossImg && bossImg && bossImg.naturalWidth) {
+              BOSS_XF.prev = BOSS_XF.img; BOSS_XF.t = performance.now();
+              if (Boss.state === "active") {
+                const n = BOSS_XF.st === "windup" ? 3 : 2, kS = bossVis(stage).k;
+                for (let i = 1; i <= n; i++) Game.afterimages.push({ x: Boss.x - Boss.facing * 22 * i, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.4 / i, spr: BOSS_XF.prev, s: kS, f: Boss.facing, color: "#fecaca", by: 40 });
+              }
+            }
+            if (!act) BOSS_XF.prev = null;
+            BOSS_XF.img = act ? bossImg : null; BOSS_XF.st = Boss.state;
+          }
           ctx.save();
           if (deathAlpha < 1) ctx.globalAlpha = deathAlpha;
           if (Boss.flashFrames > 0) ctx.filter = "brightness(2.5)";
@@ -11877,6 +11891,9 @@ const Config = {
             ctx.globalAlpha = keepA; ctx.filter = keepF;
           }
           ctx.drawImage(bossImg, -450, -560);
+          if (BOSS_XF.prev && !Boss._ilDraw && BOSS_XF.prev !== bossImg && performance.now() - BOSS_XF.t < 70) {
+            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - BOSS_XF.t) / 70); ctx.drawImage(BOSS_XF.prev, -450, -560); ctx.globalAlpha = ga;
+          }
           if (!Boss._ilDraw && !deathRot) { const hy = Boss.y + GROUND_SINK - (560 - opaqueTop(bossImg)) * bossK; Boss._headY = Boss._headY == null ? hy : Boss._headY + (hy - Boss._headY) * 0.25; } /* v0.8.84 頭頂高度（平滑，換格不跳） */
           
           ctx.filter = "none";
@@ -12351,7 +12368,7 @@ const Config = {
       /* v0.8.196 主角動作加順試驗（只套普攻第一刀 comboStep 1、地面、非反擊）：①換格時前一格淡出 60ms（交叉淡化）②從起手換到出刀那一刻，留兩道淡藍剪影殘影（smear），讓眼睛自己補中間動作。MC_SMOOTH 關掉即恢復 */
       const MC_SMOOTH = { s1: true };
       /* v0.8.199 主角動作風格比較（齒輪選單切換，localStorage qingyun_mcstyle）："video"＝影片抽幀（v0.8.198）；"smear"＝空洞騎士式：原本三拍關鍵格＋所有換格淡化＋出刀／瞬步剪影殘影 */
-      let MC_STYLE = (() => { try { return localStorage.getItem("qingyun_mcstyle") === "smear" ? "smear" : "video"; } catch (e) { return "video"; } })();
+      let MC_STYLE = (() => { try { return localStorage.getItem("qingyun_mcstyle") === "video" ? "video" : "smear"; /* v0.8.200 使用者選定刀光版為預設 */ } catch (e) { return "smear"; } })();
       const MC_SMEAR_ON = { "21_s1b": "20_s1a", "24_s2b": "23_s2a", "27_t_b": "26_t_a", "39_hv_b": "38_hv_a", "34_dash_b": "33_dash_a" }; /* 換到這些「出手格」時，用前一格留殘影 */
       const MC_XF = { img: null, prev: null, t: 0, f: 1 };
       /* v0.8.198 影片格選格：T＝換格時間點（秒），回傳第幾格 */
@@ -14589,7 +14606,7 @@ const Config = {
 
       { /* v0.8.199 主角動作風格比較：影片版 ↔ 刀光版（空洞騎士式） */
         const b = document.getElementById("btn-mcstyle"), t = document.getElementById("menu-mcstyle-txt");
-        const sync = () => { if (t) t.textContent = MC_STYLE === "smear" ? "主角動作：刀光版" : "主角動作：影片版"; };
+        const sync = () => { if (t) t.textContent = MC_STYLE === "smear" ? "動作風格：刀光版" : "動作風格：影片版"; };
         sync();
         if (b) b.addEventListener("click", () => { MC_STYLE = MC_STYLE === "smear" ? "video" : "smear"; try { localStorage.setItem("qingyun_mcstyle", MC_STYLE); } catch (e) { } sync(); hapticBuzz(20); });
       }
