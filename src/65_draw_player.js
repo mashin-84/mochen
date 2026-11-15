@@ -82,6 +82,11 @@
               const dur = Player.comboStep === 4 ? 0.32 : Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
               frame = isAirborne ? seq[1] : el < 0.05 ? seq[0] : el < dur * 0.45 ? seq[1] : seq[2];
             }
+            if (Player.comboStep === 1 && MC_VS1.every(ok)) { /* v0.8.197 第一刀影片 11 格：判定在出手瞬間，所以舉劍只閃 0.03 秒、0.09 秒劍已揮到前方，之後隨勢、收回 */
+              const el = 0.55 - Player.stateTimer, T = [0.03, 0.06, 0.09, 0.13, 0.22, 0.28, 0.34, 0.40, 0.46, 0.51];
+              let k = 0; while (k < T.length && el >= T[k]) k++;
+              frame = isAirborne ? MC_VS1[4] : MC_VS1[k];
+            }
           } else if (Player.isChargingAttack) {
             frame = "12_charge";
             if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（0.45 秒蓄滿會自動出重斬，所以提早換格） */
@@ -110,7 +115,7 @@
             playerImg = MC_IMGS[frame];
           }
           { /* v0.8.196 加順試驗：只在普攻第一刀期間記錄換格 */
-            const on = MC_SMOOTH.s1 && Player.state === "attack" && Player.comboStep === 1 && !Player.isDive && !Player.riposteAtk && !isAirborne;
+            const on = MC_SMOOTH.s1 && Player.state === "attack" && Player.comboStep === 1 && !Player.isDive && !Player.riposteAtk && !isAirborne && frame.indexOf("v_s1_") !== 0; /* 有影片格就不疊淡化／殘影 */
             if (on && MC_XF.img && MC_XF.img !== playerImg) {
               MC_XF.prev = MC_XF.img; MC_XF.t = performance.now();
               if (frame === "21_s1b") { /* 起手→出刀：兩道剪影殘影（沿用 v0.8.96 殘影系統，淡藍、自動衰減） */
@@ -137,7 +142,7 @@
             const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - MC_XF.t) / 60); ctx.drawImage(MC_XF.prev, -450, -529); ctx.globalAlpha = ga;
           }
           if (idleNext && idleMix > 0.02) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * idleMix; ctx.drawImage(idleNext, -450, -529); ctx.globalAlpha = ga; }
-          Player._mcSpr = playerImg; Player._mcS = S; /* 殘影取樣（v0.8.96） */
+          Player._mcSpr = playerImg; Player._mcS = S; Player._mcFrame = frame; /* 殘影取樣（v0.8.96）；_mcFrame 供測試 */
           if (Player.flashFrames > 0) ctx.filter = "none";
           ctx.restore();
         } else {
