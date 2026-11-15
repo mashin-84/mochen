@@ -12340,6 +12340,9 @@ const Config = {
         ctx.restore();
         return true;
       }
+      /* v0.8.196 主角動作加順試驗（只套普攻第一刀 comboStep 1、地面、非反擊）：①換格時前一格淡出 60ms（交叉淡化）②從起手換到出刀那一刻，留兩道淡藍剪影殘影（smear），讓眼睛自己補中間動作。MC_SMOOTH 關掉即恢復 */
+      const MC_SMOOTH = { s1: true };
+      const MC_XF = { img: null, prev: null, t: 0, f: 1 };
       function drawPlayer() {
         ctx.save();
         if (Player.hurtInv > 0 && !Player.blast && Math.floor(performance.now() / 50) % 2 === 0) ctx.globalAlpha = 0.4; /* 受擊無敵閃爍 10Hz */
@@ -12448,6 +12451,17 @@ const Config = {
           if (!playerImg) {
             playerImg = MC_IMGS[frame];
           }
+          { /* v0.8.196 加順試驗：只在普攻第一刀期間記錄換格 */
+            const on = MC_SMOOTH.s1 && Player.state === "attack" && Player.comboStep === 1 && !Player.isDive && !Player.riposteAtk && !isAirborne;
+            if (on && MC_XF.img && MC_XF.img !== playerImg) {
+              MC_XF.prev = MC_XF.img; MC_XF.t = performance.now();
+              if (frame === "21_s1b") { /* 起手→出刀：兩道剪影殘影（沿用 v0.8.96 殘影系統，淡藍、自動衰減） */
+                for (let i = 1; i <= 2; i++) Game.afterimages.push({ x: Player.x - Player.facing * 16 * i, y: Player.y, w: Player.w, h: Player.h, alpha: 0.42 / i, spr: MC_XF.prev, s: MC_SCALE * (MC_FRAME_SCALE["20_s1a"] || 1), f: Player.facing, color: "#bae6fd" });
+              }
+            }
+            if (!on) MC_XF.prev = null;
+            MC_XF.img = on ? playerImg : null;
+          }
 
           if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, PG() - Player.y)) playerEllipse();
           ctx.save();
@@ -12461,6 +12475,9 @@ const Config = {
           }
           ctx.scale((Player.facing > 0 ? S : -S) * sqX, S * sqY);
           ctx.drawImage(playerImg, -450, -529);
+          if (MC_XF.prev && MC_XF.prev !== playerImg && performance.now() - MC_XF.t < 60) { /* 交叉淡化：前一格疊在上面淡出 */
+            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - MC_XF.t) / 60); ctx.drawImage(MC_XF.prev, -450, -529); ctx.globalAlpha = ga;
+          }
           if (idleNext && idleMix > 0.02) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * idleMix; ctx.drawImage(idleNext, -450, -529); ctx.globalAlpha = ga; }
           Player._mcSpr = playerImg; Player._mcS = S; /* 殘影取樣（v0.8.96） */
           if (Player.flashFrames > 0) ctx.filter = "none";
