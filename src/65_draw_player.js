@@ -1,8 +1,11 @@
       /* v0.8.196 主角動作加順試驗（只套普攻第一刀 comboStep 1、地面、非反擊）：①換格時前一格淡出 60ms（交叉淡化）②從起手換到出刀那一刻，留兩道淡藍剪影殘影（smear），讓眼睛自己補中間動作。MC_SMOOTH 關掉即恢復 */
       const MC_SMOOTH = { s1: true };
+      /* v0.8.199 主角動作風格比較（齒輪選單切換，localStorage qingyun_mcstyle）："video"＝影片抽幀（v0.8.198）；"smear"＝空洞騎士式：原本三拍關鍵格＋所有換格淡化＋出刀／瞬步剪影殘影 */
+      let MC_STYLE = (() => { try { return localStorage.getItem("qingyun_mcstyle") === "smear" ? "smear" : "video"; } catch (e) { return "video"; } })();
+      const MC_SMEAR_ON = { "21_s1b": "20_s1a", "24_s2b": "23_s2a", "27_t_b": "26_t_a", "39_hv_b": "38_hv_a", "34_dash_b": "33_dash_a" }; /* 換到這些「出手格」時，用前一格留殘影 */
       const MC_XF = { img: null, prev: null, t: 0, f: 1 };
       /* v0.8.198 影片格選格：T＝換格時間點（秒），回傳第幾格 */
-      function mcVOk(g) { const L = MC_V[g]; if (!L) return false; for (const n of L) { const im = MC_IMGS[n]; if (!(im && im.complete && im.naturalWidth)) return false; } return true; }
+      function mcVOk(g) { if (MC_STYLE === "smear") return false; const L = MC_V[g]; if (!L) return false; for (const n of L) { const im = MC_IMGS[n]; if (!(im && im.complete && im.naturalWidth)) return false; } return true; }
       function mcVPick(g, el, T) { let k = 0; while (k < T.length && el >= T[k]) k++; return MC_V[g][Math.min(k, MC_V[g].length - 1)]; }
       function drawPlayer() {
         ctx.save();
@@ -131,12 +134,14 @@
           if (!playerImg) {
             playerImg = MC_IMGS[frame];
           }
-          { /* v0.8.196 加順試驗：只在普攻第一刀期間記錄換格 */
-            const on = MC_SMOOTH.s1 && Player.state === "attack" && Player.comboStep === 1 && !Player.isDive && !Player.riposteAtk && !isAirborne && frame.indexOf("v_s1_") !== 0; /* 有影片格就不疊淡化／殘影 */
+          { /* v0.8.196／199 加順：smear 風格時全部動作換格都淡化，出手格加剪影殘影；video 風格只在沒有影片格的第一刀用 */
+            const act = ["attack", "parry", "dash", "hitstun", "staggered"].includes(Player.state) || Player.isChargingAttack;
+            const on = MC_STYLE === "smear" ? act : (MC_SMOOTH.s1 && Player.state === "attack" && Player.comboStep === 1 && !Player.isDive && !Player.riposteAtk && !isAirborne && frame.indexOf("v_") !== 0);
             if (on && MC_XF.img && MC_XF.img !== playerImg) {
               MC_XF.prev = MC_XF.img; MC_XF.t = performance.now();
-              if (frame === "21_s1b") { /* 起手→出刀：兩道剪影殘影（沿用 v0.8.96 殘影系統，淡藍、自動衰減） */
-                for (let i = 1; i <= 2; i++) Game.afterimages.push({ x: Player.x - Player.facing * 16 * i, y: Player.y, w: Player.w, h: Player.h, alpha: 0.42 / i, spr: MC_XF.prev, s: MC_SCALE * (MC_FRAME_SCALE["20_s1a"] || 1), f: Player.facing, color: "#bae6fd" });
+              if (MC_SMEAR_ON[frame] && (MC_STYLE === "smear" || frame === "21_s1b")) { /* 起手→出手：剪影殘影（沿用 v0.8.96 殘影系統，淡藍、自動衰減） */
+                const n = MC_STYLE === "smear" ? 3 : 2;
+                for (let i = 1; i <= n; i++) Game.afterimages.push({ x: Player.x - Player.facing * 16 * i, y: Player.y, w: Player.w, h: Player.h, alpha: 0.42 / i, spr: MC_XF.prev, s: MC_SCALE * (MC_FRAME_SCALE[MC_SMEAR_ON[frame]] || 1), f: Player.facing, color: "#bae6fd" });
               }
             }
             if (!on) MC_XF.prev = null;
@@ -155,8 +160,8 @@
           }
           ctx.scale((Player.facing > 0 ? S : -S) * sqX, S * sqY);
           ctx.drawImage(playerImg, -playerImg.naturalWidth / 2, 31 - playerImg.naturalHeight); /* v0.8.198 影片格畫布較大（1300×800），以圖寬一半、腳底距下緣 31px 對齊 */
-          if (MC_XF.prev && MC_XF.prev !== playerImg && performance.now() - MC_XF.t < 60) { /* 交叉淡化：前一格疊在上面淡出 */
-            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - MC_XF.t) / 60); ctx.drawImage(MC_XF.prev, -MC_XF.prev.naturalWidth / 2, 31 - MC_XF.prev.naturalHeight); ctx.globalAlpha = ga;
+          if (MC_XF.prev && MC_XF.prev !== playerImg && performance.now() - MC_XF.t < (MC_STYLE === "smear" ? 70 : 60)) { /* 交叉淡化：前一格疊在上面淡出 */
+            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - MC_XF.t) / (MC_STYLE === "smear" ? 70 : 60)); ctx.drawImage(MC_XF.prev, -MC_XF.prev.naturalWidth / 2, 31 - MC_XF.prev.naturalHeight); ctx.globalAlpha = ga;
           }
           if (idleNext && idleMix > 0.02) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * idleMix; ctx.drawImage(idleNext, -450, -529); ctx.globalAlpha = ga; }
           Player._mcSpr = playerImg; Player._mcS = S; Player._mcFrame = frame; /* 殘影取樣（v0.8.96）；_mcFrame 供測試 */
