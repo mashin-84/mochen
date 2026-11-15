@@ -795,8 +795,9 @@
       });
 
       /* M2 主角攻擊關鍵格：每一刀「預備 a → 出刀 b → 收招 c」三拍（v0.8.45 生圖，900×560、腳底 y=529、x=450） */
-      /* v0.8.197 普攻第一刀改影片抽幀（Gemini 綠幕影片 2 秒，取第 10～44 幀共 11 格：舉劍→揮過→出刀→隨勢→收回站姿），assets/mc/v_s1_01～11 */
-      const MC_VS1 = []; for (let i = 1; i <= 11; i++) { const n = "v_s1_" + String(i).padStart(2, "0"), img = new Image(); img.src = "assets/mc/" + n + ".webp"; MC_IMGS[n] = img; MC_VS1.push(n); }
+      /* v0.8.197～198 主角動作改影片抽幀（Gemini 綠幕影片，tools/mc_vid.py；1300×800、腳底 769）：MC_V[組] = 格名陣列 */
+      const MC_V = {}; [["s1", 11], ["s2", 11], ["t", 12], ["hv", 12], ["ch", 11], ["pr", 13], ["ds", 8], ["hu", 11]].forEach(([g, n]) => { MC_V[g] = []; for (let i = 1; i <= n; i++) { const nm = "v_" + g + "_" + String(i).padStart(2, "0"), img = new Image(); img.src = "assets/mc/" + nm + ".webp"; MC_IMGS[nm] = img; MC_V[g].push(nm); } });
+      const MC_VS1 = MC_V.s1;
       const MC_ATK = { 1: ["20_s1a", "21_s1b", "22_s1c"], 2: ["23_s2a", "24_s2b", "25_s2c"], 3: ["26_t_a", "27_t_b", "28_t_c"], 4: ["38_hv_a", "39_hv_b", "40_hv_c"] /* v0.8.98 蓄力重斬 */ };
       ['41_point_a', '42_point_b', '43_point_c', '17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
       const MC_STRIDE = 250;
@@ -850,7 +851,8 @@
         const L = Game.mode !== "battle" ? hubLight(x) : null; /* 營地：影子隨營火方向與火光晃動 */
         if (L) ctx.globalAlpha = a * L.a / 0.46;
         ctx.transform((facing > 0 ? 1 : -1) * S * sx, 0, S * (L ? -L.skew : 0.38), -S * (L ? L.len : 0.16), x, Config.groundY + 2); /* d 為負：剪影的「高」往螢幕下方（朝觀眾）投到地面上 */
-        ctx.drawImage(c, -450, -anchorY, img.naturalWidth, img.naturalHeight);
+        const ay = img.naturalHeight === 800 ? 769 : anchorY; /* v0.8.198 主角影片格 1300×800、腳底 769 */
+        ctx.drawImage(c, -img.naturalWidth / 2, -ay, img.naturalWidth, img.naturalHeight);
         ctx.restore();
         return true;
       }

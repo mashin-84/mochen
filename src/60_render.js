@@ -140,7 +140,7 @@
             if (sil) {
               ctx.save(); ctx.globalAlpha = Math.max(0, img.alpha * 0.85);
               ctx.translate(img.x, img.y + GROUND_SINK); ctx.scale(img.f > 0 ? img.s : -img.s, img.s);
-              ctx.drawImage(sil, -450, -529); ctx.restore();
+              ctx.drawImage(sil, -sil.width / 2, 31 - sil.height); ctx.restore();
             }
           } else if (MC_READY !== 16) { /* 沒有角色圖時才畫舊方塊 */
             ctx.fillStyle = `rgba(56, 189, 248, ${img.alpha * 0.45})`;
