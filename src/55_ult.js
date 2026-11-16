@@ -84,7 +84,7 @@
         if (t < T.stab) {
           Boss.state = "ult"; Boss._ultFrame = t < T.pause ? c.img.raise : c.img.pause;
           Game.ultCam = 0.2; Game.ultFocus = true; Boss._ucd = Math.min(1, (Boss._ucd || 0) + dt * 3); Boss._ucdPos = ultPt(450, 230);
-          if (once("flame")) { const p = ultPt(450, 120); if (fxReady("boss1ult")) spawnFx("boss1ult", 0, p.x, p.y, { w: 220, h: 220, dur: T.stab, loop: true, fps: 10, alpha: 0.95, follow: () => ultPt(450, 120) }); Sound.play("b3_charge", 0.8, 0.85); }
+          if (once("flame")) { const p = ultPt(450, 120); if (fxReady("boss1ult")) spawnFx("boss1ult", 0, p.x, p.y, { w: 220, h: 220, dur: T.stab, loop: true, fps: 10, alpha: 0.95, follow: () => ultPt(450, 120) }); Sound.play("b1u_charge", 0.85, 1.0); }
           return true;
         }
         /* ② 插地：爆裂、震屏、震動、鏡頭拉回（放波時看得到主角與火牆） */
@@ -92,7 +92,7 @@
           Boss._ultFrame = c.img.stab; Game.ultCam = -0.04; Game.ultFocus = false;
           const sx = Boss.x + fc * c.stabDx * k;
           if (fxReady("boss1ult")) spawnFx("boss1ult", 1, sx, groundFxY("boss1ult", 1, 420), { anchor: "b", w: 420, h: 420, dur: 0.5 });
-          Sound.play("b3_plunge", 1.0, 0.85); triggerShake(0, 0.5, 30, 0.4); hapticBuzz([40, 20, 60]); triggerHitstopMs(60);
+          Sound.play("b1u_stab", 1.0, 1.0); triggerShake(0, 0.5, 30, 0.4); hapticBuzz([40, 20, 60]); triggerHitstopMs(60);
         }
         if (t < T.cross) {
           Boss._ultFrame = c.img.stab; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 4);
@@ -102,7 +102,7 @@
           while (U.wN < 3 && t >= T.w1 + U.wN * T.gap) {
             U.wN++; const sx = Boss.x + fc * c.stabDx * k;
             Ult.waves.push({ big: false, x: sx, dir: 1, done: false }, { big: false, x: sx, dir: -1, done: false });
-            Sound.play("b3_low", 0.9, 0.9 + U.wN * 0.04); triggerShake(0, 0.25, 10, 0.18); hapticBuzz(18);
+            Sound.play("b1u_wave", 0.85, 0.96 + U.wN * 0.04); triggerShake(0, 0.25, 10, 0.18); hapticBuzz(18);
           }
           return true;
         }
@@ -122,7 +122,7 @@
           Boss._ultCue = null; Boss._ultFrame = c.img.roar; Game.ultCam = -0.06; Game.ultFocus = false; Boss._ucd = 0.6;
           const hp = ultPt(445, 170);
           if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, groundFxY("boss1ult2", 2, 0), { anchor: "b", w: 900, h: (G + 6) - ultViewTop() + 260, dur: 0.6 }); } /* 竄起火牆直接頂到畫面上緣 */
-          Sound.play("m_roar", 1.0, 0.8); Sound.play("b3_heavy", 0.9, 0.7);
+          Sound.play("b1u_bigwave", 1.0, 1.0); /* v0.8.204 不要人聲：拿掉長嘯（原借狼吼） */
           triggerShake(0, 0.7, 40, 0.6); hapticBuzz([60, 30, 90]); triggerHitstopMs(80);
           Ult.waves.push({ big: true, x: Boss.x, dir: 1, done: false }, { big: true, x: Boss.x, dir: -1, done: false });
         }
