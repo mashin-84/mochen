@@ -2110,7 +2110,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "dee491a5"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
+      const ASSET_VER = "ba432a17"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
       /* v0.8.156 共用圖片載入器 IMGQ：所有 assets/ 圖片（不論哪裡 new Image）都經過這裡。
        * - 先用隱藏的代理圖下載，成功才把網址交給真正的圖（此時從快取秒載、觸發原本的 onload）；
        *   下載中的圖沒有 src，畫出來不會丟錯（失敗狀態的圖 drawImage 會丟錯）。
@@ -2189,6 +2189,7 @@
         /* v0.8.67 Boss 專屬音效（ElevenLabs 生成）：assets/sfx/<名>.mp3（變體 <名>_2.mp3），「名: 變體數」；各關在 Stages[n].sfx 指定事件用哪個（見 bsfx） */
         bossSfx: { b2_fan: 2, b2_thrust: 2, b2_vortex: 1, b2_sword_cast: 2, b2_sword_fly: 2, b2_sword_rain: 2, b2_vanish: 2, b2_appear: 2, b2_split: 2, b2_shatter: 2, b2_shard_hit: 1,
           b3_twin: 1, b3_cross: 2, b3_spin: 2, b3_dash: 2, b3_low: 2, b3_rain: 1, b3_draw: 1, b3_heavy: 1, b3_plunge: 1, b3_seal: 1, b3_charge: 1, b3_sweep: 1,
+          b2u_rise: 1, b2u_rain: 1, b2u_gather: 1, b2u_giant: 1, b2u_clash: 1, b2u_shatter: 1, /* v0.8.207 第 2 關大招音效 */
           b1u_charge: 1, b1u_stab: 1, b1u_wave: 1, b1u_bigwave: 1 /* v0.8.204 第 1 關大招火焰音效（ElevenLabs；使用者：只留火焰、不要人聲） */ },
         genSfx: { parry: 1, block: 1, slash: 1, flysword: 1, peril: 1, mikiri: 1, execution: 1, gourd: 1, assist: 1, victory: 1, hit: 1 }, /* v0.8.41 通用 11 個全部接入 */
 
@@ -8568,7 +8569,7 @@ const Config = {
         Game.ultCamY = (U.lift || 0) > 40 ? -150 : 0; if (!Game.ultFocus || Game.ultFocus === true && t < U.c.t.gather) Game.ultFocus = 0.5; /* 浮空：鏡頭往上抬、焦點放兩人中間 */
         if (!U.res) {
           if (once("dispel") && illusionsAlive()) illusionDispelAll("〔分身歸元〕"); /* 分身散去：畫面上只留放大招的真身 */
-          if (t < T.summon) { Boss.state = "ult"; Boss._ultFrame = c.img.rise; setLift(c.lift * ease(t / T.summon)); Game.ultCam = -0.1; if (once("rise")) Sound.play("b2_appear", 0.9, 0.9); return true; }
+          if (t < T.summon) { Boss.state = "ult"; Boss._ultFrame = c.img.rise; setLift(c.lift * ease(t / T.summon)); Game.ultCam = -0.1; if (once("rise")) { Sound.play("b2u_rise", 0.95, 1.0); ultClashBuild(); } return true; }
           setLift(c.lift + Math.sin(t * 2.4) * 8); /* 浮空微微上下 */
           if (once("halo")) { if (fxReady("boss2ult")) spawnFx("boss2ult", 0, 0, 0, { w: 720, h: 720, dur: T.launch - T.summon + 0.1, loop: true, fps: 6, alpha: 0.9, back: true, follow: () => ultPt(450, 210) }); Sound.play("b2_sword_cast", 0.9, 0.85); }
           if (t < T.gather) {
@@ -8581,7 +8582,7 @@ const Config = {
             Boss._ultFrame = c.img.gather; Game.ultCam = 0.06; Game.ultFocus = 0.45; Game.ultCamY = -80; /* v0.8.168 鎖身時主角也要在畫面內 */
             Boss._ucd = Math.min(0.85, (Boss._ucd || 0) + dt * 1.5); Boss._ucdPos = ultPt(560, 300);
             if (once("gather")) {
-              const p = ultPt(640, 300); if (fxReady("boss2ult2")) spawnFx("boss2ult2", 0, p.x, p.y, { w: 640, h: 640, dur: T.launch - T.gather, alpha: 0.95, follow: () => ultPt(640, 300) }); Sound.play("b2_vortex", 0.9, 0.8);
+              const p = ultPt(640, 300); if (fxReady("boss2ult2")) spawnFx("boss2ult2", 0, p.x, p.y, { w: 640, h: 640, dur: T.launch - T.gather, alpha: 0.95, follow: () => ultPt(640, 300) }); Sound.play("b2u_gather", 1.0, 1.0);
               /* v0.8.168 劍陣鎖身：巨劍成形時把主角鎖在原地，只能招架（使用者：走開或瞬步就能躲＝漏洞） */
               Game.ultBind = true; Player.vx = 0; if (Player.state === "move" || Player.state === "dash") Player.state = "idle";
               const lockDur = T.launch + T.fly - T.gather + 0.1, pf = () => ({ x: Player.x, y: Player.y - 70 });
@@ -8601,7 +8602,7 @@ const Config = {
             return true;
           }
           /* 發劍：瞬間鎖定，0.35 秒刺到 */
-          if (once("launch")) { U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; Sound.play("b2_thrust", 1.0, 0.75); Game.ultCam = 0; Game.ultFocus = 0.5; hapticBuzz(30); }
+          if (once("launch")) { U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; Sound.play("b2u_giant", 1.0, 1.0); Game.ultCam = 0; Game.ultFocus = 0.5; hapticBuzz(30); }
           Boss._ultFrame = c.img.launch; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 2); Game.ultFocus = 0.45; Game.ultCamY = -80;
           if (Game.ultBind) { Player.vx = 0; if (Player.state === "move") Player.state = "idle"; }
           U.gp = Math.min(1, (t - T.launch) / T.fly);
@@ -8610,7 +8611,7 @@ const Config = {
         }
         const rt = t - U.rt;
         if (U.res === "ref") { /* 折射：角力 2 秒 → 巨劍碎裂、劍光倒飛 → 擊中長老 → 摔落破防 */
-          if (U.mash == null) { U.mash = 0.5; ultClashUI(true); }
+          if (U.mash == null) { U.mash = 0.5; ultClashUI(true); Sound.play("b2u_clash", 1.0, 1.0); }
           if (rt < T.clash && U.mash > 0 && U.mash < 1) { /* v0.8.166 角力；v0.8.167 連按招架推角力條（長老持續往回壓；推滿＝提前破劍、被壓到底＝輸） */
             U.mash = Math.max(0, U.mash - T.mashDecay * dt); ultClashUI(true, U.mash, rt / T.clash);
             const k = Math.max(rt / T.clash, Math.abs(U.mash - 0.5) * 2), fcP = Boss.x >= Player.x ? 1 : -1;
@@ -8620,7 +8621,7 @@ const Config = {
             Game.ultCam = 0.24; Game.ultFocus = 0.22; Game.ultCamY = -30; Boss._ucd = Math.min(0.7, (Boss._ucd || 0) + dt * 2); Boss._ucdPos = { x: U.tgt.x, y: U.tgt.y };
             U.jit = Math.sin(rt * (26 + 34 * k)) * (8 + 20 * k); U.ck = k;
             U.spT = (U.spT || 0) - dt; if (U.spT <= 0) { U.spT = 0.11 - 0.05 * k; if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x + (Math.random() - 0.5) * 60, U.tgt.y + (Math.random() - 0.5) * 60, { w: 180 + 160 * k, h: 180 + 160 * k, dur: 0.22, c0: 1, nf: 2 }); }
-            U.snT = (U.snT || 0) - dt; if (U.snT <= 0) { U.snT = 0.24 - 0.1 * k; Sound.play("block", 0.4 + 0.35 * k, 0.75 + Math.random() * 0.3); }
+            U.snT = (U.snT || 0) - dt; if (U.snT <= 0) { U.snT = 0.24 - 0.1 * k; Sound.play("block", 0.2 + 0.25 * k, 0.75 + Math.random() * 0.3); }
             U.hpT = (U.hpT || 0) - dt; if (U.hpT <= 0) { U.hpT = 0.12; hapticBuzz(Math.round(30 + 40 * k)); triggerShake(0, 0.2 + 0.35 * k, 8 + 14 * k, 0.12); } /* v0.8.167 震動加強 */
             return true;
           }
@@ -8637,7 +8638,7 @@ const Config = {
           if (once("break")) { /* 角力結束：巨劍碎裂爆開，碎劍化成劍光倒飛回去 */
             ultClashUI(false); Game.ultLock = false; Player.state = "idle"; Player.stateTimer = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 0.5);
             if (fxReady("boss2ult2")) { spawnFx("boss2ult2", 3, U.tgt.x - Math.cos(U.ang) * 260, U.tgt.y - Math.sin(U.ang) * 260, { w: 1400, h: 1400, dur: 0.6, rot: U.ang }); spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 900, h: 900, dur: 0.5 }); }
-            Sound.play("b2_shatter", 1.0, 0.8); Sound.play("parry", 1.0, 0.7);
+            Sound.play("b2u_shatter", 1.0, 1.0); Sound.play("parry", 0.7, 0.7);
             triggerHitstopMs(130); Game.slowT = 0.35; Game.slowScale = 0.35; triggerShake(Boss.facing, 0.8, 40, 0.5); hapticBuzz([60, 20, 100]);
             Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.12); Game.ultCam = 0; Game.ultFocus = 0.5;
             spawnFloatingText(Player.x, Player.y - 140, "【破劍折射】", "#fde047", 1.4);
@@ -8692,7 +8693,7 @@ const Config = {
           if (!s.done && t >= s.tf) {
             s.done = true;
             if (fxReady("boss2ult")) spawnFx("boss2ult", 2, s.x, groundFxY("boss2ult", 2, 300), { anchor: "b", w: 300, h: 300, dur: 0.5 });
-            Sound.play("b2_shard_hit", 0.6, 0.9 + Math.random() * 0.2); triggerShake(0, 0.15, 6, 0.1);
+            if (t - (U._rainSnd || -9) > 0.2) { U._rainSnd = t; Sound.play("b2u_rain", 0.9, 0.95 + Math.random() * 0.1); } triggerShake(0, 0.15, 6, 0.1); /* v0.8.207 每批落劍播一次（同批同時落地）*/
             if (Math.abs(Player.x - s.x) < c.rain.r && Player.state !== "execution") {
               if (Player.invulnTimer > 0) perfectDodgeFx("【完美閃避】", 4); else if (!ultHardBlock(c.rain.dmg, Player.x >= s.x ? 1 : -1, "【硬接落劍】")) takeDamage(bossDmg(c.rain.dmg), Player.x >= s.x ? 1 : -1, "【萬劍落】");
             }
@@ -8909,25 +8910,30 @@ const Config = {
         if (fxReady("boss2ult2")) spawnFx("boss2ult2", 2, U.tgt.x, U.tgt.y, { w: 300, h: 300, dur: 0.2, c0: 1, nf: 2 });
         return true;
       }
+      function ultClashBuild() { /* v0.8.207 角力條提早建好（隱藏）：框與徽章圖都載入完才顯示，不再先閃一下程式畫的底色 */
+        let el = document.getElementById("ult-clash"); if (el) return el;
+        const CH = { l: 9.11, w: 81.79, t: 14.26, h: 21.01, cy: 24.58 }; /* 軌道在框圖中的位置（%），由圖實測 */
+        el = document.createElement("div"); el.id = "ult-clash"; el.style.display = "none";
+        el.style.cssText = "display:none;position:fixed;left:50%;top:20%;transform:translateX(-50%);z-index:8500;width:min(62vw,560px);pointer-events:none;text-align:center;font-family:'Noto Serif TC','Songti TC',serif;";
+        el.innerHTML = '<div style="color:#fef3c7;font-size:15px;letter-spacing:.25em;text-shadow:0 0 8px rgba(0,0,0,.85);margin-bottom:2px;">連按【招架】頂回去！</div><div id="ult-clash-time" style="height:3px;margin:0 auto 4px;background:#fde68a;width:80%;border-radius:2px;"></div>'
+          + '<div id="ult-clash-box" style="position:relative;width:100%;aspect-ratio:2504/533;visibility:hidden;">'
+          + '<div style="position:absolute;left:' + CH.l + '%;top:' + CH.t + '%;width:' + CH.w + '%;height:' + CH.h + '%;background:linear-gradient(90deg,#7f1d1d,#dc2626);"><div id="ult-clash-fill" style="position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#115e59,#5eead4);"></div></div>'
+          + '</div>';
+        document.body.appendChild(el);
+        const box = el.querySelector("#ult-clash-box");
+        let n = 0; const ok = () => { if (++n === 2) box.style.visibility = "visible"; };
+        const fr = new Image(); fr.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;"; fr.onload = ok; fr.onerror = ok; fr.src = "assets/ui/clash_bar.webp"; box.appendChild(fr);
+        const md = new Image(); md.id = "ult-clash-medal"; md.style.cssText = "position:absolute;width:auto;height:58%;top:" + CH.cy + "%;left:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 6px rgba(255,250,220,.85));"; md.onload = ok; md.onerror = ok; md.src = "assets/ui/clash_medal.webp"; box.appendChild(md);
+        const st = document.createElement("style"); st.textContent = "@keyframes clashPulse{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(253,224,71,.9)}100%{transform:scale(1.18);box-shadow:0 0 0 14px rgba(253,224,71,0)}} #touch-parry.clash-pulse{animation:clashPulse .32s ease-out infinite;}";
+        document.head.appendChild(st);
+        return el;
+      }
       function ultClashUI(on, m, tp) { /* v0.8.170 生圖角力條：assets/ui/clash_bar（雕花框，軌道鏤空）＋ clash_medal（雙劍徽章，停在青紅交界＝誰佔上風） */
+        const CH = { l: 9.11, w: 81.79 };
         let el = document.getElementById("ult-clash");
         const pb = document.getElementById("touch-parry");
         if (!on) { if (el) el.style.display = "none"; if (pb) pb.classList.remove("clash-pulse"); return; }
-        const CH = { l: 9.11, w: 81.79, t: 14.26, h: 21.01, cy: 24.58 }; /* 軌道在框圖中的位置（%），由圖實測 */
-        if (!el) {
-          el = document.createElement("div"); el.id = "ult-clash";
-          el.style.cssText = "position:fixed;left:50%;top:20%;transform:translateX(-50%);z-index:8500;width:min(62vw,560px);pointer-events:none;text-align:center;font-family:'Noto Serif TC','Songti TC',serif;";
-          el.innerHTML = '<div style="color:#fef3c7;font-size:15px;letter-spacing:.25em;text-shadow:0 0 8px rgba(0,0,0,.85);margin-bottom:2px;">連按【招架】頂回去！</div><div id="ult-clash-time" style="height:3px;margin:0 auto 4px;background:#fde68a;width:80%;border-radius:2px;"></div>'
-            + '<div id="ult-clash-box" style="position:relative;width:100%;aspect-ratio:2504/533;">'
-            + '<div style="position:absolute;left:' + CH.l + '%;top:' + CH.t + '%;width:' + CH.w + '%;height:' + CH.h + '%;background:linear-gradient(90deg,#7f1d1d,#dc2626);"><div id="ult-clash-fill" style="position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#115e59,#5eead4);"></div></div>'
-            + '</div>';
-          document.body.appendChild(el);
-          const box = el.querySelector("#ult-clash-box");
-          const fr = new Image(); fr.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;"; fr.src = "assets/ui/clash_bar.webp"; box.appendChild(fr);
-          const md = new Image(); md.id = "ult-clash-medal"; md.style.cssText = "position:absolute;width:auto;height:58%;top:" + CH.cy + "%;left:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 6px rgba(255,250,220,.85));"; md.src = "assets/ui/clash_medal.webp"; box.appendChild(md);
-          const st = document.createElement("style"); st.textContent = "@keyframes clashPulse{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(253,224,71,.9)}100%{transform:scale(1.18);box-shadow:0 0 0 14px rgba(253,224,71,0)}} #touch-parry.clash-pulse{animation:clashPulse .32s ease-out infinite;}";
-          document.head.appendChild(st);
-        }
+        if (!el) el = ultClashBuild();
         if (el.style.display !== "block" && typeof elHintToast !== "undefined" && elHintToast) { elHintToast.style.transition = "none"; elHintToast.style.opacity = "0"; } /* 角力開始：收掉上方提示字，免得和角力條疊字 */
         el.style.display = "block"; if (pb) pb.classList.add("clash-pulse");
         if (m != null) {

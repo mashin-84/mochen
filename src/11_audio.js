@@ -15,6 +15,7 @@
         /* v0.8.67 Boss 專屬音效（ElevenLabs 生成）：assets/sfx/<名>.mp3（變體 <名>_2.mp3），「名: 變體數」；各關在 Stages[n].sfx 指定事件用哪個（見 bsfx） */
         bossSfx: { b2_fan: 2, b2_thrust: 2, b2_vortex: 1, b2_sword_cast: 2, b2_sword_fly: 2, b2_sword_rain: 2, b2_vanish: 2, b2_appear: 2, b2_split: 2, b2_shatter: 2, b2_shard_hit: 1,
           b3_twin: 1, b3_cross: 2, b3_spin: 2, b3_dash: 2, b3_low: 2, b3_rain: 1, b3_draw: 1, b3_heavy: 1, b3_plunge: 1, b3_seal: 1, b3_charge: 1, b3_sweep: 1,
+          b2u_rise: 1, b2u_rain: 1, b2u_gather: 1, b2u_giant: 1, b2u_clash: 1, b2u_shatter: 1, /* v0.8.207 第 2 關大招音效 */
           b1u_charge: 1, b1u_stab: 1, b1u_wave: 1, b1u_bigwave: 1 /* v0.8.204 第 1 關大招火焰音效（ElevenLabs；使用者：只留火焰、不要人聲） */ },
         genSfx: { parry: 1, block: 1, slash: 1, flysword: 1, peril: 1, mikiri: 1, execution: 1, gourd: 1, assist: 1, victory: 1, hit: 1 }, /* v0.8.41 通用 11 個全部接入 */
 
