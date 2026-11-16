@@ -127,12 +127,6 @@
         });
       }
 
-      { /* v0.8.199 主角動作風格比較：影片版 ↔ 刀光版（空洞騎士式） */
-        const b = document.getElementById("btn-mcstyle"), t = document.getElementById("menu-mcstyle-txt");
-        const sync = () => { if (t) t.textContent = MC_STYLE === "smear" ? "動作風格：刀光版" : "動作風格：影片版"; };
-        sync();
-        if (b) b.addEventListener("click", () => { MC_STYLE = MC_STYLE === "smear" ? "video" : "smear"; try { localStorage.setItem("qingyun_mcstyle", MC_STYLE); } catch (e) { } sync(); hapticBuzz(20); });
-      }
       const btnUltTest = document.getElementById("btn-ult-test"); /* v0.8.163 大招測試：選關直接進二階段放招牌大招 */
       if (btnUltTest) btnUltTest.addEventListener("click", () => { if (elSysMenuModal) elSysMenuModal.classList.remove("open"); openUltTestMenu(); });
 

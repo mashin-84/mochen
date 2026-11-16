@@ -1,12 +1,5 @@
-      /* v0.8.196 主角動作加順試驗（只套普攻第一刀 comboStep 1、地面、非反擊）：①換格時前一格淡出 60ms（交叉淡化）②從起手換到出刀那一刻，留兩道淡藍剪影殘影（smear），讓眼睛自己補中間動作。MC_SMOOTH 關掉即恢復 */
-      const MC_SMOOTH = { s1: true };
-      /* v0.8.199 主角動作風格比較（齒輪選單切換，localStorage qingyun_mcstyle）："video"＝影片抽幀（v0.8.198）；"smear"＝空洞騎士式：原本三拍關鍵格＋所有換格淡化＋出刀／瞬步剪影殘影 */
-      let MC_STYLE = (() => { try { return localStorage.getItem("qingyun_mcstyle") === "video" ? "video" : "smear"; /* v0.8.200 使用者選定刀光版為預設 */ } catch (e) { return "smear"; } })();
       const MC_SMEAR_ON = { "21_s1b": "20_s1a", "24_s2b": "23_s2a", "27_t_b": "26_t_a", "39_hv_b": "38_hv_a", "34_dash_b": "33_dash_a" }; /* 換到這些「出手格」時，用前一格留殘影 */
       const MC_XF = { img: null, prev: null, t: 0, f: 1 };
-      /* v0.8.198 影片格選格：T＝換格時間點（秒），回傳第幾格 */
-      function mcVOk(g) { if (MC_STYLE === "smear") return false; const L = MC_V[g]; if (!L) return false; for (const n of L) { const im = MC_IMGS[n]; if (!(im && im.complete && im.naturalWidth)) return false; } return true; }
-      function mcVPick(g, el, T) { let k = 0; while (k < T.length && el >= T[k]) k++; return MC_V[g][Math.min(k, MC_V[g].length - 1)]; }
       function drawPlayer() {
         ctx.save();
         if (Player.hurtInv > 0 && !Player.blast && Math.floor(performance.now() / 50) % 2 === 0) ctx.globalAlpha = 0.4; /* 受擊無敵閃爍 10Hz */
@@ -63,10 +56,6 @@
               if (Player.state === "hitstun") frame = Player.stateTimer > 0.16 ? "36_hurt_a" : "37_hurt_b";
               else if (Player.state === "staggered") frame = "37_hurt_b";
             }
-            if (mcVOk("hu")) { /* v0.8.198 受擊影片格（hitstun 0.28 秒）；踉蹌停在彎腰格 */
-              if (Player.state === "hitstun") frame = mcVPick("hu", 0.28 - Player.stateTimer, [0.025, 0.05, 0.075, 0.10, 0.13, 0.16, 0.19, 0.22, 0.25, 0.27]);
-              else if (Player.state === "staggered") frame = MC_V.hu[5];
-            }
           } else if (Player.state === "drink") {
             frame = "15_drink";
           } else if (Player.state === "dash") {
@@ -75,16 +64,11 @@
               const pr = 1 - Player.stateTimer / 0.22;
               frame = isAirborne ? "34_dash_b" : pr < 0.25 ? "33_dash_a" : pr < 0.75 ? "34_dash_b" : "35_dash_c";
             }
-            if (mcVOk("ds")) { const pr = Math.max(0, Math.min(0.999, 1 - Player.stateTimer / 0.22)); frame = isAirborne ? MC_V.ds[4] : MC_V.ds[Math.floor(pr * 8)]; } /* v0.8.198 瞬步影片 8 格 */
           } else if (Player.state === "parry") {
             frame = "13_parry";
             if (has("29_parry_a") && has("30_parry_b")) { /* v0.8.98 招架：預備（前 90ms，涵蓋完美窗口）→ 架開（剛彈開時一律用架開格） */
               const nowT = performance.now();
               frame = (Player.lastDeflectMs && nowT - Player.lastDeflectMs < 220) || nowT - Player.parryStartMs >= 90 ? "30_parry_b" : "29_parry_a";
-            }
-            if (mcVOk("pr")) { /* v0.8.198 招架影片格：前 90ms 由橫架轉直（涵蓋完美窗口），之後直立架住；剛彈開一律直立格 */
-              const nowT = performance.now(), pt = (nowT - Player.parryStartMs) / 1000;
-              frame = (Player.lastDeflectMs && nowT - Player.lastDeflectMs < 220) ? MC_V.pr[5] : mcVPick("pr", pt, [0.02, 0.04, 0.06, 0.08, 0.10, 0.16, 0.24]);
             }
           } else if (Player.state === "attack" && Player.isDive) {
             frame = "08_fall";
@@ -97,18 +81,9 @@
               const dur = Player.comboStep === 4 ? 0.32 : Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
               frame = isAirborne ? seq[1] : el < 0.05 ? seq[0] : el < dur * 0.45 ? seq[1] : seq[2];
             }
-            { /* v0.8.197～198 影片格（判定在出手瞬間，所以起手只閃一下，劍很快到前方）；空中用出刀格 */
-              const st = Player.comboStep, el = (st === 4 ? 0.32 : st === 3 ? 0.75 : 0.55) - Player.stateTimer;
-              const VA = { 1: ["s1", [0.03, 0.06, 0.09, 0.13, 0.22, 0.28, 0.34, 0.40, 0.46, 0.51], 4],
-                           2: ["s2", [0.02, 0.04, 0.06, 0.08, 0.10, 0.13, 0.17, 0.24, 0.32, 0.42], 5],
-                           3: ["t", [0.02, 0.04, 0.06, 0.09, 0.14, 0.24, 0.34, 0.44, 0.54, 0.64, 0.70], 4],
-                           4: ["hv", [0.02, 0.04, 0.06, 0.09, 0.12, 0.15, 0.18, 0.21, 0.24, 0.27, 0.30], 3] }[st];
-              if (VA && mcVOk(VA[0])) frame = isAirborne ? MC_V[VA[0]][VA[2]] : mcVPick(VA[0], el, VA[1]);
-            }
           } else if (Player.isChargingAttack) {
             frame = "12_charge";
             if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（0.45 秒蓄滿會自動出重斬，所以提早換格） */
-            if (mcVOk("ch")) { const ce = (performance.now() - Player.attackChargeStartTime) / 1000; frame = mcVPick("ch", ce, [0.03, 0.06, 0.09, 0.12, 0.15, 0.18, 0.22, 0.27, 0.33, 0.40]); } /* v0.8.198 舉劍蓄力（0.45 秒蓄滿） */
           } else if (isAirborne) {
             frame = Player.vy < 0 ? "07_jump" : "08_fall";
             if (Player.vy < 0 && PG() - Player.y < 40 && has("32_jump_a")) frame = "32_jump_a"; /* v0.8.98 起跳蹲蓄（離地前 40px） */
@@ -122,8 +97,7 @@
           } else {
             frame = Math.floor(performance.now() / 600) % 2 === 0 ? "01_idle1" : "02_idle2";
             const pSince = performance.now() - Player.parryStartMs;
-            if (mcVOk("pr") && pSince >= Config.guardStanceMs && pSince < Config.guardStanceMs + 200) frame = MC_V.pr[8 + Math.min(4, Math.floor((pSince - Config.guardStanceMs) / 40))]; /* v0.8.198 招架收勢 5 格 */
-            else if (has("31_parry_c") && pSince >= Config.guardStanceMs && pSince < Config.guardStanceMs + 170) frame = "31_parry_c"; /* v0.8.98 招架收勢（架勢結束後 170ms） */
+            if (has("31_parry_c") && pSince >= Config.guardStanceMs && pSince < Config.guardStanceMs + 170) frame = "31_parry_c"; /* v0.8.98 招架收勢（架勢結束後 170ms） */
             else if (MCI_READY === MCI_N) { /* v0.8.97 待機影片格：相鄰兩格淡入淡出 */
               const ph = ((performance.now() / 1000) % MCI_PERIOD) / MCI_PERIOD * MCI_N, i0 = Math.floor(ph) % MCI_N;
               playerImg = MCI_IMGS[i0]; idleNext = MCI_IMGS[(i0 + 1) % MCI_N]; idleMix = ph - Math.floor(ph);
@@ -136,11 +110,11 @@
           }
           { /* v0.8.196／199 加順：smear 風格時全部動作換格都淡化，出手格加剪影殘影；video 風格只在沒有影片格的第一刀用 */
             const act = ["attack", "parry", "dash", "hitstun", "staggered"].includes(Player.state) || Player.isChargingAttack;
-            const on = MC_STYLE === "smear" ? act : (MC_SMOOTH.s1 && Player.state === "attack" && Player.comboStep === 1 && !Player.isDive && !Player.riposteAtk && !isAirborne && frame.indexOf("v_") !== 0);
+            const on = act;
             if (on && MC_XF.img && MC_XF.img !== playerImg) {
               MC_XF.prev = MC_XF.img; MC_XF.t = performance.now();
-              if (MC_SMEAR_ON[frame] && (MC_STYLE === "smear" || frame === "21_s1b")) { /* 起手→出手：剪影殘影（沿用 v0.8.96 殘影系統，淡藍、自動衰減） */
-                const n = MC_STYLE === "smear" ? 3 : 2;
+              if (MC_SMEAR_ON[frame]) { /* 起手→出手：剪影殘影（沿用 v0.8.96 殘影系統，淡藍、自動衰減） */
+                const n = 3;
                 for (let i = 1; i <= n; i++) Game.afterimages.push({ x: Player.x - Player.facing * 16 * i, y: Player.y, w: Player.w, h: Player.h, alpha: 0.42 / i, spr: MC_XF.prev, s: MC_SCALE * (MC_FRAME_SCALE[MC_SMEAR_ON[frame]] || 1), f: Player.facing, color: "#bae6fd" });
               }
             }
@@ -160,8 +134,8 @@
           }
           ctx.scale((Player.facing > 0 ? S : -S) * sqX, S * sqY);
           ctx.drawImage(playerImg, -playerImg.naturalWidth / 2, 31 - playerImg.naturalHeight); /* v0.8.198 影片格畫布較大（1300×800），以圖寬一半、腳底距下緣 31px 對齊 */
-          if (MC_XF.prev && MC_XF.prev !== playerImg && performance.now() - MC_XF.t < (MC_STYLE === "smear" ? 70 : 60)) { /* 交叉淡化：前一格疊在上面淡出 */
-            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - MC_XF.t) / (MC_STYLE === "smear" ? 70 : 60)); ctx.drawImage(MC_XF.prev, -MC_XF.prev.naturalWidth / 2, 31 - MC_XF.prev.naturalHeight); ctx.globalAlpha = ga;
+          if (MC_XF.prev && MC_XF.prev !== playerImg && performance.now() - MC_XF.t < 70) { /* 交叉淡化：前一格疊在上面淡出 */
+            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - MC_XF.t) / 70); ctx.drawImage(MC_XF.prev, -MC_XF.prev.naturalWidth / 2, 31 - MC_XF.prev.naturalHeight); ctx.globalAlpha = ga;
           }
           if (idleNext && idleMix > 0.02) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * idleMix; ctx.drawImage(idleNext, -450, -529); ctx.globalAlpha = ga; }
           Player._mcSpr = playerImg; Player._mcS = S; Player._mcFrame = frame; /* 殘影取樣（v0.8.96）；_mcFrame 供測試 */

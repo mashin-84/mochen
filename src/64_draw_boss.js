@@ -86,7 +86,7 @@
             return sp;
           }
 
-      /* v0.8.200 敵人刀光版（空洞騎士式，與主角 MC_STYLE 同開關）：出招期間換格交叉淡化 70ms；進入出手（windup→active）留 3 道淡紅剪影殘影、出手中換格留 2 道 */
+      /* v0.8.200 敵人刀光版（空洞騎士式，與主角同為預設）：出招期間換格交叉淡化 70ms；進入出手（windup→active）留 3 道淡紅剪影殘影、出手中換格留 2 道 */
       const BOSS_XF = { img: null, prev: null, t: 0, st: null };
                 function drawBossEntity() {
         if (Boss._introHide) return; /* v0.8.112 從天而降登場前，Boss 不先站在右邊 */
@@ -360,7 +360,7 @@
           }
 
           if (!Boss._ilDraw) { /* v0.8.200 敵人刀光版：記錄換格 */
-            const act = typeof MC_STYLE !== "undefined" && MC_STYLE === "smear" && !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered"].includes(Boss.state);
+            const act = !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered"].includes(Boss.state);
             if (act && BOSS_XF.img && BOSS_XF.img !== bossImg && bossImg && bossImg.naturalWidth) {
               BOSS_XF.prev = BOSS_XF.img; BOSS_XF.t = performance.now();
               if (Boss.state === "active") {
@@ -812,9 +812,6 @@
       });
 
       /* M2 主角攻擊關鍵格：每一刀「預備 a → 出刀 b → 收招 c」三拍（v0.8.45 生圖，900×560、腳底 y=529、x=450） */
-      /* v0.8.197～198 主角動作改影片抽幀（Gemini 綠幕影片，tools/mc_vid.py；1300×800、腳底 769）：MC_V[組] = 格名陣列 */
-      const MC_V = {}; [["s1", 11], ["s2", 11], ["t", 12], ["hv", 12], ["ch", 11], ["pr", 13], ["ds", 8], ["hu", 11]].forEach(([g, n]) => { MC_V[g] = []; for (let i = 1; i <= n; i++) { const nm = "v_" + g + "_" + String(i).padStart(2, "0"), img = new Image(); img.src = "assets/mc/" + nm + ".webp"; MC_IMGS[nm] = img; MC_V[g].push(nm); } });
-      const MC_VS1 = MC_V.s1;
       const MC_ATK = { 1: ["20_s1a", "21_s1b", "22_s1c"], 2: ["23_s2a", "24_s2b", "25_s2c"], 3: ["26_t_a", "27_t_b", "28_t_c"], 4: ["38_hv_a", "39_hv_b", "40_hv_c"] /* v0.8.98 蓄力重斬 */ };
       ['41_point_a', '42_point_b', '43_point_c', '17_slide', '18_plant', '19_rise', '20_s1a', '21_s1b', '22_s1c', '23_s2a', '24_s2b', '25_s2c', '26_t_a', '27_t_b', '28_t_c', '29_parry_a', '30_parry_b', '31_parry_c', '32_jump_a', '33_dash_a', '34_dash_b', '35_dash_c', '36_hurt_a', '37_hurt_b', '38_hv_a', '39_hv_b', '40_hv_c'].forEach(name => { const img = new Image(); img.src = 'assets/mc/' + name + '.webp'; MC_IMGS[name] = img; }); /* 選用（沒有圖時靜默，繪製時退回頂替格） */
       const MC_STRIDE = 250;
