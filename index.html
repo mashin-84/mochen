@@ -2114,7 +2114,7 @@
       "use strict";
 
       /* v0.7.8 圖片快取：assets/ 圖片網址一律加 ?v=版本，更新美術後不會讀到手機瀏覽器的舊快取（每次改圖就遞增 ASSET_VER） */
-      const ASSET_VER = "05dd16f2"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
+      const ASSET_VER = "fbe4ad35"; /* v0.8.135 由 tools/build.py 依 assets/ 內容雜湊自動填入：只有圖片／音檔真的變了網址才換（原本每發一版全部換網址，手機要重載約 10 MB）。不必再手動遞增 */
       /* v0.8.156 共用圖片載入器 IMGQ：所有 assets/ 圖片（不論哪裡 new Image）都經過這裡。
        * - 先用隱藏的代理圖下載，成功才把網址交給真正的圖（此時從快取秒載、觸發原本的 onload）；
        *   下載中的圖沒有 src，畫出來不會丟錯（失敗狀態的圖 drawImage 會丟錯）。
@@ -2192,8 +2192,7 @@
            載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
         /* v0.8.67 Boss 專屬音效（ElevenLabs 生成）：assets/sfx/<名>.mp3（變體 <名>_2.mp3），「名: 變體數」；各關在 Stages[n].sfx 指定事件用哪個（見 bsfx） */
         bossSfx: { b2_fan: 2, b2_thrust: 2, b2_vortex: 1, b2_sword_cast: 2, b2_sword_fly: 2, b2_sword_rain: 2, b2_vanish: 2, b2_appear: 2, b2_split: 2, b2_shatter: 2, b2_shard_hit: 1,
-          b3_twin: 1, b3_cross: 2, b3_spin: 2, b3_dash: 2, b3_low: 2, b3_rain: 1, b3_draw: 1, b3_heavy: 1, b3_plunge: 1, b3_seal: 1, b3_charge: 1, b3_sweep: 1,
-          b1u_charge: 1, b1u_stab: 1, b1u_wave: 1, b1u_gather: 1, b1u_roar: 1, b1u_bigwave: 1, b1u_pant: 1 /* v0.8.201 第 1 關大招正式音效（ElevenLabs） */ },
+          b3_twin: 1, b3_cross: 2, b3_spin: 2, b3_dash: 2, b3_low: 2, b3_rain: 1, b3_draw: 1, b3_heavy: 1, b3_plunge: 1, b3_seal: 1, b3_charge: 1, b3_sweep: 1 },
         genSfx: { parry: 1, block: 1, slash: 1, flysword: 1, peril: 1, mikiri: 1, execution: 1, gourd: 1, assist: 1, victory: 1, hit: 1 }, /* v0.8.41 通用 11 個全部接入 */
 
         init() {
@@ -8470,7 +8469,7 @@ const Config = {
         if (t < T.stab) {
           Boss.state = "ult"; Boss._ultFrame = t < T.pause ? c.img.raise : c.img.pause;
           Game.ultCam = 0.2; Game.ultFocus = true; Boss._ucd = Math.min(1, (Boss._ucd || 0) + dt * 3); Boss._ucdPos = ultPt(450, 230);
-          if (once("flame")) { const p = ultPt(450, 120); if (fxReady("boss1ult")) spawnFx("boss1ult", 0, p.x, p.y, { w: 220, h: 220, dur: T.stab, loop: true, fps: 10, alpha: 0.95, follow: () => ultPt(450, 120) }); Sound.play("b1u_charge", 0.9, 1.0); }
+          if (once("flame")) { const p = ultPt(450, 120); if (fxReady("boss1ult")) spawnFx("boss1ult", 0, p.x, p.y, { w: 220, h: 220, dur: T.stab, loop: true, fps: 10, alpha: 0.95, follow: () => ultPt(450, 120) }); Sound.play("b3_charge", 0.8, 0.85); }
           return true;
         }
         /* ② 插地：爆裂、震屏、震動、鏡頭拉回（放波時看得到主角與火牆） */
@@ -8478,7 +8477,7 @@ const Config = {
           Boss._ultFrame = c.img.stab; Game.ultCam = -0.04; Game.ultFocus = false;
           const sx = Boss.x + fc * c.stabDx * k;
           if (fxReady("boss1ult")) spawnFx("boss1ult", 1, sx, groundFxY("boss1ult", 1, 420), { anchor: "b", w: 420, h: 420, dur: 0.5 });
-          Sound.play("b1u_stab", 1.0, 1.0); triggerShake(0, 0.5, 30, 0.4); hapticBuzz([40, 20, 60]); triggerHitstopMs(60);
+          Sound.play("b3_plunge", 1.0, 0.85); triggerShake(0, 0.5, 30, 0.4); hapticBuzz([40, 20, 60]); triggerHitstopMs(60);
         }
         if (t < T.cross) {
           Boss._ultFrame = c.img.stab; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 4);
@@ -8488,7 +8487,7 @@ const Config = {
           while (U.wN < 3 && t >= T.w1 + U.wN * T.gap) {
             U.wN++; const sx = Boss.x + fc * c.stabDx * k;
             Ult.waves.push({ big: false, x: sx, dir: 1, done: false }, { big: false, x: sx, dir: -1, done: false });
-            Sound.play("b1u_wave", 0.9, 0.96 + U.wN * 0.04); triggerShake(0, 0.25, 10, 0.18); hapticBuzz(18);
+            Sound.play("b3_low", 0.9, 0.9 + U.wN * 0.04); triggerShake(0, 0.25, 10, 0.18); hapticBuzz(18);
           }
           return true;
         }
@@ -8496,7 +8495,7 @@ const Config = {
         if (t < T.roar) {
           if (once("cross")) {
             if (fxReady("boss1ult")) { const sx = Boss.x + fc * c.stabDx * k; spawnFx("boss1ult", 1, sx, groundFxY("boss1ult", 1, 300), { anchor: "b", w: 300, h: 300, dur: 0.4, c0: 1, nf: 3 }); }
-            Boss.flashFrames = 3; Sound.play("b1u_gather", 0.85, 1.0);
+            Boss.flashFrames = 3; Sound.play("b3_seal", 0.7, 0.8);
             const p = ultPt(450, 260); if (fxReady("boss1ult2")) spawnFx("boss1ult2", 0, p.x, p.y, { w: 520, h: 520, dur: T.roar - T.cross, alpha: 0.95, follow: () => ultPt(450, 260) });
           }
           Boss._ultFrame = c.img.cross; Game.ultCam = 0.24; Game.ultFocus = true;
@@ -8508,14 +8507,14 @@ const Config = {
           Boss._ultCue = null; Boss._ultFrame = c.img.roar; Game.ultCam = -0.06; Game.ultFocus = false; Boss._ucd = 0.6;
           const hp = ultPt(445, 170);
           if (fxReady("boss1ult2")) { spawnFx("boss1ult2", 1, hp.x, hp.y, { w: 640, h: 640, dur: 0.55 }); spawnFx("boss1ult2", 2, Boss.x, groundFxY("boss1ult2", 2, 0), { anchor: "b", w: 900, h: (G + 6) - ultViewTop() + 260, dur: 0.6 }); } /* 竄起火牆直接頂到畫面上緣 */
-          Sound.play("b1u_roar", 1.0, 1.0); Sound.play("b1u_bigwave", 0.95, 1.0);
+          Sound.play("m_roar", 1.0, 0.8); Sound.play("b3_heavy", 0.9, 0.7);
           triggerShake(0, 0.7, 40, 0.6); hapticBuzz([60, 30, 90]); triggerHitstopMs(80);
           Ult.waves.push({ big: true, x: Boss.x, dir: 1, done: false }, { big: true, x: Boss.x, dir: -1, done: false });
         }
         if (t < T.rest) { Boss._ultFrame = c.img.roar; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 2); return true; }
         /* ⑥ 跪地喘息：破綻窗口（state=recover），窗口內傷害減半（51_physics 讀 Boss._ultRest） */
         if (t < T.rest + T.restDur) {
-          if (once("rest")) { Sound.play("b1u_pant", 0.8, 1.0); const p = ultPt(510, 200); if (fxReady("boss1ult2")) spawnFx("boss1ult2", 3, p.x, p.y, { w: 200, h: 200, dur: T.restDur, loop: true, fps: 5, alpha: 0.8, facing: fc, follow: () => ultPt(510, 200) }); hintOnce("ult1rest", "神衛力竭喘息：趁機反擊！（大招後的破綻傷害減半）"); }
+          if (once("rest")) { const p = ultPt(510, 200); if (fxReady("boss1ult2")) spawnFx("boss1ult2", 3, p.x, p.y, { w: 200, h: 200, dur: T.restDur, loop: true, fps: 5, alpha: 0.8, facing: fc, follow: () => ultPt(510, 200) }); hintOnce("ult1rest", "神衛力竭喘息：趁機反擊！（大招後的破綻傷害減半）"); }
           Boss.state = "recover"; Boss._ultRest = true; Boss._ultFrame = c.img.rest; Boss.stateTimer = T.rest + T.restDur - t; Boss.stateDur = T.restDur;
           return true;
         }
