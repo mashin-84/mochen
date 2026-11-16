@@ -33,7 +33,7 @@
             return top < 0 ? 0 : bot - top + 1;
           }
           /* v0.8.189 各 sprite 的影片抽幀格數：walk＝走路格數（預設 12）、idle＝站立循環格數（無則沿用 01／02 兩格）、normOne＝走路格已直接對齊 01_idle1 尺寸，不再用高度比校正 */
-          const SPRITE_ANIM = { boss1: { idle: 34 }, boss5: { walk: 12, normOne: true }, boss5b: { walk: 24, idle: 34, normOne: true } }; /* v0.8.194 站立循環改「只往前播」：影片中找首尾最接近的一段（第1關 68 幀、小狼 56 幀＋接縫交叉淡化、大狼 67 幀），每 2 幀取 1，12 格/秒 */
+          const SPRITE_ANIM = { boss1: { idle: 34 }, boss2: { idle: 24 }, boss5: { walk: 12, normOne: true }, boss5b: { walk: 24, idle: 34, normOne: true } }; /* v0.8.194 站立循環改「只往前播」：影片中找首尾最接近的一段（第1關 68 幀、小狼 56 幀＋接縫交叉淡化、大狼 67 幀），每 2 幀取 1，12 格/秒 */
           function getWalkNorm(SP) {
             if (SP.walkNorm) return SP.walkNorm;
             let k = 1;
