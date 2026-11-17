@@ -83,7 +83,7 @@
             }
           } else if (Player.isChargingAttack) {
             frame = "12_charge";
-            if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（0.45 秒蓄滿會自動出重斬，所以提早換格） */
+            if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（v0.8.208 蓄滿後維持此格直到放開） */
           } else if (isAirborne) {
             frame = Player.vy < 0 ? "07_jump" : "08_fall";
             if (Player.vy < 0 && PG() - Player.y < 40 && has("32_jump_a")) frame = "32_jump_a"; /* v0.8.98 起跳蹲蓄（離地前 40px） */
@@ -204,7 +204,8 @@
           const cp = Math.min(1.0, (performance.now() - Player.attackChargeStartTime) / 450);
           ctx.save();
           ctx.lineWidth = 3.5;
-          ctx.strokeStyle = cp >= 1.0 ? "#fde047" : "rgba(56, 189, 248, 0.85)";
+          const noSt = Player.stamina < 25; /* v0.8.208 劍勢不足：環變灰（放開也出不了蓄力斬） */
+          ctx.strokeStyle = noSt ? "rgba(148, 163, 184, 0.8)" : cp >= 1.0 ? "#fde047" : "rgba(56, 189, 248, 0.85)";
           ctx.shadowColor = cp >= 1.0 ? "#fde047" : "#38bdf8";
           ctx.shadowBlur = cp >= 1.0 ? 14 : 6;
           ctx.beginPath();

@@ -45,17 +45,22 @@
           performExecution();
           return;
         }
-        // 按下立即出招 (零延遲)；第 4 關起，按住滿 0.45 秒追加蓄力重斬
+        // 按下立即出普攻 (零延遲)；第 3 關起按住蓄力，蓄滿（0.45 秒）後維持發光，放開才出蓄力斬（v0.8.208）
         Player._atkBuffered = false;
         doNormalAttack();
         if (Progress.unlockedStages >= 3 && !Player._atkBuffered) { /* v0.8.186 這一下只是記進緩衝（上一刀還在收招）就不開始蓄力，連按時不會誤放蓄力斬 */ /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
           Player.isChargingAttack = true;
-          Player.attackChargeStartTime = performance.now();
+          Player.attackChargeStartTime = performance.now(); Player._chargeReadyFx = false;
         }
       }
 
+      /* v0.8.208 蓄力斬改「按住蓄滿、放開出招」（空洞騎士蓄力技做法）：可先蓄好等霸體招，看到藍圈再放開；未蓄滿放開＝只有那一刀普攻 */
+      const CHARGE_MS = 450;
+      function chargeReady() { return Player.isChargingAttack && performance.now() - Player.attackChargeStartTime >= CHARGE_MS; }
       function releaseAttackCharge() {
+        const ready = chargeReady();
         Player.isChargingAttack = false;
+        if (ready && !inputLocked() && Game.mode === "battle" && !["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) doChargedAttack();
       }
 
       function doChargedAttack() {

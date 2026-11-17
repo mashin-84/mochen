@@ -239,7 +239,7 @@
         Boss.aerialTimer = 0;
         Boss.aerialShotTimer = m.aerialShotInterval || 1.1;
         Boss.jumpedOver = false;
-        if (m.armor && !m.isCharge && !m.isSwitch && !m.isSplit && Progress.unlockedStages >= 3) hintOnce("armor_charge", "【霸體】藍色光圈＝普攻打不斷：按住攻擊 0.45 秒放【蓄力斬】才能打斷"); /* v0.8.186 第 3 關起第一次遇到霸體招時教蓄力斬 */
+        if (m.armor && !m.isCharge && !m.isSwitch && !m.isSplit && Progress.unlockedStages >= 3) hintOnce("armor_charge", "【霸體】藍色光圈＝普攻打不斷：先按住攻擊蓄滿，看到藍圈再放開【蓄力斬】才能打斷"); /* v0.8.186 第 3 關起第一次遇到霸體招時教蓄力斬 */
         if (m.isCharge) hintOnce("charge", "【衝鋒】跳躍越過，或在它貼近時瞬步閃開");
 
         if (m.isAerial) {

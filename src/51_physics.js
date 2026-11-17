@@ -87,13 +87,13 @@
           Player.stamina = Math.min(Player.maxStamina, Player.stamina + regenRate * dt);
         }
 
-        // 蓄力計時：按住滿 0.45 秒觸發蓄力重斬；被打斷或換招則取消
+        // 蓄力：按住滿 CHARGE_MS 蓄滿（維持到放開才出招，v0.8.208）；受擊、處決、招架、瞬步、喝藥則取消
         if (Player.isChargingAttack) {
           if (Progress.unlockedStages < 3 || ["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) {
             Player.isChargingAttack = false;
-          } else if (performance.now() - Player.attackChargeStartTime >= 450) {
-            Player.isChargingAttack = false;
-            doChargedAttack();
+          } else if (chargeReady() && !Player._chargeReadyFx) { /* 蓄滿瞬間：閃一下＋輕震，告訴玩家可以放開了 */
+            Player._chargeReadyFx = true; Player.flashFrames = Math.max(Player.flashFrames || 0, 2); hapticBuzz(18);
+            if (fxReady("spark")) spawnFx("spark", 2, Player.x + Player.facing * 30, Player.y - 120, { w: 150, dur: 0.25 });
           }
         }
 
@@ -235,7 +235,7 @@
                   // 墨塵長劍被彈開受阻
                   Player.vx = -Player.facing * 160;
                   Player.state = "idle";
-                  Player.isChargingAttack = false; Player.atkCd = Math.max(Player.atkCd || 0, 0.35); /* v0.8.186 被彈刀＝攻勢中斷：取消正在蓄的蓄力斬（原本 0.45 秒一到照樣砍出去），0.35 秒內不能再出刀 */
+                  Player.atkCd = Math.max(Player.atkCd || 0, 0.35); /* v0.8.208 被彈刀不再取消蓄力（按著的蓄力斬留著，正好用來打斷 Boss 的霸體反斬）；v0.8.186 被彈刀＝攻勢中斷：取消正在蓄的蓄力斬（原本 0.45 秒一到照樣砍出去），0.35 秒內不能再出刀 */
                   spawnFloatingText(Player.x, Player.y - 120, "【敵將完美彈刀！】立即招架！", "#fde047", 1.35);
                   setTelemetry("⚠️ 敵將完美彈刀！攻防互換，敵將霸體反斬，立即按 K 招架！");
 
@@ -271,7 +271,7 @@
           const onG = Player.y >= PG() - 2;
           if (dir !== 0) {
             /* v0.8.186 起步／轉身用很短的加速（地面約 0.07 秒到全速、轉身約 0.05 秒過零），取代瞬間 0→580：跑步格是依位移推進的，起步與轉身不再滑一格；空中轉向稍慢，有一點慣性 */
-            const tgt = dir * MOVE.speed, turning = Player.vx * dir < 0;
+            const tgt = dir * MOVE.speed * (Player.isChargingAttack ? 0.4 : 1) /* v0.8.208 蓄力中慢走 */, turning = Player.vx * dir < 0;
             const acc = (onG ? MOVE.accel : MOVE.airAccel) * (turning ? MOVE.turnK : 1);
             if (Game.mode === "enter") Player.vx = tgt;
             else Player.vx = tgt > Player.vx ? Math.min(tgt, Player.vx + acc * dt) : Math.max(tgt, Player.vx - acc * dt);

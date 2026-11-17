@@ -106,7 +106,7 @@
           spawnSparks(p.x, hy, "block", Player.facing);
           partFx(p.x, hy, "block");
           spawnFloatingText(p.x, p.top - 20, "鏗！斬不斷", "#cbd5e1", 0.95);
-          hintOnce("seal_charge", "封印要用【蓄力斬】才斬得斷：按住攻擊 0.45 秒（耗 25 劍勢）");
+          hintOnce("seal_charge", "封印要用【蓄力斬】才斬得斷：按住攻擊蓄滿再放開（耗 25 劍勢）");
           setTelemetry("〔封印堅不可摧：按住攻擊鍵蓄力，以【蓄力重斬】斬斷劍柄封印！〕");
           return;
         }
@@ -116,7 +116,7 @@
           h.flash = 2; Sound.play("block", 0.9, 1.3); triggerHitstopMs(30);
           spawnSparks(p.x, hy, "block", Player.facing); partFx(p.x, hy, "block");
           spawnFloatingText(p.x, p.top - 20, "鏗！", "#cbd5e1", 0.8);
-          hintOnce("form_charge", "劍陣的劍插地時，用【蓄力斬】才打得落：按住攻擊 0.45 秒");
+          hintOnce("form_charge", "劍陣的劍插地時，用【蓄力斬】才打得落：按住攻擊蓄滿再放開");
           return;
         }
         if (p.id === "hand") {
@@ -346,7 +346,7 @@
               if (fxReady("spark")) spawnFx("spark", 2, a.x, G - 14, { w: 340, h: 170, dur: 0.45 }); else Game.shockwaves.push({ x: a.x, y: G - 10, r: 10, maxR: 170, alpha: 0.9, color: "#bae6fd" }); /* v0.8.124 衝擊環改生圖（壓扁成地面橢圓） */
               if (fxReady("boss4fx2")) spawnFx("boss4fx2", 0, a.x, G - 110, { w: 420, dur: 0.7 });
               if (k === "sky" && Math.abs(Player.x - a.x) <= m.w * 0.5 + 26 && Player.y > G - 260) partHitPlayer(a.x, m, "天劍斬落！");
-              hintOnce("p4_seal", "巨劍插地露出封印！按住攻擊 0.45 秒放【蓄力斬】斬斷它");
+              hintOnce("p4_seal", "巨劍插地露出封印！按住攻擊蓄滿、放開【蓄力斬】斬斷它");
               a.st = "stuck"; a.t = 0;
             }
           } else if (a.st === "stuck") {
