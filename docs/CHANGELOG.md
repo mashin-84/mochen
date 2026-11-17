@@ -5,6 +5,11 @@
 
 ## 最新版本
 
+**v0.8.211 第 3 關二階段大招改「鎮岳劍獄」灰盒（使用者選 A；原「玄鐵崩山」不夠帥）**：`57_gult.js` `g_s3b` 重寫，招式名改「鎮岳劍獄」（`u_tornado` 鍵不變）。
+- 流程（約 10 秒）：舉劍 0.8 → 插劍入地，兩側升起玄鐵劍牆（半寬 `w0`＝max(600, 主角距離＋160)，上限 900）並把主角關在裡面 → 三輪（1.4／3.6／5.8 秒）：劍牆推近一格（三輪後半寬 330）＋高劍氣波（黃，招架）＋0.4 秒後矮劍氣波（跳；**跳時可繼續蓄力**，招架會中斷蓄力所以這樣排）→ 他拄劍喘息、劍柄亮藍 0.9 秒：這時放開蓄力斬、離劍柄 250px 內劈中＝破獄（劍牆炸開、架勢 +45、慢動作、喘息 3.2 秒）；藍光外劈中＝「時機未到」→ 8.0 秒三輪都沒破＝劍牆合攏 220（×1.25），喘息 1.4 秒。劍氣波每道 64（×1.25）。
+- 佔位：劍牆、插地本劍、藍光是程式畫的（`g.draw`，`drawGultWorld` 新增每招自訂繪製鉤子），待生圖。Boss 借 `20_slam_wind`／`21_slam_hit`／`71_ub_hold`／`22_slam_rec`／`16_stagger`／`24_plunge_hit`／`25_plunge_rec`。
+- 無頭測試：站著不動扣 1025（5000 血測，調降前）→ 調降後估約 755；機器人「招架→跳時蓄力→藍光放開」第一輪就破獄、0 傷害；藍光前放開＝不破。
+
 **v0.8.210 第一批整理（使用者同意）**：
 - **刪程式**：舊影片過場與剪影登場系統（`61_cine.js` 的 `CINE`／`playMovie`／`startBossCine`／`updateCine`／`drawCineA` 等，`82_dialogue.js` 的 `bossPhase2Movie`，`53_parts.js` 的 `formMovieStart`、第 4 關 p2 影片分支，`54_director.js` 的 `stMovie`），各關 `introMovie`／`p2Movie`／`formMovie`／第 5 關 `introCine`／`introVideo`／`introBg` 設定；從未呼叫的 `showWinTitle`／`drawWinTitle`／`drawFormGlow`；沒用到的 CSS 9 條（`.speaker-name`、`.rotate-ornament` 等）與 `body.cine-mode`。`index.html` 949KB → 約 918KB。
 - **行為保留**：原本靠 `p2Movie` 欄位判斷「二階段曲與第 3 關換重劍等導演爆發那一刻」，改成 `Stages[1～3].p2AtBurst = true`（`50_boss_ai.js` `onBossPhase2`）。無頭測試第 1～5 關登場與二階段演出、配樂切換、第 3 關爆發後才換重劍，皆與整理前相同。

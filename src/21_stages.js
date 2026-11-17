@@ -160,7 +160,7 @@
         S3.stances.B.extras = ["20_slam_wind", "21_slam_hit", "22_slam_rec", "23_plunge_jump", "24_plunge_hit", "25_plunge_rec", "26_charge_wind", "27_charge_hit", "28_charge_rec", "29_sweep_wind", "30_sweep_hit", "31_sweep_rec", "35_draw_a", "36_draw_b", "37_draw_c"];
         /* v0.8.171 招牌大招：雙劍「寒川十字」（一階段）、重劍「玄鐵龍捲」（二階段），55_ult.js b3cross／b3tornado */
         S3.moves.u_cross = { name: "寒川影殺", ult: "g_s3a", /* v0.8.209 灰盒新大招（原寒川十字 b3cross 程式暫留 55_ult.js） */ damage: 0, windup: 0.6, active: 1.2, recover: 1.5 };
-        S3.moves.u_tornado = { name: "玄鐵崩山", ult: "g_s3b", damage: 0, windup: 0.5, active: 3.0, recover: 3.3 };
+        S3.moves.u_tornado = { name: "鎮岳劍獄", ult: "g_s3b", damage: 0, windup: 0.5, active: 3.0, recover: 3.3 };
         S3.stances.A.extras = S3.stances.A.extras.concat(["61_ua_guard", "65_ua_push", "66_ua_pant", "67_ua_recoil", "68_ua_recover", "71_ua_sw1", "72_ua_sw2", "73_ua_sw3", "74_ua_r1", "75_ua_r2", "77_ua_x", "78_ua_rel"]);
         S3.stances.B.extras = S3.stances.B.extras.concat(["71_ub_hold", "74_ub_pause", "75_ub_throw", "81_ub_spinA", "82_ub_spinB", "83_ub_spinC", "84_ub_spinD", "85_ub_catch", "86_ub_pull", "87_ub_land", "88_ub_rise", "89_ub_raise", "90_ub_peak", "91_ub_slam", "92_ub_after"]);
         S3.stances.A.pool.push(["u_cross", 4]); S3.stances.B.poolP2.push(["u_tornado", 5]);
