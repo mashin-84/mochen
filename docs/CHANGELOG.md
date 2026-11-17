@@ -9,7 +9,7 @@
 - **刪程式**：舊影片過場與剪影登場系統（`61_cine.js` 的 `CINE`／`playMovie`／`startBossCine`／`updateCine`／`drawCineA` 等，`82_dialogue.js` 的 `bossPhase2Movie`，`53_parts.js` 的 `formMovieStart`、第 4 關 p2 影片分支，`54_director.js` 的 `stMovie`），各關 `introMovie`／`p2Movie`／`formMovie`／第 5 關 `introCine`／`introVideo`／`introBg` 設定；從未呼叫的 `showWinTitle`／`drawWinTitle`／`drawFormGlow`；沒用到的 CSS 9 條（`.speaker-name`、`.rotate-ornament` 等）與 `body.cine-mode`。`index.html` 949KB → 約 918KB。
 - **行為保留**：原本靠 `p2Movie` 欄位判斷「二階段曲與第 3 關換重劍等導演爆發那一刻」，改成 `Stages[1～3].p2AtBurst = true`（`50_boss_ai.js` `onBossPhase2`）。無頭測試第 1～5 關登場與二階段演出、配樂切換、第 3 關爆發後才換重劍，皆與整理前相同。
 - **刪素材 74 檔（約 9MB）**：舊配樂 `music/dongfu／libie／lilian／wenqing`、舊開場背景 `bg/intro1～3／intro5`、第 4 關舊巨手 `boss4/h01～h12`、`fx/boss3bwave`、第 3 關未用大招格 `boss3/62～64_ua_*`、`boss3b/72／73／76～78_ub_*`、`boss1/64_u_hold`、第 5 關登場影片 `boss5/intro.mp4／webm`、切圖工具產生的 `meta.json` 類（已加進 .gitignore）、`prompts/smooth/refs/pack_*.png` 29 張（約 11MB，已放棄的補間做法）。要找回看 git 歷史（v0.8.209）。
-- **整理**：`prompts1～7／prompts_sfx／prompts_smooth` 收進 `prompts/1～7／sfx／smooth`；HANDOFF 拆成現況＋`docs/CHANGELOG.md`＋`docs/DESIGN.md`，`AI_HANDOFF.md` 移到 `docs/`；README 補簡介；刪除 4 條已合併的舊分支。
+- **整理**：`prompts1～7／prompts_sfx／prompts_smooth` 收進 `prompts/1～7／sfx／smooth`；HANDOFF 拆成現況＋`docs/CHANGELOG.md`＋`docs/DESIGN.md`，`AI_HANDOFF.md` 移到 `docs/`；README 補簡介。4 條已合併的舊分支（ccr-47012c2f／ccr-6ece24d2／ccr-d536db9e／claude/mochen-stage3-testing）Claude 沒有刪除權限，請使用者在 GitHub 網頁 Branches 頁刪。
 - 驗證：build／check；smoke 九關 OK（整理途中一度漏改 `updateCamera` 的 `cineOn` 變數，`check.js` 抓不到、smoke 抓到後修正）。
 
 ## 舊紀錄
