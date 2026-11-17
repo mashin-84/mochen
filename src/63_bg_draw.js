@@ -253,12 +253,12 @@
         if (Boss.state !== "windup" || !m || m.isMobility || !(m.damage > 0 || m.isCombo || m.isZone)) return;
         let col = "#facc15", key = "tg_yellow", txt = "黃圈：可招架（在紅圈收縮到底時按招架）";
         if (Boss.isPerilous) { col = "#ef4444"; key = "tg_red"; txt = "紅圈【危】：突刺類可在完美窗口內招架看破；橫掃、橫穿、躍斬類不能擋，要跳、瞬步或側閃"; }
-        else if (m.armor) { col = "#60a5fa"; key = "tg_blue"; txt = "藍圈：霸體，普攻打不斷；可招架或閃開"; }
+        else if (m.armor) { col = "#60a5fa"; key = "tg_blue"; txt = m.chargeBreak ? "淡藍盾圈：霸體重招！看到就【按住攻擊】蓄滿，等他出手前放開＝蓄力斬打斷（也可招架）" : "藍圈：霸體，普攻打不斷；可招架或閃開"; }
         if (m.hintText) { key = m.hintKey || key; txt = m.hintText; } /* 招式自訂提示（魔焰獸玉不能擋、要瞬步到狼身後） */
         hintOnce(key, txt);
         const p = 1 - Boss.stateTimer / (Boss.stateDur || 1);
         const cx = Boss.x, cy = Boss.y - Boss.h * 0.5;
-        { const stM = Stages[Boss.stageId]; if (stM && stM.cueArt && fxReady("cue")) return; } /* v0.8.143 有生圖光圈的關卡：光圈改在 drawBossEntity 的 C4 提示（以實際命中時間 nextImpactIn 驅動），這裡只留提示文字 */
+        { const stM = Stages[Boss.stageId]; if (stM && stM.cueArt && fxReady("cue") && !m.chargeBreak) return; } /* v0.8.212 可蓄力斬反制的霸體招：起手一開始就畫淡藍盾圈，給玩家時間蓄力 */ /* v0.8.143 有生圖光圈的關卡：光圈改在 drawBossEntity 的 C4 提示（以實際命中時間 nextImpactIn 驅動），這裡只留提示文字 */
         if (fxReady("mark")) {
           ctx.save();
           ctx.globalCompositeOperation = "lighter";

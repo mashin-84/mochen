@@ -629,3 +629,14 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       })();
       /* v0.8.189 第 5 關走路／站立改影片抽幀（小狼 walk 12 格＋idle 32 格往返、大狼 walk 24 格＋idle 32 格往返；SPRITE_ANIM 在 64_draw_boss.js）：stride＝走完一個步態週期的距離，原 4 格走路是 170／330，換 12／24 格整週期後改 300／420（待實測腳滑） */
       Stages[5].stances.A.stride = 300; Stages[5].stances.B.stride = 420;
+      /* v0.8.212 蓄力斬反制要來得及（使用者：「看到就被砍了」）：能被蓄力斬打斷的霸體招，起手一律 ≥ 1.1 秒
+         ＝看到淡藍霸體圈（起手一開始就出現）→ 反應約 0.3 → 按住蓄滿 0.45 → 還有約 0.35 秒等他出手前放開。
+         第 1 關基礎斬「破軍」起手只有 0.42、又是最常出的招，拿掉霸體（照常可招架），不拖慢整關節奏。 */
+      (function () {
+        delete Stages[1].moves.slash1.armor;
+        const seen = new Set();
+        Object.keys(Stages).forEach(n => { const M = Stages[n].moves || {}; Object.values(M).forEach(m => {
+          if (seen.has(m) || !m.armor || m.ult || m.isCharge || m.isSwitch || m.isSplit || m.isTransform || m.isZone) return;
+          seen.add(m); m.windup = Math.max(m.windup || 0, 1.1); m.chargeBreak = true;
+        }); });
+      })();

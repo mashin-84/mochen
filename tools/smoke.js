@@ -54,7 +54,7 @@ const server = http.createServer((req, res) => {
         const sk = document.querySelector('#dlg-skip');
         if (sk && sk.offsetParent) sk.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         if (__G.cine) __G.cine.t = 999;
-        return { won: /\bopen\b/.test((document.getElementById('settlement-modal') || {}).className || ''), aer: !!((__S[__B.stageId].moves || {})[__B.moveType] || {}).isAerial, mode: __G.mode, bs: __B.state, mv: __B.moveType, bx: __B.x, by: __B.y, hp: __B.hp, px: __P.x, py: __P.y, php: __P.hp, ps: __P.state, dlg: __DLG.active };
+        return { won: /\bopen\b/.test((document.getElementById('settlement-modal') || {}).className || ''), aer: !!(((__S[__B.stageId].moves || {})[__B.moveType] || {}).isAerial || ((__S[__B.stageId].moves || {})[__B.moveType] || {}).ult), /* v0.8.212 大招（如鎮岳劍獄約 11 秒）也用 13 秒門檻 */ mode: __G.mode, bs: __B.state, mv: __B.moveType, bx: __B.x, by: __B.y, hp: __B.hp, px: __P.x, py: __P.y, php: __P.hp, ps: __P.state, dlg: __DLG.active };
       });
       const now = Date.now();
       if (s.won) { stat.won = true; break; } /* v0.8.65 打贏（結算畫面已開）就結束本關；原本會把結算時主角不動誤報成「主角卡住」 */
@@ -63,7 +63,7 @@ const server = http.createServer((req, res) => {
       if (s.mode === 'battle' && !s.dlg) {
         if (s.mv) stat.moves.add(s.mv);
         if (typeof s.hp === 'number') stat.minHp = Math.min(stat.minHp, s.hp);
-        if (s.bs !== stat.lastBoss) { stat.lastBoss = s.bs; stat.bossSince = now; } else if (now - stat.bossSince > (s.aer ? 13000 : 9000) && s.bs !== 'idle' && s.bs !== 'chase') stat.bossStuck++;
+        if (s.bs !== stat.lastBoss) { stat.lastBoss = s.bs; stat.bossSince = now; } else if (now - stat.bossSince > (s.aer ? 14000 : 9000) && s.bs !== 'idle' && s.bs !== 'chase') stat.bossStuck++;
         const pBusy = s.ps && s.ps !== 'idle' && s.ps !== 'move';
         if (s.ps !== stat.lastP) { stat.lastP = s.ps; stat.pSince = now; } else if (pBusy && now - stat.pSince > 6000) stat.playerStuck++;
       }
