@@ -11,8 +11,6 @@
           const bgG = ctx.createRadialGradient(cx, cy, 0, cx, cy, R); bgG.addColorStop(0, "#0f1c2e"); bgG.addColorStop(1, "#030712");
           ctx.fillStyle = bgG; ctx.fillRect(0, 0, w, h);
         }
-        if (Game.cine && Game.cine.movie) { drawMovie(w, h); ctx.restore(); return; }
-        if (Game.cine && Game.cine.t < CINE.A) { drawCineA(w, h); drawCineBars(w, h); ctx.restore(); return; }
 
         const isPortrait = h > w;
         let scale = 1.0;
@@ -132,7 +130,6 @@
         }
 
         drawTelegraphs();
-        if (Game.cine && !Game.cine.landed && !Game.cine.dash) drawCineMark();
 
         for (const img of Game.afterimages) {
           if (img.spr) { /* v0.8.96 角色剪影殘影 */
@@ -151,7 +148,6 @@
         drawMist();
         drawFx(true);
         drawFlyingSwords();
-        drawCineTrail();
         drawIllusions();
         drawPartner(); /* v0.8.179 第 6 關同伴 */
         drawUltWorld(); /* v0.8.160 招牌大招：壓暗聚焦＋火牆 */
@@ -223,11 +219,6 @@
 
         ctx.restore();
 
-        if (Game.cine) {
-          const ft = Game.cine.t - CINE.A, fd = Game.cine.dash ? 0.8 : 0.35;
-          if (ft < fd) { ctx.fillStyle = `rgba(${Stages[Boss.stageId].introFlash || "255,236,224"},${1 - ft / fd})`; ctx.fillRect(0, 0, w, h); }
-          drawCineBars(w, h);
-        }
         drawNameCard(w, h);
         drawDirOverlay(w, h);
 

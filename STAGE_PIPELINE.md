@@ -88,7 +88,7 @@ Gemini 會把整張背景重畫（月亮位置跑掉），**不能整張用**：
 - 招式特效：`move.fxAct`（出招起點，可 `follow:true`）、`fxHit`（連擊每下）、`fxLand`（躍斬落地）、`fxVanish`／`fxAppear`（瞬移）；刀弧圖 `Stages[n].arcArt`；投射物 `Stages[n].bulletArts[kind]`／`flySwordArt`；預載 `Stages[n].fxSheets`。
 - 音效：`Stages[n].sfxClass = "heavy"｜"light"`、`sfxPitch`；特殊招式 `move.sfx = {w 前搖, a 出招, h 連擊每下, land 落地, p 音高, v 音量}`；事件音 `Stages[n].sfx`（`tpOut`／`tpIn`／`zone`…）。
 - 登場：`Stages[n].dirMode = true` 由 `DIR_CFG[n]` 演出（`kind:"drop"` 從天而降＋名牌滑入；否則「跪姿→爆發」）；二階段 `DIR_CFG[n].phase`（`blast` 震飛主角、`grow` 放大、`p2Aura` 常駐氣焰）；第 3 關另有 `stanceByPhase`（換姿態在爆發那一刻，`applyP2Stance`）。
-- 部位 Boss（第 4、7 關）：`Stages[n].parts`（見 HANDOFF v0.8.83～v0.8.92），登場／轉場仍用影片。
+- 部位 Boss（第 4、7 關）：`Stages[n].parts`（見 `docs/CHANGELOG.md` v0.8.83～v0.8.92）；登場／轉場一樣用 `DIR_CFG` 戰場演出（影片系統已在 v0.8.210 刪除）。
 - 營地：`ASSET_VER` 每次改圖遞增；`tools/missing_ok.txt` 登記「還沒生」的檔，生好就刪那行。
 
 ## 五、驗收清單（每關做完逐項勾）

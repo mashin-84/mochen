@@ -1,5 +1,5 @@
 第 2～9 關招牌大招＋第 6～8 關機制音效（ElevenLabs Sound Effects；每條寫明秒數；全部 no music, no voice。
-拿到檔後交給 Claude：裁切、正規化峰值 -1.5 dBFS、單聲道 mp3、接入。檔名用每條開頭的代號。第 1 關的在 prompts1/4_boss1ult_sfx.txt。
+拿到檔後交給 Claude：裁切、正規化峰值 -1.5 dBFS、單聲道 mp3、接入。檔名用每條開頭的代號。第 1 關的在 prompts/1/4_boss1ult_sfx.txt。
 目前全部暫借通用音效（peril／hit／slash／mikiri／execution 等），這份到齊後逐招換掉。
 
 【第 2 關 羅天萬劍】

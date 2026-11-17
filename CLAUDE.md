@@ -15,7 +15,7 @@
 - 本機看不到音效、感受不到手感、手機震動：這些一律列為「請使用者實測」。
 
 ## 每次改版流程
-改 `src/` → `HANDOFF.md` 標題版本號 +1 並在版本紀錄加一段（寫清楚做法、數值、檔名）→ `python3 tools/build.py` → `python3 tools/build.py --check` → `node tools/check.js index.html` → 動到戰鬥／流程時 `NODE_PATH=$(npm root -g) node tools/smoke.js index.html 20 <關卡>` → commit（訊息尾端加系統提醒給的 Co-Authored-By 與 Claude-Session 行）→ `git push origin HEAD:main` **並** push 到目前工作分支。推送後約 1～2 分鐘網站更新。
+改 `src/` → `HANDOFF.md` 標題版本號 +1、第〇節現況同步，並在 `docs/CHANGELOG.md`「最新版本」最上面加一段（寫清楚做法、數值、檔名）→ `python3 tools/build.py` → `python3 tools/build.py --check` → `node tools/check.js index.html` → 動到戰鬥／流程時 `NODE_PATH=$(npm root -g) node tools/smoke.js index.html 20 <關卡>` → commit（訊息尾端加系統提醒給的 Co-Authored-By 與 Claude-Session 行）→ `git push origin HEAD:main` **並** push 到目前工作分支。推送後約 1～2 分鐘網站更新。
 - `ASSET_VER` 自 v0.8.135 起由 `build.py` 依 assets/ 內容雜湊自動填入（網址加 `?v=<雜湊>`），**不用手動改**；新增 assets 後重跑 build 即可。
 - Stop hook 會檢查未追蹤檔案：產生的檔案要嘛 commit，要嘛放 scratchpad／`/tmp`；`__audit_tmp.html`、`dbg_tmp.html` 已在 .gitignore。
 
@@ -41,7 +41,7 @@
 
 ## 最高原則
 - **夠精緻**：參考各式動作遊戲的手法（空洞騎士、隻狼、九日 Nine Sols、死亡細胞、褻瀆神明、奧日、火影忍者式大招演出等），但維持本作淡彩、透光、薄霧的風格聖經；學手法不學色調。
-- 路線圖與製作流程見 `HANDOFF.md` 第二十二節（M0～M9、單關七步、完成定義）與 `STAGE_PIPELINE.md`。
+- 路線圖與製作流程見 `HANDOFF.md` 第一節（M0～M9、單關七步、完成定義）與 `STAGE_PIPELINE.md`；九關設計卡在 `docs/DESIGN.md`。
 
 ## 分工
 - 交給 Gemini：全部生圖與影片（動作表、關鍵格、背景、半身像、特效圖）。
@@ -51,7 +51,7 @@
 
 ## 生圖提示詞規則
 - 整段放在**單一程式碼框**內（框內不可再有三個反引號）；開頭放**完整風格聖經（直接寫進去，不可用佔位符）**；寫「EXACTLY N」格；一張盡量多塞。交出前不得殘留任何 `[ ]` 佔位符，並用 `python3 tools/check_prompt.py 檔案`（影片加 `--video`）檢查。
-- 提示詞檔存在 `prompts<關卡>/`（例：`prompts5/`）並 commit，使用者要重貼時從檔案原文貼。
+- 提示詞檔存在 `prompts/<關卡>/`（例：`prompts/5/`；音效 `prompts/sfx/`）並 commit，使用者要重貼時從檔案原文貼。
 - 角色／不發光物底色：洋紅 #FF00FF；**發光特效用純黑 #000000**（程式用疊加 `lighter` 播放，黑底自動透明）。
 - 敵人與特效在圖裡一律面向右（遊戲內依 facing 鏡像）；**程式生成特效時必須帶 `facing`**，否則一瞬間反向。
 - 角色關鍵格提示詞要寫：附參考圖（單格單角色）、同體型同地平線、面向右、不畫嘴外特效。

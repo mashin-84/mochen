@@ -478,7 +478,7 @@
         document.querySelectorAll(".cult-modal-backdrop.open").forEach(e => e.classList.remove("open"));
         if (DLG.active) { DLG.onEnd = null; dlgFinish(); } /* 關掉進行中的對話，不觸發它的後續 */
         loadStage(n);
-        Game.mode = "battle"; Game.introT = 0; Game.pendingPre = false; Game.dir = null; Game.cine = null; Game.cutsceneActive = false; Game.defeated = false;
+        Game.mode = "battle"; Game.introT = 0; Game.pendingPre = false; Game.dir = null; Game.cutsceneActive = false; Game.defeated = false;
         Boss._introHide = false; Boss._p2MoviePending = false;
         const ph = sg.phase || 2;
         if (ph === 2) { Config.bossPhase = 2; if (Boss.maxHp2) bossRefillP2(); if (STAGE_BGM_P2[n]) Music.play(STAGE_BGM_P2[n]); }

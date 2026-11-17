@@ -2,3 +2,5 @@ __audit_tmp.html
 dbg_tmp.html
 review/*.html
 tools/__pycache__/
+assets/**/meta.json
+assets/**/*_meta.json

@@ -1,11 +1,10 @@
       /* ====================== v0.8.105 戰場上的登場與階段轉換「導演」 ======================
        * Stages[n].dirMode = true：登場影片、二階段影片不播，改在戰場上演出（不切走畫面）：
        *   Boss 擺姿勢（Boss._cineImg）＋鏡頭推近到 Boss（updateCamera 的 introOn）＋暗角變色＋氣場／衝擊波特效＋換曲。
-       * 影片檔與 introMovie／p2Movie 設定都保留；把 dirMode 拿掉就切回影片。
+       * v0.8.210 舊影片過場（introMovie／p2Movie／formMovie）程式與設定已刪除。
        * cfg：{ dur, burstAt, poses:[[秒,"格名"]…], tint:"r,g,b", tintA, aura:{sheet,row,w,at,fps,dy}, ring:{sheet,row,w,dur},
        *        pillar:{sheet,row,w,dur}, title:[大字,副字,色], sfx:[[音名,音量,音高]…] }
        * 演出期間戰鬥完全暫停（同登場凍結），結束後 Boss 回待機、玩家給 1.2 秒無敵。 */
-      function stMovie(st, key) { return st && !st.dirMode ? st[key] : null; } /* dirMode 的關卡不播影片 */
 
       const DIR_CFG = {
         1: { /* 赤煞神衛統領：單膝跪地、血煞紅氣湧起 → 起身怒吼，衝擊波 */
@@ -235,7 +234,7 @@
        *   assets/fx/xtz_star.webp（單張十字星）、主角前指關鍵格 mc/41_point_a／42_point_b／43_point_c（沒有時用 11_thrust 頂替）。 */
       const ASSIST_CFG = { tIn: 0.35, tStar: 0.8, tFreeze: 0.12, tLaunch: 0.12, dashSpd: 1500, chestY: 138, handY: 148, poseNames: ["41_point_a", "42_point_b", "43_point_c"], poseFallback: "11_thrust" };
       function assistStart(type) {
-        if (Game.mode !== "battle" || Game.cine || Game.dir || Boss.hp <= 0 || Player.hp <= 0) return false;
+        if (Game.mode !== "battle" || Game.dir || Boss.hp <= 0 || Player.hp <= 0) return false;
         const o0 = orbCurrent();
         Game.dir = { c: { kind: "assist", dur: 99 }, kind: "assist", st: Stages[Boss.stageId], type, t: 0, dark: 0, a: 0, orb: { x: o0.x, y: o0.y, R: 9 }, from: { x: o0.x, y: o0.y }, star: null, trail: [], phase: "in", tp: 0, focusX: Player.x,
           camNow: { zoom: Game.camera.targetZoom + 0.6, y: Player.y - ASSIST_CFG.chestY + 20 - Config.baseHeight * 0.5, rate: 14 } };
@@ -653,13 +652,6 @@
         if (!D.burst && t >= 0.02) { D.burst = true; screenFlash("rgba(230,250,255,0.7)", 0.45, 0.4); addTrauma(0.8); triggerHitstopMs(100); hapticBuzz([60, 30, 100]); if (fxReady("boss4fx2")) { spawnFx("boss4fx2", 3, x, G - 260, { w: 760, dur: 0.7, col: 1 }); } if (fxReady("spark")) spawnFx("spark", 3, x, G - 220, { w: 640, dur: 0.6, alpha: 0.8 }); }
         const up = Math.min(1, t / 0.8), down = t > c.dur - 0.6 ? Math.max(0, (c.dur - t) / 0.6) : 1;
         D.a = (c.tintA || 0.35) * up * down; D.dim = 0.3 * up * down; D.focusX = x;
-      }
-      function drawFormGlow(D, x) {
-        const u = D.t / 1.0, P = Boss._pp; if (!P) return;
-        D.draw = null; /* 巨劍本體仍由部位引擎畫（sw.mode）；這裡只疊光與裂紋 */
-        ctx.save(); ctx.globalCompositeOperation = "lighter"; const tip = P.sword.tip;
-        const g = ctx.createLinearGradient(x, tip - 520, x, tip); g.addColorStop(0, `rgba(200,255,235,${0.5 * u})`); g.addColorStop(1, `rgba(120,200,255,${0.25 * u})`);
-        ctx.fillStyle = g; ctx.fillRect(x - 70, tip - 520, 140, 520); ctx.restore();
       }
       /* 二→三階段：六劍落地後光塵向中央聚攏 → 光柱 → 背景古靈身影收縮進光柱 → 人形現身 */
       function descendStep(D, dt) {

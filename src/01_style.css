@@ -42,9 +42,6 @@
       font-family: var(--font-sans);
       touch-action: none;
     }
-
-    .font-serif-tc { font-family: var(--font-serif); }
-
     #game-container {
       position: relative;
       width: 100vw;
@@ -126,30 +123,6 @@
     .guide-gold-btn:active {
       transform: scale(0.96);
     }
-
-    .rotate-ornament {
-      width: 76px;
-      height: 110px;
-      border: 2px solid var(--amber-gold);
-      border-radius: 14px;
-      position: relative;
-      margin-bottom: 20px;
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
-      animation: rotate-anim 2.2s infinite ease-in-out;
-    }
-
-    .rotate-ornament::after {
-      content: "";
-      position: absolute;
-      bottom: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--amber-gold);
-    }
-
     @keyframes rotate-anim {
       0%, 25% { transform: rotate(0deg); }
       50%, 75% { transform: rotate(90deg); }
@@ -172,21 +145,6 @@
       line-height: 1.6;
       margin-bottom: 22px;
     }
-
-    .btn-fullscreen-cult {
-      background: linear-gradient(180deg, #92400e 0%, #78350f 100%);
-      border: 1px solid var(--amber-gold);
-      color: #fef3c7;
-      font-family: var(--font-serif);
-      font-weight: 700;
-      padding: 9px 24px;
-      border-radius: 999px;
-      font-size: 13px;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-      transition: all 0.15s;
-    }
-
     /* TOP HUD: 一念飛仙 Cultivation Banner */
     .hud-header {
       position: absolute;
@@ -397,13 +355,6 @@
       gap: 4px;
       pointer-events: auto;
     }
-
-    .ornate-btn-strip {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
     .cult-header-btn {
       background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
       border: 1px solid var(--border-bronze);
@@ -913,16 +864,6 @@
       font-weight: 700;
       color: #fef08a;
     }
-
-    .dialogue-stream {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 240px;
-      overflow-y: auto;
-      padding-right: 6px;
-    }
-
     .dialogue-entry {
       padding: 10px 14px;
       border-radius: 8px;
@@ -954,15 +895,6 @@
       color: #94a3b8;
       font-family: var(--font-serif);
     }
-
-    .speaker-name {
-      font-weight: 700;
-      font-family: var(--font-serif);
-      font-size: 12px;
-      margin-bottom: 2px;
-      display: block;
-    }
-
     .modal-btn-row {
       display: flex;
       justify-content: flex-end;
@@ -1170,12 +1102,6 @@
       position: relative;
       overflow: hidden;
     }
-
-    .avatar-icon-svg {
-      width: 40px;
-      height: 40px;
-    }
-
     .avatar-role-tag {
       position: absolute;
       bottom: 0;
@@ -1410,16 +1336,6 @@
       display: flex !important;
       gap: 12px !important;
     }
-
-    .dpad-btn-jump-top {
-      width: 90px !important;
-      height: 60px !important;
-      border-radius: 16px !important;
-      background: linear-gradient(180deg, rgba(6, 95, 70, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
-      border: 2px solid var(--qingyun-jade) !important;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(52, 211, 153, 0.25) !important;
-    }
-
     .dpad-btn-move-large {
       width: 86px !important;
       height: 74px !important;
@@ -1647,7 +1563,6 @@
     body.hub-mode #touch-gourd, body.hub-mode #touch-dash, body.hub-mode #touch-parry, body.hub-mode #touch-assist, body.hub-mode #touch-jump { display: none !important; }
     body.hub-mode:not(.hub-near) #touch-attack { display: none !important; }
     body.hub-mode #touch-attack .sub-key { display: none; }
-    body.cine-mode .hud-header, body.cine-mode .virtual-control-layer { visibility: hidden !important; }
 /* v0.8.136～137 左右移動鍵：加大＋擴大可按範圍（v0.8.136），再依使用者回饋「有點大但好按；兩鍵往左、右鍵靠左鍵；底圖改半透明毛玻璃」調整（v0.8.137）：
    尺寸 118×104→106×94（可按範圍仍外擴 16px）、整組往左 14px、兩鍵間距 18→6px、底圖改半透明＋毛玻璃（backdrop-filter blur），按下才變亮 */
 .dpad-row-bottom { gap: 6px !important; }

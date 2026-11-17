@@ -39,8 +39,6 @@
 /assets/portrait/boss8_alt.webp
 /assets/portrait/boss9.webp
 /assets/portrait/boss9_alt.webp
-/assets/boss4/intro.mp4
-/assets/boss4/p2.mp4
 /assets/boss4s/walk_01.webp
 /assets/boss4s/walk_02.webp
 /assets/boss4s/walk_03.webp

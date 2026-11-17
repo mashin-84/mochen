@@ -27,7 +27,6 @@
         try { clearAllInputStates(); } catch (e) { }
         Music.pauseAll();
         try { if (Sound.ctx && Sound.ctx.state === "running") Sound.ctx.suspend(); } catch (e) { }
-        if (Game.cine && Game.cine.vid) { try { Game.cine.vid.pause(); } catch (e) { } }
         const inBattle = Game.mode === "battle";
         elPResume.textContent = inBattle ? "繼續戰鬥" : "繼續遊戲";
         elPRetry.style.display = inBattle ? "block" : "none"; elPQuit.style.display = inBattle ? "block" : "none";
@@ -52,7 +51,7 @@
           pauseConfirmTimer = setTimeout(pauseResetConfirm, 2500);
         });
       }
-      function pauseLeaveBattle() { if (DLG.active) dlgFinish(); if (Game.cine) endBossCine(true); Game.nameCard = null; }
+      function pauseLeaveBattle() { if (DLG.active) dlgFinish(); Game.nameCard = null; }
       elPResume.addEventListener("click", (e) => { e.stopPropagation(); resumeGame(); });
       pauseDoubleTap(elPRetry, "retry", "重打", () => { const sid = Boss.stageId; resumeGame(); pauseLeaveBattle(); loadStage(sid, { skipPre: true }); });
       pauseDoubleTap(elPQuit, "quit", "退出", () => { const sid = Boss.stageId; resumeGame(); pauseLeaveBattle(); Game.defeated = false; returnToHub(sid); });

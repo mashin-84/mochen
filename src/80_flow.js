@@ -29,18 +29,12 @@
         else if (STAGE_BGM[stageId]) Music.play(STAGE_BGM[stageId]);
         else Music.fadeOut();
 
-        Game.executionBannerTimer = 0; Game.winTitle = null; Game.darkVignetteAlpha = 0; Game.flashWhiteOverlay = 0; if (Game.executionLines) Game.executionLines.length = 0; /* v0.8.54 換關／回營地時清掉處決大字與暗場（物理沒在跑時計時器不會倒數，字會一直留著） */
+        Game.executionBannerTimer = 0; Game.darkVignetteAlpha = 0; Game.flashWhiteOverlay = 0; if (Game.executionLines) Game.executionLines.length = 0; /* v0.8.54 換關／回營地時清掉處決大字與暗場（物理沒在跑時計時器不會倒數，字會一直留著） */
         Progress.currentStage = stageId;
         Boss.stageId = stageId;
         Boss.artId = stage.artId || stageId;
         if (stage.sprite) getBossSprite(stage.sprite, stage.spriteExtras);
-        if (stage.introBg) getCineImg("bg", "assets/bg/" + stage.introBg + ".webp");
         if (stage.introName) getCineImg("name", stage.introName);
-        if (stage.introCine) fxSheet("land");
-        if (stage.introVideo) getCineVideo(stage.introVideo);
-        if (stMovie(stage, "introMovie")) getCineVideo(stage.introMovie);
-        if (stMovie(stage, "p2Movie")) getCineVideo(stage.p2Movie);
-        if (stage.formMovie && !stage.dirMode) getCineVideo(stage.formMovie); /* v0.8.135 戰場演出關卡不預載影片 */
         applyStageSfxClass(stage); /* v0.8.122 武器類別音效自動配對 */
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite, st.extras));
         (stage.fxSheets || []).forEach(k => fxSheet(k));

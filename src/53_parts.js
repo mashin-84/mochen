@@ -220,19 +220,6 @@
         hintOnce("form_intro", "六劍陣：劍出招後會插地片刻，這時用【蓄力斬】把它打落");
         const stF = Stages[Boss.stageId];
         if (stF && stF.dirMode && stF.dir && stF.dir.form) setTimeout(() => { if (Boss._pp && Boss._pp.form && !Game.dir) dirStart("form", stF); }, 120); /* v0.8.133 巨劍崩成六劍：戰場演出（取代影片） */
-        else if (stF && stF.formMovie) setTimeout(() => formMovieStart(stF), 850); /* v0.8.104 影片版（dirMode 時不用） */
-      }
-      function formMovieStart(st) {
-        const Q = Boss._pp;
-        if (Game.mode !== "battle" || Game.cine || Game.defeated || Boss.hp <= 0 || Player.hp <= 0 || !Q || !Q.form) return;
-        const v = getCineVideo(st.formMovie), dur = (v.duration && isFinite(v.duration)) ? v.duration : 8;
-        const ok = playMovie(st.formMovie, { audio: true, onEnd: () => {
-          Music.duckUntil = 0; Music.duckLvl = 1; /* 影片期間關卡曲壓成無聲，結束（含提早跳過）立刻恢復 */
-          const R = Boss._pp; if (R && R.form) R.cd = Math.max(R.cd || 0, 1.6); /* 影片後給劍陣一點喘息 */
-          Game.introT = Math.max(Game.introT, 0.7);
-          Player.invulnTimer = Math.max(Player.invulnTimer, 1.0);
-        } });
-        if (ok) Music.duck(0.0, dur + 0.5);
       }
       /* v0.8.94 劍陣特效（boss4fx3 列 3）：插地漣漪（前 2 格）、被打落的碎裂爆光（後 2 格）、橫穿拖尾（列 2 後 2 格） */
       function plantFx(x) { if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, x, Config.groundY - 30, { c0: 0, nf: 2, w: 380, dur: 0.6 }); }
@@ -584,11 +571,6 @@
         Game.slowT = 0.8; Game.slowScale = 0.3;
         const st4 = Stages[Boss.stageId];
         if (st4.dirMode && st4.dir && st4.dir.phase3) { setTimeout(() => { if (Boss._pp && Boss._pp.phase === "t" && !Game.dir) dirStart("phase3", st4); }, 100); }
-        else if (st4.p2Movie && playMovie(st4.p2Movie, { onEnd: () => { /* 影片已演完崩碎與降臨：直接跳到轉場尾段 */
-          const Q = Boss._pp; if (!Q || Q.phase !== "t") return;
-          Q._shattered = true; Q._roar = true; Q.sword.mode = "gone"; Q.tt = Math.max(Q.tt, 2.4);
-          Game.slowT = 0; Player.invulnTimer = Math.max(Player.invulnTimer, 1.0);
-        } })) { if (STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); }
         screenFlash("rgba(224,242,254,0.9)", 0.7, 0.6);
         showBanner("萬劍歸一", "古　靈　現　世", 1600, "#7dd3fc");
         setTelemetry("★ 劍陣盡落！古靈劍魂現身——回到彈刀對決！");

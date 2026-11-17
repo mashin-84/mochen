@@ -20,8 +20,8 @@
       /* 進二階段：依 stage.stanceByPhase 換姿態（第 3 關：一階段雙劍、二階段玄鐵重劍） */
       function onBossPhase2() {
         const stage = Stages[Boss.stageId];
-        if (stage && !stage.transformMove && !(stage.p2Movie && !stage.parts) && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* 有二階段影片的關卡，換曲改在影片結束時 */ /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
-        if (stage && stage.p2Movie && !stage.parts && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) { Boss._p2MoviePending = true; return; } /* v0.8.103 有二階段影片：影片裡演拔劍，姿態等影片開始時才換（applyP2Stance），不播拔劍招式 */
+        if (stage && !stage.transformMove && !(stage.p2AtBurst && !stage.parts) && STAGE_BGM_P2[Boss.stageId]) Music.play(STAGE_BGM_P2[Boss.stageId]); /* 有二階段影片的關卡，換曲改在影片結束時 */ /* v0.8.69 二階段換曲（第 5 關在蛻變落地時換） */
+        if (stage && stage.p2AtBurst && !stage.parts && stage.stanceByPhase && stage.stanceByPhase[2] && Boss.stance !== stage.stanceByPhase[2]) { Boss._p2MoviePending = true; return; } /* v0.8.103 有二階段影片：影片裡演拔劍，姿態等影片開始時才換（applyP2Stance），不播拔劍招式 */
         if (stage && stage.transformMove && Game.dir && Game.dir.kind === "phase" && Game.dir.c.kind === "morph") return; /* v0.8.141 第 5 關：由導演演完蛻變（換姿態、換曲都在爆發那一刻） */
         if (stage && stage.transformMove && stage.moves[stage.transformMove] && stage.stanceByPhase && Boss.stance !== stage.stanceByPhase[2]) {
           triggerBossMove(stage.transformMove); /* 蛻變演出：長嘯脹大，active 起點才換姿態 */

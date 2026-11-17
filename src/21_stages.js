@@ -72,8 +72,6 @@
         S2.flySwordArt = { sheet: "boss2sw", row: 0, frames: [0, 1, 2, 3], fps: 10, w: 140, tipX: 238, tipY: 108, rot: 0.16, summonRow: 1, breakRow: 2, groundRow: 3 }; /* v0.8.66 專屬飛劍圖 boss2sw（4×4 黑底：0 飛行循環（劍身微斜，rot 補正）、1 召喚成形、2 命中碎裂、3 插地碎散） */
         M.flyswords.bulletY = [-200, -165, -130]; M.flyswords.bulletX = 150; /* v0.8.65 三把飛劍拉高到肩～腰（主角圖約高 240；原 -77／-55／-33＝膝到大腿） */
         S2.introName = "assets/boss2/name.webp";
-        /* v0.8.100 第 2 關改影片過場（日式賽璐璐風）：登場「千鏡一影」、二階段「真假難辨」；舊的剪影＋鏡片聚合演出停用 */
-        S2.introMovie = "assets/boss2/intro"; S2.p2Movie = "assets/boss2/p2";
         /* v0.8.67 Boss 專屬音效（ElevenLabs）：招式 sfx {w 前搖, a 出招}；其他事件見 bsfx */
         S2.sfxClass = "light"; /* v0.8.127 沒專屬音效的招（罡風陣、雷劫陣）走輕武器類別音效庫 */
         S2.sfx = { tpOut: ["b2_vanish", 0.85], tpIn: ["b2_appear", 0.9], split: ["b2_split", 0.9], ilBreak: ["b2_shatter", 0.8], ilShard: ["b2_shard_hit", 0.85], swordFly: ["b2_sword_fly", 0.55], swordRain: ["b2_sword_rain", 0.85], introSwirl: ["b2_vortex", 0.8], introLand: ["b2_shatter", 0.85] };
@@ -176,8 +174,7 @@
           { img: "arena3_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.95, dim: 0.18 } /* v0.8.63 前景竹叢剪影 */
         ];
         S3.introName = "assets/boss3/name.webp"; /* v0.8.63 書法名牌「莫寒川」 */
-        /* v0.8.101 第 3 關改影片過場（日式賽璐璐風）：登場「竹林拔劍」；舊的剪影＋飛劍聚合登場停用（二階段影片待接） */
-        S3.introMovie = "assets/boss3/intro"; S3.p2Movie = "assets/boss3/p2"; /* v0.8.103 二階段影片（跪姿→竹葉→背影拔重劍→白光→全身定格） */
+        [1, 2, 3].forEach(n => { Stages[n].p2AtBurst = true; }); /* v0.8.210 二階段曲（與第 3 關換重劍）等導演演出「爆發」那一刻才切（原本靠 p2Movie 欄位判斷） */
         /* v0.8.68 Boss 專屬音效（ElevenLabs b3_*）：招式 sfx {w 前搖, a 出招, h 連擊每下}；zone＝戒律陣紋生成時的低鳴 */
         S3.sfx = { zone: ["b3_seal", 0.75], introSwirl: ["b3_spin", 0.8], introLand: ["b3_cross", 0.85] };
         [["slash1", { a: "b3_twin" }], ["exclusive_combo", { h: "b3_cross" }], ["exclusive_feint", { a: "b3_cross" }], ["slash2", { a: "b3_spin" }], ["dash_rush", { a: "b3_dash" }], ["thrust_peril", { a: "b3_dash" }], ["sweep_peril", { a: "b3_low" }], ["grab_peril", { a: "b3_rain" }],
@@ -256,10 +253,9 @@
         };
       })();
       /* v0.8.99 第 1 關改影片過場（日式賽璐璐風，使用者用 Gemini 生；舊的崖頂剪影躍下演出停用） */
-      Stages[1].introMovie = "assets/boss1/intro"; Stages[1].p2Movie = "assets/boss1/p2"; Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "36_tq_wind", "37_tq_hit", "38_tq_rec", "39_cb_wind", "40_cb_h1", "41_cb_h2", "42_cb_rec", "43_dl_hold", "44_dl_hit", "45_tw_wind", "46_tw_rel", "47_tw_catch", "48_sp_wind", "49_sp_hit", "50_sp_rec", "51_ch_wind", "52_ch_run", "53_ch_stop", "54_sh_vanish", "55_sh_strike", "21_fall", "22_land", "23_rise", "24_chop_wind", "25_chop_hit", "26_chop_rec", "27_thr_wind", "28_thr_hit", "29_thr_rec", "30_swp_wind", "31_swp_hit", "32_swp_rec", "33_leap_crouch", "34_leap_air", "35_leap_land"];
-      /* v0.8.33 第 5 關登場：影片（剪影小狼＋巨狼影子）→ 揚塵淡出 → 小狼衝進場煞停、名字卡（introDash 模式，需影片） */
-Stages[5].introCine = true; Stages[5].introDash = true; Stages[5].introVideo = "assets/boss5/intro"; Stages[5].introBg = "intro5"; Stages[5].introName = "assets/boss5/name.webp";
-Stages[5].introA = 5.6; Stages[5].introFlash = "214,196,170"; Stages[5].introSfx = [[1.9, "w_snarl", 0.45, 1.1], [2.9, "m_howl", 0.95, 1], [4.0, "w_bark", 0.85, 1.1], [4.4, "w_claw", 0.7, 1]]; Stages[5].introLandSfx = "w_snarl"; Stages[5].spriteExtras = ["26_rush", "25_pounce_land", "20_bite_crouch"];
+      Stages[1].introName = "assets/boss1/name.webp"; Stages[1].spriteExtras = ["20_jump", "36_tq_wind", "37_tq_hit", "38_tq_rec", "39_cb_wind", "40_cb_h1", "41_cb_h2", "42_cb_rec", "43_dl_hold", "44_dl_hit", "45_tw_wind", "46_tw_rel", "47_tw_catch", "48_sp_wind", "49_sp_hit", "50_sp_rec", "51_ch_wind", "52_ch_run", "53_ch_stop", "54_sh_vanish", "55_sh_strike", "21_fall", "22_land", "23_rise", "24_chop_wind", "25_chop_hit", "26_chop_rec", "27_thr_wind", "28_thr_hit", "29_thr_rec", "30_swp_wind", "31_swp_hit", "32_swp_rec", "33_leap_crouch", "34_leap_air", "35_leap_land"];
+Stages[5].introName = "assets/boss5/name.webp";
+Stages[5].spriteExtras = ["26_rush", "25_pounce_land", "20_bite_crouch"];
 Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖片 */
       /* 第 1 關二階段新招（只出現在二階段隨機池）：戈擲（長柄投射物）、衝鋒（直線突進，可跳躍越過） */
       Stages[1].moves.halberd_throw = { name: "神衛擲戈 (可折射)", isRanged: true, bulletCount: 1, bulletSpeed: 1050, bulletTrajectory: "linear", bulletKind: "halberd", bulletColor: "#f59e0b", windup: 0.55, active: 0.20, recover: 0.55, range: 700, lunge: 0, damage: 170, parryPostureDmg: 22 };
@@ -377,7 +373,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
           cd: 0.7, /* 招與招之間的空檔 */
           handHit: { normal: 12, heavy: 18, charged: 30, reflect: 15 }, /* 砍手／折射打手的架勢（滿 100 巨手崩勢 → 古靈失衡、巨劍插地 3 秒） */
           p2: { palmEvery: [9, 13], palmDmg: 180 } /* 二階段兩側巨手偶爾壓掌 */,
-          /* v0.8.85 生圖：assets/boss4/h01～h12（巨手，0.5 倍、下緣中點錨點）、sw1／sw2／sw3（巨劍 0.6 倍，畫時 ×swK）；boss4fx 列 0 核心、1 核心蓄光、2 封印環、3 小飛劍 */
+          /* v0.8.85 生圖：sw1／sw2／sw3（巨劍 0.6 倍，畫時 ×swK）；boss4fx 列 0 核心、1 核心蓄光、2 封印環、3 小飛劍 */
           art: { dir: "boss4", fx: "boss4fx", bgBody: true, swK: 0.667, swTip: [[94.5, 803], [103, 811]], ringY: [416, 442, 470] }
         };
         S4.moves = {
@@ -401,7 +397,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S4.poolP2 = S4.pool;
         S4.sfxClass = "light"; /* v0.8.134 三階段人形古靈招式走輕武器類別音效庫（部位引擎的聲音在 53_parts 直接指定 b2_／b3_ 音效） */
         S4.farMoves = ["flyswords"];
-        S4.bg = "arena4"; S4.bgDim = 0.42; /* v0.8.90 劍塚調暗 */ S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; S4.introMovie = "assets/boss4/intro"; S4.p2Movie = "assets/boss4/p2"; S4.formMovie = "assets/boss4/form"; /* v0.8.133 影片保留，dirMode 優先 */ /* v0.8.104 三段影片：登場 intro／三封印斷→六劍 form／六劍盡落→人形古靈 p2 */ /* v0.8.89 影片過場（檔案未到前自動走備案） */ /* v0.8.87 古靈背景、書法名牌 */
+        S4.bg = "arena4"; S4.bgDim = 0.42; /* v0.8.90 劍塚調暗 */ S4.arenaName = "劍塚"; S4.introName = "assets/boss4/name.webp"; /* v0.8.87 古靈背景、書法名牌 */
         S4.layers = [
           { img: "arena4_ground", ground: true, par: 1, y: 455, h: 330, dim: 0.32 },
           { img: "arena4_fg", fg: true, par: 1.35, y: 560, h: 250, alpha: 0.9, dim: 0.5 }

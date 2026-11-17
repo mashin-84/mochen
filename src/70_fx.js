@@ -28,21 +28,6 @@
         ctx.restore();
         return true;
       }
-      /* v0.8.11 「一劍青雲」只在擊敗敵人（終結處決）時出現：處決字退場後淡入，約 2.4 秒 */
-      function showWinTitle(delayMs) { Game.winTitle = { t0: performance.now() + delayMs, dur: 2400 }; }
-      function drawWinTitle(w, h) {
-        const W = Game.winTitle; if (!W) return;
-        const T2 = fxSheet("exec_t2"); if (!T2.ok) return;
-        const t = (performance.now() - W.t0) / 1000, dur = W.dur / 1000;
-        if (t < 0) return;
-        if (t > dur) { Game.winTitle = null; return; }
-        const a = Math.min(1, t / 0.3) * Math.min(1, (dur - t) / 0.5);
-        const sc = 1 + 0.12 * Math.max(0, 1 - t / 0.4);
-        const ww = Math.min(w * 0.5, h * 0.9) * sc, hh = ww * T2.img.height / T2.img.width;
-        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = a;
-        ctx.drawImage(T2.img, w * 0.5 - ww / 2, h * 0.38 - hh / 2, ww, hh);
-        ctx.restore();
-      }
       /* v0.8.162 特效圖每列「腳底」位置（格內 y，0～256）：底部對齊地面時要扣掉圖裡的留白，否則浮空。
        * land 第 0 列是地面光圈，記的是圓環中心（圓心對齊腳底）。數值由 assets/fx 實測（亮度 >60 的最低列）。 */
       const FX_FOOT = { land: [203, 242, 174, 240], boss1ult: [240, 235, 232, 244], boss1ult2: [256, 256, 250, 256], boss2ult: [256, 256, 228, 145], boss2bind: [229, 228, 147, 225], boss3bult: [244, 256, 256, 238] }; /* boss2ult 第 3 列紅圈記圓心 */
