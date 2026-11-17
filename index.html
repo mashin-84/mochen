@@ -3097,8 +3097,8 @@
         S3.stances.A.extras = ["20_hs_wind", "21_hs_hit", "22_hs_rec", "23_x_wind", "24_x_hold", "25_x_hit", "26_spin_wind", "27_spin_hit", "28_spin_rec", "29_dash_wind", "30_dash_hit", "31_dash_rec", "32_low_wind", "33_low_hit", "34_low_rec", "35_draw_a"];
         S3.stances.B.extras = ["20_slam_wind", "21_slam_hit", "22_slam_rec", "23_plunge_jump", "24_plunge_hit", "25_plunge_rec", "26_charge_wind", "27_charge_hit", "28_charge_rec", "29_sweep_wind", "30_sweep_hit", "31_sweep_rec", "35_draw_a", "36_draw_b", "37_draw_c"];
         /* v0.8.171 招牌大招：雙劍「寒川十字」（一階段）、重劍「玄鐵龍捲」（二階段），55_ult.js b3cross／b3tornado */
-        S3.moves.u_cross = { name: "寒川十字", ult: "b3cross", damage: 0, windup: 0.6, active: 1.2, recover: 1.5 };
-        S3.moves.u_tornado = { name: "玄鐵龍捲", ult: "b3tornado", damage: 0, windup: 0.5, active: 3.0, recover: 3.3 };
+        S3.moves.u_cross = { name: "寒川影殺", ult: "g_s3a", /* v0.8.209 灰盒新大招（原寒川十字 b3cross 程式暫留 55_ult.js） */ damage: 0, windup: 0.6, active: 1.2, recover: 1.5 };
+        S3.moves.u_tornado = { name: "玄鐵崩山", ult: "g_s3b", damage: 0, windup: 0.5, active: 3.0, recover: 3.3 };
         S3.stances.A.extras = S3.stances.A.extras.concat(["61_ua_guard", "65_ua_push", "66_ua_pant", "67_ua_recoil", "68_ua_recover", "71_ua_sw1", "72_ua_sw2", "73_ua_sw3", "74_ua_r1", "75_ua_r2", "77_ua_x", "78_ua_rel"]);
         S3.stances.B.extras = S3.stances.B.extras.concat(["71_ub_hold", "74_ub_pause", "75_ub_throw", "81_ub_spinA", "82_ub_spinB", "83_ub_spinC", "84_ub_spinD", "85_ub_catch", "86_ub_pull", "87_ub_land", "88_ub_rise", "89_ub_raise", "90_ub_peak", "91_ub_slam", "92_ub_after"]);
         S3.stances.A.pool.push(["u_cross", 4]); S3.stances.B.poolP2.push(["u_tornado", 5]);
@@ -4383,7 +4383,7 @@ const Config = {
         Player._lastParryPress = now;
 
         Player.state = "parry";
-        { const tx = partsBusy() ? partsThreatX() : null; Player.facing = (tx == null ? Boss.x : tx) >= Player.x ? 1 : -1; } /* v0.8.90 部位 Boss：面向來襲的飛劍／出招部位 */
+        if (!Game.ultNoFace) { const tx = partsBusy() ? partsThreatX() : null; Player.facing = (tx == null ? Boss.x : tx) >= Player.x ? 1 : -1; } /* v0.8.90 部位 Boss：面向來襲的飛劍／出招部位 */
         Player.stateTimer = Config.guardStanceMs / 1000;
         Player.parryStartMs = now;
         Player.vx *= 0.1;
@@ -9438,6 +9438,10 @@ const Config = {
           const sx = Boss.x, sp = Boss.isPerilous, st = Boss.perilType, svx = Boss.vx;
           Boss.x = srcX === Player.x ? Player.x - Player.facing * 40 : srcX; Boss.isPerilous = false; Boss.perilType = null;
           const pc = Progress.parryCount;
+          if (h.needFace && Player.facing !== (srcX >= Player.x ? 1 : -1) && !(Player.invulnTimer > 0)) { /* v0.8.209 背後來的刀：沒轉身面向就擋不到 */
+            Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
+            takeDamage(bossDmg(h.dmg), dir, "【背後中劍】要先轉身！"); return;
+          }
           resolveBossStrike({ damage: h.dmg, parryPostureDmg: h.post });
           Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
           if (h.onParry && Progress.parryCount > pc) h.onParry(h);
@@ -9458,7 +9462,7 @@ const Config = {
               if (h.t >= h.delay) {
                 h.done = true; h.ft = 0;
                 const inside = Math.abs(Player.x - h.x) <= h.w * 0.5;
-                if (inside && !(h.kind === "jump" && Player.y < G - 38)) guHit(h.src != null ? h.src : h.x, h);
+                if (inside && !(h.kind === "jump" && Player.y < G - 38)) guHit(h.srcBoss ? Boss.x : h.srcOff ? h.x + h.side * h.srcOff : h.src != null ? h.src : h.x, h);
                 else if (inside && h.kind === "jump") spawnFloatingText(Player.x, Player.y - 95, "躍過！", "#34d399", 1.0);
                 if (!h.quiet) { triggerShake(0, 0.3, h.w > 300 ? 22 : 10, 0.2); Sound.play(h.kind === "parry" ? "slash" : "hit", 0.6, 0.8); }
                 if (h.onFire) h.onFire(h);
@@ -9466,7 +9470,7 @@ const Config = {
             } else { h.ft += dt; if (h.ft > 0.3) H.splice(i, 1); }
           } else {
             h.x += h.dir * h.speed * dt;
-            if (h.x < -500 || h.x > Config.worldWidth + 500 || h.t > 6) { H.splice(i, 1); continue; }
+            if (h.x < -500 || h.x > Config.worldWidth + 500 || h.t > (h.life || 6)) { H.splice(i, 1); continue; }
             if (h.done) continue;
             const rel = (Player.x - h.x) * h.dir;
             if (rel > 10 || rel < -h.depth) continue;
@@ -9489,7 +9493,7 @@ const Config = {
         return best;
       }
       function gultCleanup(cancel) { /* ultEnd 呼叫 */
-        Boss._introHide = false; Boss._gImm = false;
+        Boss._introHide = false; Boss._gImm = false; Game.ultNoFace = false;
         if (cancel) GU.hz.length = 0;
         const p = Game.partner; if (p && p.state === "ultchant") { p.state = "idle"; p.cd = 3; p.kind = null; }
       }
@@ -9518,6 +9522,90 @@ const Config = {
       function gVanish(on) { Boss._introHide = on; Boss._ultAir = on; if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 100, { w: 300, dur: 0.35 }); Sound.play("mikiri", 0.5, on ? 1.7 : 1.3); }
       function gChain(ev, t0, gaps, mk) { let t = t0; gaps.forEach((gp, i) => { t += gp; const at = t, idx = i; ev.push([at, () => mk(idx)]); }); return t; }
       const GULT = {
+        /* ===== v0.8.209 第 3 關新大招灰盒（取代寒川十字／玄鐵龍捲；關鍵格先借現有圖，圈與波是程式畫的佔位） ===== */
+        /* 一階段雙劍「寒川影殺」：貼身快速四連斬 → 化影消失、從背後背刺（要先轉身面向才擋得到）→ 現身空中斜落刺 → 十字收尾。
+           七刀全部可完美招架（post 4／5／10，完美招架實際加倍＝每刀架勢 +8～10、收尾 +20，七刀共 62）；瞬步只是躲開；七刀全完美＝莫寒川踉蹌 2.6 秒 */
+        g_s3a: (U) => {
+          const ev = [], G = Config.groundY, D = 0.45; U.pp = 0;
+          const fr = (k) => { Boss._ultFrame = k; }, ok = () => { U.pp++; };
+          ev.push([0, () => fr("61_ua_guard")]);
+          ev.push([1.2, () => hintOnce("gu3a", "大招【寒川影殺】：每一刀都能完美招架（黃圈）！他消失時會從【背後】刺來——先按方向鍵轉身，再招架")]);
+          ev.push([0.55, () => { U.follow = 125; fr("23_x_wind"); Sound.play("b3_dash", 0.8, 1.15); }]);
+          let t = gChain(ev, 0.65 - 0.40, [0.40, 0.40, 0.36, 0.36], (i) => guStrike({ x: Player.x, track: true, lock: 0.15, w: 200, delay: D, kind: "parry", dmg: 72, post: 4, srcBoss: true, label: "【影殺連斬】", quiet: true, onParry: ok,
+            onFire: () => { fr(i % 2 ? "21_hs_hit" : "25_x_hit"); Boss._kickMs = performance.now(); Sound.play("b3_twin", 0.7, 1 + i * 0.06); if (fxReady("boss3fx")) spawnFx("boss3fx", 0, Boss.x + Boss.facing * 110, Boss.y - 120, { w: 300, dur: 0.18, facing: Boss.facing }); } }));
+          t += D; /* 第 4 刀命中時刻 */
+          ev.push([t + 0.22, () => { /* 化影：背後出現影子 0.65 秒後背刺 */
+            U.follow = 0; gVanish(true); const side = -Player.facing;
+            spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.9); Sound.play("b2_vanish", 0.8, 1.2);
+            guStrike({ x: Player.x, track: true, lock: 0.2, w: 200, delay: 0.65, kind: "parry", needFace: true, side, srcOff: 120, shape: "cross", dmg: 88, post: 5, label: "【背刺】", onParry: ok,
+              onFire: (h) => { Boss.x = gClampX(h.x + h.side * 120); gVanish(false); Boss.facing = -h.side; fr("30_dash_hit"); Sound.play("b3_dash", 0.9, 1.0); } });
+          }]);
+          t += 0.22 + 0.65;
+          ev.push([t + 0.2, () => gVanish(true)]);
+          ev.push([t + 0.35, () => { /* 現身空中 → 斜落刺 */
+            Boss._introHide = false; Boss._ultAir = true; fr("26_spin_wind"); Boss.x = gClampX(Player.x - Player.facing * 60); Boss.y = G - 330; Boss.facing = gSide(); Sound.play("b2_appear", 0.7, 1.3);
+            U.air = guStrike({ x: Player.x, track: true, lock: 0.25, w: 210, delay: 0.7, kind: "parry", shape: "pillar", dmg: 88, post: 5, label: "【落影刺】", onParry: ok,
+              onFire: (h) => { U.air = null; Boss.x = gClampX(h.x - Boss.facing * 70); Boss.y = G; Boss._ultAir = false; fr("27_spin_hit"); if (fxReady("land")) landingFx(Boss.x, 1); } });
+          }]);
+          t += 0.35 + 0.7;
+          ev.push([t + 0.2, () => { /* 十字收尾：舉劍停一拍（遲刃）再合擊 */
+            U.follow = 150; fr("74_ua_r1"); Sound.play("b3_draw", 0.8, 1.0);
+            guStrike({ x: Player.x, track: true, lock: 0.2, w: 300, delay: 0.8, kind: "parry", dmg: 120, post: 10, srcBoss: true, label: "【寒川十字】", onParry: ok,
+              onFire: () => { U.follow = 0; fr("77_ua_x"); Sound.play("b3_cross", 1.0, 0.9); if (fxReady("boss3ult")) { spawnFx("boss3ult", 0, Boss.x + Boss.facing * 150, Boss.y - 140, { w: 480, h: 480, dur: 0.24, nf: 3, facing: Boss.facing }); spawnFx("boss3ult", 1, Boss.x + Boss.facing * 150, Boss.y - 190, { w: 300, h: 560, dur: 0.24, nf: 3, facing: Boss.facing }); } } });
+          }]);
+          ev.push([t + 0.45, () => fr("75_ua_r2")]);
+          t += 0.2 + 0.8;
+          const g = { ev, dim: [[0, 0.6]], rest: [t + 0.3, 1.2], restText: "〔收劍喘息〕" };
+          ev.push([t + 0.25, () => {
+            if (U.pp >= 7) { g.rest = [t + 0.3, 2.6]; g.restText = "〔七劍盡破・莫寒川踉蹌！〕"; fr("67_ua_recoil"); damageBossPosture(15, null); triggerHitstopMs(100); addTrauma(0.45); Sound.play("mikiri", 1.0, 0.8); Boss.x = gClampX(Boss.x - Boss.facing * 90); }
+            else fr("66_ua_pant");
+          }]);
+          g.tick = (dt) => {
+            Game.ultNoFace = GU.hz.some(h => h.needFace && !h.done); /* 背刺期間：招架不自動轉身 */
+            if (U.follow) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 11); }
+            if (U.air) { const p = Math.min(1, U.air.t / U.air.delay); Boss.x += (U.air.x - Boss.facing * 70 - Boss.x) * Math.min(1, dt * 8); Boss.y = G - 330 * (1 - p * p * p); }
+          };
+          return g;
+        },
+        /* 二階段重劍「玄鐵崩山」：舉劍蓄勢 → 連跳三次往前劈地。第 1、2 劈＝紅圈（走開／瞬步），落地後地裂往前竄（跳或瞬步）；
+           第 3 劈跳最高、黃圈＝完美招架硬頂 → 震飛重劍、架勢 +45、長破綻 3.2 秒；沒頂住則落地地裂往兩邊竄 */
+        g_s3b: (U) => {
+          const ev = [], G = Config.groundY;
+          const fr = (k) => { Boss._ultFrame = k; };
+          const g = { ev, dim: [[0, 0.7], [3.1, 3.5]], rest: [4.95, 1.4], restText: "〔拄劍喘息〕" };
+          const crack = (x, dir) => guWave({ x, dir, low: true, kind: "red", speed: 720, life: 0.8, depth: 130, dmg: 96, label: "【地裂】" });
+          const leap = (at, delay, H, last) => ev.push([at, () => {
+            if (U.won) return;
+            Boss.facing = gSide(); Boss._ultAir = true; fr("23_plunge_jump"); Sound.play("b3_plunge", 0.8, last ? 0.8 : 1.0);
+            const x0 = Boss.x, fc = Boss.facing;
+            U.leap = { x0, H, h: guStrike({ x: Player.x, track: true, lock: last ? 0.3 : 0.4, w: last ? 260 : 230, delay, kind: last ? "parry" : "red", shape: "pillar", dmg: last ? 240 : 176, post: 0, label: last ? "【崩山・終】" : "【崩山】",
+              onParry: () => { U.won = true; },
+              onFire: (h) => {
+                U.leap = null; Boss.x = gClampX(h.x - (last ? fc * 60 : 0)); Boss.y = G; Boss._ultAir = false; fr("24_plunge_hit"); U.recAt = U.t + 0.3;
+                triggerShake(0, 0.6, last ? 40 : 28, 0.4); hapticBuzz(last ? [60, 30, 90] : 50); Sound.play("b3_heavy", 1.0, last ? 0.75 : 0.9);
+                if (fxReady("boss3bfx")) spawnFx("boss3bfx", 1, Boss.x, groundFxY("boss3bfx", 1, last ? 760 : 560), { anchor: "b", w: last ? 760 : 560, h: last ? 760 : 560, dur: 0.55 });
+                if (U.won) { /* 完美招架硬頂：震飛重劍 */
+                  GU.hz.forEach(z => { if (z.type === "wave") z.done = z.cut = true; });
+                  g.rest = [U.t + 0.05, 3.2]; g.restText = "〔硬頂崩山・重劍震飛！〕"; fr("22_slam_rec"); U.recAt = null;
+                  damageBossPosture(45, "【以小博大】架勢 +45%"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.35; Game.slowScale = 0.35; Sound.play("mikiri", 1.0, 0.7);
+                  Boss.x = gClampX(Boss.x - fc * 120);
+                } else if (last) { crack(h.x, 1); crack(h.x, -1); }
+                else crack(h.x, fc);
+              } }) };
+          }]);
+          ev.push([0, () => fr("20_slam_wind")]);
+          ev.push([1.2, () => hintOnce("gu3b", "大招【玄鐵崩山】：前兩劈是紅圈，走開或瞬步，落地的地裂要跳！第三劈是黃圈——完美招架硬頂，能把他的重劍震飛！")]);
+          leap(0.8, 0.8, 230, false); leap(2.0, 0.72, 250, false);
+          ev.push([3.1, () => { if (!U.won) { fr("20_slam_wind"); Boss.facing = gSide(); Sound.play("b3_charge", 0.8, 0.9); } }]);
+          leap(3.5, 1.0, 330, true);
+          g.tick = (dt) => {
+            const L = U.leap;
+            if (L) { const h = L.h, p = Math.min(1, h.t / h.delay); h.x = Math.max(L.x0 - 620, Math.min(L.x0 + 620, h.x));
+              Boss.x = L.x0 + (h.x - L.x0) * Math.min(1, p * 1.15); Boss.y = G - L.H * 4 * p * (1 - p) - (p < 1 ? 6 : 0); if (p > 0.82) fr("24_plunge_hit"); }
+            else if (U.recAt && U.t >= U.recAt) { U.recAt = null; fr("25_plunge_rec"); }
+          };
+          return g;
+        },
         /* 第 4 關 人形劍魂「六劍朝宗」：六把劍左右交錯橫穿（逐把招架，第 5 把慢半拍）→ 六劍合一從天直落（紅圈追蹤，走開或瞬步）→ 劍插地喘息 */
         g_s4: (U) => {
           const ev = [], D = 0.85;

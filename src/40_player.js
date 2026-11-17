@@ -293,7 +293,7 @@
         Player._lastParryPress = now;
 
         Player.state = "parry";
-        { const tx = partsBusy() ? partsThreatX() : null; Player.facing = (tx == null ? Boss.x : tx) >= Player.x ? 1 : -1; } /* v0.8.90 部位 Boss：面向來襲的飛劍／出招部位 */
+        if (!Game.ultNoFace) { const tx = partsBusy() ? partsThreatX() : null; Player.facing = (tx == null ? Boss.x : tx) >= Player.x ? 1 : -1; } /* v0.8.90 部位 Boss：面向來襲的飛劍／出招部位 */
         Player.stateTimer = Config.guardStanceMs / 1000;
         Player.parryStartMs = now;
         Player.vx *= 0.1;
