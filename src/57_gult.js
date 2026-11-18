@@ -161,7 +161,7 @@
             fr("uc1_plant"); C.on = true; C.pose = 1; Boss.x = Math.max(80, Math.min(W - 80, sx - fc * 150 * kS));
             triggerShake(0, 0.9, 40, 0.5); addTrauma(0.6); hapticBuzz([60, 30, 90]); Sound.play("b3_plunge", 1.0, 0.7); Sound.play("b3_heavy", 0.8, 0.6);
             if (fxReady("boss3bfx")) spawnFx("boss3bfx", 1, sx, groundFxY("boss3bfx", 1, 760), { anchor: "b", w: 760, h: 760, dur: 0.6 });
-            hintOnce("gu3b", "【鎮岳劍獄】劍氣先招架或跳；劍柄閃藍＝按住蓄力，藍光大亮＝放開劈中劍柄。劈中兩次破獄！");
+            hintOnce("gu3b", "【鎮岳劍獄】劍氣先招架或跳；劍柄閃藍＝按住蓄力，藍光大亮＝放開劈中劍柄。三輪都劈中才破獄，漏一次就合攏！");
           }]);
           ev.push([1.15, () => { C.pose = 2; }]);
           [1.4, 4.4, 7.4].forEach((cs, k) => { /* v0.8.212 每輪：劍氣兩道（招架或跳）→ 預兆 0.7 秒（劍柄閃藍、安全，這時按住蓄力）→ 藍光 1.0 秒（放開劈下）；右手一次只做一件事 */
@@ -201,10 +201,10 @@
               if (slashing && !U._cs && Math.abs(Player.x - C.sx) < 250) {
                 U._cs = true;
                 if (C.win) { C.hits++; C.win = false;
-                  if (C.hits >= 2) breakCage();
+                  if (C.hits >= 3) breakCage(); /* v0.8.219 三輪都要劈中（不能漏）才破獄 */
                   else { /* v0.8.213 第一次劈中只是龜裂：要兩次才破獄 */
                     C.flT = 0.5; triggerHitstopMs(90); addTrauma(0.4); hapticBuzz([40, 20, 60]); Sound.play("b3_heavy", 0.9, 1.3); Sound.play("parry", 0.9, 0.8);
-                    spawnFloatingText(C.sx, G - 320, "劍身龜裂！再劈一次！", "#fde047", 1.3); damageBossPosture(10, null);
+                    spawnFloatingText(C.sx, G - 320, C.hits === 1 ? "劍身龜裂！還差兩劍！" : "裂痕擴大！最後一劍！", "#fde047", 1.3); damageBossPosture(10, null);
                     if (fxReady("spark")) spawnFx("spark", 2, C.sx, G - 300 * kS, { w: 360, dur: 0.4 });
                   } }
                 else { spawnFloatingText(C.sx, G - 260, "太早了（等藍光大亮）", "#94a3b8", 0.9); Sound.play("block", 0.8, 0.7); triggerShake(0, 0.2, 10, 0.12); }
