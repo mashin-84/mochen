@@ -115,7 +115,7 @@
         /* 重劍姿態專屬 */
         M.heavy_slam = { name: "玄鐵壓頂 (霸體・蓄力重斬打斷)", armor: true, windup: 0.72, active: 0.18, recover: 0.58, range: 205, lunge: 260, damage: 230, parryPostureDmg: 30 };
         M.heavy_slash = { name: "玄鐵劈砍", windup: 0.48, active: 0.16, recover: 0.42, range: 215, lunge: 280, damage: 190, parryPostureDmg: 26 };
-        M.heavy_zone = { name: "戒律鎮壓 (跳起)", isZone: true, zoneType: "fire", zoneWidth: 380, zoneDuration: 2.6, zoneDamagePerSec: 160, zoneTargetP2: true, frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.20, recover: 0.45, range: 330, lunge: 0, damage: 140 };
+        M.heavy_zone = { name: "戒律鎮壓 (跳起)", isZone: true, zoneType: "fire", zoneWidth: 380, zoneDuration: 1.75, zoneDamagePerSec: 160, zoneTargetP2: true, /* v0.8.223 持續 2.6→1.75 秒（使用者：太煩） */ frames: { windup: "14_cast", active: "14_cast", recover: "14_cast" }, windup: 0.60, active: 0.20, recover: 0.45, range: 330, lunge: 0, damage: 140 };
         M.heavy_thrust = { name: "【危】玄鐵撼嶽撞 (前閃看破)", pose: "thrust", windup: 0.65, active: 0.22, recover: 0.68, range: 270, lunge: 860, damage: 330, isPerilous: true, perilType: "thrust" };
         M.heavy_sweep = { name: "【危】千鈞橫江斬 (起跳踩頭)", pose: "sweep", windup: 0.66, active: 0.24, recover: 0.65, range: 250, lunge: 260, damage: 300, isPerilous: true, perilType: "sweep" };
         /* 二階段（重劍）：連斬接落地震波 */
@@ -130,9 +130,9 @@
             pool: [["slash1", 26], ["exclusive_combo", 22], ["exclusive_feint", 20], ["slash2", 10], ["dash_rush", 8], ["thrust_peril", 7], ["sweep_peril", 7]],
             far: ["dash_rush"], farP2: [] },
           B: { sprite: "boss3b", stride: 260, /* v0.8.132 重劍走路改用 Gemini 走路影片抽幀 walk_01～12（綠幕、35 幀週期；原 walkSeq 兩格交替為過渡方案） */ alias: { thrust_peril: "heavy_thrust", sweep_peril: "heavy_sweep" }, /* v0.8.60 低掃在重劍姿態也換成千鈞橫江斬（否則會找雙劍圖） */
-            pool: [["heavy_slam", 30], ["heavy_slash", 22], ["heavy_zone", 18], ["heavy_thrust", 15], ["heavy_sweep", 15]],
-            poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 18], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
-            far: [], farP2: ["heavy_zone"] }
+            pool: [["heavy_slam", 30], ["heavy_slash", 22], ["heavy_zone", 9], ["heavy_thrust", 15], ["heavy_sweep", 15]], /* v0.8.223 戒律鎮壓權重 18→9 */
+            poolP2: [["heavy_slam", 22], ["heavy_slash", 16], ["heavy_zone", 9], ["heavy_thrust", 14], ["heavy_sweep", 14], ["sword_cleave", 16]],
+            far: [], farP2: [] } /* v0.8.223 拿掉「拉開距離就放戒律鎮壓」（二階段最主要的頻率來源） */
         };
         /* v0.8.59 三拍關鍵格（A 雙劍表 3×5 → assets/boss3/20～34；B 重劍表 3×5 → assets/boss3b/20～31、35～37 拔劍）＋專屬特效
            boss3fx（A，淡紫銀光）：0 雙月牙刀弧、1 旋風環、2 突刺光、3 劍雨飛劍；boss3bfx（B，硃紅金）：0 重劍弧、1 落地震波、2 戒律陣紋（循環）、3 拔劍爆氣 */
