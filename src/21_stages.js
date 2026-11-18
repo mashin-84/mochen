@@ -126,7 +126,7 @@
         /* 叛宗劍陣：不再用拔劍姿勢，改成舉劍→劍雨落下插地 */
         M.grab_peril.swordRain = 9; M.grab_peril.frames = { windup: "07_windup", active: "09_slash", recover: "10_slash_rec" };
         Stages[3].stances = {
-          A: { sprite: "boss3", stride: 250, walkSeq: ["03_walk1", "04_walk2", "05_walk3", "06_walk4"], remap: { "12_thrust_rec": "10_slash_rec" }, /* 雙劍表第 12 格只畫了手、沒有劍，突刺收招改用第 10 格 */
+          A: { sprite: "boss3", stride: 250, remap: { "12_thrust_rec": "10_slash_rec" }, /* 雙劍表第 12 格只畫了手、沒有劍，突刺收招改用第 10 格 */
             pool: [["slash1", 26], ["exclusive_combo", 22], ["exclusive_feint", 20], ["slash2", 10], ["dash_rush", 8], ["thrust_peril", 7], ["sweep_peril", 7]],
             far: ["dash_rush"], farP2: [] },
           B: { sprite: "boss3b", stride: 260, /* v0.8.132 重劍走路改用 Gemini 走路影片抽幀 walk_01～12（綠幕、35 幀週期；原 walkSeq 兩格交替為過渡方案） */ alias: { thrust_peril: "heavy_thrust", sweep_peril: "heavy_sweep" }, /* v0.8.60 低掃在重劍姿態也換成千鈞橫江斬（否則會找雙劍圖） */
@@ -148,7 +148,7 @@
         M.sweep_peril.frames = F("32_low_wind", "33_low_hit", "34_low_rec");
         M.grab_peril.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
         M.heavy_slam.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
-        M.heavy_slash.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
+        M.heavy_slash.frames = F("hs1_wind", ["hs2_mid", "hs3_hit"], "hs4_rec"); /* v0.8.225 橫斬不再和壓頂共用格（生圖 4 格） */
         M.sword_cleave.frames = F("20_slam_wind", ["21_slam_hit", "30_sweep_hit"], "31_sweep_rec");
         M.heavy_zone.frames = F("23_plunge_jump", "24_plunge_hit", "25_plunge_rec");
         M.heavy_thrust.frames = F("26_charge_wind", "27_charge_hit", "28_charge_rec");
@@ -168,7 +168,7 @@
         S3.sigMoves = [{ move: "u_cross", phase: 1, stance: "A" }, { move: "u_tornado", phase: 2, stance: "B" }];
         S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3btorn", "boss3bsolid", "cue", "land"); S3.fxSheets.push("boss3shadow", "boss3cage"); /* v0.8.216 新大招特效 */
         S3.stances.A.extras = S3.stances.A.extras.concat(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4", "us5_crouch", "us6_back", "us7_dive", "us8_land"]);
-        S3.stances.B.extras = S3.stances.B.extras.concat(["uc1_plant", "uc2_holdA", "uc3_holdB", "uc4_lean", "uc5_flinch", "uc6_blown", "uc7_kneel", "uc8_command", "wall_1", "wall_2", "wall_3", "wall_4", "wall_5", "wall_6", "wall_7", "wall_8"]); /* v0.8.171 大招 */
+        S3.stances.B.extras = S3.stances.B.extras.concat(["hs1_wind", "hs2_mid", "hs3_hit", "hs4_rec", "uc1_plant", "uc2_holdA", "uc3_holdB", "uc4_lean", "uc5_flinch", "uc6_blown", "uc7_kneel", "uc8_command", "wall_1", "wall_2", "wall_3", "wall_4", "wall_5", "wall_6", "wall_7", "wall_8"]); /* v0.8.171 大招 */
         S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
         S3.zoneArt = { fire: ["boss3bfx", 2] }; /* 戒律鎮壓地面區域用陣紋循環 */
         S3.layers = [
