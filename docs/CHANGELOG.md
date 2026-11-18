@@ -5,6 +5,8 @@
 
 ## 最新版本
 
+**v0.8.221 PWA（使用者：不想每次開瀏覽器測）**：根目錄 `manifest.webmanifest`（名稱「墨塵傳」、`display: fullscreen`、`orientation: landscape`、`start_url`／`scope` 用相對 `./` 配合 `/mochen/` 子路徑）、`sw.js`、圖示 `pwa/icon-192.png`／`icon-512.png`（由 `assets/portrait/mochen.webp` 裁頭像＋深藍漸層底）。`src/00_head.html` 加 manifest／theme-color／apple 標籤；`src/91_main.js` 檔尾註冊 SW（https 或 localhost）。**快取策略**：頁面與其他請求＝網路優先（有網路一定拿最新版，離線才用快取）；`/assets/`＝快取優先（網址帶 `?v=` 內容雜湊，換圖網址就變）；分段請求（影音 range）不攔。無頭測試：SW 註冊並接管、manifest 正確、斷網重新整理仍能開。
+
 **v0.8.220 整體音量＋齒輪選單暫停（使用者：手機最小聲仍很大、部分音效刺耳；按齒輪要暫停）**
 - `11_audio.js`：`Sound.LEVELS` [1.0, 0.55, 0.3, 0.15]（大／中／小／極小），**預設「小」**（localStorage `qingyun_vol`），乘在音效總音量（`master` 0.9×level）與配樂（`Music` 音量公式多乘 `Sound.level`）。音效鏈加高頻架式濾波（highshelf 4.5kHz −7dB）再進限幅器，削刺耳高頻。蓄滿提示音 `mikiri` 音高 1.8→1.3、音量 0.3。
 - 齒輪選單新增「🔉 整體音量：小」按鈕（點一下循環）。

@@ -254,3 +254,5 @@
         }
       };
     })();
+      /* v0.8.221 PWA：註冊 Service Worker（可「加到主畫面」全螢幕開啟；頁面網路優先，不會卡舊版） */
+      if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => { }); }); }

@@ -1,7 +1,7 @@
 # 《一念飛仙外傳-墨塵傳》專案規則（Claude 每次開工先讀）
 
 橫版動作 RPG（Boss Rush，隻狼式彈刀與架勢）。上線檔是單檔 `index.html`（Canvas 2D、Web Audio、無外部依賴）＋ `assets/` 圖片音檔；**原始碼在 `src/`，`index.html` 由 `tools/build.py` 組出，不要直接改 `index.html`**。使用者在手機（Android Chrome，橫向）測試。
-- 網址：https://mashin-84.github.io/mochen/（GitHub Pages，main 分支根目錄）
+- 網址：https://mashin-84.github.io/mochen/（GitHub Pages，main 分支根目錄）。**PWA**（v0.8.221）：根目錄 `manifest.webmanifest`、`sw.js`（頁面網路優先、assets 快取優先）、圖示 `pwa/icon-192／512.png`；改了 `sw.js` 的快取策略才需要改快取名稱 `mochen-page-v1`／`mochen-assets-v1`。
 - **開工順序**：讀本檔 → 讀 `HANDOFF.md` 第〇節「現況總覽」（目前進度、待辦、各關狀態）→ 做新關卡再讀 `STAGE_PIPELINE.md`（單關標準流程、提示詞模板、驗收清單）。
 - 劇情來源：`mashin-84/Cultivation` 的 `source` 分支（劇情之後由使用者在 Gemini 討論後提供，重寫前不要動對白）。
 - 外部顧問（Gemini）評估資料放 `review/`；Gemini 的意見一律先對原始碼查證、標出屬實／誇大／與使用者已定案衝突，再提方案。

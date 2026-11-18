@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f1c2e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="icon" href="pwa/icon-192.png" />
+  <link rel="apple-touch-icon" href="pwa/icon-192.png" />
   <title>一念飛仙外傳-墨塵傳 — 全九難絕巔硬核動作RPG</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14478,6 +14484,9 @@ const Config = {
         }
       };
     })();
+      /* v0.8.221 PWA：註冊 Service Worker（可「加到主畫面」全螢幕開啟；頁面網路優先，不會卡舊版） */
+      if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => { }); }); }
+
   </script>
 </body>
 </html>
