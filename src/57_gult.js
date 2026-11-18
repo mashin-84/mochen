@@ -104,25 +104,27 @@
            七刀全部可完美招架（post 4／5／10，完美招架實際加倍＝每刀架勢 +8～10、收尾 +20，七刀共 62）；瞬步只是躲開；七刀全完美＝莫寒川踉蹌 2.6 秒 */
         g_s3a: (U) => {
           const ev = [], G = Config.groundY, D = 0.45; U.pp = 0;
-          const fr = (k) => { Boss._ultFrame = k; }, ok = () => { U.pp++; };
+          const fr = (k) => { Boss._ultFrame = k; }, ok = () => { U.pp++; }, kS = bossVis(Stages[Boss.stageId]).k;
+          const shd = (row, x, y, w, o) => { if (fxReady("boss3shadow")) spawnFx("boss3shadow", row, x, y, Object.assign({ w, h: w, dur: 0.45 }, o || {})); }; /* v0.8.216 生圖 boss3shadow：0 化影、1 現身、2 落刺光痕、3 落地爆光 */
           ev.push([0, () => fr("61_ua_guard")]);
           ev.push([1.2, () => hintOnce("gu3a", "大招【寒川影殺】：每一刀都能完美招架（黃圈）！他消失時會從【背後】刺來——先按方向鍵轉身，再招架")]);
           ev.push([0.55, () => { U.follow = 125; fr("23_x_wind"); Sound.play("b3_dash", 0.8, 1.15); }]);
           let t = gChain(ev, 0.65 - 0.40, [0.40, 0.40, 0.36, 0.36], (i) => guStrike({ x: Player.x, track: true, lock: 0.15, w: 200, delay: D, kind: "parry", dmg: 72, post: 4, srcBoss: true, label: "【影殺連斬】", quiet: true, onParry: ok,
-            onFire: () => { fr(i % 2 ? "21_hs_hit" : "25_x_hit"); Boss._kickMs = performance.now(); Sound.play("b3_twin", 0.7, 1 + i * 0.06); if (fxReady("boss3fx")) spawnFx("boss3fx", 0, Boss.x + Boss.facing * 110, Boss.y - 120, { w: 300, dur: 0.18, facing: Boss.facing }); } }));
+            onFire: () => { fr(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4"][i]); Boss._kickMs = performance.now(); Sound.play("b3_twin", 0.7, 1 + i * 0.06); if (fxReady("boss3fx")) spawnFx("boss3fx", 0, Boss.x + Boss.facing * 110, Boss.y - 120, { w: 300, dur: 0.18, facing: Boss.facing }); } }));
           t += D; /* 第 4 刀命中時刻 */
+          ev.push([t + 0.04, () => fr("us5_crouch")]);
           ev.push([t + 0.22, () => { /* 化影：背後出現影子 0.65 秒後背刺 */
-            U.follow = 0; gVanish(true); const side = -Player.facing;
+            U.follow = 0; shd(0, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b" }); gVanish(true); const side = -Player.facing;
             spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.9); Sound.play("b2_vanish", 0.8, 1.2);
             guStrike({ x: Player.x, track: true, lock: 0.2, w: 200, delay: 0.65, kind: "parry", needFace: true, side, srcOff: 120, shape: "cross", dmg: 88, post: 5, label: "【背刺】", onParry: ok,
-              onFire: (h) => { Boss.x = gClampX(h.x + h.side * 120); gVanish(false); Boss.facing = -h.side; fr("30_dash_hit"); Sound.play("b3_dash", 0.9, 1.0); } });
+              onFire: (h) => { Boss.x = gClampX(h.x + h.side * 120); gVanish(false); Boss.facing = -h.side; fr("us6_back"); shd(1, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b", dur: 0.35 }); Sound.play("b3_dash", 0.9, 1.0); } });
           }]);
           t += 0.22 + 0.65;
-          ev.push([t + 0.2, () => gVanish(true)]);
+          ev.push([t + 0.2, () => { shd(0, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b" }); gVanish(true); }]);
           ev.push([t + 0.35, () => { /* 現身空中 → 斜落刺 */
-            Boss._introHide = false; Boss._ultAir = true; fr("26_spin_wind"); Boss.x = gClampX(Player.x - Player.facing * 60); Boss.y = G - 330; Boss.facing = gSide(); Sound.play("b2_appear", 0.7, 1.3);
+            Boss._introHide = false; Boss._ultAir = true; fr("us7_dive"); Boss.x = gClampX(Player.x - Player.facing * 60); Boss.y = G - 330; Boss.facing = gSide(); shd(1, Boss.x, Boss.y - 150, 420, { dur: 0.3 }); shd(2, Boss.x + Boss.facing * 110, G - 190, 440, { dur: 0.7, facing: Boss.facing }); Sound.play("b2_appear", 0.7, 1.3);
             U.air = guStrike({ x: Player.x, track: true, lock: 0.25, w: 210, delay: 0.7, kind: "parry", shape: "pillar", dmg: 88, post: 5, label: "【落影刺】", onParry: ok,
-              onFire: (h) => { U.air = null; Boss.x = gClampX(h.x - Boss.facing * 70); Boss.y = G; Boss._ultAir = false; fr("27_spin_hit"); if (fxReady("land")) landingFx(Boss.x, 1); } });
+              onFire: (h) => { U.air = null; Boss.x = gClampX(h.x - Boss.facing * 70); Boss.y = G; Boss._ultAir = false; fr("us8_land"); shd(3, Boss.x + Boss.facing * 60, groundFxY("boss3shadow", 3, 520), 520, { anchor: "b", dur: 0.5 }); triggerShake(0, 0.35, 16, 0.2); } });
           }]);
           t += 0.35 + 0.7;
           ev.push([t + 0.2, () => { /* 十字收尾：舉劍停一拍（遲刃）再合擊 */
@@ -149,35 +151,35 @@
            教的是 v0.8.208 新蓄力斬：先蓄好、看到藍光再放開。劍牆、劍柄藍光都是程式畫的佔位（待生圖）。 */
         g_s3b: (U) => {
           const ev = [], G = Config.groundY, W = Config.worldWidth, fc = Boss.facing;
-          const fr = (k) => { Boss._ultFrame = k; };
+          const fr = (k) => { Boss._ultFrame = k; }, kS = bossVis(Stages[Boss.stageId]).k; /* v0.8.216 生圖關鍵格 uc1～uc8：插地劍底固定在格內 x=600（錨點右 150） */
           const g = { ev, dim: [[0, 0.8]], rest: [11.0, 1.4], restText: "〔劍獄力竭・拄劍喘息〕" };
           const sx = Math.max(420, Math.min(W - 420, Boss.x + fc * 90)), w0 = Math.max(600, Math.min(900, Math.abs(Player.x - sx) + 160)), step = (w0 - 330) / 3;
           U.cage = { sx, hw: w0, tgt: w0, on: false, win: false, winT: 0, winLen: 1, hits: 0, pre: 0, broken: false, bt: 0, rise: 0, crush: 0 };
           const C = U.cage;
           ev.push([0, () => { fr("20_slam_wind"); Sound.play("b3_charge", 0.9, 0.85); }]);
           ev.push([0.8, () => { /* 插劍入地：劍獄升起 */
-            fr("21_slam_hit"); C.on = true; Boss.x = Math.max(80, Math.min(W - 80, sx - fc * 90));
+            fr("uc1_plant"); C.on = true; C.pose = 1; Boss.x = Math.max(80, Math.min(W - 80, sx - fc * 150 * kS));
             triggerShake(0, 0.9, 40, 0.5); addTrauma(0.6); hapticBuzz([60, 30, 90]); Sound.play("b3_plunge", 1.0, 0.7); Sound.play("b3_heavy", 0.8, 0.6);
             if (fxReady("boss3bfx")) spawnFx("boss3bfx", 1, sx, groundFxY("boss3bfx", 1, 760), { anchor: "b", w: 760, h: 760, dur: 0.6 });
-            hintOnce("gu3b", "大招【鎮岳劍獄】：劍牆會一步步逼近！先【按住攻擊蓄滿】，等他拄劍、劍氣先招架或跳過；劍柄【閃藍】時按住攻擊蓄力，【藍光大亮】時放開蓄力斬劈中劍柄——劈中兩次才破獄，藍光一輪比一輪短！");
+            hintOnce("gu3b", "【鎮岳劍獄】劍氣先招架或跳；劍柄閃藍＝按住蓄力，藍光大亮＝放開劈中劍柄。劈中兩次破獄！");
           }]);
-          ev.push([1.15, () => fr("71_ub_hold")]);
+          ev.push([1.15, () => { C.pose = 2; }]);
           [1.4, 4.4, 7.4].forEach((cs, k) => { /* v0.8.212 每輪：劍氣兩道（招架或跳）→ 預兆 0.7 秒（劍柄閃藍、安全，這時按住蓄力）→ 藍光 1.0 秒（放開劈下）；右手一次只做一件事 */
-            ev.push([cs, () => { if (C.broken) return; C.tgt = w0 - step * (k + 1); Sound.play("b3_seal", 0.9, 0.8 + k * 0.08); triggerShake(0, 0.35, 16, 0.25); hapticBuzz(30); fr("71_ub_hold"); }]);
-            const wave = (at, side, low) => ev.push([at, () => { if (C.broken) return; guWave({ x: C.sx + side * C.hw, dir: -side, low, kind: "parry", speed: 1000, life: 2.2, depth: 120, dmg: 64, post: 8, label: low ? "【地裂劍氣】" : "【劍獄劍氣】" }); Sound.play("b3_sweep", 0.7, 1.1); }]);
+            ev.push([cs, () => { if (C.broken) return; C.tgt = w0 - step * (k + 1); Sound.play("b3_seal", 0.9, 0.8 + k * 0.08); triggerShake(0, 0.35, 16, 0.25); hapticBuzz(30); C.cmdT = 0.7; }]);
+            const wave = (at, side, low) => ev.push([at, () => { if (C.broken) return; guWave({ x: C.sx + side * C.hw, dir: -side, low, art: ["boss3cage", low ? 3 : 2], kind: "parry", speed: 1000, life: 2.2, depth: 120, dmg: 64, post: 8, label: low ? "【地裂劍氣】" : "【劍獄劍氣】" }); Sound.play("b3_sweep", 0.7, 1.1); }]);
             const s1 = k % 2 ? 1 : -1;
             wave(cs, s1, false); wave(cs + 0.3, -s1, k !== 1); /* 劍氣速度 1000：最遲 cs+1.2 前到，預兆開始前一定躲完 */
-            ev.push([cs + 1.3, () => { if (C.broken) return; C.pre = 0.7; fr("22_slam_rec"); Sound.play("b3_seal", 0.7, 1.4); if (k === 0) spawnFloatingText(C.sx, G - 300, "劍柄閃藍：按住攻擊蓄力！", "#bfdbfe", 1.2); }]);
+            ev.push([cs + 1.3, () => { if (C.broken) return; C.pre = 0.7; Sound.play("b3_seal", 0.7, 1.4); if (k === 0) spawnFloatingText(C.sx, G - 300, "劍柄閃藍：按住攻擊蓄力！", "#bfdbfe", 1.2); }]);
             ev.push([cs + 2.0, () => { if (C.broken) return; C.pre = 0; C.win = true; C.winLen = [0.8, 0.6, 0.45][k]; C.winT = C.winLen; Sound.play("b2_sword_cast", 0.9, 1.3); if (k === 0) spawnFloatingText(C.sx, G - 300, "藍光大亮：放開！", "#93c5fd", 1.0); }]);
           });
           ev.push([10.4, () => { /* 劍牆合攏 */
-            if (C.broken) return; C.tgt = 40; C.crush = 0.6; fr("24_plunge_hit"); Sound.play("b3_heavy", 1.0, 0.55); triggerShake(0, 1, 44, 0.6); hapticBuzz([80, 30, 120]);
+            if (C.broken) return; C.tgt = 40; C.crush = 0.6; C.cmdT = 0.6; Sound.play("b3_heavy", 1.0, 0.55); triggerShake(0, 1, 44, 0.6); hapticBuzz([80, 30, 120]);
             if (Player.state !== "execution") { if (Player.invulnTimer > 0) perfectDodgeFx("【瞬步閃過合攏】", 6); else if (!ultHardBlock(220, gSide(), "【硬接劍獄】")) takeDamage(bossDmg(220), gSide(), "【劍獄合攏】"); }
           }]);
-          ev.push([10.9, () => { if (!C.broken) { C.on = false; fr("25_plunge_rec"); } }]);
+          ev.push([10.9, () => { if (!C.broken) { C.on = false; C.pose = 0; fr("uc4_lean"); } }]);
           const breakCage = () => {
             C.broken = true; C.win = false; C.bt = 0.7; GU.hz.length = 0; Game.ultLock = false;
-            g.rest = [U.t + 0.05, 3.2]; g.restText = "〔劍獄崩碎・莫寒川震飛！〕"; fr("16_stagger");
+            g.rest = [U.t + 0.05, 3.2]; g.restText = "〔劍獄崩碎・莫寒川震飛！〕"; C.pose = 0; fr("uc6_blown"); C.kneelAt = U.t + 0.45;
             Boss.x = Math.max(80, Math.min(W - 80, Boss.x + (Boss.x >= C.sx ? 1 : -1) * 140));
             damageBossPosture(45, "【破獄】架勢 +45%"); triggerHitstopMs(120); addTrauma(0.7); Game.slowT = 0.4; Game.slowScale = 0.35; Game.flashWhiteOverlay = 0.8;
             Sound.play("b2u_shatter", 1.0, 0.75); Sound.play("mikiri", 1.0, 0.8); hapticBuzz([60, 30, 120]);
@@ -188,7 +190,10 @@
             C.rise = Math.min(1, C.rise + (C.on ? dt * 4 : -dt * 3));
             C.hw += (C.tgt - C.hw) * Math.min(1, dt * 6);
             if (C.pre > 0) C.pre -= dt;
-            if (C.win) { C.winT -= dt; if (C.winT <= 0) { C.win = false; if (!C.broken) fr("71_ub_hold"); } }
+            if (C.win) { C.winT -= dt; if (C.winT <= 0) C.win = false; }
+            C.cmdT = Math.max(0, (C.cmdT || 0) - dt); C.flT = Math.max(0, (C.flT || 0) - dt);
+            if (C.kneelAt && U.t >= C.kneelAt) { C.kneelAt = 0; fr("uc7_kneel"); }
+            if (C.pose === 2) fr(C.flT > 0 ? "uc5_flinch" : (C.pre > 0 || C.win) ? "uc4_lean" : C.cmdT > 0 ? "uc8_command" : (Math.floor(U.t / 0.45) % 2 ? "uc3_holdB" : "uc2_holdA")); /* 扶劍兩格交替；預兆／藍光＝拄劍喘息；推牆＝號令；龜裂＝退縮 */
             if (C.on && !C.broken) { /* 主角關在劍獄內 */
               const L = Math.max(40, C.sx - C.hw + 40), R = Math.min(W - 40, C.sx + C.hw - 40);
               if (Player.x < L) { Player.x = L; if (Player.vx < 0) Player.vx = 0; } else if (Player.x > R) { Player.x = R; if (Player.vx > 0) Player.vx = 0; }
@@ -198,33 +203,36 @@
                 if (C.win) { C.hits++; C.win = false;
                   if (C.hits >= 2) breakCage();
                   else { /* v0.8.213 第一次劈中只是龜裂：要兩次才破獄 */
-                    fr("16_stagger"); triggerHitstopMs(90); addTrauma(0.4); hapticBuzz([40, 20, 60]); Sound.play("b3_heavy", 0.9, 1.3); Sound.play("parry", 0.9, 0.8);
+                    C.flT = 0.5; triggerHitstopMs(90); addTrauma(0.4); hapticBuzz([40, 20, 60]); Sound.play("b3_heavy", 0.9, 1.3); Sound.play("parry", 0.9, 0.8);
                     spawnFloatingText(C.sx, G - 320, "劍身龜裂！再劈一次！", "#fde047", 1.3); damageBossPosture(10, null);
-                    if (fxReady("spark")) spawnFx("spark", 2, C.sx, G - 280, { w: 360, dur: 0.4 });
+                    if (fxReady("spark")) spawnFx("spark", 2, C.sx, G - 300 * kS, { w: 360, dur: 0.4 });
                   } }
                 else { spawnFloatingText(C.sx, G - 260, "太早了（等藍光大亮）", "#94a3b8", 0.9); Sound.play("block", 0.8, 0.7); triggerShake(0, 0.2, 10, 0.12); }
               }
               if (!slashing) U._cs = false;
             }
           };
-          g.draw = () => { /* 佔位：玄鐵劍牆、插地本劍與藍光（待生圖） */
+          g.draw = () => { /* v0.8.216 生圖：劍牆 boss3b/wall_1～8（1～4 升起、5～8 崩碎）、劍柄光 boss3cage 列 0 閃藍／列 1 大亮；插地本劍＝他自己的重劍（關鍵格內） */
             if (C.rise <= 0 && C.bt <= 0) return;
-            const top = G - 520 * C.rise, now = performance.now();
+            const now = performance.now(), SP = getBossSprite("boss3b"), WS = 1.45;
+            const wi = C.broken ? 4 + Math.min(3, Math.floor((0.7 - Math.max(0, C.bt)) / 0.7 * 4)) : (C.rise >= 1 ? 3 : Math.min(3, Math.floor(C.rise * 4)));
+            const im = SP && SP.imgs["wall_" + (wi + 1)];
             ctx.save();
             [-1, 1].forEach(sd => {
-              const x = C.sx + sd * (C.hw + (C.broken ? (0.7 - Math.max(0, C.bt)) * 900 : 0));
-              const a = C.broken ? Math.max(0, C.bt / 0.7) : 1;
-              ctx.globalAlpha = 0.92 * a;
-              for (let i = 0; i < 4; i++) { const ox = x + sd * i * 34, h = (520 - i * 70) * C.rise;
-                ctx.fillStyle = i ? "#334155" : "#1e293b"; ctx.beginPath(); ctx.moveTo(ox - 14, G); ctx.lineTo(ox + 14, G); ctx.lineTo(ox + 10, G - h + 30); ctx.lineTo(ox, G - h); ctx.lineTo(ox - 10, G - h + 30); ctx.closePath(); ctx.fill();
-                ctx.strokeStyle = "rgba(248, 113, 113, 0.55)"; ctx.lineWidth = 2; ctx.stroke(); }
-              ctx.globalAlpha = 0.35 * a; ctx.fillStyle = "#7f1d1d"; ctx.fillRect(sd > 0 ? x : x - 6, top, 6, G - top);
+              const x = C.sx + sd * (C.hw + 70);
+              if (im && im.complete && im.naturalWidth) { ctx.save(); ctx.translate(x, G - 334 * WS + 4); if (sd > 0) ctx.scale(-1, 1); ctx.drawImage(im, -178 * WS, 0, 356 * WS, 352 * WS); ctx.restore(); }
+              else { ctx.fillStyle = "#1e293b"; ctx.fillRect(x - 40, G - 500 * C.rise, 80, 500 * C.rise); }
             });
-            if (!C.broken && C.rise > 0) { /* 插地本劍 */
-              ctx.globalAlpha = 1; ctx.fillStyle = "#0f172a"; ctx.fillRect(C.sx - 16, G - 230, 32, 230); if (C.hits > 0) { ctx.strokeStyle = "rgba(254, 240, 138, 0.9)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(C.sx - 6, G - 220); ctx.lineTo(C.sx + 8, G - 170); ctx.lineTo(C.sx - 5, G - 120); ctx.lineTo(C.sx + 6, G - 60); ctx.stroke(); } ctx.fillStyle = "#475569"; ctx.fillRect(C.sx - 46, G - 250, 92, 18); ctx.fillRect(C.sx - 9, G - 330, 18, 82);
-              if (C.pre > 0) { const fl = Math.floor(now / 90) % 2; ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(147, 197, 253, ${fl ? 0.45 : 0.15})`; ctx.beginPath(); ctx.arc(C.sx, G - 290, 46, 0, Math.PI * 2); ctx.fill(); ctx.globalCompositeOperation = "source-over"; }
-              if (C.win) { const pu = 0.6 + 0.4 * Math.sin(now / 50); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(96, 165, 250, ${0.55 * pu})`; ctx.beginPath(); ctx.arc(C.sx, G - 290, 70 + 20 * pu, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = `rgba(191, 219, 254, ${0.9 * pu})`; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(C.sx, G - 290, 40 + 120 * (C.winT / (C.winLen || 1)), 0, Math.PI * 2); ctx.stroke(); }
+            if (!C.broken && C.on) { /* 劍柄光：劍柄頂在格內 y≈185 */
+              const hx = C.sx, hy = Boss.y + (185 - 560) * kS;
+              if (C.hits > 0) { ctx.strokeStyle = "rgba(254, 240, 138, 0.9)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(hx - 4, hy + 60 * kS); ctx.lineTo(hx + 7, hy + 140 * kS); ctx.lineTo(hx - 5, hy + 230 * kS); ctx.lineTo(hx + 5, hy + 320 * kS); ctx.stroke(); } /* 龜裂紋（程式畫，細線） */
+              ctx.globalCompositeOperation = "lighter";
+              if (fxReady("boss3cage")) {
+                const I = fxSheet("boss3cage").img;
+                if (C.pre > 0) { const z = 170; ctx.drawImage(I, (Math.floor(now / 90) % 4) * 256, 0, 256, 256, hx - z / 2, hy - z / 2, z, z); }
+                if (C.win) { const z = 300 + 40 * Math.sin(now / 60); ctx.drawImage(I, (Math.floor(now / 70) % 4) * 256, 256, 256, 256, hx - z / 2, hy - z / 2, z, z);
+                  ctx.strokeStyle = "rgba(191, 219, 254, 0.9)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(hx, hy, 30 + 110 * (C.winT / (C.winLen || 1)), 0, Math.PI * 2); ctx.stroke(); } /* 收縮圈＝剩餘時間 */
+              }
             }
             ctx.restore();
           };
@@ -384,6 +392,10 @@
               else if (h.shape === "cross") { ctx.strokeStyle = `rgba(255, 255, 255, ${a})`; ctx.lineWidth = 10 * a + 2; ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = 20; ctx.beginPath(); ctx.moveTo(h.x + (h.side || 1) * 280, G - 150); ctx.lineTo(h.x - (h.side || 1) * 200, G - 60); ctx.stroke(); }
               else { const g = ctx.createLinearGradient(h.x - hw, 0, h.x + hw, 0); g.addColorStop(0, `rgba(${col}, 0)`); g.addColorStop(0.5, `rgba(255, 255, 255, ${0.9 * a})`); g.addColorStop(1, `rgba(${col}, 0)`); ctx.fillStyle = g; ctx.fillRect(h.x - hw, top, h.w, G - top + 6); }
             }
+          } else if (!h.cut && h.art && fxReady(h.art[0])) { /* v0.8.216 生圖劍氣波（圖面向右；往左跑就鏡像） */
+            const I = fxSheet(h.art[0]).img, z = h.low ? 420 : 640, col = Math.floor(now / 70) % 4;
+            ctx.globalCompositeOperation = "lighter"; ctx.translate(h.x - h.dir * z * (h.low ? 0.3 : 0.15), h.low ? G - z * 0.42 : G - z * 0.45); ctx.scale(h.dir, 1);
+            ctx.drawImage(I, col * 256, h.art[1] * 256, 256, 256, -z / 2, -z / 2, z, z);
           } else if (!h.cut) {
             const x0 = h.dir > 0 ? h.x - h.depth : h.x, y0 = h.low ? G - 78 : top, fl = 0.75 + 0.25 * Math.sin(now / 60 + h.x * 0.01);
             const g = ctx.createLinearGradient(h.x - h.dir * h.depth, 0, h.x, 0); g.addColorStop(0, `rgba(${col}, 0)`); g.addColorStop(1, `rgba(${col}, ${0.85 * fl})`);
