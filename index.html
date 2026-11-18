@@ -1592,7 +1592,13 @@
 .dpad-cluster { transform: scale(0.92) !important; transform-origin: bottom left !important; margin-left: 42px !important; }
 @media (max-height: 460px) and (orientation: landscape) {
   .dpad-cluster { transform: scale(1.0) !important; transform-origin: bottom left !important; margin-left: 42px !important; }
-  .action-fan-cluster { transform: scale(0.95) !important; transform-origin: bottom right !important; } /* v0.8.227 右手按鍵群整組等比例放大 0.78→0.95（使用者：有點小） */
+  .action-fan-cluster { transform: scale(0.88) !important; transform-origin: bottom right !important; } /* v0.8.227 放大 0.78→0.95；v0.8.228 使用者：小一點點 → 0.88 */
+  /* v0.8.228 攻擊鍵不動，外圍按鍵往攻擊鍵中心（right/bottom 62）收 8%，按鍵間留 2～6px */
+  #touch-gourd { right: 163px !important; bottom: 143px !important; }
+  #touch-dash { right: 196px !important; bottom: 30px !important; }
+  #touch-parry { right: 98px !important; bottom: 98px !important; }
+  #touch-jump { right: 126px !important; bottom: 30px !important; }
+  #touch-assist { right: 30px !important; bottom: 126px !important; }
 }
     /* v0.8.183 架勢條：60% 刻度（從中間往兩邊長，所以在 20%／80% 位置）；卡在上限時刻度閃白；血見底整條轉赤紅脈衝 */
     .hud-header .cultivation-card .gauge-posture-track { height: 8px !important; overflow: visible !important; }
