@@ -4059,22 +4059,28 @@ const Config = {
           performExecution();
           return;
         }
-        // 按下立即出普攻 (零延遲)；第 3 關起按住蓄力，蓄滿（0.45 秒）後維持發光，放開才出蓄力斬（v0.8.208）
+        /* v0.8.218 蓄力斬改「按住就蓄、不先揮一刀」（使用者：按下先揮第一劍再蓄，實際等很久）：
+         * 第 3 關起，按下先不出刀；TAP_MS 內放開＝普攻（放開那一刻出刀），按超過 TAP_MS＝直接舉劍蓄力，蓄滿 CHARGE_MS（從按下起算）後放開＝蓄力斬；
+         * 蓄到一半放開＝普攻。第 1、2 關（還沒解鎖蓄力）維持按下立即出刀。 */
         Player._atkBuffered = false;
-        doNormalAttack();
-        if (Progress.unlockedStages >= 3 && !Player._atkBuffered) { /* v0.8.186 這一下只是記進緩衝（上一刀還在收招）就不開始蓄力，連按時不會誤放蓄力斬 */ /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
-          Player.isChargingAttack = true;
+        if (Progress.unlockedStages >= 3) {
+          Player.isChargingAttack = true; Player._tapPending = true;
           Player.attackChargeStartTime = performance.now(); Player._chargeReadyFx = false;
+          return;
         }
+        doNormalAttack();
       }
 
-      /* v0.8.208 蓄力斬改「按住蓄滿、放開出招」（空洞騎士蓄力技做法）：可先蓄好等霸體招，看到藍圈再放開；未蓄滿放開＝只有那一刀普攻 */
-      const CHARGE_MS = 450;
+      const CHARGE_MS = 450, TAP_MS = 120;
       function chargeReady() { return Player.isChargingAttack && performance.now() - Player.attackChargeStartTime >= CHARGE_MS; }
+      function chargeShown() { return Player.isChargingAttack && !Player._tapPending; } /* 已進入舉劍蓄力（過了點按判定） */
       function releaseAttackCharge() {
+        if (!Player.isChargingAttack) return;
         const ready = chargeReady();
-        Player.isChargingAttack = false;
-        if (ready && !inputLocked() && Game.mode === "battle" && !["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) doChargedAttack();
+        Player.isChargingAttack = false; Player._tapPending = false;
+        if (inputLocked() || Game.mode !== "battle") return;
+        if (ready && !["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) doChargedAttack();
+        else doNormalAttack(); /* 點按或蓄到一半放開＝普攻（doNormalAttack 自己處理收招中的緩衝與連段） */
       }
 
       function doChargedAttack() {
@@ -6068,7 +6074,10 @@ const Config = {
 
         // 蓄力：按住滿 CHARGE_MS 蓄滿（維持到放開才出招，v0.8.208）；受擊、處決、招架、瞬步、喝藥則取消
         if (Player.isChargingAttack) {
-          if (Progress.unlockedStages < 3 || ["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) {
+          const busy = ["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state);
+          if (Player._tapPending) { /* v0.8.218 點按判定期：忙碌中也先等放開（放開＝普攻，交給緩衝）；超過 TAP_MS 才決定進蓄力或取消 */
+            if (performance.now() - Player.attackChargeStartTime >= TAP_MS) { Player._tapPending = false; if (busy) Player.isChargingAttack = false; }
+          } else if (Progress.unlockedStages < 3 || busy) {
             Player.isChargingAttack = false;
           } else if (chargeReady() && !Player._chargeReadyFx) { /* 蓄滿瞬間：閃一下＋輕震，告訴玩家可以放開了 */
             Player._chargeReadyFx = true; Player.flashFrames = Math.max(Player.flashFrames || 0, 2); hapticBuzz(18);
@@ -6250,7 +6259,7 @@ const Config = {
           const onG = Player.y >= PG() - 2;
           if (dir !== 0) {
             /* v0.8.186 起步／轉身用很短的加速（地面約 0.07 秒到全速、轉身約 0.05 秒過零），取代瞬間 0→580：跑步格是依位移推進的，起步與轉身不再滑一格；空中轉向稍慢，有一點慣性 */
-            const tgt = dir * MOVE.speed * (Player.isChargingAttack ? 0.4 : 1) /* v0.8.208 蓄力中慢走 */, turning = Player.vx * dir < 0;
+            const tgt = dir * MOVE.speed * (chargeShown() ? 0.4 : 1) /* v0.8.208 蓄力中慢走 */, turning = Player.vx * dir < 0;
             const acc = (onG ? MOVE.accel : MOVE.airAccel) * (turning ? MOVE.turnK : 1);
             if (Game.mode === "enter") Player.vx = tgt;
             else Player.vx = tgt > Player.vx ? Math.min(tgt, Player.vx + acc * dt) : Math.max(tgt, Player.vx - acc * dt);
@@ -12095,7 +12104,7 @@ const Config = {
        * 蓄力中＝身周淡藍光暈、光點從四周往劍身聚集、劍身由淡藍漸亮；蓄滿＝轉金色、劍上星芒脈動（放開就出招）。劍身位置取自 38_hv_a 格（雙手高舉、劍尖朝後）。 */
       const CHG = { motes: [], last: 0 };
       function chargeInfo() {
-        if (!Player.isChargingAttack) return null;
+        if (!chargeShown()) return null;
         const el = performance.now() - Player.attackChargeStartTime, cp = Math.min(1, el / 450), f = Player.facing, k = MC_SCALE, by = Player.y + GROUND_SINK;
         const hx = Player.x + f * (480 - 450) * k, hy = by + (90 - 529) * k, tx = Player.x + f * (265 - 450) * k, ty = by + (105 - 529) * k;
         return { el, cp, ready: cp >= 1, hx, hy, tx, ty, bx: (hx + tx) / 2, by: (hy + ty) / 2, blade: Player._mcFrame === "38_hv_a" };
@@ -12231,7 +12240,7 @@ const Config = {
               const dur = Player.comboStep === 4 ? 0.32 : Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
               frame = isAirborne ? seq[1] : el < 0.05 ? seq[0] : el < dur * 0.45 ? seq[1] : seq[2];
             }
-          } else if (Player.isChargingAttack) {
+          } else if (chargeShown()) {
             frame = "12_charge";
             if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（v0.8.208 蓄滿後維持此格直到放開） */
           } else if (isAirborne) {
@@ -12259,7 +12268,7 @@ const Config = {
             playerImg = MC_IMGS[frame];
           }
           { /* v0.8.196／199 加順：smear 風格時全部動作換格都淡化，出手格加剪影殘影；video 風格只在沒有影片格的第一刀用 */
-            const act = ["attack", "parry", "dash", "hitstun", "staggered"].includes(Player.state) || Player.isChargingAttack;
+            const act = ["attack", "parry", "dash", "hitstun", "staggered"].includes(Player.state) || chargeShown();
             const on = act;
             if (on && MC_XF.img && MC_XF.img !== playerImg) {
               MC_XF.prev = MC_XF.img; MC_XF.t = performance.now();
@@ -12337,7 +12346,7 @@ const Config = {
 
         // 蓄力劍身漸亮視覺反饋 (D 項要求)
         let swordColor = isFlashing ? "#ffffff" : Player.riposteTimer > 0 ? "#fde047" : "#bae6fd";
-        if (Player.isChargingAttack) {
+        if (chargeShown()) {
           const cp = Math.min(1.0, (performance.now() - Player.attackChargeStartTime) / 450);
           swordColor = cp >= 1.0 ? "#fef08a" : `rgba(${Math.round(186 + 70 * cp)}, ${Math.round(230 + 25 * cp)}, 253, 1)`;
           ctx.shadowColor = cp >= 1.0 ? "#fde047" : "#38bdf8";
@@ -12352,7 +12361,7 @@ const Config = {
         }
 
         // 蓄力圓形進度環視覺提示 (D 項要求)
-        if (Player.isChargingAttack) {
+        if (chargeShown()) {
           const cp = Math.min(1.0, (performance.now() - Player.attackChargeStartTime) / 450);
           ctx.save();
           ctx.lineWidth = 3.5;

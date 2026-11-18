@@ -4,7 +4,7 @@
        * 蓄力中＝身周淡藍光暈、光點從四周往劍身聚集、劍身由淡藍漸亮；蓄滿＝轉金色、劍上星芒脈動（放開就出招）。劍身位置取自 38_hv_a 格（雙手高舉、劍尖朝後）。 */
       const CHG = { motes: [], last: 0 };
       function chargeInfo() {
-        if (!Player.isChargingAttack) return null;
+        if (!chargeShown()) return null;
         const el = performance.now() - Player.attackChargeStartTime, cp = Math.min(1, el / 450), f = Player.facing, k = MC_SCALE, by = Player.y + GROUND_SINK;
         const hx = Player.x + f * (480 - 450) * k, hy = by + (90 - 529) * k, tx = Player.x + f * (265 - 450) * k, ty = by + (105 - 529) * k;
         return { el, cp, ready: cp >= 1, hx, hy, tx, ty, bx: (hx + tx) / 2, by: (hy + ty) / 2, blade: Player._mcFrame === "38_hv_a" };
@@ -140,7 +140,7 @@
               const dur = Player.comboStep === 4 ? 0.32 : Player.comboStep === 3 ? 0.75 : 0.55, el = dur - Player.stateTimer;
               frame = isAirborne ? seq[1] : el < 0.05 ? seq[0] : el < dur * 0.45 ? seq[1] : seq[2];
             }
-          } else if (Player.isChargingAttack) {
+          } else if (chargeShown()) {
             frame = "12_charge";
             if (has("38_hv_a") && performance.now() - Player.attackChargeStartTime >= 150) frame = "38_hv_a"; /* v0.8.98 蓄力後段：高舉過頭（v0.8.208 蓄滿後維持此格直到放開） */
           } else if (isAirborne) {
@@ -168,7 +168,7 @@
             playerImg = MC_IMGS[frame];
           }
           { /* v0.8.196／199 加順：smear 風格時全部動作換格都淡化，出手格加剪影殘影；video 風格只在沒有影片格的第一刀用 */
-            const act = ["attack", "parry", "dash", "hitstun", "staggered"].includes(Player.state) || Player.isChargingAttack;
+            const act = ["attack", "parry", "dash", "hitstun", "staggered"].includes(Player.state) || chargeShown();
             const on = act;
             if (on && MC_XF.img && MC_XF.img !== playerImg) {
               MC_XF.prev = MC_XF.img; MC_XF.t = performance.now();
@@ -246,7 +246,7 @@
 
         // 蓄力劍身漸亮視覺反饋 (D 項要求)
         let swordColor = isFlashing ? "#ffffff" : Player.riposteTimer > 0 ? "#fde047" : "#bae6fd";
-        if (Player.isChargingAttack) {
+        if (chargeShown()) {
           const cp = Math.min(1.0, (performance.now() - Player.attackChargeStartTime) / 450);
           swordColor = cp >= 1.0 ? "#fef08a" : `rgba(${Math.round(186 + 70 * cp)}, ${Math.round(230 + 25 * cp)}, 253, 1)`;
           ctx.shadowColor = cp >= 1.0 ? "#fde047" : "#38bdf8";
@@ -261,7 +261,7 @@
         }
 
         // 蓄力圓形進度環視覺提示 (D 項要求)
-        if (Player.isChargingAttack) {
+        if (chargeShown()) {
           const cp = Math.min(1.0, (performance.now() - Player.attackChargeStartTime) / 450);
           ctx.save();
           ctx.lineWidth = 3.5;

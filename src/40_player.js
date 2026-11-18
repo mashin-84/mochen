@@ -45,22 +45,28 @@
           performExecution();
           return;
         }
-        // 按下立即出普攻 (零延遲)；第 3 關起按住蓄力，蓄滿（0.45 秒）後維持發光，放開才出蓄力斬（v0.8.208）
+        /* v0.8.218 蓄力斬改「按住就蓄、不先揮一刀」（使用者：按下先揮第一劍再蓄，實際等很久）：
+         * 第 3 關起，按下先不出刀；TAP_MS 內放開＝普攻（放開那一刻出刀），按超過 TAP_MS＝直接舉劍蓄力，蓄滿 CHARGE_MS（從按下起算）後放開＝蓄力斬；
+         * 蓄到一半放開＝普攻。第 1、2 關（還沒解鎖蓄力）維持按下立即出刀。 */
         Player._atkBuffered = false;
-        doNormalAttack();
-        if (Progress.unlockedStages >= 3 && !Player._atkBuffered) { /* v0.8.186 這一下只是記進緩衝（上一刀還在收招）就不開始蓄力，連按時不會誤放蓄力斬 */ /* v0.8.171 蓄力斬改在進第 3 關時解鎖（原 >=4：第 3 關的玄鐵壓頂與寒川十字都要蓄力斬，第一次打卻放不出來） */
-          Player.isChargingAttack = true;
+        if (Progress.unlockedStages >= 3) {
+          Player.isChargingAttack = true; Player._tapPending = true;
           Player.attackChargeStartTime = performance.now(); Player._chargeReadyFx = false;
+          return;
         }
+        doNormalAttack();
       }
 
-      /* v0.8.208 蓄力斬改「按住蓄滿、放開出招」（空洞騎士蓄力技做法）：可先蓄好等霸體招，看到藍圈再放開；未蓄滿放開＝只有那一刀普攻 */
-      const CHARGE_MS = 450;
+      const CHARGE_MS = 450, TAP_MS = 120;
       function chargeReady() { return Player.isChargingAttack && performance.now() - Player.attackChargeStartTime >= CHARGE_MS; }
+      function chargeShown() { return Player.isChargingAttack && !Player._tapPending; } /* 已進入舉劍蓄力（過了點按判定） */
       function releaseAttackCharge() {
+        if (!Player.isChargingAttack) return;
         const ready = chargeReady();
-        Player.isChargingAttack = false;
-        if (ready && !inputLocked() && Game.mode === "battle" && !["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) doChargedAttack();
+        Player.isChargingAttack = false; Player._tapPending = false;
+        if (inputLocked() || Game.mode !== "battle") return;
+        if (ready && !["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) doChargedAttack();
+        else doNormalAttack(); /* 點按或蓄到一半放開＝普攻（doNormalAttack 自己處理收招中的緩衝與連段） */
       }
 
       function doChargedAttack() {

@@ -88,7 +88,10 @@
 
         // 蓄力：按住滿 CHARGE_MS 蓄滿（維持到放開才出招，v0.8.208）；受擊、處決、招架、瞬步、喝藥則取消
         if (Player.isChargingAttack) {
-          if (Progress.unlockedStages < 3 || ["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state)) {
+          const busy = ["hitstun", "execution", "parry", "dash", "drink"].includes(Player.state);
+          if (Player._tapPending) { /* v0.8.218 點按判定期：忙碌中也先等放開（放開＝普攻，交給緩衝）；超過 TAP_MS 才決定進蓄力或取消 */
+            if (performance.now() - Player.attackChargeStartTime >= TAP_MS) { Player._tapPending = false; if (busy) Player.isChargingAttack = false; }
+          } else if (Progress.unlockedStages < 3 || busy) {
             Player.isChargingAttack = false;
           } else if (chargeReady() && !Player._chargeReadyFx) { /* 蓄滿瞬間：閃一下＋輕震，告訴玩家可以放開了 */
             Player._chargeReadyFx = true; Player.flashFrames = Math.max(Player.flashFrames || 0, 2); hapticBuzz(18);
@@ -270,7 +273,7 @@
           const onG = Player.y >= PG() - 2;
           if (dir !== 0) {
             /* v0.8.186 起步／轉身用很短的加速（地面約 0.07 秒到全速、轉身約 0.05 秒過零），取代瞬間 0→580：跑步格是依位移推進的，起步與轉身不再滑一格；空中轉向稍慢，有一點慣性 */
-            const tgt = dir * MOVE.speed * (Player.isChargingAttack ? 0.4 : 1) /* v0.8.208 蓄力中慢走 */, turning = Player.vx * dir < 0;
+            const tgt = dir * MOVE.speed * (chargeShown() ? 0.4 : 1) /* v0.8.208 蓄力中慢走 */, turning = Player.vx * dir < 0;
             const acc = (onG ? MOVE.accel : MOVE.airAccel) * (turning ? MOVE.turnK : 1);
             if (Game.mode === "enter") Player.vx = tgt;
             else Player.vx = tgt > Player.vx ? Math.min(tgt, Player.vx + acc * dt) : Math.max(tgt, Player.vx - acc * dt);
