@@ -19,9 +19,13 @@
             Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
             takeDamage(bossDmg(h.dmg), dir, "【背後中劍】要先轉身！"); return;
           }
+          const hp0 = Player.hp, wasParry = Player.state === "parry";
           resolveBossStrike({ damage: h.dmg, parryPostureDmg: h.post });
           Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
           if (h.onParry && Progress.parryCount > pc) h.onParry(h);
+          else if (h.blockDmg && wasParry && Player.hp === hp0 && !(Player.invulnTimer > 0)) { /* v0.8.231 千鈞一擊：普通格擋擋不住，被震飛扣血 */
+            takeDamage(bossDmg(h.blockDmg), dir, "【千鈞壓頂】普通格擋擋不住！"); Player.vx = dir * 520;
+          }
           return;
         }
         if (Player.invulnTimer > 0) { perfectDodgeFx("【瞬步閃過】", 8); return; }
@@ -146,113 +150,83 @@
           };
           return g;
         },
-        /* 二階段重劍「鎮岳劍獄」（v0.8.211 灰盒，使用者選 A）：插劍入地 → 兩側破土升起玄鐵劍牆（劍獄）→ 三輪：劍牆推近一格＋兩道劍氣波（黃，可招架／矮波可跳）
-           → 他拄劍喘息：劍柄閃藍 0.7 秒（預兆，安全、這時蓄力）→ 藍光大亮（0.8／0.6／0.45 秒，一輪比一輪短；要劈中兩次才破獄）：這時放開預蓄的蓄力斬劈中劍柄＝劍獄崩碎、他被震飛破防（架勢 +45、破綻 3.2 秒）。三輪都沒劈中＝劍牆合攏重傷。
-           教的是 v0.8.208 新蓄力斬：先蓄好、看到藍光再放開。劍牆、劍柄藍光都是程式畫的佔位（待生圖）。 */
+        /* 二階段重劍「千鈞鎖脈」（v0.8.231 灰盒，使用者選外部顧問構想三，取代鎮岳劍獄）：
+           ① 擲出腰間兩把輕劍插在左右兩側＝光壁劍陣（不能跳過），光壁慢慢往中間擠（半寬 w0→330）；
+           ② 他單手拖著重劍逼近（拖地火花），最多 2.6 秒；③ 變速三連：快（0.35）→慢（0.75）→極慢舉劍（1.5 秒）千鈞一擊。
+           解法：劍陣期間用【蓄力斬】劈中插地輕劍（離劍 130px 內）＝破陣（光壁消失、架勢 +20）；
+           第三刀完美招架硬頂＝千鈞被頂回（光壁同時碎、架勢 +40、踉蹌 3 秒），瞬步可閃，普通格擋會被震飛扣血。
+           三連結束時光壁還在＝光壁合攏（140）；三刀傷害 80／90／180（普通格擋第三刀 150）。劍陣進行中架勢最多 95%（damageBossPosture 看 Boss._ult.cage）。光壁、輕劍、火花是程式畫的佔位（待生圖）。 */
         g_s3b: (U) => {
-          const ev = [], G = Config.groundY, W = Config.worldWidth, fc = Boss.facing;
-          const fr = (k) => { Boss._ultFrame = k; }, kS = bossVis(Stages[Boss.stageId]).k; /* v0.8.216 生圖關鍵格 uc1～uc8：插地劍底固定在格內 x=600（錨點右 150） */
-          const g = { ev, dim: [[0, 0.8]], rest: [11.0, 1.4], restText: "〔劍獄力竭・拄劍喘息〕" };
-          const sx = Math.max(420, Math.min(W - 420, Boss.x + fc * 90)), w0 = Math.max(600, Math.min(900, Math.abs(Player.x - sx) + 160)), step = (w0 - 330) / 3;
-          U.cage = { sx, hw: w0, tgt: w0, on: false, win: false, winT: 0, winLen: 1, hits: 0, pre: 0, broken: false, bt: 0, rise: 0, crush: 0 };
-          const C = U.cage;
-          ev.push([0, () => { fr("20_slam_wind"); Sound.play("b3_charge", 0.9, 0.85); }]);
-          ev.push([0.8, () => { /* 插劍入地：劍獄升起 */
-            fr("uc1_plant"); C.on = true; C.pose = 1; Boss.x = Math.max(80, Math.min(W - 80, sx - fc * 150 * kS));
-            triggerShake(0, 0.9, 40, 0.5); addTrauma(0.6); hapticBuzz([60, 30, 90]); Sound.play("b3_plunge", 1.0, 0.7); Sound.play("b3_heavy", 0.8, 0.6);
-            if (fxReady("boss3bfx")) spawnFx("boss3bfx", 1, sx, groundFxY("boss3bfx", 1, 760), { anchor: "b", w: 760, h: 760, dur: 0.6 });
-            hintOnce("gu3b", "【鎮岳劍獄】劍氣先招架或跳；劍柄閃藍＝按住蓄力，藍光大亮＝放開劈中劍柄。三輪都劈中才破獄，漏一次就合攏！");
+          const ev = [], G = Config.groundY, W = Config.worldWidth;
+          const fr = (k) => { Boss._ultFrame = k; };
+          const g = { ev, dim: [[0, 0.7]], rest: [99, 1.5], restText: "〔收劍喘息〕" };
+          const cx = Math.max(500, Math.min(W - 500, (Boss.x + Player.x) / 2)), w0 = Math.max(560, Math.min(820, Math.abs(Boss.x - Player.x) / 2 + 300));
+          U.cage = { sx: cx, hw: w0, tgt: w0, on: false, broken: false, rise: 0, bt: 0, pil: [{ x: cx - w0, ok: true }, { x: cx + w0, ok: true }] };
+          const C = U.cage; U.ph = "throw"; U.follow = 0;
+          const shatter = (why) => { if (C.broken) return; C.broken = true; C.bt = 0.6; Sound.play("b2u_shatter", 0.9, 1.1); triggerShake(0, 0.5, 26, 0.3); spawnFloatingText(C.sx, G - 300, why, "#fde047", 1.3); };
+          ev.push([0, () => { fr("uc8_command"); Boss.facing = gSide(); Sound.play("b3_draw", 0.9, 1.0); }]);
+          ev.push([0.55, () => { /* 擲雙劍插地：光壁升起 */
+            C.on = true; Sound.play("b2_sword_fly", 0.9, 1.1); Sound.play("b3_plunge", 0.9, 1.2); triggerShake(0, 0.4, 18, 0.25);
+            hintOnce("gu3b2", "【千鈞鎖脈】蓄力斬劈斷插地輕劍＝破陣；三刀「快、慢、極慢」，最後一刀完美招架或瞬步");
           }]);
-          ev.push([1.15, () => { C.pose = 2; }]);
-          [1.4, 4.4, 7.4].forEach((cs, k) => { /* v0.8.212 每輪：劍氣兩道（招架或跳）→ 預兆 0.7 秒（劍柄閃藍、安全，這時按住蓄力）→ 藍光 1.0 秒（放開劈下）；右手一次只做一件事 */
-            ev.push([cs, () => { if (C.broken) return; C.tgt = w0 - step * (k + 1); Sound.play("b3_seal", 0.9, 0.8 + k * 0.08); triggerShake(0, 0.35, 16, 0.25); hapticBuzz(30); C.cmdT = 0.7; }]);
-            const wave = (at, side, low) => ev.push([at, () => { if (C.broken) return; if (fxReady("boss3leaf")) spawnFx("boss3leaf", 3, C.sx + side * (C.hw + 70), G - 150, { w: 340, h: 340, dur: 0.6, add: false });
-              guWave({ x: C.sx + side * (C.hw + 40), dir: -side, low, leaf: true, x0: C.sx + side * (C.hw + 70), kind: "parry", speed: 1000, life: 2.2, depth: 120, dmg: 64, post: 8, label: low ? "【劍獄・掃地劍】" : "【劍獄・橫飛劍】" }); Sound.play("b2_sword_fly", 0.8, 0.75); Sound.play("b3_spin", 0.5, 1.3); }]); /* v0.8.230 萬葉劍獄：劍牆化葉（boss3leaf 列 3）→ 竹葉刃之河（列 0）掃向中間；招架擋下＝河頭炸散（列 1） */
-            const s1 = k % 2 ? 1 : -1;
-            wave(cs, s1, false); wave(cs + 0.3, -s1, k !== 1); /* 劍氣速度 1000：最遲 cs+1.2 前到，預兆開始前一定躲完 */
-            ev.push([cs + 1.3, () => { if (C.broken) return; C.pre = 0.7; Sound.play("b3_seal", 0.7, 1.4); if (k === 0) spawnFloatingText(C.sx, G - 300, "劍柄閃藍：按住攻擊蓄力！", "#bfdbfe", 1.2); }]);
-            ev.push([cs + 2.0, () => { if (C.broken) return; C.pre = 0; C.win = true; C.winLen = [0.8, 0.6, 0.45][k]; C.winT = C.winLen; Sound.play("b2_sword_cast", 0.9, 1.3); if (k === 0) spawnFloatingText(C.sx, G - 300, "藍光大亮：放開！", "#93c5fd", 1.0); }]);
-          });
-          ev.push([9.85, () => { if (!C.broken && fxReady("boss3leaf")) { spawnFx("boss3leaf", 2, Player.x, Player.y - 110, { w: 560, h: 560, dur: 0.75, add: false, follow: () => ({ x: Player.x, y: Player.y - 110 }) }); Sound.play("b3_spin", 0.9, 0.9); } }]); /* v0.8.230 合攏前 0.55 秒：竹葉旋風球收縮到主角身上，最後一格爆開＝合攏傷害 */
-          ev.push([10.4, () => { /* 劍牆合攏 */
-            if (C.broken) return; C.tgt = 40; C.crush = 0.6; C.cmdT = 0.6; Sound.play("b3_heavy", 1.0, 0.55); triggerShake(0, 1, 44, 0.6); hapticBuzz([80, 30, 120]);
-            if (Player.state !== "execution") { if (Player.invulnTimer > 0) perfectDodgeFx("【瞬步閃過合攏】", 6); else if (!ultHardBlock(220, gSide(), "【硬接劍獄】")) takeDamage(bossDmg(220), gSide(), "【劍獄合攏】"); }
-          }]);
-          ev.push([10.9, () => { if (!C.broken) { C.on = false; C.pose = 0; fr("uc4_lean"); } }]);
-          const breakCage = () => {
-            C.broken = true; C.win = false; C.bt = 0.7; GU.hz.length = 0; Game.ultLock = false;
-            g.rest = [U.t + 0.05, 3.2]; g.restText = "〔劍獄崩碎・莫寒川震飛！〕"; C.pose = 0; fr("uc6_blown"); C.kneelAt = U.t + 0.45;
-            Boss.x = Math.max(80, Math.min(W - 80, Boss.x + (Boss.x >= C.sx ? 1 : -1) * 140));
-            damageBossPosture(45, "【破獄】架勢 +45%"); triggerHitstopMs(120); addTrauma(0.7); Game.slowT = 0.4; Game.slowScale = 0.35; Game.flashWhiteOverlay = 0.8;
-            Sound.play("b2u_shatter", 1.0, 0.75); Sound.play("mikiri", 1.0, 0.8); hapticBuzz([60, 30, 120]);
-            if (fxReady("boss3bfx")) spawnFx("boss3bfx", 3, C.sx, groundFxY("boss3bfx", 3, 620), { anchor: "b", w: 620, h: 620, dur: 0.6 });
-            if (fxReady("boss3leaf")) [-1, 1].forEach(sd => { spawnFx("boss3leaf", 3, C.sx + sd * (C.hw + 70), G - 160, { w: 380, h: 380, dur: 0.7, add: false }); spawnFx("boss3leaf", 1, C.sx + sd * (C.hw + 40), G - 200, { w: 480, h: 480, dur: 0.8, add: false }); }); /* v0.8.230 破獄：劍牆化葉四散 */
+          ev.push([1.0, () => { U.ph = "drag"; U.dragT = 0; }]);
+          const strike = (delay, dmg, post, wind, hit, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.25, delay * 0.4), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, label: "【千鈞鎖脈】", onFire: () => { fr(hit); Boss._kickMs = performance.now(); Sound.play("b3_heavy", 0.9, 1.0); triggerShake(Boss.facing, 0.3, 14, 0.15); } }, extra || {}));
+          const chain = () => {
+            U.ph = "chain"; U.follow = 160; const t0 = U.t;
+            fr("hs1_wind"); strike(0.35, 80, 8, "hs1_wind", "hs3_hit");
+            ev.push([t0 + 0.75, () => { fr("26_charge_wind"); Sound.play("b3_charge", 0.7, 1.1); strike(0.75, 90, 10, "26_charge_wind", "27_charge_hit"); }]);
+            ev.push([t0 + 1.85, () => { /* 千鈞一擊：舉劍過頭停 1.5 秒 */
+              fr("89_ub_raise"); U.follow = 150; Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 260, "千鈞一擊！", "#fca5a5", 1.0);
+              ev.push([U.t + 0.4, () => fr("90_ub_peak")]);
+              strike(1.5, 180, 40, "90_ub_peak", "91_ub_slam", { w: 300, blockDmg: 150, label: "【千鈞一擊】",
+                onParry: () => { U.won = true; fr("22_slam_rec"); shatter("〔千鈞被頂回！劍陣崩碎〕"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.35; Game.slowScale = 0.35; Sound.play("mikiri", 1.0, 0.7);
+                  g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
+              ev.push([U.t + 1.5 + 0.15, () => { if (U.won) return; fr("92_ub_after"); U.follow = 0;
+                if (!C.broken) { C.tgt = 40; ev.push([U.t + 0.45, () => { if (C.broken) return; Sound.play("b3_heavy", 1.0, 0.55); triggerShake(0, 1, 40, 0.5); hapticBuzz([80, 30, 120]);
+                  if (Player.state !== "execution") { if (Player.invulnTimer > 0) perfectDodgeFx("【瞬步閃過合攏】", 6); else if (!ultHardBlock(140, gSide(), "【硬接光壁】")) takeDamage(bossDmg(140), gSide(), "【光壁合攏】"); }
+                  C.broken = true; C.bt = 0.6; }]); ev.sort((p, q) => p[0] - q[0]); }
+                g.rest = [U.t + (C.broken ? 0.3 : 0.75), 1.5]; }]);
+              ev.sort((p, q) => p[0] - q[0]);
+            }]);
+            ev.sort((p, q) => p[0] - q[0]);
           };
-          U.flyOff = [];
           g.tick = (dt) => {
-            for (const h of GU.hz) if (h.leaf && h.cut && !h.bounced) { /* 被招架擋下：葉刃之河的河頭炸散 */
-              h.bounced = true; const y = h.low ? G - 40 : G - 120;
-              if (fxReady("boss3leaf")) spawnFx("boss3leaf", 1, h.x, y, { w: 420, h: 420, dur: 0.55, add: false });
-              if (fxReady("spark")) spawnFx("spark", 1, h.x, y, { w: 260, dur: 0.3 });
-              Sound.play("b3_heavy", 0.7, 1.4); Sound.play("b2_shard_hit", 0.8, 1.2); triggerShake(h.dir, 0.25, 12, 0.15);
-            }
-            for (let i = U.flyOff.length - 1; i >= 0; i--) { const o = U.flyOff[i]; o.t += dt; o.x += o.vx * dt; o.y += o.vy * dt; o.vy += 1900 * dt; o.rot += o.vr * dt; if (o.t > 1.6) U.flyOff.splice(i, 1); }
             if (C.bt > 0) C.bt -= dt;
-            C.rise = Math.min(1, C.rise + (C.on ? dt * 4 : -dt * 3));
-            C.hw += (C.tgt - C.hw) * Math.min(1, dt * 6);
-            if (C.pre > 0) C.pre -= dt;
-            if (C.win) { C.winT -= dt; if (C.winT <= 0) C.win = false; }
-            C.cmdT = Math.max(0, (C.cmdT || 0) - dt); C.flT = Math.max(0, (C.flT || 0) - dt);
-            if (C.kneelAt && U.t >= C.kneelAt) { C.kneelAt = 0; fr("uc7_kneel"); }
-            if (C.pose === 2) fr(C.flT > 0 ? "uc5_flinch" : (C.pre > 0 || C.win) ? "uc4_lean" : C.cmdT > 0 ? "uc8_command" : (Math.floor(U.t / 0.45) % 2 ? "uc3_holdB" : "uc2_holdA")); /* 扶劍兩格交替；預兆／藍光＝拄劍喘息；推牆＝號令；龜裂＝退縮 */
-            if (C.on && !C.broken) { /* 主角關在劍獄內 */
-              const L = Math.max(40, C.sx - C.hw + 40), R = Math.min(W - 40, C.sx + C.hw - 40);
+            C.rise = Math.min(1, C.rise + (C.on && !C.broken ? dt * 4 : -dt * 3));
+            if (C.on && !C.broken) { C.tgt = Math.max(330, C.tgt - dt * 38); }
+            C.hw += (C.tgt - C.hw) * Math.min(1, dt * 5); C.pil[0].x = C.sx - C.hw; C.pil[1].x = C.sx + C.hw;
+            if (U.ph === "drag") { /* 拖劍逼近：hs4_rec（劍尖拖地）＋地面火花 */
+              U.dragT += dt; const s = gSide(); Boss.facing = s; fr(Math.floor(U.t / 0.22) % 2 ? "hs4_rec" : "hs2_mid");
+              if (Math.abs(Player.x - Boss.x) > 200) Boss.x += s * 150 * dt;
+              U.spT = (U.spT || 0) - dt; if (U.spT <= 0) { U.spT = 0.09; if (fxReady("spark")) spawnFx("spark", 1, Boss.x + s * 150 * bossVis(Stages[Boss.stageId]).k, G - 8, { w: 90, dur: 0.25 }); }
+              U.snd = (U.snd || 0) - dt; if (U.snd <= 0) { U.snd = 0.35; Sound.play("block", 0.25, 0.6 + Math.random() * 0.2); }
+              if (Math.abs(Player.x - Boss.x) <= 230 || U.dragT >= 2.6) chain();
+            }
+            if (U.follow) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 8); }
+            if (C.on && !C.broken) {
+              const L = Math.max(40, C.sx - C.hw + 50), R = Math.min(W - 40, C.sx + C.hw - 50);
               if (Player.x < L) { Player.x = L; if (Player.vx < 0) Player.vx = 0; } else if (Player.x > R) { Player.x = R; if (Player.vx > 0) Player.vx = 0; }
+              Boss.x = Math.max(L, Math.min(R, Boss.x));
               const slashing = Player.state === "attack" && Player.isChargedAttack && Player.stateTimer > 0.1;
-              if (slashing && !U._cs && Math.abs(Player.x - C.sx) < 250) {
+              if (slashing && !U._cs) {
                 U._cs = true;
-                if (C.win) { C.hits++; C.win = false;
-                  if (C.hits >= 3) breakCage(); /* v0.8.219 三輪都要劈中（不能漏）才破獄 */
-                  else { /* v0.8.213 第一次劈中只是龜裂：要兩次才破獄 */
-                    C.flT = 0.5; triggerHitstopMs(90); addTrauma(0.4); hapticBuzz([40, 20, 60]); Sound.play("b3_heavy", 0.9, 1.3); Sound.play("parry", 0.9, 0.8);
-                    spawnFloatingText(C.sx, G - 320, C.hits === 1 ? "劍身龜裂！還差兩劍！" : "裂痕擴大！最後一劍！", "#fde047", 1.3); damageBossPosture(10, null);
-                    if (fxReady("spark")) spawnFx("spark", 2, C.sx, G - 300 * kS, { w: 360, dur: 0.4 });
-                  } }
-                else { spawnFloatingText(C.sx, G - 260, "太早了（等藍光大亮）", "#94a3b8", 0.9); Sound.play("block", 0.8, 0.7); triggerShake(0, 0.2, 10, 0.12); }
+                const p = C.pil.find(q => q.ok && Math.abs(Player.x - q.x) < 130);
+                if (p) { p.ok = false; shatter("〔劍斷陣破！〕"); damageBossPosture(10, "【破陣】架勢 +"); triggerHitstopMs(100); hapticBuzz([40, 20, 60]); if (fxReady("spark")) spawnFx("spark", 2, p.x, G - 120, { w: 360, dur: 0.4 }); }
               }
               if (!slashing) U._cs = false;
             }
           };
-          g.draw = () => { /* v0.8.216 生圖：劍牆 boss3b/wall_1～8（1～4 升起、5～8 崩碎）、劍柄光 boss3cage 列 0 閃藍／列 1 大亮；插地本劍＝他自己的重劍（關鍵格內） */
-                        if (fxReady("boss3leaf")) { /* v0.8.230 葉刃之河：河頭在 h.x（判定前緣），河身拖回劍牆；格子第 1 列第 2～4 格循環（第 1 格是剛成形的稀疏版，前 0.15 秒用） */
-              const LI = fxSheet("boss3leaf").img, tnow = performance.now();
-              for (const h of GU.hz) if (h.leaf && !h.cut && !h.done) {
-                const len = Math.max(260, Math.min(820, Math.abs(h.x - h.x0) + 160)), hh = h.low ? len * 0.42 : len * 0.62, y = h.low ? G - hh * 0.12 : G - 120 + hh * 0.05;
-                const col = h.t < 0.15 ? 0 : 1 + Math.floor(tnow / 80) % 3;
-                ctx.save(); ctx.translate(h.x + h.dir * len * 0.03, y); ctx.scale(h.dir, 1); ctx.drawImage(LI, col * 256, 0, 256, 256, -len, -hh * 0.62, len, hh); ctx.restore();
-              }
-            }
+          g.draw = () => { /* 佔位：插地輕劍（淡藍劍身）＋光壁（淡青光幕） */
             if (C.rise <= 0 && C.bt <= 0) return;
-            const now = performance.now(), SP = getBossSprite("boss3b"), WS = 1.45;
-            const wi = C.broken ? 4 + Math.min(3, Math.floor((0.7 - Math.max(0, C.bt)) / 0.7 * 4)) : (C.rise >= 1 ? 3 : Math.min(3, Math.floor(C.rise * 4)));
-            const im = SP && SP.imgs["wall_" + (wi + 1)];
+            const now = performance.now(), a = C.broken ? Math.max(0, C.bt / 0.6) : C.rise;
             ctx.save();
-            [-1, 1].forEach(sd => {
-              const x = C.sx + sd * (C.hw + 70);
-              if (im && im.complete && im.naturalWidth) { ctx.save(); ctx.translate(x, G - 334 * WS + 4); if (sd > 0) ctx.scale(-1, 1); ctx.drawImage(im, -178 * WS, 0, 356 * WS, 352 * WS); ctx.restore(); }
-              else { ctx.fillStyle = "#1e293b"; ctx.fillRect(x - 40, G - 500 * C.rise, 80, 500 * C.rise); }
+            C.pil.forEach((p, i) => {
+              const sd = i ? 1 : -1, x = p.x, top = G - 560 * a;
+              const gr = ctx.createLinearGradient(x - sd * 110, 0, x + sd * 14, 0); gr.addColorStop(0, "rgba(56, 189, 248, 0)"); gr.addColorStop(1, `rgba(14, 116, 144, ${0.6 * a})`);
+              ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = gr; ctx.fillRect(Math.min(x - sd * 110, x + sd * 14), top, 124, G - top);
+              ctx.strokeStyle = `rgba(224, 242, 254, ${0.9 * a * (0.7 + 0.3 * Math.sin(now / 90 + i))})`; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x, G); ctx.lineTo(x, top); ctx.stroke();
+              if (p.ok || C.bt > 0) { ctx.globalAlpha = a; ctx.fillStyle = "#cbd5e1"; ctx.fillRect(x - 5, G - 150, 10, 150); ctx.fillStyle = "#7c2d12"; ctx.fillRect(x - 3, G - 190, 6, 40); ctx.fillStyle = "#94a3b8"; ctx.fillRect(x - 16, G - 154, 32, 6); ctx.globalAlpha = 1; }
             });
-            if (!C.broken && C.on) { /* 劍柄光：劍柄頂在格內 y≈185 */
-              const hx = C.sx, hy = Boss.y + (185 - 560) * kS;
-              if (C.hits > 0) { ctx.strokeStyle = "rgba(254, 240, 138, 0.9)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(hx - 4, hy + 60 * kS); ctx.lineTo(hx + 7, hy + 140 * kS); ctx.lineTo(hx - 5, hy + 230 * kS); ctx.lineTo(hx + 5, hy + 320 * kS); ctx.stroke(); } /* 龜裂紋（程式畫，細線） */
-              ctx.globalCompositeOperation = "lighter";
-              if (fxReady("boss3cage")) {
-                const I = fxSheet("boss3cage").img;
-                if (C.pre > 0) { const z = 170; ctx.drawImage(I, (Math.floor(now / 90) % 4) * 256, 0, 256, 256, hx - z / 2, hy - z / 2, z, z); }
-                if (C.win) { const z = 300 + 40 * Math.sin(now / 60); ctx.drawImage(I, (Math.floor(now / 70) % 4) * 256, 256, 256, 256, hx - z / 2, hy - z / 2, z, z);
-                  ctx.strokeStyle = "rgba(191, 219, 254, 0.9)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(hx, hy, 30 + 110 * (C.winT / (C.winLen || 1)), 0, Math.PI * 2); ctx.stroke(); } /* 收縮圈＝剩餘時間 */
-              }
-            }
             ctx.restore();
           };
           return g;

@@ -62,6 +62,7 @@
         Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; Game.ultBind = false; ultClashUI(false);
         if (Boss._ultAir || (U && U.lift) || Boss.y < Config.groundY) { Boss.y = Config.groundY; } /* v0.8.176 接劍等空中段被中斷也落回地面 */ Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
         if (U && U.fc0) Boss.facing = Player.x >= Boss.x ? 1 : -1; /* 龍捲旋轉中被中斷：面向恢復 */
+        Boss._sigNext = performance.now() + 15000; /* v0.8.231 被破防中斷也要算冷卻（原本中斷時 return 太早，破防一結束又立刻放同一招） */
         if (cancel) { Ult.waves.length = 0; Ult.b3.length = 0; if (Game.fxList) Game.fxList = Game.fxList.filter(f => f.sheet !== "boss2bind"); return; } /* 中斷時劍陣一起清掉 */
         Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
         if (U && U.m) Boss.ultCd = 18;
