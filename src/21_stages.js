@@ -166,7 +166,7 @@
         S3.stances.A.pool.push(["u_cross", 4]); S3.stances.B.poolP2.push(["u_tornado", 5]);
         S3.hpTriggers = [{ move: "u_cross", at: 0.5, phase: 1, stance: "A" }, { move: "u_tornado", at: 0.5, phase: 2, stance: "B" }];
         S3.sigMoves = [{ move: "u_cross", phase: 1, stance: "A" }, { move: "u_tornado", phase: 2, stance: "B" }];
-        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3btorn", "boss3bsolid", "cue", "land"); S3.fxSheets.push("boss3shadow", "boss3cage"); /* v0.8.216 新大招特效 */
+        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3btorn", "boss3bsolid", "cue", "land"); S3.fxSheets.push("boss3shadow", "boss3cage", "boss3leaf"); /* v0.8.216 新大招特效 */
         S3.stances.A.extras = S3.stances.A.extras.concat(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4", "us5_crouch", "us6_back", "us7_dive", "us8_land"]);
         S3.stances.B.extras = S3.stances.B.extras.concat(["obj_fly", "hs1_wind", "hs2_mid", "hs3_hit", "hs4_rec", "uc1_plant", "uc2_holdA", "uc3_holdB", "uc4_lean", "uc5_flinch", "uc6_blown", "uc7_kneel", "uc8_command", "wall_1", "wall_2", "wall_3", "wall_4", "wall_5", "wall_6", "wall_7", "wall_8"]); /* v0.8.171 大招 */
         S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
