@@ -16,7 +16,7 @@
 
 ## 每次改版流程
 改 `src/` → `HANDOFF.md` 標題版本號 +1、第〇節現況同步，並在 `docs/CHANGELOG.md`「最新版本」最上面加一段（寫清楚做法、數值、檔名）→ `python3 tools/build.py` → `python3 tools/build.py --check` → `node tools/check.js index.html` → 動到戰鬥／流程時 `NODE_PATH=$(npm root -g) node tools/smoke.js index.html 20 <關卡>` → commit（訊息尾端加系統提醒給的 Co-Authored-By 與 Claude-Session 行）→ `git push origin HEAD:main` **並** push 到目前工作分支。推送後約 1～2 分鐘網站更新。
-- `ASSET_VER` 自 v0.8.135 起由 `build.py` 依 assets/ 內容雜湊自動填入（網址加 `?v=<雜湊>`），**不用手動改**；新增 assets 後重跑 build 即可。
+- `ASSET_VER` 自 v0.8.135 起由 `build.py` 依 assets/ 內容雜湊自動填入，**不用手動改**；v0.8.222 起每個素材檔各自版本（`@ASSET_FILES@`＝路徑:大小:雜湊，`assetUrl(路徑)`），新增或改 assets 後重跑 build 即可。開頭載入畫面會把全部 assets 下載進快取（`bootPreload`），改一張圖玩家只重抓那一張。
 - Stop hook 會檢查未追蹤檔案：產生的檔案要嘛 commit，要嘛放 scratchpad／`/tmp`；`__audit_tmp.html`、`dbg_tmp.html` 已在 .gitignore。
 
 ## 工作偏好（使用者定案，每個 session 都遵守）

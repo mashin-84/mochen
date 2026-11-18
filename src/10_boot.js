@@ -12,6 +12,10 @@
        * - 同一網址只下載一次。IMGQ.pending() 給進場閘門用（v0.8.156 進戰場前等圖載完）。 */
       const ASSET_IMGS = new Set("@ASSET_LIST@".split(",")); /* v0.8.156 build.py 填入 assets 內全部 webp（"資料夾/檔名"） */
       const ASSET_DIRS = new Set([...ASSET_IMGS].map(s => s.split("/")[0]));
+      /* v0.8.222 每個素材檔各自的版本（內容雜湊）：網址 assets/<路徑>?v=<該檔雜湊>，改一張圖只有那張網址會變；AFILES＝[路徑, 位元組] 給開頭預載算進度 */
+      const AH = {}, AFILES = [];
+      "@ASSET_FILES@".split(",").forEach(s => { const a = s.split(":"); if (a.length === 3) { AH[a[0]] = a[2]; AFILES.push([a[0], +a[1]]); } });
+      function assetUrl(rel) { return "assets/" + rel + "?v=" + (AH[rel] || ASSET_VER); }
       const IMGQ_MAX = 12;
       const IMGQ = { q: [], active: 0, urls: {}, done: 0, total: 0, failed: 0, missing: [],
         pending() { let n = 0; for (const k in this.urls) { const u = this.urls[k]; if (u.st === 0) n++; } return n; },
@@ -49,7 +53,7 @@
           set(v) {
             if (typeof v !== "string" || v.indexOf("assets/") !== 0) { this.__want = null; d.set.call(this, v); return; }
             v = v.replace(/[?&]r=\d+/, ""); /* 舊的各處重試網址一律收回同一筆 */
-            if (v.indexOf("?") < 0) v += "?v=" + ASSET_VER;
+            if (v.indexOf("?") < 0) v += "?v=" + (AH[v.slice(7)] || ASSET_VER); /* v0.8.222 每檔各自版本 */
             this.__want = v;
             let u = IMGQ.urls[v];
             if (!u) {

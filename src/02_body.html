@@ -3,14 +3,12 @@
   <!-- v0.8.114 載入畫面：主要圖片載完才揭開，避免重新整理時先閃出灰盒介面／方塊人／師妹缺圖 -->
   <div id="boot-loading" style="position:fixed;inset:0;z-index:99999;background:#0b1220;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#cbd5e1;font-family:'Noto Serif TC','Songti TC','PMingLiU',serif;transition:opacity .45s ease-out;">
     <div style="font-size:24px;letter-spacing:.5em;color:#fde68a;text-indent:.5em;">墨　塵　傳</div>
-    <div style="margin-top:16px;font-size:13px;letter-spacing:.3em;opacity:.7;">載入中…</div>
-    <div style="margin-top:16px;width:180px;height:3px;background:#1e293b;border-radius:2px;overflow:hidden;"><div id="boot-bar" style="height:100%;width:6%;background:#7dd3fc;transition:width .3s;"></div></div>
-    <button id="boot-skip" type="button" style="display:none;margin-top:18px;padding:8px 22px;border-radius:999px;border:1px solid #475569;background:rgba(30,41,59,.9);color:#e2e8f0;font:inherit;font-size:13px;letter-spacing:.2em;cursor:pointer;">網路較慢・先進入</button>
-    <script>/* v0.8.135 保險計時器：從網頁開始就跑，不等 window.onload（網路慢時 onload 本身會很晚）。3.5 秒出現「先進入」鈕，9 秒強制揭開 */
-      (function () { var el = document.getElementById("boot-loading"), sk = document.getElementById("boot-skip");
-        function rev() { if (!el || !el.parentNode) return; el.style.opacity = "0"; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 500); }
-        if (sk) sk.addEventListener("click", rev);
-        setTimeout(function () { if (sk && el && el.parentNode) sk.style.display = "block"; }, 3500); setTimeout(rev, 9000); })();</script>
+    <!-- v0.8.222 開頭一次下載全部素材（存進手機），之後進任何關卡都不用再下載；顯示百分比與說明 -->
+    <div id="boot-pct" style="margin-top:18px;font-size:30px;font-weight:700;color:#e0f2fe;letter-spacing:.08em;">0%</div>
+    <div style="margin-top:10px;width:min(62vw,320px);height:4px;background:#1e293b;border-radius:2px;overflow:hidden;"><div id="boot-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#7dd3fc,#fde68a);transition:width .25s;"></div></div>
+    <div id="boot-msg" style="margin-top:12px;font-size:13px;letter-spacing:.12em;opacity:.85;">準備中…</div>
+    <div id="boot-sub" style="margin-top:6px;font-size:12px;letter-spacing:.06em;opacity:.55;"></div>
+    <div id="boot-tip" style="margin-top:22px;max-width:min(80vw,520px);text-align:center;font-size:12.5px;line-height:1.7;color:#94a3b8;letter-spacing:.06em;"></div>
   </div>
   <div id="game-container">
     <canvas id="battle-canvas"></canvas>

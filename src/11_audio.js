@@ -65,7 +65,7 @@
           const list = { s_hit: "sfx_hit", s_hurt: "sfx_hurt", s_skill: "sfx_skill", s_ult: "sfx_ult", s_thunder: "sfx_thunder" };
           Object.keys(list).forEach((k) => {
             try {
-              fetch(`assets/sfx/${list[k]}.mp3?v=${ASSET_VER}`)
+              fetch(assetUrl(`sfx/${list[k]}.mp3`))
                 .then((r) => r.arrayBuffer())
                 .then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no)))
                 .then((buf) => { this.buffers[k] = buf; })
@@ -158,13 +158,13 @@
             const n = dict[k] || 1;
             for (let i = 1; i <= n; i++) {
               const f = i === 1 ? `${pre}${k}` : `${pre}${k}_${i}`;
-              try { fetch(`assets/sfx/${f}.mp3?v=${ASSET_VER}`).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { (this.variants[k] = this.variants[k] || []).push(buf); this.buffers[k] = this.variants[k][0]; this.ext[k] = true; }).catch(() => { }); } catch (e) { }
+              try { fetch(assetUrl(`sfx/${f}.mp3`)).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { (this.variants[k] = this.variants[k] || []).push(buf); this.buffers[k] = this.variants[k][0]; this.ext[k] = true; }).catch(() => { }); } catch (e) { }
             }
           }));
         },
         bakeWolf() {
           this.extSfx.forEach((k) => {
-            try { fetch(`assets/sfx/${k}.mp3?v=${ASSET_VER}`).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { this.buffers[k] = buf; }).catch(() => { }); } catch (e) { }
+            try { fetch(assetUrl(`sfx/${k}.mp3`)).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { this.buffers[k] = buf; }).catch(() => { }); } catch (e) { }
           });
         },
 
@@ -275,7 +275,7 @@
         play(name) {
           if (this.name === name) { const t = this.tracks.find((x) => x.name === name && x.target > 0); if (t) return; }
           this.fadeOut();
-          const el = new Audio(`assets/music/${name}.webm?v=${ASSET_VER}`);
+          const el = new Audio(assetUrl(`music/${name}.webm`));
           el.loop = true; el.preload = "auto"; el.volume = 0;
           const t = { name, el, cur: 0, target: 1 };
           this.tracks.push(t); this.name = name;

@@ -26,6 +26,16 @@ def asset_list(): # v0.8.156 assets 內所有 webp 圖（"資料夾/檔名"，�
             if f.endswith(".webp"): r.append(os.path.splitext(os.path.relpath(os.path.join(dp, f), os.path.join(root, "assets")))[0].replace(os.sep, "/"))
     return ",".join(r)
 out = out.replace("@ASSET_LIST@", asset_list())
+def asset_files(): # v0.8.222 assets 內全部檔案「相對路徑:大小:內容雜湊6碼」：開頭預載算進度＋每檔各自的 ?v=（改一張圖只重抓那一張）
+    r = []
+    for dp, dn, fn in sorted(os.walk(os.path.join(root, "assets"))):
+        dn.sort()
+        for f in sorted(fn):
+            if f.startswith("."): continue
+            p = os.path.join(dp, f); rel = os.path.relpath(p, os.path.join(root, "assets")).replace(os.sep, "/")
+            r.append("%s:%d:%s" % (rel, os.path.getsize(p), hashlib.sha1(open(p, "rb").read()).hexdigest()[:6]))
+    return ",".join(r)
+out = out.replace("@ASSET_FILES@", asset_files())
 target = os.path.join(root, "index.html")
 if "--check" in sys.argv:
     cur = open(target, encoding="utf-8", newline="").read()

@@ -204,20 +204,53 @@
         }
       }
 
-      /* v0.8.114 載入畫面：等主角 16 格、營地用圖（師妹四姿勢、山門、營火）與當下所有請求中的背景圖載完才揭開；最久等 9 秒 */
+      /* v0.8.222 開頭預載：把 assets 全部檔案（圖、音效、配樂）下載存進 Cache（與 sw.js 共用 mochen-assets-v1），之後進任何關卡只從手機讀；
+       * 第二次開啟只比對、缺的才下載（每檔各自版本，改一張圖只重抓那張）；同時清掉舊版本的快取。最後再等主角與營地圖解碼完才揭開。 */
       const BOOT_KEYS = ["hub_shimei_1", "hub_shimei_2", "hub_shimei_3", "hub_shimei_4", "hub_gate", "hub_gate_front", "hub_fire_base"];
-      function bootGate() {
-        const el = document.getElementById("boot-loading"), bar = document.getElementById("boot-bar"), t0 = performance.now();
-        if (!el) return;
-        const reveal = () => { el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); }; /* 「先進入」鈕與 9 秒保險在 02_body 的內嵌計時器 */
-        const tick = () => {
-          const okK = BOOT_KEYS.filter(k => BG_ART[k] && (BG_ART[k].ok || BG_ART[k].fail)).length;
-          const pend = Object.values(BG_ART).filter(a => a.img && a.img.src && !a.ok && !a.fail).length; /* 預設的 camp／s1 空殼沒有 src，不算 */
-          if (bar) bar.style.width = Math.min(100, Math.round(100 * (Math.min(MC_READY, 16) + okK) / (16 + BOOT_KEYS.length))) + "%";
-          if ((MC_READY >= 16 && okK === BOOT_KEYS.length && pend === 0) || performance.now() - t0 > 7000) { reveal(); return; }
-          setTimeout(tick, 100);
+      const BOOT_TIPS = ["完美招架：在光圈縮到最小的瞬間按【招架】，架勢條滿了就能處決。", "紅圈【危】：突刺可以看破，橫掃要跳，其他用瞬步閃開。", "淡藍盾圈＝霸體重招：看到就按住攻擊蓄力，等他出手前放開。", "按住攻擊蓄滿（劍發金光）再放開＝青雲蓄力斬。", "架勢見底時，防守類動作（完美招架、踏劍看破）才能補滿最後一段。", "齒輪選單可以調整整體音量；開著選單時遊戲會暫停。"];
+      async function bootPreload(onProg) {
+        const want = new Map(); let total = 0; AFILES.forEach(([rel, sz]) => { want.set(new URL(assetUrl(rel), location.href).href, sz); total += sz; });
+        let done = 0, fail = 0, cache = null;
+        try { if (window.caches) cache = await caches.open("mochen-assets-v1"); } catch (e) { cache = null; }
+        const todo = [];
+        if (cache) {
+          let have = new Set();
+          try { const ks = await cache.keys(); ks.forEach(r => { if (want.has(r.url)) have.add(r.url); else if (r.url.indexOf("/assets/") >= 0) cache.delete(r); }); } catch (e) { have = new Set(); }
+          want.forEach((sz, u) => { if (have.has(u)) done += sz; else todo.push([u, sz]); });
+        } else want.forEach((sz, u) => todo.push([u, sz]));
+        onProg(done, total, todo.length, fail);
+        let i = 0;
+        const one = async ([u, sz]) => {
+          for (let tr = 0; tr < 3; tr++) {
+            try { const res = await fetch(u); if (!res.ok) throw 0; if (cache) await cache.put(u, res); else await res.arrayBuffer(); done += sz; onProg(done, total, todo.length - i, fail); return; }
+            catch (e) { await new Promise(r => setTimeout(r, 500 * (tr + 1))); }
+          }
+          fail++; done += sz; onProg(done, total, todo.length - i, fail);
         };
-        tick();
+        const worker = async () => { while (i < todo.length) { const it = todo[i++]; await one(it); } };
+        await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
+        return { total, fail, fetched: todo.length };
+      }
+      function bootGate() {
+        const el = document.getElementById("boot-loading"); if (!el) return;
+        const bar = document.getElementById("boot-bar"), pct = document.getElementById("boot-pct"), msg = document.getElementById("boot-msg"), sub = document.getElementById("boot-sub"), tip = document.getElementById("boot-tip");
+        let ti = Math.floor(Math.random() * BOOT_TIPS.length); const nextTip = () => { if (tip) tip.textContent = "提示：" + BOOT_TIPS[ti++ % BOOT_TIPS.length]; }; nextTip(); const tipT = setInterval(nextTip, 3200);
+        const MB = (b) => (b / 1048576).toFixed(1);
+        const show = (p, m, s2) => { const v = Math.max(0, Math.min(100, Math.floor(p))); if (pct) pct.textContent = v + "%"; if (bar) bar.style.width = v + "%"; if (msg && m) msg.textContent = m; if (sub) sub.textContent = s2 || ""; };
+        const reveal = () => { clearInterval(tipT); el.style.opacity = "0"; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 500); };
+        bootPreload((d, t, left, f) => show(95 * d / t, left > 0 ? "下載遊戲素材（只有第一次或更新時需要）" : "檢查素材完成", MB(d) + " / " + MB(t) + " MB" + (f ? "　（" + f + " 個檔案失敗，遊戲中會再試）" : "")))
+          .then(() => {
+            const t0 = performance.now();
+            const tick = () => { /* 最後 5%：主角動作圖與營地圖解碼 */
+              const okK = BOOT_KEYS.filter(k => BG_ART[k] && (BG_ART[k].ok || BG_ART[k].fail)).length;
+              const k = (Math.min(MC_READY, 16) + okK) / (16 + BOOT_KEYS.length);
+              show(95 + 5 * k, "整理畫面中…", "");
+              if ((MC_READY >= 16 && okK === BOOT_KEYS.length) || performance.now() - t0 > 8000) { show(100, "完成", ""); setTimeout(reveal, 200); return; }
+              setTimeout(tick, 100);
+            };
+            tick();
+          })
+          .catch(() => reveal());
       }
       window.onload = function () {
         BOOT_KEYS.forEach(getBgArt); fxSheet("campfire"); fxSheet("xtz"); fxSheet("xtz_star"); fxSheet("xtz_shield"); fxSheet("heal_fx"); fxSheet("peril_aura"); /* 玄天珠圖要在營地與第一場就能用 */ /* 師妹各姿勢一開始就載好（原本到那個姿勢才載，圖沒到就整個人消失） */
