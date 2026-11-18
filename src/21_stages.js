@@ -139,12 +139,12 @@
         const F = (w, a, r) => ({ windup: w, active: a, recover: r });
         const S3 = Stages[3];
         M.slash1.frames = F("20_hs_wind", "21_hs_hit", "22_hs_rec");
-        M.exclusive_combo.frames = F("23_x_wind", ["25_x_hit", "21_hs_hit", "25_x_hit"], "22_hs_rec");
+        M.exclusive_combo.frames = F("23_x_wind", ["us1_strike1", "us2_strike2", "us3_strike3"], "22_hs_rec"); /* v0.8.224 三刀各一格（橫斬／上挑／下斬，借寒川影殺關鍵格） */
         M.exclusive_feint.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
         M.slash2.frames = F("26_spin_wind", "27_spin_hit", "28_spin_rec");
         M.slash1.windup = 0.36; M.slash2.windup = 0.36; M.thrust_peril.windup = 0.6; /* v0.8.80 依戰鬥規範：開場招 ≥0.35、危招 ≥0.6（原 0.28／0.32／0.58） */
         M.dash_rush.frames = F("29_dash_wind", "30_dash_hit", "31_dash_rec");
-        M.thrust_peril.frames = F("29_dash_wind", "30_dash_hit", "31_dash_rec");
+        M.thrust_peril.frames = F("us5_crouch", "us6_back", "31_dash_rec"); /* v0.8.224 突刺【危】不再和衝刺共用格：蹲身蓄勢→長距離突刺（借寒川影殺 us5／us6） */
         M.sweep_peril.frames = F("32_low_wind", "33_low_hit", "34_low_rec");
         M.grab_peril.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
         M.heavy_slam.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
