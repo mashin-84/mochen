@@ -1,6 +1,6 @@
       const MC_SMEAR_ON = { "21_s1b": "20_s1a", "24_s2b": "23_s2a", "27_t_b": "26_t_a", "39_hv_b": "38_hv_a", "34_dash_b": "33_dash_a" }; /* 換到這些「出手格」時，用前一格留殘影 */
       const MC_XF = { img: null, prev: null, t: 0, f: 1 };
-      /* v0.8.214 蓄力斬視覺（使用者：「根本不知道我在蓄力」）。⚠ 程式畫的佔位，待換生圖 assets/fx/mc_charge.webp（提示詞 prompts/mc/1_mc_charge_fx.txt）：
+      /* v0.8.214 蓄力斬視覺（使用者：「根本不知道我在蓄力」）。v0.8.215 已換生圖 assets/fx/mc_charge.webp（提示詞 prompts/mc/1_mc_charge_fx.txt）；圖沒載到時退回下面的程式畫備案：
        * 蓄力中＝身周淡藍光暈、光點從四周往劍身聚集、劍身由淡藍漸亮；蓄滿＝轉金色、劍上星芒脈動（放開就出招）。劍身位置取自 38_hv_a 格（雙手高舉、劍尖朝後）。 */
       const CHG = { motes: [], last: 0 };
       function chargeInfo() {
@@ -9,9 +9,16 @@
         const hx = Player.x + f * (480 - 450) * k, hy = by + (90 - 529) * k, tx = Player.x + f * (265 - 450) * k, ty = by + (105 - 529) * k;
         return { el, cp, ready: cp >= 1, hx, hy, tx, ty, bx: (hx + tx) / 2, by: (hy + ty) / 2, blade: Player._mcFrame === "38_hv_a" };
       }
+      function chargeCell(row, col, x, y, ang, w, h, a) { const I = fxSheet("mc_charge").img; ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.rotate(ang); ctx.drawImage(I, col * 256, row * 256, 256, 256, -w / 2, -h / 2, w, h); ctx.restore(); }
       function drawChargeBack() {
         const c = chargeInfo(); if (!c) return;
-        const now = performance.now(), pu = 0.75 + 0.25 * Math.sin(now / (c.ready ? 70 : 120)), cy = Player.y - Player.h * 0.55, R = 70 + 50 * c.cp;
+        const now = performance.now(), cy = Player.y - Player.h * 0.55;
+        if (fxReady("mc_charge")) { /* v0.8.215 生圖：蓄滿＝金色光焰（第 4 列循環） */
+          if (!c.ready) return;
+          ctx.save(); ctx.globalCompositeOperation = "lighter"; chargeCell(3, Math.floor(now / 110) % 4, Player.x, Player.y + GROUND_SINK - 125, 0, 330, 330, 0.9); ctx.restore();
+          return;
+        }
+        const pu = 0.75 + 0.25 * Math.sin(now / (c.ready ? 70 : 120)), R = 70 + 50 * c.cp;
         const g = ctx.createRadialGradient(Player.x, cy, 8, Player.x, cy, R);
         g.addColorStop(0, c.ready ? `rgba(253, 230, 138, ${0.75 * pu})` : `rgba(186, 230, 253, ${0.55 * c.cp * pu})`); g.addColorStop(1, "rgba(0,0,0,0)");
         ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(Player.x, cy, R * 0.75, R * 1.15, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
@@ -19,6 +26,16 @@
       function drawChargeFront() {
         const now = performance.now(), dt = Math.min(0.05, (now - (CHG.last || now)) / 1000); CHG.last = now;
         const c = chargeInfo();
+        if (c && c.blade && fxReady("mc_charge")) { /* v0.8.215 生圖：聚光（第 1 列，依蓄力進度由散到聚）＋劍身光（第 2 列循環），沿劍身角度旋轉；蓄滿劍尖小星芒（第 3 列第 1 格）脈動 */
+          CHG.motes.length = 0;
+          const ang = Math.atan2(c.ty - c.hy, c.tx - c.hx), L = Math.hypot(c.tx - c.hx, c.ty - c.hy), W = L / 0.82;
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          if (!c.ready) chargeCell(0, Math.min(3, Math.floor(c.cp * 4)), c.bx, c.by, ang, W * 1.7, W * 1.7, 0.8 + 0.2 * c.cp); chargeCell(0, Math.min(3, Math.floor(c.cp * 4)), c.bx, c.by, ang, W * 1.7, W * 1.7, 0.5 * c.cp); /* 疊兩次：亮背景上看得清楚 */
+          chargeCell(1, Math.floor(now / 90) % 4, c.bx, c.by, ang, W, W, c.ready ? 1 : 0.35 + 0.65 * c.cp);
+          if (c.ready) { const z = 90 + 25 * Math.sin(now / 80); chargeCell(2, 0, c.tx, c.ty, 0, z, z, 0.95); }
+          ctx.restore();
+          return;
+        }
         if (c && c.blade) { /* 生成光點：從四周往劍身某點聚集 */
           const n = c.ready ? 1 : 3;
           for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = 110 + Math.random() * 110, u = Math.random();

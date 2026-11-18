@@ -35,6 +35,7 @@
         Boss.artId = stage.artId || stageId;
         if (stage.sprite) getBossSprite(stage.sprite, stage.spriteExtras);
         if (stage.introName) getCineImg("name", stage.introName);
+        fxSheet("mc_charge"); /* v0.8.215 主角蓄力特效 */
         applyStageSfxClass(stage); /* v0.8.122 武器類別音效自動配對 */
         if (stage.stances) Object.values(stage.stances).forEach(st => getBossSprite(st.sprite, st.extras));
         (stage.fxSheets || []).forEach(k => fxSheet(k));
