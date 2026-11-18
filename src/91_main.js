@@ -22,7 +22,8 @@
         elPRetry.textContent = "重新挑戰"; elPQuit.textContent = "退出戰鬥（回營地）";
       }
       function pauseGame() {
-        if (Game.paused) return;
+        if (Game.paused && !Game._menuPause) return;
+        Game._menuPause = false;
         Game.paused = true; Game._pauseT0 = performance.now();
         try { clearAllInputStates(); } catch (e) { }
         Music.pauseAll();
@@ -69,6 +70,18 @@
           if (elSysMenuModal) elSysMenuModal.classList.add("open");
         });
       }
+      /* v0.8.220 齒輪選單開著時遊戲暫停（不顯示暫停畫面）；選單一關（含按選單裡的功能）就自動繼續 */
+      function menuPause(on) {
+        if (on) {
+          if (Game.paused) return;
+          Game.paused = true; Game._menuPause = true; Game._pauseT0 = performance.now();
+          try { clearAllInputStates(); } catch (e) { }
+          Music.pauseAll(); try { if (Sound.ctx && Sound.ctx.state === "running") Sound.ctx.suspend(); } catch (e) { }
+        } else if (Game._menuPause) {
+          Game._menuPause = false; resumeGame();
+        }
+      }
+      if (elSysMenuModal && window.MutationObserver) new MutationObserver(() => menuPause(elSysMenuModal.classList.contains("open"))).observe(elSysMenuModal, { attributes: true, attributeFilter: ["class"] });
 
       if (btnCloseSysMenu) {
         btnCloseSysMenu.addEventListener("click", () => {
@@ -113,6 +126,12 @@
         });
       }
 
+      { /* v0.8.220 整體音量：大→中→小→極小 循環 */
+        const b = document.getElementById("btn-volume"), t = document.getElementById("menu-volume-txt");
+        const sync = () => { if (t) t.textContent = "整體音量：" + Sound.LEVEL_NAMES[Sound.levelIdx]; };
+        sync();
+        if (b) b.addEventListener("click", () => { Sound.setLevel(Sound.levelIdx + 1); sync(); });
+      }
       const btnMenuHaptic = document.getElementById("btn-haptic");
       const menuHapticTxt = document.getElementById("menu-haptic-txt");
       const hapticTexts = ["震動回饋：關", "震動回饋：弱", "震動回饋：強"];

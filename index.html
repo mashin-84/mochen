@@ -1991,6 +1991,10 @@
             <span>💡</span>
             <span>重看教學提示</span>
           </button>
+          <button type="button" id="btn-volume" class="menu-tile-btn">
+            <span>🔉</span>
+            <span id="menu-volume-txt">整體音量：小</span>
+          </button>
           <button type="button" id="btn-haptic" class="menu-tile-btn">
             <span>📳</span>
             <span id="menu-haptic-txt">震動回饋：強</span>
@@ -2098,6 +2102,11 @@
         master: null,
         /* M1：同音同時上限、音高隨機微調（±4%，旋律類不抖）、檔案變體 */
         maxVoices: 4, pitchJitter: 0.04, noJitter: { victory: 1 },
+        /* v0.8.220 整體音量（使用者：手機開最小聲還是很大、部分音效刺耳）：LEVELS 大／中／小／極小，預設「小」，同時乘在音效總音量與配樂上；localStorage qingyun_vol */
+        LEVELS: [1.0, 0.55, 0.3, 0.15], LEVEL_NAMES: ["大", "中", "小", "極小"],
+        levelIdx: (() => { try { const v = parseInt(localStorage.getItem("qingyun_vol"), 10); return v >= 0 && v <= 3 ? v : 2; } catch (e) { return 2; } })(),
+        get level() { return this.LEVELS[this.levelIdx]; },
+        setLevel(i) { this.levelIdx = (i + 4) % 4; try { localStorage.setItem("qingyun_vol", String(this.levelIdx)); } catch (e) { } if (this.master) this.master.gain.value = 0.9 * this.level; },
         live: {}, variants: {}, ext: {},
         /* M1 通用音效換檔：檔案放 assets/sfx/g_<名>.mp3（變體 g_<名>_2.mp3、g_<名>_3.mp3…），在這裡登記「名: 變體數」才會載入；
            載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
@@ -2115,10 +2124,11 @@
           this.ctx = new AC();
           /* M1 音效匯流排：所有音效 → 總音量 → 限幅器 → 喇叭（多個音效疊在一起不爆音） */
           try {
-            this.master = this.ctx.createGain(); this.master.gain.value = 0.9;
+            this.master = this.ctx.createGain(); this.master.gain.value = 0.9 * this.level;
             const c = this.ctx.createDynamicsCompressor();
             c.threshold.value = -10; c.knee.value = 6; c.ratio.value = 12; c.attack.value = 0.003; c.release.value = 0.15;
-            this.master.connect(c); c.connect(this.ctx.destination);
+            const hs = this.ctx.createBiquadFilter(); hs.type = "highshelf"; hs.frequency.value = 4500; hs.gain.value = -7; /* v0.8.220 削掉刺耳高頻（4.5kHz 以上 -7dB） */
+            this.master.connect(hs); hs.connect(c); c.connect(this.ctx.destination);
           } catch (e) { this.master = null; }
           this.ready = true;
           this.bake();
@@ -2375,7 +2385,7 @@
             const t = this.tracks[i];
             t.cur += (t.target - t.cur) * 0.08;
             if (t.target === 0 && t.cur < 0.01) { t.el.pause(); this.tracks.splice(i, 1); continue; }
-            t.el.volume = Math.max(0, Math.min(1, t.cur * this.vol * this.duckCur * (Sound.muted ? 0 : 1)));
+            t.el.volume = Math.max(0, Math.min(1, t.cur * this.vol * this.duckCur * Sound.level * (Sound.muted ? 0 : 1)));
           }
         }
       };
@@ -6081,7 +6091,7 @@ const Config = {
             Player.isChargingAttack = false;
           } else if (chargeReady() && !Player._chargeReadyFx) { /* 蓄滿瞬間：閃一下＋輕震，告訴玩家可以放開了 */
             Player._chargeReadyFx = true; Player.flashFrames = Math.max(Player.flashFrames || 0, 2); hapticBuzz(18);
-            { const ci = chargeInfo(); if (fxReady("mc_charge")) spawnFx("mc_charge", 2, ci ? ci.tx : Player.x, ci ? ci.ty : Player.y - 120, { w: 300, dur: 0.4 }); else if (fxReady("spark")) spawnFx("spark", 3, ci ? ci.bx : Player.x, ci ? ci.by : Player.y - 120, { w: 260, dur: 0.3 }); } Sound.play("mikiri", 0.35, 1.8); /* v0.8.214 蓄滿：劍身爆一下星光＋輕響 */
+            { const ci = chargeInfo(); if (fxReady("mc_charge")) spawnFx("mc_charge", 2, ci ? ci.tx : Player.x, ci ? ci.ty : Player.y - 120, { w: 300, dur: 0.4 }); else if (fxReady("spark")) spawnFx("spark", 3, ci ? ci.bx : Player.x, ci ? ci.by : Player.y - 120, { w: 260, dur: 0.3 }); } Sound.play("mikiri", 0.3, 1.3); /* v0.8.220 音高 1.8→1.3（刺耳）；v0.8.214 蓄滿：劍身爆一下星光＋輕響 */
           }
         }
 
@@ -14236,7 +14246,8 @@ const Config = {
         elPRetry.textContent = "重新挑戰"; elPQuit.textContent = "退出戰鬥（回營地）";
       }
       function pauseGame() {
-        if (Game.paused) return;
+        if (Game.paused && !Game._menuPause) return;
+        Game._menuPause = false;
         Game.paused = true; Game._pauseT0 = performance.now();
         try { clearAllInputStates(); } catch (e) { }
         Music.pauseAll();
@@ -14283,6 +14294,18 @@ const Config = {
           if (elSysMenuModal) elSysMenuModal.classList.add("open");
         });
       }
+      /* v0.8.220 齒輪選單開著時遊戲暫停（不顯示暫停畫面）；選單一關（含按選單裡的功能）就自動繼續 */
+      function menuPause(on) {
+        if (on) {
+          if (Game.paused) return;
+          Game.paused = true; Game._menuPause = true; Game._pauseT0 = performance.now();
+          try { clearAllInputStates(); } catch (e) { }
+          Music.pauseAll(); try { if (Sound.ctx && Sound.ctx.state === "running") Sound.ctx.suspend(); } catch (e) { }
+        } else if (Game._menuPause) {
+          Game._menuPause = false; resumeGame();
+        }
+      }
+      if (elSysMenuModal && window.MutationObserver) new MutationObserver(() => menuPause(elSysMenuModal.classList.contains("open"))).observe(elSysMenuModal, { attributes: true, attributeFilter: ["class"] });
 
       if (btnCloseSysMenu) {
         btnCloseSysMenu.addEventListener("click", () => {
@@ -14327,6 +14350,12 @@ const Config = {
         });
       }
 
+      { /* v0.8.220 整體音量：大→中→小→極小 循環 */
+        const b = document.getElementById("btn-volume"), t = document.getElementById("menu-volume-txt");
+        const sync = () => { if (t) t.textContent = "整體音量：" + Sound.LEVEL_NAMES[Sound.levelIdx]; };
+        sync();
+        if (b) b.addEventListener("click", () => { Sound.setLevel(Sound.levelIdx + 1); sync(); });
+      }
       const btnMenuHaptic = document.getElementById("btn-haptic");
       const menuHapticTxt = document.getElementById("menu-haptic-txt");
       const hapticTexts = ["震動回饋：關", "震動回饋：弱", "震動回饋：強"];

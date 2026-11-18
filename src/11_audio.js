@@ -9,6 +9,11 @@
         master: null,
         /* M1：同音同時上限、音高隨機微調（±4%，旋律類不抖）、檔案變體 */
         maxVoices: 4, pitchJitter: 0.04, noJitter: { victory: 1 },
+        /* v0.8.220 整體音量（使用者：手機開最小聲還是很大、部分音效刺耳）：LEVELS 大／中／小／極小，預設「小」，同時乘在音效總音量與配樂上；localStorage qingyun_vol */
+        LEVELS: [1.0, 0.55, 0.3, 0.15], LEVEL_NAMES: ["大", "中", "小", "極小"],
+        levelIdx: (() => { try { const v = parseInt(localStorage.getItem("qingyun_vol"), 10); return v >= 0 && v <= 3 ? v : 2; } catch (e) { return 2; } })(),
+        get level() { return this.LEVELS[this.levelIdx]; },
+        setLevel(i) { this.levelIdx = (i + 4) % 4; try { localStorage.setItem("qingyun_vol", String(this.levelIdx)); } catch (e) { } if (this.master) this.master.gain.value = 0.9 * this.level; },
         live: {}, variants: {}, ext: {},
         /* M1 通用音效換檔：檔案放 assets/sfx/g_<名>.mp3（變體 g_<名>_2.mp3、g_<名>_3.mp3…），在這裡登記「名: 變體數」才會載入；
            載入成功就蓋掉程式合成音（且不再過低通）。名字：parry block slash flysword hit peril mikiri execution gourd assist victory */
@@ -26,10 +31,11 @@
           this.ctx = new AC();
           /* M1 音效匯流排：所有音效 → 總音量 → 限幅器 → 喇叭（多個音效疊在一起不爆音） */
           try {
-            this.master = this.ctx.createGain(); this.master.gain.value = 0.9;
+            this.master = this.ctx.createGain(); this.master.gain.value = 0.9 * this.level;
             const c = this.ctx.createDynamicsCompressor();
             c.threshold.value = -10; c.knee.value = 6; c.ratio.value = 12; c.attack.value = 0.003; c.release.value = 0.15;
-            this.master.connect(c); c.connect(this.ctx.destination);
+            const hs = this.ctx.createBiquadFilter(); hs.type = "highshelf"; hs.frequency.value = 4500; hs.gain.value = -7; /* v0.8.220 削掉刺耳高頻（4.5kHz 以上 -7dB） */
+            this.master.connect(hs); hs.connect(c); c.connect(this.ctx.destination);
           } catch (e) { this.master = null; }
           this.ready = true;
           this.bake();
@@ -286,7 +292,7 @@
             const t = this.tracks[i];
             t.cur += (t.target - t.cur) * 0.08;
             if (t.target === 0 && t.cur < 0.01) { t.el.pause(); this.tracks.splice(i, 1); continue; }
-            t.el.volume = Math.max(0, Math.min(1, t.cur * this.vol * this.duckCur * (Sound.muted ? 0 : 1)));
+            t.el.volume = Math.max(0, Math.min(1, t.cur * this.vol * this.duckCur * Sound.level * (Sound.muted ? 0 : 1)));
           }
         }
       };
