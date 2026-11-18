@@ -6070,7 +6070,7 @@ const Config = {
             Player.isChargingAttack = false;
           } else if (chargeReady() && !Player._chargeReadyFx) { /* 蓄滿瞬間：閃一下＋輕震，告訴玩家可以放開了 */
             Player._chargeReadyFx = true; Player.flashFrames = Math.max(Player.flashFrames || 0, 2); hapticBuzz(18);
-            if (fxReady("spark")) spawnFx("spark", 2, Player.x + Player.facing * 30, Player.y - 120, { w: 150, dur: 0.25 });
+            { const ci = chargeInfo(); if (fxReady("spark")) spawnFx("spark", 3, ci ? ci.bx : Player.x, ci ? ci.by : Player.y - 120, { w: 260, dur: 0.3 }); } Sound.play("mikiri", 0.35, 1.8); /* v0.8.214 蓄滿：劍身爆一下星光＋輕響 */
           }
         }
 
@@ -12073,6 +12073,48 @@ const Config = {
       }
       const MC_SMEAR_ON = { "21_s1b": "20_s1a", "24_s2b": "23_s2a", "27_t_b": "26_t_a", "39_hv_b": "38_hv_a", "34_dash_b": "33_dash_a" }; /* 換到這些「出手格」時，用前一格留殘影 */
       const MC_XF = { img: null, prev: null, t: 0, f: 1 };
+      /* v0.8.214 蓄力斬視覺（使用者：「根本不知道我在蓄力」）。⚠ 程式畫的佔位，待換生圖 assets/fx/mc_charge.webp（提示詞 prompts/mc/1_mc_charge_fx.txt）：
+       * 蓄力中＝身周淡藍光暈、光點從四周往劍身聚集、劍身由淡藍漸亮；蓄滿＝轉金色、劍上星芒脈動（放開就出招）。劍身位置取自 38_hv_a 格（雙手高舉、劍尖朝後）。 */
+      const CHG = { motes: [], last: 0 };
+      function chargeInfo() {
+        if (!Player.isChargingAttack) return null;
+        const el = performance.now() - Player.attackChargeStartTime, cp = Math.min(1, el / 450), f = Player.facing, k = MC_SCALE, by = Player.y + GROUND_SINK;
+        const hx = Player.x + f * (480 - 450) * k, hy = by + (90 - 529) * k, tx = Player.x + f * (265 - 450) * k, ty = by + (105 - 529) * k;
+        return { el, cp, ready: cp >= 1, hx, hy, tx, ty, bx: (hx + tx) / 2, by: (hy + ty) / 2, blade: Player._mcFrame === "38_hv_a" };
+      }
+      function drawChargeBack() {
+        const c = chargeInfo(); if (!c) return;
+        const now = performance.now(), pu = 0.75 + 0.25 * Math.sin(now / (c.ready ? 70 : 120)), cy = Player.y - Player.h * 0.55, R = 70 + 50 * c.cp;
+        const g = ctx.createRadialGradient(Player.x, cy, 8, Player.x, cy, R);
+        g.addColorStop(0, c.ready ? `rgba(253, 230, 138, ${0.75 * pu})` : `rgba(186, 230, 253, ${0.55 * c.cp * pu})`); g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(Player.x, cy, R * 0.75, R * 1.15, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
+      function drawChargeFront() {
+        const now = performance.now(), dt = Math.min(0.05, (now - (CHG.last || now)) / 1000); CHG.last = now;
+        const c = chargeInfo();
+        if (c && c.blade) { /* 生成光點：從四周往劍身某點聚集 */
+          const n = c.ready ? 1 : 3;
+          for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = 110 + Math.random() * 110, u = Math.random();
+            CHG.motes.push({ x: c.bx + Math.cos(a) * r, y: c.by + Math.sin(a) * r * 0.8, u, t: 0, life: 0.35 + Math.random() * 0.2, s: 2.5 + Math.random() * 2.5 }); }
+        }
+        if (!c) { if (CHG.motes.length) CHG.motes.length = 0; return; }
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        const col = c.ready ? "253, 224, 120" : "191, 230, 255";
+        for (let i = CHG.motes.length - 1; i >= 0; i--) { const m = CHG.motes[i]; m.t += dt; if (m.t >= m.life || !c.blade) { CHG.motes.splice(i, 1); continue; }
+          const gx = c.hx + (c.tx - c.hx) * m.u, gy = c.hy + (c.ty - c.hy) * m.u, k = Math.min(1, dt * 9); m.x += (gx - m.x) * k; m.y += (gy - m.y) * k;
+          ctx.fillStyle = `rgba(${col}, ${Math.min(1, m.t * 6) * (1 - m.t / m.life) * 0.95})`; ctx.beginPath(); ctx.arc(m.x, m.y, m.s, 0, Math.PI * 2); ctx.fill(); }
+        if (c.blade) { /* 劍身發光 */
+          const pu = 0.7 + 0.3 * Math.sin(now / (c.ready ? 60 : 110));
+          ctx.lineCap = "round"; ctx.strokeStyle = `rgba(${col}, ${(0.25 + 0.5 * c.cp) * pu})`; ctx.lineWidth = 6 + 10 * c.cp; ctx.shadowColor = `rgb(${col})`; ctx.shadowBlur = 12 + 22 * c.cp;
+          ctx.beginPath(); ctx.moveTo(c.hx, c.hy); ctx.lineTo(c.tx, c.ty); ctx.stroke();
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 * c.cp * pu})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(c.hx, c.hy); ctx.lineTo(c.tx, c.ty); ctx.stroke();
+          if (c.ready) { /* 蓄滿：劍尖星芒脈動 */
+            const z = 70 + 30 * Math.sin(now / 80);
+            if (fxReady("xtz_star")) { ctx.shadowBlur = 0; ctx.globalAlpha = 0.85; ctx.drawImage(fxSheet("xtz_star").img, c.tx - z / 2, c.ty - z / 2, z, z); }
+          }
+        }
+        ctx.restore();
+      }
       function drawPlayer() {
         ctx.save();
         if (Player.hurtInv > 0 && !Player.blast && Math.floor(performance.now() / 50) % 2 === 0) ctx.globalAlpha = 0.4; /* 受擊無敵閃爍 10Hz */
@@ -12195,6 +12237,7 @@ const Config = {
             MC_XF.img = on ? playerImg : null;
           }
 
+          drawChargeBack();
           if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, PG() - Player.y)) playerEllipse();
           ctx.save();
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
@@ -12214,6 +12257,7 @@ const Config = {
           Player._mcSpr = playerImg; Player._mcS = S; Player._mcFrame = frame; /* 殘影取樣（v0.8.96）；_mcFrame 供測試 */
           if (Player.flashFrames > 0) ctx.filter = "none";
           ctx.restore();
+          drawChargeFront(); /* v0.8.214 蓄力特效（劍身光、聚光點、蓄滿星芒） */
         } else {
           if (Player.scarfNodes.length > 1) {
           ctx.strokeStyle = "rgba(56, 189, 248, 0.65)";

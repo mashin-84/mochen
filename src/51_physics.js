@@ -92,7 +92,7 @@
             Player.isChargingAttack = false;
           } else if (chargeReady() && !Player._chargeReadyFx) { /* 蓄滿瞬間：閃一下＋輕震，告訴玩家可以放開了 */
             Player._chargeReadyFx = true; Player.flashFrames = Math.max(Player.flashFrames || 0, 2); hapticBuzz(18);
-            if (fxReady("spark")) spawnFx("spark", 2, Player.x + Player.facing * 30, Player.y - 120, { w: 150, dur: 0.25 });
+            { const ci = chargeInfo(); if (fxReady("spark")) spawnFx("spark", 3, ci ? ci.bx : Player.x, ci ? ci.by : Player.y - 120, { w: 260, dur: 0.3 }); } Sound.play("mikiri", 0.35, 1.8); /* v0.8.214 蓄滿：劍身爆一下星光＋輕響 */
           }
         }
 
