@@ -116,7 +116,7 @@
           ev.push([t + 0.22, () => { /* 化影：背後出現影子 0.65 秒後背刺 */
             U.follow = 0; shd(0, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b" }); gVanish(true); const side = -Player.facing;
             spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.9); Sound.play("b2_vanish", 0.8, 1.2);
-            guStrike({ x: Player.x, track: true, lock: 0.2, w: 200, delay: 0.65, kind: "parry", needFace: true, side, srcOff: 120, shape: "cross", dmg: 88, post: 5, label: "【背刺】", onParry: ok,
+            guStrike({ x: Player.x, track: true, lock: 0.2, w: 200, delay: 0.65, kind: "parry", needFace: true, ghost: true, side, srcOff: 120, shape: "cross", dmg: 88, post: 5, label: "【背刺】", onParry: ok,
               onFire: (h) => { Boss.x = gClampX(h.x + h.side * 120); gVanish(false); Boss.facing = -h.side; fr("us6_back"); shd(1, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b", dur: 0.35 }); Sound.play("b3_dash", 0.9, 1.0); } });
           }]);
           t += 0.22 + 0.65;
@@ -380,7 +380,11 @@
                 ctx.strokeStyle = `rgba(${col}, 0.9)`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(h.x, G + 2, hw, 16, 0, 0, Math.PI * 2); ctx.stroke();
                 ctx.fillStyle = `rgba(${col}, ${0.15 + 0.3 * pr})`; ctx.beginPath(); ctx.ellipse(h.x, G + 2, hw * pr, 16 * pr, 0, 0, Math.PI * 2); ctx.fill();
                 if (h.shape === "pillar") { ctx.fillStyle = `rgba(${col}, ${0.05 + 0.09 * pr})`; ctx.fillRect(h.x - hw * 0.8, top, h.w * 0.8, G - top); }
-                if (h.shape === "cross" && h.side) { /* 來襲方向的影子＋箭頭 */
+                if (h.shape === "cross" && h.side && h.ghost) { /* v0.8.217 背刺預警：他化影前蹲的剪影（淡紫）＋生圖現身煙霧，取代程式畫的梯形影子 */
+                  const SPg = getBossSprite("boss3"), ig = SPg && SPg.imgs["us5_crouch"], sil = ig && ig.complete && ig.naturalWidth ? silImg(ig, "#6d28d9") : null, gx = h.x + h.side * (h.srcOff || 260), kg = bossVis(Stages[Boss.stageId]).k;
+                  if (sil) { ctx.save(); ctx.globalAlpha = 0.2 + 0.55 * pr; ctx.translate(gx, G + GROUND_SINK); ctx.scale(-h.side * kg, kg); ctx.drawImage(sil, -450, -560); ctx.restore(); }
+                  if (fxReady("boss3shadow")) { const z = 360; ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.85; ctx.drawImage(fxSheet("boss3shadow").img, Math.min(3, Math.floor(pr * 4)) * 256, 256, 256, 256, gx - z / 2, G - z * 0.85, z, z); ctx.restore(); }
+                } else if (h.shape === "cross" && h.side) { /* 來襲方向的影子＋箭頭 */
                   const sx = h.x + h.side * 260; ctx.globalAlpha = 0.35 + 0.5 * pr; ctx.fillStyle = "#312e81"; ctx.strokeStyle = `rgba(${col}, 0.9)`;
                   ctx.beginPath(); ctx.moveTo(sx - 26, G); ctx.lineTo(sx + 26, G); ctx.lineTo(sx + 12, G - 150); ctx.lineTo(sx - 12, G - 150); ctx.closePath(); ctx.fill(); ctx.stroke();
                   ctx.beginPath(); ctx.moveTo(sx - h.side * 40, G - 90); ctx.lineTo(sx - h.side * (40 + 150 * pr), G - 90); ctx.stroke();
