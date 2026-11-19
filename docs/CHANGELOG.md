@@ -5,6 +5,11 @@
 
 ## 最新版本
 
+### v0.8.244（2026-11-19）大招也套刀光版
+- 原因：`64_draw_boss.js` 刀光版只在 windup／active／recover／hurt／staggered 換格淡化，大招期間 `Boss.state="ult"` 不在清單 → 第 1～3 關大招全部硬切格。
+- 修：清單加 `ult`（換格交叉淡化 70ms）；新 `ULT_SMEAR` 出手格表（第 1 關 63_u_stab、65_u_cross；寒川影殺 us1～4、us6_back、us7_dive、us8_land、77_ua_x；舊 71～73_ua_sw、91_ub_slam；千鈞 hs3_hit、qj1_dash、qj5_cleave），換到這些格留 3 道淡紅剪影殘影。
+- 驗證：Playwright 大招測試跑寒川影殺、千鈞鎖脈，殘影最多 3～4 道、無錯誤。
+
 ### v0.8.243（2026-11-19）GIF 特效試驗
 - Gemini 產的 GIF 實為 640×360、30 格、每格 0.1 秒（左右有黑邊，內容 x 74～566）。集氣那張粒子確實內收，但核心一路變大、沒有照提示詞循環。
 - 新工具 `tools/gif2sheet.py`：選格範圍、裁正方形、`--loop K` 頭尾交叉淡化、`--fadeout K` 收尾淡出、扣底噪 18、每格邊緣淡出 → 4×4 序列圖。
