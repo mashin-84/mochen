@@ -294,6 +294,11 @@
         if (key === "grab") { a.s = a.hand.x >= Player.x ? 1 : -1; a.x0 = clampX(Player.x + a.s * 640); a.x1 = a.x0 - a.s * m.span; }
         if (key === "plant") { a.s = a.hand && a.hand.x >= Player.x ? 1 : -1; a.x = clampX(Player.x + a.s * 190); }
         if (key === "rain" || key === "rain2") a.x = P.spiritX;
+        if (key === "sky") { /* v0.8.249 1A 封印遞進：斷 1 道後插地會冒一道劍氣（先招架再蓄力）；斷 2 道後天劍連砸兩下 */
+          const tot = D.seals || 3;
+          a.qi = P.seals === tot - 1; a.double = P.seals <= tot - 2;
+          if (a.qi) a.stuckT += 0.6;
+        }
         /* 預警：危招紅＋出招聲＋提示；其餘也有起手聲 */
         if (m.isPerilous) {
           Sound.play("peril", 0.9, 1.0);
@@ -338,6 +343,19 @@
             }
           } else if (a.st === "stuck") {
             sw.mode = "stuck"; sw.glow = 0.5 + 0.5 * Math.sin(a.t * 9);
+            if (k === "sky" && a.double && !a.second && a.t >= 0.45) { /* 連砸：拔起再追一下（第二下才長插地） */
+              a.second = true; a.st = "windup"; a.t = m.windup * 0.35; Sound.play("b3_heavy", 0.9, 0.85);
+              spawnFloatingText(a.x, G - 380, "連砸！", "#fca5a5", 0.9); hintOnce("p4_double", "封印只剩一道：天劍會連砸兩下，第二下插地才露出封印");
+              return true;
+            }
+            if (k === "sky" && a.qi && !a.qiDone && (!a.double || a.second)) {
+              if (a.t >= 0.25 && !a.qiWarn) { a.qiWarn = 1; sw.flash = 4; Sound.play("c_shing", 0.9, 1.1); spawnFloatingText(sw.x, G - 360, "劍氣！", "#fde047", 0.8); hintOnce("p4_qi", "巨劍插地會先冒一道劍氣：先招架，再蓄力斬封印"); }
+              if (a.t >= 0.6) {
+                a.qiDone = 1; const dir = Player.x >= sw.x ? 1 : -1;
+                Game.flyingSwords.push({ x: sw.x + dir * 60, y: G - 125, vx: dir * 650, vy: 0, dir, damage: 110, reflected: false, life: 2.4, color: "#7dd3fc", trajectory: "linear", kind: null });
+                Sound.play("b2_sword_fly", 0.9, 0.95); addTrauma(0.15);
+              }
+            }
             if (a.t >= a.stuckT) { a.st = "pull"; a.t = 0; }
           } else if (a.st === "pull") {
             sw.mode = "pull"; sw.tx = P.spiritX + 280; sw.ttip = G - 120;
@@ -390,14 +408,16 @@
           return true;
         }
         if (k === "finger") {
+          if (a.autoDown > 0) { a.autoDown -= dt; if (a.autoDown <= 0 && !h.dead) { spawnFloatingText(h.x, Config.groundY - 360, "劍氣盡反！", "#fde047", 1.2); swordDown(h); return false; } } /* v0.8.249 2A：三道劍氣全部招架彈回＝這把劍直接被打落 */
           const fd = Player.x >= h.x ? 1 : -1;
           h.tx = a.x; h.ty = G - 115; h.tang = -fd * Math.PI / 2; /* 劍尖指向主角 */
           if (a.st === "windup") {
-            if (a.t >= m.windup) { a.st = "active"; a.t = 0; }
+            if (a.t >= m.windup) { a.st = "active"; a.t = 0; if (P.form) hintOnce("form_refl", "劍氣三連：三道全部招架彈回，那把劍會直接被打落！"); }
           } else if (a.st === "active") {
             while (a.shots < m.count && a.t >= a.shots * m.gap) {
               const dir = Player.x >= h.x ? 1 : -1;
-              Game.flyingSwords.push({ x: h.x + dir * 30, y: G - 125, vx: dir * m.speed, vy: 0, dir, damage: m.damage, reflected: false, life: 2.4, color: "#7dd3fc", trajectory: "linear", kind: null });
+              Game.flyingSwords.push({ x: h.x + dir * 30, y: G - 125, vx: dir * m.speed, vy: 0, dir, damage: m.damage, reflected: false, life: 2.4, color: "#7dd3fc", trajectory: "linear", kind: null,
+                onRefl: P.form ? () => { a.refl = (a.refl || 0) + 1; spawnFloatingText(h.x, G - 330, "◆".repeat(a.refl) + "◇".repeat(Math.max(0, m.count - a.refl)), "#7dd3fc", 0.7); if (a.refl >= m.count) a.autoDown = 0.35; } : null });
               Sound.play("b2_sword_fly", 0.8, 1.0 + a.shots * 0.06);
               h.flash = 1; a.shots++;
             }

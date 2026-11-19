@@ -462,6 +462,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         /* 第 4 關 人形劍魂 */
         const S4 = Stages[4];
         S4.moves.u_liujian = U("六劍朝宗", "g_s4", 6.5);
+        S4.ultMax = { u_liujian: 2 }; /* v0.8.249 天劍全完美＝架勢直接打滿，限三階段最多放 2 次（血 60% 必放一次＋招式池再一次） */
         S4.hpTriggers = [{ move: "u_liujian", at: 0.6, phase: 2 }]; S4.sigMove = "u_liujian";
         S4.pool = S4.pool.concat([["u_liujian", 4]]); S4.poolP2 = S4.pool; addCue(S4);
         /* 第 5 關 小狼（一階段）；大狼＝魔焰獸玉（已有） */

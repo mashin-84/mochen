@@ -398,7 +398,7 @@
             const d = Math.abs(sw.x - Player.x);
             if (d < 42 && sw.y > Player.y - Player.h * 2.05 && sw.y < Player.y + 6) { /* v0.8.65 判定改為圖上整個身體（約腳底上 230；原 -90～0 只到大腿，飛劍拉高後胸口也要能中） */
               if (Player.state === "parry") {
-                sw.reflected = true;
+                sw.reflected = true; if (sw.onRefl) sw.onRefl(sw); /* v0.8.249 第 4 關劍陣：記錄劍氣彈回數 */
                 Player.parryCooldown = 0; Player._parrySpam = 0; Player._lastParryPress = 0; /* v0.8.72 折射成功清冷卻（同近戰彈刀），連發飛劍可逐把按 */
                 sw.vx = -sw.dir * 950;
                 sw.dir = -sw.dir;

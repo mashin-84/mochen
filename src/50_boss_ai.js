@@ -61,7 +61,8 @@
       function pickFromPool(list, moves) {
         const noR = Stages[Boss.stageId] && Stages[Boss.stageId].noReader; /* v0.8.183 第 1 關（教學）不讀玩家習慣 */
         const parry = noR ? 0 : Reader.count("parry", 8), dash = noR ? 0 : Reader.count("dash", 8), near = noR ? 0 : Reader.nearAvg;
-        const pp = list.filter(e => moves[e[0].split("+")[0]] && !(moves[e[0].split("+")[0]].ult && performance.now() < (Boss._sigNext || 0))).map(e => { /* v0.8.171 招牌大招冷卻（v0.8.172 改 15 秒；血量門檻必放不受影響） */
+        const uMax = Stages[Boss.stageId] && Stages[Boss.stageId].ultMax; /* v0.8.249 每場大招次數上限 */
+        const pp = list.filter(e => moves[e[0].split("+")[0]] && !(moves[e[0].split("+")[0]].ult && performance.now() < (Boss._sigNext || 0)) && !(uMax && uMax[e[0]] != null && ((Boss._ultN || {})[e[0]] || 0) >= uMax[e[0]])).map(e => { /* v0.8.171 招牌大招冷卻（v0.8.172 改 15 秒；血量門檻必放不受影響） */
           let w = e[1]; const tag = e[2];
           if (tag === "break" && parry >= 3) w *= 2.5;
           if ((tag === "ranged" || tag === "chase") && dash >= 3) w *= 2.2;

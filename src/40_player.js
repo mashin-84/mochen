@@ -798,6 +798,7 @@
       }
 
       function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
+        if (Boss._ult && Boss._ult.noPost) return; /* v0.8.249 第 4 關六劍朝宗：整招不累積架勢（只有天劍最後一下全完美才一次打滿） */
         if (fromAtk && Boss._hpOut) { /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢；v0.8.183 例外：Boss 收招／大招喘息／被擊落的破綻中砍，可以慢慢推最後 20%（避免一直出不能招架的招時卡死） */
           const big = Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen";
           if (!(Boss.state === "recover" || big)) { Boss._capFlash = performance.now(); return; }

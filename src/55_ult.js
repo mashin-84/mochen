@@ -34,6 +34,7 @@
       function ultStart(m, key) {
         const c = ULT_CFG[m.ult]; if (!c) return false;
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
+        Boss._ultN = Boss._ultN || {}; Boss._ultN[key] = (Boss._ultN[key] || 0) + 1; /* v0.8.249 次數（Stages[n].ultMax） */
         Boss.moveType = key; Boss.state = "ult"; Boss.vx = 0; Boss.isPerilous = false; Boss.perilType = null;
         Boss.nextImpactIn = 999; Boss.consecutiveBlocks = 0;
         Boss._ult = { kind: m.ult, c, m, t: 0, ev: {}, wN: 0, hc0: Progress.hitCount || 0, pc0: Progress.parryCount || 0 }; Boss._ultRest = false; Boss._ultFrame = c.img.raise || c.img.rise || c.img.guard || c.img.hold;
