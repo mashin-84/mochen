@@ -1,0 +1,19 @@
+第 3 關招牌大招「寒川影殺」「千鈞鎖脈」音效（ElevenLabs Sound Effects；秒數寫在提示詞本文；拿到檔後由 Claude 裁切、正規化峰值 -1.5 dBFS、單聲道 mp3）
+目前暫用：b3_dash、b3_twin、b2_vanish、b3_cross、b3_heavy、b3_plunge、b3_charge＋assist、b2_sword_fly、mikiri。不要人聲、不要音樂。
+
+【寒川影殺（一階段雙劍）】
+1. s3a_rush（0.6 秒）：Exactly 0.6 seconds long. A light, agile swordsman dashing forward in a burst, quick soft footsteps and a sharp rush of air with two steel blades whooshing, no music, no voice. The sound starts immediately and ends cleanly at 0.6 seconds.
+2. s3a_slash（0.4 秒，四連斬共用、程式變調）：Exactly 0.4 seconds long. One very fast, sharp slash with a thin straight steel sword, a crisp high whistle through the air with a short bright metallic ring at the end, no impact, no music, no voice. The sound starts immediately and ends cleanly at 0.4 seconds.
+3. s3a_vanish（0.8 秒）：Exactly 0.8 seconds long. A swordsman dissolving into shadow and vanishing, a soft dark whoosh that is sucked inward and fades into silence, faint airy shimmer, no music, no voice. The sound starts immediately and ends cleanly at 0.8 seconds.
+4. s3a_backstab（0.6 秒）：Exactly 0.6 seconds long. Someone suddenly reappearing right behind you out of nowhere and stabbing, a short pop of displaced air followed instantly by a sharp piercing steel thrust, no music, no voice. The sound starts immediately and ends cleanly at 0.6 seconds.
+5. s3a_dive（0.8 秒）：Exactly 0.8 seconds long. Two steel swords plunging down from the air and stabbing into stone ground, a short falling whistle then a hard sharp stab impact with cracking stone and small scattering pebbles, no music, no voice. The sound starts immediately and ends cleanly at 0.8 seconds.
+6. s3a_cross（1.0 秒）：Exactly 1.0 seconds long. Two steel swords scraping against each other, then released together in one huge crossing slash, a bright metallic shriek followed by a wide powerful whoosh and a long clear ringing tail, no music, no voice. The sound starts immediately and ends cleanly at 1.0 seconds.
+
+【千鈞鎖脈（二階段重劍）】
+7. s3b_dash（0.5 秒）：Exactly 0.5 seconds long. A strong man dashing at great speed while carrying a huge heavy iron sword, a heavy rush of wind and one hard skidding footstep, no music, no voice. The sound starts immediately and ends cleanly at 0.5 seconds.
+8. s3b_backslash（0.6 秒）：Exactly 0.6 seconds long. A huge heavy iron greatsword swung fast in a wide horizontal arc, a deep heavy whoosh with a low metallic hum, no impact, no music, no voice. The sound starts immediately and ends cleanly at 0.6 seconds.
+9. s3b_charge（1.4 秒）：Exactly 1.4 seconds long. Immense power gathering into a huge raised iron sword, a deep low hum rising steadily in pitch and intensity with a trembling metallic resonance and faint crackling, building unbearable tension, no music, no voice. The sound starts immediately and ends cleanly at 1.4 seconds.
+10. s3b_flysword（0.8 秒）：Exactly 0.8 seconds long. A slender steel sword thrown hard and spinning through the air, a fast rising whistle that passes by from left to right with a light metallic shimmer, no music, no voice. The sound starts immediately and ends cleanly at 0.8 seconds.
+11. s3b_flash（0.4 秒）：Exactly 0.4 seconds long. A single bright gleam of light flashing on a sword blade, a short crystal-clear high-pitched shing, very clean, no music, no voice. The sound starts immediately and ends cleanly at 0.4 seconds.
+12. s3b_cleave（1.8 秒）：Exactly 1.8 seconds long. A colossal iron greatsword slammed straight down into stone ground with tremendous force, a massive deep boom, stone splitting and cracking apart, debris falling, then a low rumbling aftershock, no music, no voice. The sound starts immediately and ends cleanly at 1.8 seconds.
+13. s3b_clash（1.2 秒）：Exactly 1.2 seconds long. A thin sword perfectly blocking a gigantic heavy iron blade, a piercing high metallic clang that rings out long and bright with a shimmering tail, powerful and triumphant, no music, no voice. The sound starts immediately and ends cleanly at 1.2 seconds.
