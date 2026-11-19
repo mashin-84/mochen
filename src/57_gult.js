@@ -211,6 +211,7 @@
               const ix = Boss.x + Boss.facing * 150; inkBurst(ix, G - 140, 300, 0.45, 1);
               if (fxReady("ink2")) spawnFx("ink2", 3, ix, groundFxY("ink2", 3, 620), { anchor: "b", w: 620, dur: 0.6, add: false, alpha: 0.75, back: true, facing: Boss.facing });
               if (CF === "boss3charge" && fxReady(CF)) spawnFx(CF, 3, ix, groundFxY(CF, 3, 640), { anchor: "b", w: 640, dur: 0.5, facing: Boss.facing });
+              if (fxReady("heavyhit")) spawnFx("heavyhit", 3, ix, groundFxY("heavyhit", 3, 520), { anchor: "b", w: 520, dur: 0.55, facing: Boss.facing }); /* v0.8.242 重劍砸地光塵 */
               if (CF === "boss3charge" && fxReady(CF)) spawnFx(CF, 2, ix, G - 330, { w: 760, dur: 0.45, facing: Boss.facing, alpha: 1 }); /* 縱劈光柱（生圖到了才有） */
               else if (fxReady("spark")) spawnFx("spark", 3, ix, G - 200, { w: 620, dur: 0.45, alpha: 0.9 });
               if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },

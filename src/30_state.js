@@ -233,6 +233,15 @@ const Config = {
         if (fxReady("ink2")) { spawnFx("ink2", row || 0, x, y, { w: r * 2, dur: Math.max(0.3, (dur || 0.32) * 1.3), add: false, alpha: 0.7, back: true }); return; }
         (Game.inks || (Game.inks = [])).push({ x, y, r, t0: performance.now(), dur: (dur || 0.32) * 1000 }); if (Game.inks.length > 8) Game.inks.shift();
       }
+      /* v0.8.242 重擊三段命中（SAKURAI C2）：生圖 heavyhit（0 閃光、1 衝擊波、2 碎屑、3 重劍砸地），三段同時生成、時長遞增
+         ＝閃光先蓋住、退去後露出擴散的衝擊波，最後碎屑飛散。dir＝力道方向（圖朝右）；s＝大小倍率。沒圖回傳 false 讓呼叫端用舊特效。 */
+      function heavyHitFx(x, y, dir, s) {
+        if (!fxReady("heavyhit")) return false; const k = s || 1, f = dir < 0 ? -1 : 1;
+        spawnFx("heavyhit", 0, x, y, { w: 270 * k, dur: 0.18, facing: f });
+        spawnFx("heavyhit", 1, x + f * 24 * k, y, { w: 300 * k, dur: 0.3, facing: f, alpha: 0.9 });
+        spawnFx("heavyhit", 2, x + f * 40 * k, y, { w: 330 * k, dur: 0.46, facing: f, alpha: 0.95 });
+        return true;
+      }
       function drawInks() {
         const L = Game.inks; if (!L || !L.length) return; const now = performance.now();
         for (let i = L.length - 1; i >= 0; i--) {
@@ -332,7 +341,7 @@ const Config = {
         if (!hitArt) Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: baseAng, len: slashLen, life: heavy ? 0.16 : 0.11, maxLife: heavy ? 0.16 : 0.11, w: heavy ? 7 : 4.5, color });
         if (heavy && !hitArt) Game.hitFx.push({ type: "slash", x: hx, y: hy, dir, ang: -baseAng, len: slashLen * 0.85, life: 0.16, maxLife: 0.16, w: 5.5, color });
 
-        if (fxReady("spark")) spawnFx("spark", guard ? 1 : 0, hx, hy, { w: heavy ? 250 : guard ? 160 : 180, dur: heavy ? 0.28 : 0.22, facing: dir, alpha: 0.85 });
+        if (!(heavy && heavyHitFx(hx, hy, dir, 1)) && fxReady("spark")) spawnFx("spark", guard ? 1 : 0, hx, hy, { w: heavy ? 250 : guard ? 160 : 180, dur: heavy ? 0.28 : 0.22, facing: dir, alpha: 0.85 });
         const n = hitArt ? 0 : heavy ? 12 : guard ? 6 : 8;
         for (let i = 0; i < n; i++) {
           const sp = (heavy ? 520 : 400) * (0.5 + Math.random() * 0.7);

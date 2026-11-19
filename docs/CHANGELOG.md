@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+### v0.8.242（2026-11-19）重擊三段命中特效（SAKURAI C2）
+- 生圖 `prompts/3/22_boss3hit_fx.txt` → `tools/fx_black.py … 2:60 3:45`（第 3 列霧、第 4 列砸地塵灰底加大邊緣淡出）→ `assets/fx/heavyhit.webp`，加進 `70_fx.js` 預載清單，`FX_FOOT.heavyhit` 第 4 列腳底 218。
+- `30_state.js` 新 `heavyHitFx(x,y,dir,s)`：三列同時生成，閃光 0.18 秒（寬 270）、衝擊波 0.3 秒（300，往力道方向偏 24）、碎屑 0.46 秒（330，偏 40）；閃光先蓋、退去露出衝擊波與碎屑。
+- 接點：`bossHitFx("heavy")`（蓄力斬、第三刀、下劈）有圖時取代 spark 第 0 列；`takeDamage` 傷害 ≥250 疊在墨爆上（×1.15）；`g_s3b` 千鈞劈地加第 4 列砸地光塵（寬 520，貼地）。
+- 驗證：check、smoke 第 3 關過；頁面內逐幀截圖確認 0.1 秒閃光＋衝擊波、0.36 秒衝擊波擴散＋碎屑、0.67 秒消失。
+
 ### v0.8.241（2026-11-19）千鈞一擊 qj3～6 去腰間雙劍
 - 使用者用 `prompts/3/21_boss3B_qianjun_keys_nosword.txt` 重生 2×2 四格（2528×1696），`tools/cut_keys.py` match 第 1 格高 516（scale 0.7078）→ 覆蓋 `assets/boss3b/qj3_raise、qj4_peak、qj5_cleave、qj6_after`；與舊圖疊對位置一致。
 - 新提示詞：`prompts/3/22_boss3hit_fx.txt`（重擊命中三段特效 `boss3hit`，黑底 4×4：閃光／衝擊波／碎屑／重劍砸地），待生圖。
