@@ -5,6 +5,17 @@
 
 ## 最新版本
 
+**v0.8.239 調參定案＋抽屜修正＋千鈞一擊演出＋櫻井式五項**
+- 使用者調參定案寫成正式值（`12_tune.js`）：頓幀 ×1.2、微震受擊 10／出手 2.5、震動 ×1.2；頓幀倍率改乘在 120ms 上限之後（原本重擊被上限吃掉）；載入時已等於正式值的手機設定自動清掉。
+- 修「天機演武與心印」關不掉：`90_input.js` 對同一顆鈕又綁了 toggle（與 `91_main.js` 的「打開」疊加＝永遠開）→ 拿掉，抽屜右上加「✕ 關閉」（`btn-drawer-close`）；抽屜開著維持暫停（MutationObserver 同時看齒輪選單與抽屜）。
+- 千鈞一擊演出（`57_gult.js`）：集氣時 `Game.gDimOn` 叫出全畫面暗場（`51_physics.js` `ultOn` 加條件），光暈色 `Game.ultDimRGB`＝冷白、高度 `Game.ultDimY`＝劍（`60_render.js`）；鏡頭 `g.camZ` 0.22、劍閃時 0.28、`g.camF` 0.72 對準他；劍尖聚光／劍閃光圈暫借 `boss5charge` 列 0／1（S3.fxSheets 加入）；砸下時暗場瞬間放開（ultDim×0.25）、亮暗閃 0.7、墨環 300、`spark` 列 3。專屬圖 `boss3charge`（0 聚光、1 劍閃、2 縱劈光柱、3 地裂）生好後加進 S3.fxSheets 會自動換上。
+- D1 讚美演出（`55_ult.js` `ultPraise`）：大招期間 hitCount 沒增加且完美招架 ≥2 → 「無傷破招」金色橫幅＋慢動作 0.5 秒＋音效震動；`Progress.ultFlawless` 記入結算（評分每次 +8、上限 15，顯示在「被擊／閃避」欄後）。
+- F1 音效分層（`11_audio.js`）：`SFX_HI`（execution、mikiri、parry、s_ult、peril、hit、s_hit、s_hurt、b2u_shatter、b2_shatter）直通 master，其他走 `busLo`；高層音量 ≥0.4 一響，`busLo` 0.3 秒內壓到 55%、音樂 duck 到 60%。
+- C1 命中墨環（`30_state.js` `inkBurst`／`drawInks`，畫在 `drawFx(true)` 之前）：受擊 140／重擊 190、完美招架 150、千鈞一擊 300；程式繪製暫代，正式版生圖（`prompts/common/1_ink_impact.txt`）。
+- B2 收招下限（`50_boss_ai.js` `bossRecDur`）：傷害 ≥200 或【危】收招至少 0.6 秒（起手 ≥1.1 秒的 +0.1；二階段下限 ×0.85），調參面板 `recStrong`；影響第 3～9 關約 20 招。
+- D2 卡關救濟（`12_tune.js` `Easy`）：同關連輸 3、6、9…次先跳詢問框（`#easy-offer`），「護心」＝Boss 傷害 ×0.8、完美招架 +20ms；齒輪「🛡 護心輔助」可開關；過關清除連輸次數（`qingyun_lose`、`qingyun_easy`）。
+- 測試：千鈞一擊截圖（暗場、聚光、劍閃、砸下）、詢問框截圖與開啟、抽屜開關與暫停、讚美觸發（Progress.ultFlawless=1）；smoke 第 3、5、8 關通過。
+
 **v0.8.238 櫻井式小改五項（`docs/SAKURAI_NOTES.md` 第三節 C3／C4／A2／A3／E1）**
 - C3 震屏分抖法（`60_render.js`）：橫抖權重 `(trauma-0.3)/0.2`、旋轉權重 `(trauma-0.6)/0.2`（夾 0～1）＝小震只縱抖、中震加橫抖、大震再加旋轉。
 - C4 亮暗交替（`81_legacy_story.js` `screenFlash`）：亮色（RGB 平均 >170）且強度 ≥0.3 的閃白，70ms 後接一層 `rgb(12,16,30)` 暗閃（強度 ×0.32、上限 0.3，0.22 秒淡出）。

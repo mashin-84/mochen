@@ -81,7 +81,11 @@
           Game._menuPause = false; resumeGame();
         }
       }
-      if (elSysMenuModal && window.MutationObserver) new MutationObserver(() => menuPause(elSysMenuModal.classList.contains("open"))).observe(elSysMenuModal, { attributes: true, attributeFilter: ["class"] });
+      if (elSysMenuModal && window.MutationObserver) { /* v0.8.239 天機演武抽屜開著也維持暫停 */
+        const elDrawer = document.getElementById("scroll-drawer");
+        const sync = () => menuPause(elSysMenuModal.classList.contains("open") || !!(elDrawer && elDrawer.classList.contains("open")));
+        const mo = new MutationObserver(sync); mo.observe(elSysMenuModal, { attributes: true, attributeFilter: ["class"] }); if (elDrawer) mo.observe(elDrawer, { attributes: true, attributeFilter: ["class"] });
+      }
 
       if (btnCloseSysMenu) {
         btnCloseSysMenu.addEventListener("click", () => {
@@ -133,6 +137,10 @@
         sync();
         if (b) b.addEventListener("click", () => { Tune.open(); });
         document.addEventListener("click", (e) => { if (e.target.closest && e.target.closest("#tune-panel")) setTimeout(sync, 0); });
+      }
+      { /* v0.8.239 護心輔助開關 */
+        const b = document.getElementById("btn-easy"); Easy.set(Easy.on);
+        if (b) b.addEventListener("click", () => Easy.set(!Easy.on));
       }
       { /* v0.8.220 整體音量：大→中→小→極小 循環 */
         const b = document.getElementById("btn-volume"), t = document.getElementById("menu-volume-txt");

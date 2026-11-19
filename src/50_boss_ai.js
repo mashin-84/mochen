@@ -1,3 +1,11 @@
+      /* v0.8.239 收招長度（櫻井式〈フォロースルー〉）：強招（傷害 ≥200 或【危】）收招至少 recStrong 秒、起手 ≥1.1 秒的重招再 +0.1；
+         二階段原本收招 ×0.75，下限也只打 0.85 折——破綻要看得出來、抓得到。調參面板可改 recStrong。 */
+      function bossRecDur(m) {
+        const p2 = Config.bossPhase === 2, base = (m.recover || 0.5) * (p2 ? 0.75 : 1);
+        if (!((m.damage || 0) >= 200 || m.isPerilous)) return base;
+        const floor = (Tune.v("recStrong") + ((m.windup || 0) >= 1.1 ? 0.1 : 0)) * (p2 ? 0.85 : 1);
+        return Math.max(base, floor);
+      }
       /* v0.7.4 雙姿態 Boss（第 3 關）：Stages[n].stances = { A:{sprite,stride,pool,poolP2,far,farP2,alias}, B:{...} }
          每 switchEvery 招（二階段 switchEveryP2）插入「換姿」招式（stance_switch，前搖期間 Boss 有破綻），姿態決定用哪套動作表與招式池 */
       function stanceOf(stage) { return stage.stances ? stage.stances[Boss.stance] : null; }
@@ -141,7 +149,7 @@
             out.ox += (d.kick.ox || 0) * K * e; out.rot += (d.kick.rot || 0) * K * e; out.sx += ((d.kick.sx || 1) - 1) * K * e; out.sy += ((d.kick.sy || 1) - 1) * K * e;
           }
         } else {
-          const rd = (move.recover || 0.5) * (Config.bossPhase === 2 ? 0.75 : 1);
+          const rd = bossRecDur(move);
           const p = cl(1 - Boss.stateTimer / Math.max(0.05, rd));
           const R = soft(d.r);
           const e = 1 - Math.pow(1 - p, 2);
@@ -791,7 +799,7 @@
               }
             }
             Boss.state = "recover";
-            Boss.stateTimer = move.recover * (Config.bossPhase === 2 ? 0.75 : 1.0);
+            Boss.stateTimer = bossRecDur(move);
             Boss.isPerilous = false;
             Boss.vx *= 0.2;
           }

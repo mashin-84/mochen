@@ -125,7 +125,7 @@
         Progress.parryCount = 0;
         Progress.mikiriCount = 0;
         Progress.damageTaken = 0;
-        Progress.hitCount = 0;
+        Progress.hitCount = 0; Progress.ultFlawless = 0;
         Progress.perfectDodgeCount = 0;
 
         // UI Header Updates
@@ -244,7 +244,7 @@
 
       const elSettlementModal = document.getElementById("settlement-modal");
       function handleStageClear(clearedStageId) {
-        Game.cutsceneActive = true;
+        Game.cutsceneActive = true; Easy.clear(clearedStageId);
         Music.fadeOut();
         if (clearedStageId === 5) Sound.play("m_howl", 0.9, 0.85);
         const stC = Stages[clearedStageId];
@@ -285,9 +285,9 @@
         document.getElementById("settle-time-val").textContent = `${elapsedSec} 秒`;
         {
           const hits = Progress.hitCount || 0, dodges = Progress.perfectDodgeCount || 0;
-          document.getElementById("settle-hit-dodge").textContent = `${hits} / ${dodges}`;
           /* 評級：被擊越少、完美招架／閃避越多越高；耗時過長微扣 */
-          let score = 100 - hits * 9 + Math.min(20, Progress.parryCount * 2) + Math.min(10, dodges * 3) - (elapsedSec > 240 ? 10 : 0);
+          let score = 100 - hits * 9 + Math.min(20, Progress.parryCount * 2) + Math.min(10, dodges * 3) + Math.min(15, (Progress.ultFlawless || 0) * 8) - (elapsedSec > 240 ? 10 : 0); /* v0.8.239 無傷破招每次 +8（上限 15） */
+          document.getElementById("settle-hit-dodge").textContent = `${hits} / ${dodges}` + ((Progress.ultFlawless || 0) ? `｜無傷破招 ${Progress.ultFlawless}` : "");
           const grade = score >= 105 ? "甲上・劍神" : score >= 85 ? "甲・劍豪" : score >= 65 ? "乙・劍客" : score >= 40 ? "丙・習劍" : "丁・險勝";
           document.getElementById("settle-grade").textContent = grade;
         }

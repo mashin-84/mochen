@@ -5,13 +5,14 @@
        * ========================================================================= */
       const TUNE_DEFS = [
         { g: "手感（全部關卡）" },
-        { k: "hsMul", n: "頓幀長度倍率", d: 1, min: 0, max: 2, s: 0.1 },
-        { k: "hsVictim", n: "頓幀微震：受擊方（px）", d: 7, min: 0, max: 16, s: 1 },
-        { k: "hsAttacker", n: "頓幀微震：出手方（px）", d: 2, min: 0, max: 8, s: 0.5 },
-        { k: "shakeMul", n: "畫面震動倍率", d: 1, min: 0, max: 2, s: 0.1 },
+        { k: "hsMul", n: "頓幀長度倍率", d: 1.2, min: 0, max: 2, s: 0.1 },
+        { k: "hsVictim", n: "頓幀微震：受擊方（px）", d: 10, min: 0, max: 16, s: 1 },
+        { k: "hsAttacker", n: "頓幀微震：出手方（px）", d: 2.5, min: 0, max: 8, s: 0.5 },
+        { k: "shakeMul", n: "畫面震動倍率", d: 1.2, min: 0, max: 2, s: 0.1 },
         { k: "parryMs", n: "完美招架窗口（ms，不含關卡加成）", d: 130, min: 60, max: 250, s: 5 },
         { k: "bossDmgMul", n: "Boss 傷害倍率", d: 1, min: 0.3, max: 2, s: 0.05 },
         { k: "bossWindMul", n: "Boss 一般招式起手時間倍率", d: 1, min: 0.6, max: 1.6, s: 0.05 },
+        { k: "recStrong", n: "強招收招下限（秒，傷害≥200 或危招）", d: 0.6, min: 0.3, max: 1.2, s: 0.05 },
         { g: "第 3 關二階大招【千鈞鎖脈】" },
         { k: "s3b_d1", n: "第一刀：衝到背後後幾秒砍", d: 0.55, min: 0.25, max: 1.2, s: 0.05 },
         { k: "s3b_d2", n: "第二刀：衝到背後後幾秒砍", d: 0.5, min: 0.25, max: 1.2, s: 0.05 },
@@ -21,7 +22,7 @@
       ];
       const Tune = {
         o: {},
-        load() { try { this.o = JSON.parse(localStorage.getItem("qingyun_tune") || "{}") || {}; } catch (e) { this.o = {}; } },
+        load() { try { this.o = JSON.parse(localStorage.getItem("qingyun_tune") || "{}") || {}; } catch (e) { this.o = {}; } for (const k of Object.keys(this.o)) { const d = this.def(k); if (!d || Math.abs(this.o[k] - d.d) < 1e-9) delete this.o[k]; } }, /* 已等於正式值（例如使用者回報後寫進程式）就清掉 */
         save() { try { localStorage.setItem("qingyun_tune", JSON.stringify(this.o)); } catch (e) { } },
         def(k) { return TUNE_DEFS.find(d => d.k === k); },
         v(k) { const d = this.def(k); const x = this.o[k]; return typeof x === "number" && isFinite(x) ? x : (d ? d.d : 0); },
@@ -78,3 +79,23 @@
         toast(s) { const t = this.el.querySelector(".tune-toast"); t.textContent = s; t.classList.add("on"); clearTimeout(this._tt); this._tt = setTimeout(() => t.classList.remove("on"), 1800); }
       };
       Tune.load();
+
+      /* v0.8.239 卡關救濟（櫻井式〈クリアできないよりマシ〉）：同一關連輸 3 次，問要不要開「護心」輔助（Boss 傷害 −20%、完美招架窗口 +20ms），
+         措辭不羞辱、隨時可在齒輪關掉。連輸次數存 qingyun_lose（{關卡: 次數}），過關歸零；護心開關存 qingyun_easy。 */
+      const Easy = {
+        on: (() => { try { return localStorage.getItem("qingyun_easy") === "1"; } catch (e) { return false; } })(),
+        set(v) { this.on = !!v; try { localStorage.setItem("qingyun_easy", v ? "1" : "0"); } catch (e) { } const t = document.getElementById("menu-easy-txt"); if (t) t.textContent = "護心輔助：" + (this.on ? "開" : "關"); },
+        streak() { try { return JSON.parse(localStorage.getItem("qingyun_lose") || "{}") || {}; } catch (e) { return {}; } },
+        lose(sid) { const o = this.streak(); o[sid] = (o[sid] || 0) + 1; try { localStorage.setItem("qingyun_lose", JSON.stringify(o)); } catch (e) { } return o[sid]; },
+        clear(sid) { const o = this.streak(); delete o[sid]; try { localStorage.setItem("qingyun_lose", JSON.stringify(o)); } catch (e) { } },
+        /* 輸了之後：連輸 3、6、9…次且還沒開護心 → 先問再重打；否則照常 cb() */
+        offer(sid, cb) {
+          const n = this.lose(sid);
+          if (this.on || n < 3 || n % 3 !== 0) { cb(); return; }
+          const el = document.createElement("div"); el.id = "easy-offer";
+          el.innerHTML = '<div class="eo-box"><div class="eo-t">這關已經挑戰 ' + n + ' 次了</div><div class="eo-d">要開啟「護心」輔助嗎？<br>Boss 傷害 −20%、完美招架判定 +20ms。<br><small>隨時可在齒輪選單關閉，不影響結算。</small></div>' +
+            '<div class="eo-b"><button type="button" data-v="1">開啟並重來</button><button type="button" data-v="0">不用，再戰</button></div></div>';
+          el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "1") this.set(true); el.remove(); cb(); });
+          document.body.appendChild(el);
+        }
+      };

@@ -180,7 +180,15 @@
             const buf = vs && vs.length > 1 ? vs[Math.floor(Math.random() * vs.length)] : this.buffers[name];
             const rate = Math.max(0.1, pitch * (this.noJitter[name] ? 1 : 1 + (Math.random() * 2 - 1) * this.pitchJitter));
             live.push(now + buf.duration / rate); this.live[name] = live;
-            const out = this.master || this.ctx.destination;
+            /* v0.8.239 音效依重要度分層（櫻井式〈重要度で効果音バランス〉）：關鍵回饋音（處決、完美招架、受擊、危招）走高層；
+               高層一響，低層（揮刀、Boss 招式聲、腳步…）0.3 秒內壓到 55%、音樂壓到 60%，關鍵音不被蓋掉。各呼叫原本的音量不變。 */
+            const hi = SFX_HI.has(name);
+            if (this.master && !this.busLo) { this.busLo = this.ctx.createGain(); this.busLo.connect(this.master); }
+            const out = this.master ? (hi ? this.master : this.busLo) : this.ctx.destination;
+            if (hi && this.busLo && vol >= 0.4) {
+              const gg = this.busLo.gain; gg.cancelScheduledValues(now); gg.setTargetAtTime(0.55, now, 0.015); gg.setTargetAtTime(1, now + 0.22, 0.12);
+              if (typeof Music !== "undefined") Music.duck(0.6, 0.35);
+            }
             const s = this.ctx.createBufferSource();
             s.buffer = buf;
             s.playbackRate.value = rate;
@@ -201,6 +209,7 @@
       /* v0.8.122 武器類別音效庫：Stages[n].sfxClass = "heavy"｜"light"，引擎依招式標記自動配對「類別 × 招式型態」，只有特殊招式才需要專屬音效（move.sfx 或 Stages[n].sfx 事件優先）。
          型態：swing 普通揮擊、combo 連擊每下、thrust 突刺、sweep 橫掃、slam 砸地／震退、charge 衝鋒、leap 躍起、leapLand 躍斬落地、throw 投擲、rage 怒氣、zone 陣法、mobility 位移。
          另可用 Stages[n].sfxPitch（音高倍率，體型大壓低）。檔案都是 assets/sfx/ 現有的 b2_／b3_／m_ 音效（見 Sound.bossSfx／extSfx）。 */
+      const SFX_HI = new Set(["execution", "mikiri", "parry", "s_ult", "peril", "hit", "s_hit", "s_hurt", "b2u_shatter", "b2_shatter"]); /* v0.8.239 高層音效（見 Sound.play） */
       const SFX_CLASS = {
         heavy: { swing: "b3_heavy", combo: "b3_heavy", thrust: "b3_dash", sweep: "b3_sweep", slam: "b3_plunge", charge: "b3_charge", leap: "b3_dash", leapLand: "b3_plunge", throw: "b2_sword_fly", rage: "b3_heavy", rageW: "m_roar", zone: "b3_seal", mobility: "b3_dash" },
         light: { swing: "b3_twin", combo: "b3_cross", thrust: "b3_dash", sweep: "b3_low", slam: "b3_plunge", charge: "b3_dash", leap: "b3_spin", leapLand: "b3_low", throw: "b2_sword_fly", rage: "b3_rain", rageW: "b3_draw", zone: "b3_seal", mobility: "b3_dash" }

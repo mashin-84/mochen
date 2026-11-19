@@ -115,7 +115,8 @@
 
       const drawer = document.getElementById("scroll-drawer");
       const btnDrawer = document.getElementById("btn-drawer-toggle");
-      if (btnDrawer) btnDrawer.addEventListener("click", () => { drawer.classList.toggle("open"); btnDrawer.classList.toggle("active", drawer.classList.contains("open")); });
+      /* v0.8.239 修：這裡原本也綁了 toggle，跟 91_main 的「打開」疊在一起＝永遠打開、又沒有關閉鈕 → 改由抽屜右上「✕ 關閉」關 */
+      { const cl = document.getElementById("btn-drawer-close"); if (cl) cl.addEventListener("click", () => drawer.classList.remove("open")); }
 
       document.querySelectorAll(".drawer-tab-btn").forEach((tBtn) => {
         tBtn.addEventListener("click", () => {

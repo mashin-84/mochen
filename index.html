@@ -478,6 +478,7 @@
     }
 
     .scroll-drawer.open { display: block; }
+    .drawer-close-btn { height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border-gold); background: rgba(51, 65, 85, 0.9); color: #fde68a; font-size: 13px; font-family: inherit; }
 
     .drawer-top-banner {
       display: flex;
@@ -1606,6 +1607,15 @@
     .gauge-posture-track.capped .posture-tick { background: #ffffff; box-shadow: 0 0 8px #ffffff, 0 0 3px #000; transform: scaleY(1.6); }
     .gauge-posture-track.capped .gauge-posture-fill { filter: grayscale(0.7) brightness(0.8); }
     .gauge-posture-fill.hpout { background: linear-gradient(90deg, #7f1d1d 0%, #ef4444 50%, #7f1d1d 100%) !important; box-shadow: 0 0 14px rgba(239, 68, 68, 0.95) !important; animation: pulse-posture 0.22s infinite alternate !important; }
+    /* v0.8.239 卡關救濟詢問框 */
+    #easy-offer { position: fixed; inset: 0; z-index: 9100; display: flex; align-items: center; justify-content: center; background: rgba(6, 10, 20, 0.6); }
+    #easy-offer .eo-box { width: min(440px, calc(100vw - 32px)); padding: 18px 20px 16px; border-radius: 14px; background: rgba(20, 26, 40, 0.97); border: 1px solid rgba(253, 224, 71, 0.5); color: #f1f5f9; font-family: 'Noto Serif TC', serif; text-align: center; }
+    #easy-offer .eo-t { font-size: 18px; font-weight: 900; color: #fde68a; margin-bottom: 8px; }
+    #easy-offer .eo-d { font-size: 14px; line-height: 1.7; color: #e2e8f0; }
+    #easy-offer .eo-d small { color: #94a3b8; }
+    #easy-offer .eo-b { display: flex; gap: 10px; margin-top: 14px; }
+    #easy-offer .eo-b button { flex: 1; height: 42px; border-radius: 10px; border: 1px solid #64748b; background: #334155; color: #f8fafc; font-size: 15px; font-family: inherit; }
+    #easy-offer .eo-b button[data-v="1"] { background: #92400e; border-color: #f59e0b; }
     /* v0.8.237 手感調參面板 */
     #tune-panel { position: fixed; inset: 0; z-index: 9000; display: none; align-items: center; justify-content: center; background: rgba(8, 12, 24, 0.55); }
     #tune-panel.open { display: flex; }
@@ -1757,7 +1767,7 @@
           <span>📜</span>
           <span>天機閣・演武玉簡</span>
         </div>
-        <span style="font-size: 10px; color: var(--amber-gold);">墨塵修道隨筆</span>
+        <button type="button" id="btn-drawer-close" class="drawer-close-btn">✕ 關閉</button>
       </div>
 
       <div class="drawer-tabs">
@@ -2032,6 +2042,10 @@
           <button type="button" id="btn-volume" class="menu-tile-btn">
             <span>🔉</span>
             <span id="menu-volume-txt">整體音量：小</span>
+          </button>
+          <button type="button" id="btn-easy" class="menu-tile-btn">
+            <span>🛡</span>
+            <span id="menu-easy-txt">護心輔助：關</span>
           </button>
           <button type="button" id="btn-haptic" class="menu-tile-btn">
             <span>📳</span>
@@ -2315,7 +2329,15 @@
             const buf = vs && vs.length > 1 ? vs[Math.floor(Math.random() * vs.length)] : this.buffers[name];
             const rate = Math.max(0.1, pitch * (this.noJitter[name] ? 1 : 1 + (Math.random() * 2 - 1) * this.pitchJitter));
             live.push(now + buf.duration / rate); this.live[name] = live;
-            const out = this.master || this.ctx.destination;
+            /* v0.8.239 音效依重要度分層（櫻井式〈重要度で効果音バランス〉）：關鍵回饋音（處決、完美招架、受擊、危招）走高層；
+               高層一響，低層（揮刀、Boss 招式聲、腳步…）0.3 秒內壓到 55%、音樂壓到 60%，關鍵音不被蓋掉。各呼叫原本的音量不變。 */
+            const hi = SFX_HI.has(name);
+            if (this.master && !this.busLo) { this.busLo = this.ctx.createGain(); this.busLo.connect(this.master); }
+            const out = this.master ? (hi ? this.master : this.busLo) : this.ctx.destination;
+            if (hi && this.busLo && vol >= 0.4) {
+              const gg = this.busLo.gain; gg.cancelScheduledValues(now); gg.setTargetAtTime(0.55, now, 0.015); gg.setTargetAtTime(1, now + 0.22, 0.12);
+              if (typeof Music !== "undefined") Music.duck(0.6, 0.35);
+            }
             const s = this.ctx.createBufferSource();
             s.buffer = buf;
             s.playbackRate.value = rate;
@@ -2336,6 +2358,7 @@
       /* v0.8.122 武器類別音效庫：Stages[n].sfxClass = "heavy"｜"light"，引擎依招式標記自動配對「類別 × 招式型態」，只有特殊招式才需要專屬音效（move.sfx 或 Stages[n].sfx 事件優先）。
          型態：swing 普通揮擊、combo 連擊每下、thrust 突刺、sweep 橫掃、slam 砸地／震退、charge 衝鋒、leap 躍起、leapLand 躍斬落地、throw 投擲、rage 怒氣、zone 陣法、mobility 位移。
          另可用 Stages[n].sfxPitch（音高倍率，體型大壓低）。檔案都是 assets/sfx/ 現有的 b2_／b3_／m_ 音效（見 Sound.bossSfx／extSfx）。 */
+      const SFX_HI = new Set(["execution", "mikiri", "parry", "s_ult", "peril", "hit", "s_hit", "s_hurt", "b2u_shatter", "b2_shatter"]); /* v0.8.239 高層音效（見 Sound.play） */
       const SFX_CLASS = {
         heavy: { swing: "b3_heavy", combo: "b3_heavy", thrust: "b3_dash", sweep: "b3_sweep", slam: "b3_plunge", charge: "b3_charge", leap: "b3_dash", leapLand: "b3_plunge", throw: "b2_sword_fly", rage: "b3_heavy", rageW: "m_roar", zone: "b3_seal", mobility: "b3_dash" },
         light: { swing: "b3_twin", combo: "b3_cross", thrust: "b3_dash", sweep: "b3_low", slam: "b3_plunge", charge: "b3_dash", leap: "b3_spin", leapLand: "b3_low", throw: "b2_sword_fly", rage: "b3_rain", rageW: "b3_draw", zone: "b3_seal", mobility: "b3_dash" }
@@ -2440,13 +2463,14 @@
        * ========================================================================= */
       const TUNE_DEFS = [
         { g: "手感（全部關卡）" },
-        { k: "hsMul", n: "頓幀長度倍率", d: 1, min: 0, max: 2, s: 0.1 },
-        { k: "hsVictim", n: "頓幀微震：受擊方（px）", d: 7, min: 0, max: 16, s: 1 },
-        { k: "hsAttacker", n: "頓幀微震：出手方（px）", d: 2, min: 0, max: 8, s: 0.5 },
-        { k: "shakeMul", n: "畫面震動倍率", d: 1, min: 0, max: 2, s: 0.1 },
+        { k: "hsMul", n: "頓幀長度倍率", d: 1.2, min: 0, max: 2, s: 0.1 },
+        { k: "hsVictim", n: "頓幀微震：受擊方（px）", d: 10, min: 0, max: 16, s: 1 },
+        { k: "hsAttacker", n: "頓幀微震：出手方（px）", d: 2.5, min: 0, max: 8, s: 0.5 },
+        { k: "shakeMul", n: "畫面震動倍率", d: 1.2, min: 0, max: 2, s: 0.1 },
         { k: "parryMs", n: "完美招架窗口（ms，不含關卡加成）", d: 130, min: 60, max: 250, s: 5 },
         { k: "bossDmgMul", n: "Boss 傷害倍率", d: 1, min: 0.3, max: 2, s: 0.05 },
         { k: "bossWindMul", n: "Boss 一般招式起手時間倍率", d: 1, min: 0.6, max: 1.6, s: 0.05 },
+        { k: "recStrong", n: "強招收招下限（秒，傷害≥200 或危招）", d: 0.6, min: 0.3, max: 1.2, s: 0.05 },
         { g: "第 3 關二階大招【千鈞鎖脈】" },
         { k: "s3b_d1", n: "第一刀：衝到背後後幾秒砍", d: 0.55, min: 0.25, max: 1.2, s: 0.05 },
         { k: "s3b_d2", n: "第二刀：衝到背後後幾秒砍", d: 0.5, min: 0.25, max: 1.2, s: 0.05 },
@@ -2456,7 +2480,7 @@
       ];
       const Tune = {
         o: {},
-        load() { try { this.o = JSON.parse(localStorage.getItem("qingyun_tune") || "{}") || {}; } catch (e) { this.o = {}; } },
+        load() { try { this.o = JSON.parse(localStorage.getItem("qingyun_tune") || "{}") || {}; } catch (e) { this.o = {}; } for (const k of Object.keys(this.o)) { const d = this.def(k); if (!d || Math.abs(this.o[k] - d.d) < 1e-9) delete this.o[k]; } }, /* 已等於正式值（例如使用者回報後寫進程式）就清掉 */
         save() { try { localStorage.setItem("qingyun_tune", JSON.stringify(this.o)); } catch (e) { } },
         def(k) { return TUNE_DEFS.find(d => d.k === k); },
         v(k) { const d = this.def(k); const x = this.o[k]; return typeof x === "number" && isFinite(x) ? x : (d ? d.d : 0); },
@@ -2513,6 +2537,26 @@
         toast(s) { const t = this.el.querySelector(".tune-toast"); t.textContent = s; t.classList.add("on"); clearTimeout(this._tt); this._tt = setTimeout(() => t.classList.remove("on"), 1800); }
       };
       Tune.load();
+
+      /* v0.8.239 卡關救濟（櫻井式〈クリアできないよりマシ〉）：同一關連輸 3 次，問要不要開「護心」輔助（Boss 傷害 −20%、完美招架窗口 +20ms），
+         措辭不羞辱、隨時可在齒輪關掉。連輸次數存 qingyun_lose（{關卡: 次數}），過關歸零；護心開關存 qingyun_easy。 */
+      const Easy = {
+        on: (() => { try { return localStorage.getItem("qingyun_easy") === "1"; } catch (e) { return false; } })(),
+        set(v) { this.on = !!v; try { localStorage.setItem("qingyun_easy", v ? "1" : "0"); } catch (e) { } const t = document.getElementById("menu-easy-txt"); if (t) t.textContent = "護心輔助：" + (this.on ? "開" : "關"); },
+        streak() { try { return JSON.parse(localStorage.getItem("qingyun_lose") || "{}") || {}; } catch (e) { return {}; } },
+        lose(sid) { const o = this.streak(); o[sid] = (o[sid] || 0) + 1; try { localStorage.setItem("qingyun_lose", JSON.stringify(o)); } catch (e) { } return o[sid]; },
+        clear(sid) { const o = this.streak(); delete o[sid]; try { localStorage.setItem("qingyun_lose", JSON.stringify(o)); } catch (e) { } },
+        /* 輸了之後：連輸 3、6、9…次且還沒開護心 → 先問再重打；否則照常 cb() */
+        offer(sid, cb) {
+          const n = this.lose(sid);
+          if (this.on || n < 3 || n % 3 !== 0) { cb(); return; }
+          const el = document.createElement("div"); el.id = "easy-offer";
+          el.innerHTML = '<div class="eo-box"><div class="eo-t">這關已經挑戰 ' + n + ' 次了</div><div class="eo-d">要開啟「護心」輔助嗎？<br>Boss 傷害 −20%、完美招架判定 +20ms。<br><small>隨時可在齒輪選單關閉，不影響結算。</small></div>' +
+            '<div class="eo-b"><button type="button" data-v="1">開啟並重來</button><button type="button" data-v="0">不用，再戰</button></div></div>';
+          el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "1") this.set(true); el.remove(); cb(); });
+          document.body.appendChild(el);
+        }
+      };
 
       /* =========================================================================
        * 2. 全九難關卡資料庫 (ALL 9 STAGES DATABASE)
@@ -3150,7 +3194,7 @@
         S3.stances.A.pool.push(["u_cross", 4]); S3.stances.B.poolP2.push(["u_tornado", 5]);
         S3.hpTriggers = [{ move: "u_cross", at: 0.5, phase: 1, stance: "A" }, { move: "u_tornado", at: 0.5, phase: 2, stance: "B" }];
         S3.sigMoves = [{ move: "u_cross", phase: 1, stance: "A" }, { move: "u_tornado", phase: 2, stance: "B" }];
-        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3btorn", "boss3bsolid", "cue", "land"); S3.fxSheets.push("boss3shadow", "boss3cage", "boss3leaf"); /* v0.8.216 新大招特效 */
+        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3btorn", "boss3bsolid", "cue", "land"); S3.fxSheets.push("boss3shadow", "boss3cage", "boss3leaf", "boss5charge"); /* v0.8.239 boss5charge：千鈞一擊集氣暫借，boss3charge 生好後換掉 */ /* v0.8.216 新大招特效 */
         S3.stances.A.extras = S3.stances.A.extras.concat(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4", "us5_crouch", "us6_back", "us7_dive", "us8_land"]);
         S3.stances.B.extras = S3.stances.B.extras.concat(["obj_fly", "hs1_wind", "hs2_mid", "hs3_hit", "hs4_rec", "uc1_plant", "uc2_holdA", "uc3_holdB", "uc4_lean", "uc5_flinch", "uc6_blown", "uc7_kneel", "uc8_command", "wall_1", "wall_2", "wall_3", "wall_4", "wall_5", "wall_6", "wall_7", "wall_8"]); /* v0.8.171 大招 */
         S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
@@ -3751,7 +3795,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       const ctx = canvas.getContext("2d");
 
       const BOSS_DMG_K = 1.25; /* v0.8.159 Boss 招式傷害倍率（招式、飛劍、部位招；地面煞氣與火柱不乘） */
-function bossDmg(n) { return Math.round(n * BOSS_DMG_K * Tune.v("bossDmgMul")); }
+function bossDmg(n) { return Math.round(n * BOSS_DMG_K * Tune.v("bossDmgMul") * (Easy.on ? 0.8 : 1)); }
 const Config = {
         worldWidth: 3200,
         baseWidth: 1280,
@@ -3967,12 +4011,25 @@ const Config = {
       /* v0.8.8 定格改毫秒制：只凍結 Boss 與主角，粒子、鏡頭、輸入緩衝照跑；上限 120ms */
       function triggerHitstopMs(ms) {
         const was = Game.hitstopT || 0;
-        Game.hitstopT = Math.max(was, Math.min(120, ms * Tune.v("hsMul")) / 1000);
+        Game.hitstopT = Math.max(was, Math.min(120, ms) * Tune.v("hsMul") / 1000); /* v0.8.239 倍率套在上限之後，120ms 的重擊也會被放大 */
         Game.hsMax = was > 0 ? Math.max(Game.hsMax || 0, Game.hitstopT) : Game.hitstopT; /* 微震收斂用的起始長度 */
       }
       /* v0.8.237 頓幀微震（參考櫻井政博〈8 種頓幀規格〉）：只動畫面不動判定；受擊方大（7px）、出手方小（2px），
          地面只橫震、空中加縱震，幅度隨剩餘頓幀時間收斂。受擊方＝剛被打的主角（hurtInv 剛設）否則是 Boss（被砍、被彈刀）。 */
       const HS_AMP = { victim: 7, attacker: 2 };
+      /* v0.8.239 命中深色層（櫻井式：只靠加亮的特效在亮背景會糊，要混暗色）：重擊／完美招架時在發光特效底下墊一圈擴散的淡墨環。
+         程式繪製的暫代品，正式版改生圖（prompts/common/ink_impact）。 */
+      function inkBurst(x, y, r, dur) { (Game.inks || (Game.inks = [])).push({ x, y, r, t0: performance.now(), dur: (dur || 0.32) * 1000 }); if (Game.inks.length > 8) Game.inks.shift(); }
+      function drawInks() {
+        const L = Game.inks; if (!L || !L.length) return; const now = performance.now();
+        for (let i = L.length - 1; i >= 0; i--) {
+          const k = L[i], p = (now - k.t0) / k.dur; if (p >= 1) { L.splice(i, 1); continue; }
+          const e = 1 - (1 - p) * (1 - p), R = k.r * (0.55 + 0.6 * e), a = 0.42 * (1 - p);
+          const g = ctx.createRadialGradient(k.x, k.y, R * 0.45, k.x, k.y, R);
+          g.addColorStop(0, "rgba(18, 22, 38, 0)"); g.addColorStop(0.7, `rgba(18, 22, 38, ${a})`); g.addColorStop(1, "rgba(18, 22, 38, 0)");
+          ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(k.x, k.y, R, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+      }
       /* v0.8.238 投射物偏心晃動（櫻井式〈重心をズラす〉）：6 格（0.1 秒）一循環的上下左右微偏＋小角度擺動，直線飛行不再死板；seed 讓每個物件不同步 */
       const WOB_P = [[1.6, -1], [2, 0.6], [0.4, 1.8], [-1.6, 1], [-2, -0.6], [-0.4, -1.8]];
       function wobble(seed, amp) { const i = (Math.floor(performance.now() / 16.7) + (seed | 0)) % 6, p = WOB_P[i], k = amp == null ? 1 : amp; return { x: p[0] * k, y: p[1] * k, r: p[1] * 0.012 * k }; }
@@ -4435,6 +4492,7 @@ const Config = {
       function getParryWindowMs(isPerilThrust) {
         let base = Config.parryWindowMs + getStageParryBonus();
         if (Progress.echoes && Progress.echoes.includes(13)) base += 20;
+        if (Easy.on) base += 20; /* v0.8.239 護心輔助 */
         /* v0.8.183 問心印（預設裝備）原本把窗口 ×0.7，等於大家實際只有 105ms；改為不縮窗口（保留架勢 ×2），全關實際 150ms。心印系統是否封存待使用者決定 */
         if (isPerilThrust) base = Math.round(base * 0.8);
         base = Math.round(base * PARRY_SPAM_K[Math.min(2, Player._parrySpam || 0)]);
@@ -5090,7 +5148,7 @@ const Config = {
 
       function doPerfectDeflect(cx, cy, dir, el, postureGain) {
         Player.parryCooldown = 0; Player._parrySpam = 0; Player._lastParryPress = 0; /* v0.8.183 彈成功：連按懲罰歸零（連段招架照常） */
-        feel("parry", dir); /* 定格、震屏、震動、雙方閃白 → 回饋表 FEEL */
+        feel("parry", dir); /* 定格、震屏、震動、雙方閃白 → 回饋表 FEEL */ inkBurst(cx, cy, 150, 0.28);
         // 完美招架不耗體力，且即刻恢復 20 劍勢體力！
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 20);
         Player.vx = dir * 140;
@@ -5158,7 +5216,7 @@ const Config = {
         triggerHitstopMs(heavyHit ? 100 : 70);
         triggerShake(dir, 0.3, heavyHit ? 34 : 24, heavyHit ? 0.36 : 0.28);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + (heavyHit ? 0.06 : 0.035));
-        hurtFlash(heavyHit ? 0.8 : 0.5);
+        hurtFlash(heavyHit ? 0.8 : 0.5); inkBurst(Player.x, Player.y - 60, heavyHit ? 190 : 140);
         Game.comboCount = 0;
         spawnSparks(Player.x, Player.y - 48, "hit", dir);
         spawnFloatingText(Player.x, Player.y - 100, `${tag} -${dmg}`, "#f87171", 1.1);
@@ -5175,7 +5233,7 @@ const Config = {
           hapticBuzz([80, 40, 120]);
           showBanner("問心失敗", "元神潰散・重整再戰", 1700, "#f87171");
           const sid = Boss.stageId;
-          setTimeout(() => { if (Game.defeated) loadStage(sid, { skipPre: true }); }, 1900);
+          setTimeout(() => { if (Game.defeated) Easy.offer(sid, () => { if (Game.defeated) loadStage(sid, { skipPre: true }); }); }, 1900); /* v0.8.239 連輸 3 次先問要不要開護心 */
         }
       }
 
@@ -5228,6 +5286,14 @@ const Config = {
         }
       }
 
+      /* v0.8.239 收招長度（櫻井式〈フォロースルー〉）：強招（傷害 ≥200 或【危】）收招至少 recStrong 秒、起手 ≥1.1 秒的重招再 +0.1；
+         二階段原本收招 ×0.75，下限也只打 0.85 折——破綻要看得出來、抓得到。調參面板可改 recStrong。 */
+      function bossRecDur(m) {
+        const p2 = Config.bossPhase === 2, base = (m.recover || 0.5) * (p2 ? 0.75 : 1);
+        if (!((m.damage || 0) >= 200 || m.isPerilous)) return base;
+        const floor = (Tune.v("recStrong") + ((m.windup || 0) >= 1.1 ? 0.1 : 0)) * (p2 ? 0.85 : 1);
+        return Math.max(base, floor);
+      }
       /* v0.7.4 雙姿態 Boss（第 3 關）：Stages[n].stances = { A:{sprite,stride,pool,poolP2,far,farP2,alias}, B:{...} }
          每 switchEvery 招（二階段 switchEveryP2）插入「換姿」招式（stance_switch，前搖期間 Boss 有破綻），姿態決定用哪套動作表與招式池 */
       function stanceOf(stage) { return stage.stances ? stage.stances[Boss.stance] : null; }
@@ -5371,7 +5437,7 @@ const Config = {
             out.ox += (d.kick.ox || 0) * K * e; out.rot += (d.kick.rot || 0) * K * e; out.sx += ((d.kick.sx || 1) - 1) * K * e; out.sy += ((d.kick.sy || 1) - 1) * K * e;
           }
         } else {
-          const rd = (move.recover || 0.5) * (Config.bossPhase === 2 ? 0.75 : 1);
+          const rd = bossRecDur(move);
           const p = cl(1 - Boss.stateTimer / Math.max(0.05, rd));
           const R = soft(d.r);
           const e = 1 - Math.pow(1 - p, 2);
@@ -6021,7 +6087,7 @@ const Config = {
               }
             }
             Boss.state = "recover";
-            Boss.stateTimer = move.recover * (Config.bossPhase === 2 ? 0.75 : 1.0);
+            Boss.stateTimer = bossRecDur(move);
             Boss.isPerilous = false;
             Boss.vx *= 0.2;
           }
@@ -6193,7 +6259,7 @@ const Config = {
         {
           const stU = Stages[Boss.stageId];
           const mU = stU && stU.moves ? stU.moves[Boss.moveType] : null;
-          const ultOn = !!(mU && mU.ultimate && (Boss.state === "windup" || Boss.state === "active"));
+          const ultOn = !!(mU && mU.ultimate && (Boss.state === "windup" || Boss.state === "active")) || !!Game.gDimOn; /* v0.8.239 灰盒大招也能叫全畫面暗場（Game.gDimOn） */
           Game.ultDim += ((ultOn ? 1 : 0) - Game.ultDim) * Math.min(1, dt * (ultOn ? 6 : 4));
           if (Game.ultDim < 0.01) Game.ultDim = 0;
         }
@@ -8494,15 +8560,25 @@ const Config = {
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         Boss.moveType = key; Boss.state = "ult"; Boss.vx = 0; Boss.isPerilous = false; Boss.perilType = null;
         Boss.nextImpactIn = 999; Boss.consecutiveBlocks = 0;
-        Boss._ult = { kind: m.ult, c, m, t: 0, ev: {}, wN: 0 }; Boss._ultRest = false; Boss._ultFrame = c.img.raise || c.img.rise || c.img.guard || c.img.hold;
+        Boss._ult = { kind: m.ult, c, m, t: 0, ev: {}, wN: 0, hc0: Progress.hitCount || 0, pc0: Progress.parryCount || 0 }; Boss._ultRest = false; Boss._ultFrame = c.img.raise || c.img.rise || c.img.guard || c.img.hold;
         Ult.waves.length = 0;
         showBanner(String(m.name).replace(/\s*[（(].*[）)]\s*/, ""), "大　招", 1300, "#fca5a5");
         Sound.play("peril", 1.0, 0.7); hapticBuzz([30, 40, 60]);
         return true;
       }
+      /* v0.8.239 讚美演出（櫻井式〈ほめてやれ〉）：大招全程無傷＝金色大字＋短慢動作＋震動，結算多記一項「無傷破招」 */
+      function ultPraise(m) {
+        Progress.ultFlawless = (Progress.ultFlawless || 0) + 1;
+        const nm = String(m.name || "大招").replace(/\s*[（(].*[）)]\s*/, "");
+        showBanner("無傷破招", "【" + nm + "】盡數化解", 1500, "#fde047");
+        Game.slowT = Math.max(Game.slowT || 0, 0.5); Game.slowScale = 0.35;
+        Sound.play("mikiri", 0.9, 1.25); Sound.play("assist", 0.7, 1.5); hapticBuzz([30, 30, 60]);
+        if (fxReady("spark")) spawnFx("spark", 2, Player.x, Player.y - 120, { w: 340, dur: 0.5 });
+      }
       function ultEnd(cancel) {
         gultCleanup(cancel);
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
+        if (U && U.m && Boss.hp > 0 && (Progress.hitCount || 0) === U.hc0 && (Progress.parryCount || 0) - U.pc0 >= 2) ultPraise(U.m); /* v0.8.239 讚美演出：整招沒被打中且至少完美招架 2 次 */
         Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; Game.ultBind = false; ultClashUI(false);
         if (Boss._ultAir || (U && U.lift) || Boss.y < Config.groundY) { Boss.y = Config.groundY; } /* v0.8.176 接劍等空中段被中斷也落回地面 */ Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
         if (U && U.fc0) Boss.facing = Player.x >= Boss.x ? 1 : -1; /* 龍捲旋轉中被中斷：面向恢復 */
@@ -9559,7 +9635,7 @@ const Config = {
         return best;
       }
       function gultCleanup(cancel) { /* ultEnd 呼叫 */
-        Boss._introHide = false; Boss._gImm = false; Game.ultNoFace = false;
+        Boss._introHide = false; Boss._gImm = false; Game.ultNoFace = false; Game.gDimOn = false; Game.ultDimRGB = null;
         if (cancel) GU.hz.length = 0;
         const p = Game.partner; if (p && p.state === "ultchant") { p.state = "idle"; p.cd = 3; p.kind = null; }
       }
@@ -9579,7 +9655,7 @@ const Config = {
         Boss.state = "ult";
         const dimOn = (g.dim || []).some(d => t >= d[0] && t < d[1]);
         Boss._ucd = Math.max(0, Math.min(0.8, (Boss._ucd || 0) + (dimOn ? dt * 2.5 : -dt * 3))); Boss._ucdPos = { x: Boss.x, y: Boss.y - 110 };
-        Game.ultCam = dimOn ? 0.12 : -0.05; Game.ultFocus = dimOn ? true : 0.5;
+        Game.ultCam = dimOn ? (g.camZ || 0.12) : -0.05; Game.ultFocus = dimOn ? (g.camF || true) : 0.5;
         return true;
       }
       /* ---------- 各關大招時間軸 ---------- */
@@ -9671,12 +9747,24 @@ const Config = {
           ev.push([T2, () => { fr("26_charge_wind"); blink();
             strike(D2, 95, 10, "27_charge_hit", () => { impact(50, 70, 18, 0.04); Sound.play("b3_heavy", 0.95, 0.95); Sound.play("hit", 0.6, 0.7); }, { needFace: true, label: "【背後斬】" }); }]);
           /* 第三刀 千鈞一擊：舉劍 0.4 → 集氣 1.2（雙劍輪流飛向主角）→ 頂點劍閃停 0.25 → 用力下揮 */
+          /* v0.8.239 千鈞一擊演出（使用者：要像第 5 關噴火一樣有力）：全畫面暗場＋冷白光暈聚在劍上、鏡頭拉近對準他、
+             劍尖聚光（光點往劍收）→ 劍閃光圈 → 砸下：縱向光柱＋地面衝擊波＋亮暗閃＋暗場瞬間放開。
+             專屬特效圖 boss3charge（0 聚光、1 劍閃光圈、2 縱劈光柱、3 地裂衝擊）還沒生，先借第 5 關 boss5charge（0、1、2）＋boss3shadow 列 3。 */
+          const CF = (Stages[3].fxSheets || []).includes("boss3charge") ? "boss3charge" : "boss5charge";
+          const tip = () => ({ x: Boss.x + Boss.facing * 40, y: Boss.y - 340 });
+          g.camZ = 0.12;
           ev.push([T3, () => { U.ph = "charge"; U.follow = 0; fr("89_ub_raise"); Boss.facing = gSide(); Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
-            strike(CH, 1, 40, "91_ub_slam", () => { U.capPost = false; impact(60, 120, 30, 0.08); hapticBuzz([60, 20, 90]);
+            g.camZ = 0.22; g.camF = 0.72; Game.gDimOn = true; Game.ultDimRGB = "175, 215, 255"; Game.ultDimY = Boss.y - 330; Sound.play("assist", 0.45, 0.6);
+            if (fxReady(CF)) { const p0 = tip(); spawnFx(CF, 0, p0.x, p0.y, { w: 560, dur: CH - FL, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: tip }); }
+            strike(CH, 1, 40, "91_ub_slam", () => { U.capPost = false; impact(60, 120, 30, 0.1); hapticBuzz([60, 20, 90]);
               Sound.play("b3_heavy", 1.0, 0.6); Sound.play("b3_plunge", 0.8, 0.8);
+              Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.12; screenFlash("rgba(235,245,255,0.75)", 0.7, 0.35); addTrauma(0.35); /* 暗場瞬間放開＋亮暗閃 */
+              const ix = Boss.x + Boss.facing * 150; inkBurst(ix, G - 120, 300, 0.45);
+              if (CF === "boss3charge" && fxReady(CF)) spawnFx(CF, 2, ix, G - 330, { w: 760, dur: 0.45, facing: Boss.facing, alpha: 1 }); /* 縱劈光柱（生圖到了才有） */
+              else if (fxReady("spark")) spawnFx("spark", 3, ix, G - 200, { w: 620, dur: 0.45, alpha: 0.9 });
               if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },
               { w: 300, lock: 0.25, blockDmg: 150, lethal: true, dodgePlain: true, label: "【千鈞一擊】",
-              onParry: () => { U.won = true; U.capPost = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
+              onParry: () => { U.won = true; U.capPost = false; Game.gDimOn = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
                 spawnFloatingText(Boss.x, Boss.y - 260, "〔千鈞被頂回〕", "#fde047", 1.2); Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
           }]);
           ev.push([T3 + 0.3, () => { fr("90_ub_peak"); swordOut(0); }]); /* v0.8.236 飛劍提早：第二把離最後一刀 ≥0.6 秒，避開「0.5 秒內連按招架窗口縮小」（預設值下） */
@@ -9687,7 +9775,8 @@ const Config = {
             Sound.play("b2_sword_fly", 0.8, 1.2 + i * 0.1);
             if (i < 1) { ev.push([U.t + (far ? SG * 0.78 : SG), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
           };
-          ev.push([T3 + CH - FL, () => { /* 停頓劍閃：這一閃之後 FL 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 260, dur: 0.25 }); }]);
+          ev.push([T3 + CH - FL, () => { /* 停頓劍閃：這一閃之後 FL 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 300, dur: 0.25 });
+            if (fxReady(CF)) { const p0 = tip(); spawnFx(CF, 1, p0.x, p0.y, { w: 440, dur: Math.max(0.2, FL), alpha: 0.95, follow: tip }); } g.camZ = 0.28; hapticBuzz(30); }]);
           ev.push([T3 + CH - Math.min(FL, 0.15), () => { /* 落刀前：人在遠處就衝刺貼上（逃不掉，只能招架或瞬步） */ const s = gSide(); if (Math.abs(Player.x - Boss.x) > 260) dashTo(Player.x - s * 180, 0.12); }]);
           ev.push([T3 + CH + 0.15, () => { if (U.won) return; fr("92_ub_after"); g.rest = [U.t + 0.3, 1.5]; }]);
           g.tick = (dt) => {
@@ -10337,12 +10426,13 @@ const Config = {
           ctx.save();
           ctx.fillStyle = `rgba(2, 4, 14, ${0.62 * Game.ultDim})`;
           ctx.fillRect(-3000, -3000, Config.worldWidth + 6000, 7000);
-          const ug = ctx.createRadialGradient(Boss.x, Boss.y - 110, 20, Boss.x, Boss.y - 110, 420);
-          ug.addColorStop(0, `rgba(255, 70, 50, ${0.34 * Game.ultDim})`);
-          ug.addColorStop(1, "rgba(255, 70, 50, 0)");
+          const uc = Game.ultDimRGB || "255, 70, 50", uy = Game.ultDimY != null && Game.gDimOn ? Game.ultDimY : Boss.y - 110; /* v0.8.239 光暈顏色／高度可由大招指定（第 3 關＝冷白，聚在舉高的劍上） */
+          const ug = ctx.createRadialGradient(Boss.x, uy, 20, Boss.x, uy, 420);
+          ug.addColorStop(0, `rgba(${uc}, ${0.34 * Game.ultDim})`);
+          ug.addColorStop(1, `rgba(${uc}, 0)`);
           ctx.globalCompositeOperation = "lighter";
           ctx.fillStyle = ug;
-          ctx.fillRect(Boss.x - 450, Boss.y - 560, 900, 700);
+          ctx.fillRect(Boss.x - 450, uy - 450, 900, 900);
           ctx.restore();
         }
 
@@ -10419,6 +10509,7 @@ const Config = {
         }
 
         drawMist();
+        drawInks(); /* v0.8.239 命中深色層（墊在發光特效底下） */
         drawFx(true);
         drawFlyingSwords();
         drawIllusions();
@@ -11701,7 +11792,7 @@ const Config = {
             let fr = moveData.frames[Boss.state];
             if (Array.isArray(fr)) { /* v0.8.30 關鍵格序列：同一階段依進度平均切換多張圖 */
               let pr = 0;
-              if (Boss.state === "recover") pr = 1 - Boss.stateTimer / Math.max(0.05, (moveData.recover || 0.5) * (Config.bossPhase === 2 ? 0.75 : 1));
+              if (Boss.state === "recover") pr = 1 - Boss.stateTimer / Math.max(0.05, bossRecDur(moveData));
               else pr = 1 - Boss.stateTimer / (Boss.stateDur || 1);
               fr = fr[Math.min(fr.length - 1, Math.max(0, Math.floor(pr * fr.length)))];
             }
@@ -13029,7 +13120,7 @@ const Config = {
         Progress.parryCount = 0;
         Progress.mikiriCount = 0;
         Progress.damageTaken = 0;
-        Progress.hitCount = 0;
+        Progress.hitCount = 0; Progress.ultFlawless = 0;
         Progress.perfectDodgeCount = 0;
 
         // UI Header Updates
@@ -13148,7 +13239,7 @@ const Config = {
 
       const elSettlementModal = document.getElementById("settlement-modal");
       function handleStageClear(clearedStageId) {
-        Game.cutsceneActive = true;
+        Game.cutsceneActive = true; Easy.clear(clearedStageId);
         Music.fadeOut();
         if (clearedStageId === 5) Sound.play("m_howl", 0.9, 0.85);
         const stC = Stages[clearedStageId];
@@ -13189,9 +13280,9 @@ const Config = {
         document.getElementById("settle-time-val").textContent = `${elapsedSec} 秒`;
         {
           const hits = Progress.hitCount || 0, dodges = Progress.perfectDodgeCount || 0;
-          document.getElementById("settle-hit-dodge").textContent = `${hits} / ${dodges}`;
           /* 評級：被擊越少、完美招架／閃避越多越高；耗時過長微扣 */
-          let score = 100 - hits * 9 + Math.min(20, Progress.parryCount * 2) + Math.min(10, dodges * 3) - (elapsedSec > 240 ? 10 : 0);
+          let score = 100 - hits * 9 + Math.min(20, Progress.parryCount * 2) + Math.min(10, dodges * 3) + Math.min(15, (Progress.ultFlawless || 0) * 8) - (elapsedSec > 240 ? 10 : 0); /* v0.8.239 無傷破招每次 +8（上限 15） */
+          document.getElementById("settle-hit-dodge").textContent = `${hits} / ${dodges}` + ((Progress.ultFlawless || 0) ? `｜無傷破招 ${Progress.ultFlawless}` : "");
           const grade = score >= 105 ? "甲上・劍神" : score >= 85 ? "甲・劍豪" : score >= 65 ? "乙・劍客" : score >= 40 ? "丙・習劍" : "丁・險勝";
           document.getElementById("settle-grade").textContent = grade;
         }
@@ -14189,7 +14280,8 @@ const Config = {
 
       const drawer = document.getElementById("scroll-drawer");
       const btnDrawer = document.getElementById("btn-drawer-toggle");
-      if (btnDrawer) btnDrawer.addEventListener("click", () => { drawer.classList.toggle("open"); btnDrawer.classList.toggle("active", drawer.classList.contains("open")); });
+      /* v0.8.239 修：這裡原本也綁了 toggle，跟 91_main 的「打開」疊在一起＝永遠打開、又沒有關閉鈕 → 改由抽屜右上「✕ 關閉」關 */
+      { const cl = document.getElementById("btn-drawer-close"); if (cl) cl.addEventListener("click", () => drawer.classList.remove("open")); }
 
       document.querySelectorAll(".drawer-tab-btn").forEach((tBtn) => {
         tBtn.addEventListener("click", () => {
@@ -14467,7 +14559,11 @@ const Config = {
           Game._menuPause = false; resumeGame();
         }
       }
-      if (elSysMenuModal && window.MutationObserver) new MutationObserver(() => menuPause(elSysMenuModal.classList.contains("open"))).observe(elSysMenuModal, { attributes: true, attributeFilter: ["class"] });
+      if (elSysMenuModal && window.MutationObserver) { /* v0.8.239 天機演武抽屜開著也維持暫停 */
+        const elDrawer = document.getElementById("scroll-drawer");
+        const sync = () => menuPause(elSysMenuModal.classList.contains("open") || !!(elDrawer && elDrawer.classList.contains("open")));
+        const mo = new MutationObserver(sync); mo.observe(elSysMenuModal, { attributes: true, attributeFilter: ["class"] }); if (elDrawer) mo.observe(elDrawer, { attributes: true, attributeFilter: ["class"] });
+      }
 
       if (btnCloseSysMenu) {
         btnCloseSysMenu.addEventListener("click", () => {
@@ -14519,6 +14615,10 @@ const Config = {
         sync();
         if (b) b.addEventListener("click", () => { Tune.open(); });
         document.addEventListener("click", (e) => { if (e.target.closest && e.target.closest("#tune-panel")) setTimeout(sync, 0); });
+      }
+      { /* v0.8.239 護心輔助開關 */
+        const b = document.getElementById("btn-easy"); Easy.set(Easy.on);
+        if (b) b.addEventListener("click", () => Easy.set(!Easy.on));
       }
       { /* v0.8.220 整體音量：大→中→小→極小 循環 */
         const b = document.getElementById("btn-volume"), t = document.getElementById("menu-volume-txt");

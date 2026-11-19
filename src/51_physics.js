@@ -56,7 +56,7 @@
         {
           const stU = Stages[Boss.stageId];
           const mU = stU && stU.moves ? stU.moves[Boss.moveType] : null;
-          const ultOn = !!(mU && mU.ultimate && (Boss.state === "windup" || Boss.state === "active"));
+          const ultOn = !!(mU && mU.ultimate && (Boss.state === "windup" || Boss.state === "active")) || !!Game.gDimOn; /* v0.8.239 灰盒大招也能叫全畫面暗場（Game.gDimOn） */
           Game.ultDim += ((ultOn ? 1 : 0) - Game.ultDim) * Math.min(1, dt * (ultOn ? 6 : 4));
           if (Game.ultDim < 0.01) Game.ultDim = 0;
         }

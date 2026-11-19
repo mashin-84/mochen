@@ -272,6 +272,7 @@
       function getParryWindowMs(isPerilThrust) {
         let base = Config.parryWindowMs + getStageParryBonus();
         if (Progress.echoes && Progress.echoes.includes(13)) base += 20;
+        if (Easy.on) base += 20; /* v0.8.239 護心輔助 */
         /* v0.8.183 問心印（預設裝備）原本把窗口 ×0.7，等於大家實際只有 105ms；改為不縮窗口（保留架勢 ×2），全關實際 150ms。心印系統是否封存待使用者決定 */
         if (isPerilThrust) base = Math.round(base * 0.8);
         base = Math.round(base * PARRY_SPAM_K[Math.min(2, Player._parrySpam || 0)]);
@@ -927,7 +928,7 @@
 
       function doPerfectDeflect(cx, cy, dir, el, postureGain) {
         Player.parryCooldown = 0; Player._parrySpam = 0; Player._lastParryPress = 0; /* v0.8.183 彈成功：連按懲罰歸零（連段招架照常） */
-        feel("parry", dir); /* 定格、震屏、震動、雙方閃白 → 回饋表 FEEL */
+        feel("parry", dir); /* 定格、震屏、震動、雙方閃白 → 回饋表 FEEL */ inkBurst(cx, cy, 150, 0.28);
         // 完美招架不耗體力，且即刻恢復 20 劍勢體力！
         Player.stamina = Math.min(Player.maxStamina, Player.stamina + 20);
         Player.vx = dir * 140;
@@ -995,7 +996,7 @@
         triggerHitstopMs(heavyHit ? 100 : 70);
         triggerShake(dir, 0.3, heavyHit ? 34 : 24, heavyHit ? 0.36 : 0.28);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + (heavyHit ? 0.06 : 0.035));
-        hurtFlash(heavyHit ? 0.8 : 0.5);
+        hurtFlash(heavyHit ? 0.8 : 0.5); inkBurst(Player.x, Player.y - 60, heavyHit ? 190 : 140);
         Game.comboCount = 0;
         spawnSparks(Player.x, Player.y - 48, "hit", dir);
         spawnFloatingText(Player.x, Player.y - 100, `${tag} -${dmg}`, "#f87171", 1.1);
@@ -1012,7 +1013,7 @@
           hapticBuzz([80, 40, 120]);
           showBanner("問心失敗", "元神潰散・重整再戰", 1700, "#f87171");
           const sid = Boss.stageId;
-          setTimeout(() => { if (Game.defeated) loadStage(sid, { skipPre: true }); }, 1900);
+          setTimeout(() => { if (Game.defeated) Easy.offer(sid, () => { if (Game.defeated) loadStage(sid, { skipPre: true }); }); }, 1900); /* v0.8.239 連輸 3 次先問要不要開護心 */
         }
       }
 

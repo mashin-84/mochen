@@ -50,15 +50,25 @@
         Boss.facing = Player.x >= Boss.x ? 1 : -1;
         Boss.moveType = key; Boss.state = "ult"; Boss.vx = 0; Boss.isPerilous = false; Boss.perilType = null;
         Boss.nextImpactIn = 999; Boss.consecutiveBlocks = 0;
-        Boss._ult = { kind: m.ult, c, m, t: 0, ev: {}, wN: 0 }; Boss._ultRest = false; Boss._ultFrame = c.img.raise || c.img.rise || c.img.guard || c.img.hold;
+        Boss._ult = { kind: m.ult, c, m, t: 0, ev: {}, wN: 0, hc0: Progress.hitCount || 0, pc0: Progress.parryCount || 0 }; Boss._ultRest = false; Boss._ultFrame = c.img.raise || c.img.rise || c.img.guard || c.img.hold;
         Ult.waves.length = 0;
         showBanner(String(m.name).replace(/\s*[（(].*[）)]\s*/, ""), "大　招", 1300, "#fca5a5");
         Sound.play("peril", 1.0, 0.7); hapticBuzz([30, 40, 60]);
         return true;
       }
+      /* v0.8.239 讚美演出（櫻井式〈ほめてやれ〉）：大招全程無傷＝金色大字＋短慢動作＋震動，結算多記一項「無傷破招」 */
+      function ultPraise(m) {
+        Progress.ultFlawless = (Progress.ultFlawless || 0) + 1;
+        const nm = String(m.name || "大招").replace(/\s*[（(].*[）)]\s*/, "");
+        showBanner("無傷破招", "【" + nm + "】盡數化解", 1500, "#fde047");
+        Game.slowT = Math.max(Game.slowT || 0, 0.5); Game.slowScale = 0.35;
+        Sound.play("mikiri", 0.9, 1.25); Sound.play("assist", 0.7, 1.5); hapticBuzz([30, 30, 60]);
+        if (fxReady("spark")) spawnFx("spark", 2, Player.x, Player.y - 120, { w: 340, dur: 0.5 });
+      }
       function ultEnd(cancel) {
         gultCleanup(cancel);
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
+        if (U && U.m && Boss.hp > 0 && (Progress.hitCount || 0) === U.hc0 && (Progress.parryCount || 0) - U.pc0 >= 2) ultPraise(U.m); /* v0.8.239 讚美演出：整招沒被打中且至少完美招架 2 次 */
         Game.ultCam = 0; Game.ultFocus = false; Game.ultCamY = 0; Game.ultLock = false; Game.ultBind = false; ultClashUI(false);
         if (Boss._ultAir || (U && U.lift) || Boss.y < Config.groundY) { Boss.y = Config.groundY; } /* v0.8.176 接劍等空中段被中斷也落回地面 */ Boss._ultAir = false; Ult.rain.length = 0; /* 浮空中斷＝直接回地面 */
         if (U && U.fc0) Boss.facing = Player.x >= Boss.x ? 1 : -1; /* 龍捲旋轉中被中斷：面向恢復 */

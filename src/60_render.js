@@ -66,12 +66,13 @@
           ctx.save();
           ctx.fillStyle = `rgba(2, 4, 14, ${0.62 * Game.ultDim})`;
           ctx.fillRect(-3000, -3000, Config.worldWidth + 6000, 7000);
-          const ug = ctx.createRadialGradient(Boss.x, Boss.y - 110, 20, Boss.x, Boss.y - 110, 420);
-          ug.addColorStop(0, `rgba(255, 70, 50, ${0.34 * Game.ultDim})`);
-          ug.addColorStop(1, "rgba(255, 70, 50, 0)");
+          const uc = Game.ultDimRGB || "255, 70, 50", uy = Game.ultDimY != null && Game.gDimOn ? Game.ultDimY : Boss.y - 110; /* v0.8.239 光暈顏色／高度可由大招指定（第 3 關＝冷白，聚在舉高的劍上） */
+          const ug = ctx.createRadialGradient(Boss.x, uy, 20, Boss.x, uy, 420);
+          ug.addColorStop(0, `rgba(${uc}, ${0.34 * Game.ultDim})`);
+          ug.addColorStop(1, `rgba(${uc}, 0)`);
           ctx.globalCompositeOperation = "lighter";
           ctx.fillStyle = ug;
-          ctx.fillRect(Boss.x - 450, Boss.y - 560, 900, 700);
+          ctx.fillRect(Boss.x - 450, uy - 450, 900, 900);
           ctx.restore();
         }
 
@@ -148,6 +149,7 @@
         }
 
         drawMist();
+        drawInks(); /* v0.8.239 命中深色層（墊在發光特效底下） */
         drawFx(true);
         drawFlyingSwords();
         drawIllusions();

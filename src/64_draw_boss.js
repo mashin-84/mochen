@@ -316,7 +316,7 @@
             let fr = moveData.frames[Boss.state];
             if (Array.isArray(fr)) { /* v0.8.30 關鍵格序列：同一階段依進度平均切換多張圖 */
               let pr = 0;
-              if (Boss.state === "recover") pr = 1 - Boss.stateTimer / Math.max(0.05, (moveData.recover || 0.5) * (Config.bossPhase === 2 ? 0.75 : 1));
+              if (Boss.state === "recover") pr = 1 - Boss.stateTimer / Math.max(0.05, bossRecDur(moveData));
               else pr = 1 - Boss.stateTimer / (Boss.stateDur || 1);
               fr = fr[Math.min(fr.length - 1, Math.max(0, Math.floor(pr * fr.length)))];
             }

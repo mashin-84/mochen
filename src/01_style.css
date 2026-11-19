@@ -461,6 +461,7 @@
     }
 
     .scroll-drawer.open { display: block; }
+    .drawer-close-btn { height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border-gold); background: rgba(51, 65, 85, 0.9); color: #fde68a; font-size: 13px; font-family: inherit; }
 
     .drawer-top-banner {
       display: flex;
@@ -1589,6 +1590,15 @@
     .gauge-posture-track.capped .posture-tick { background: #ffffff; box-shadow: 0 0 8px #ffffff, 0 0 3px #000; transform: scaleY(1.6); }
     .gauge-posture-track.capped .gauge-posture-fill { filter: grayscale(0.7) brightness(0.8); }
     .gauge-posture-fill.hpout { background: linear-gradient(90deg, #7f1d1d 0%, #ef4444 50%, #7f1d1d 100%) !important; box-shadow: 0 0 14px rgba(239, 68, 68, 0.95) !important; animation: pulse-posture 0.22s infinite alternate !important; }
+    /* v0.8.239 卡關救濟詢問框 */
+    #easy-offer { position: fixed; inset: 0; z-index: 9100; display: flex; align-items: center; justify-content: center; background: rgba(6, 10, 20, 0.6); }
+    #easy-offer .eo-box { width: min(440px, calc(100vw - 32px)); padding: 18px 20px 16px; border-radius: 14px; background: rgba(20, 26, 40, 0.97); border: 1px solid rgba(253, 224, 71, 0.5); color: #f1f5f9; font-family: 'Noto Serif TC', serif; text-align: center; }
+    #easy-offer .eo-t { font-size: 18px; font-weight: 900; color: #fde68a; margin-bottom: 8px; }
+    #easy-offer .eo-d { font-size: 14px; line-height: 1.7; color: #e2e8f0; }
+    #easy-offer .eo-d small { color: #94a3b8; }
+    #easy-offer .eo-b { display: flex; gap: 10px; margin-top: 14px; }
+    #easy-offer .eo-b button { flex: 1; height: 42px; border-radius: 10px; border: 1px solid #64748b; background: #334155; color: #f8fafc; font-size: 15px; font-family: inherit; }
+    #easy-offer .eo-b button[data-v="1"] { background: #92400e; border-color: #f59e0b; }
     /* v0.8.237 手感調參面板 */
     #tune-panel { position: fixed; inset: 0; z-index: 9000; display: none; align-items: center; justify-content: center; background: rgba(8, 12, 24, 0.55); }
     #tune-panel.open { display: flex; }

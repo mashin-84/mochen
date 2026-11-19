@@ -5,7 +5,7 @@
       const ctx = canvas.getContext("2d");
 
       const BOSS_DMG_K = 1.25; /* v0.8.159 Boss 招式傷害倍率（招式、飛劍、部位招；地面煞氣與火柱不乘） */
-function bossDmg(n) { return Math.round(n * BOSS_DMG_K * Tune.v("bossDmgMul")); }
+function bossDmg(n) { return Math.round(n * BOSS_DMG_K * Tune.v("bossDmgMul") * (Easy.on ? 0.8 : 1)); }
 const Config = {
         worldWidth: 3200,
         baseWidth: 1280,
@@ -221,12 +221,25 @@ const Config = {
       /* v0.8.8 定格改毫秒制：只凍結 Boss 與主角，粒子、鏡頭、輸入緩衝照跑；上限 120ms */
       function triggerHitstopMs(ms) {
         const was = Game.hitstopT || 0;
-        Game.hitstopT = Math.max(was, Math.min(120, ms * Tune.v("hsMul")) / 1000);
+        Game.hitstopT = Math.max(was, Math.min(120, ms) * Tune.v("hsMul") / 1000); /* v0.8.239 倍率套在上限之後，120ms 的重擊也會被放大 */
         Game.hsMax = was > 0 ? Math.max(Game.hsMax || 0, Game.hitstopT) : Game.hitstopT; /* 微震收斂用的起始長度 */
       }
       /* v0.8.237 頓幀微震（參考櫻井政博〈8 種頓幀規格〉）：只動畫面不動判定；受擊方大（7px）、出手方小（2px），
          地面只橫震、空中加縱震，幅度隨剩餘頓幀時間收斂。受擊方＝剛被打的主角（hurtInv 剛設）否則是 Boss（被砍、被彈刀）。 */
       const HS_AMP = { victim: 7, attacker: 2 };
+      /* v0.8.239 命中深色層（櫻井式：只靠加亮的特效在亮背景會糊，要混暗色）：重擊／完美招架時在發光特效底下墊一圈擴散的淡墨環。
+         程式繪製的暫代品，正式版改生圖（prompts/common/ink_impact）。 */
+      function inkBurst(x, y, r, dur) { (Game.inks || (Game.inks = [])).push({ x, y, r, t0: performance.now(), dur: (dur || 0.32) * 1000 }); if (Game.inks.length > 8) Game.inks.shift(); }
+      function drawInks() {
+        const L = Game.inks; if (!L || !L.length) return; const now = performance.now();
+        for (let i = L.length - 1; i >= 0; i--) {
+          const k = L[i], p = (now - k.t0) / k.dur; if (p >= 1) { L.splice(i, 1); continue; }
+          const e = 1 - (1 - p) * (1 - p), R = k.r * (0.55 + 0.6 * e), a = 0.42 * (1 - p);
+          const g = ctx.createRadialGradient(k.x, k.y, R * 0.45, k.x, k.y, R);
+          g.addColorStop(0, "rgba(18, 22, 38, 0)"); g.addColorStop(0.7, `rgba(18, 22, 38, ${a})`); g.addColorStop(1, "rgba(18, 22, 38, 0)");
+          ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(k.x, k.y, R, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+      }
       /* v0.8.238 投射物偏心晃動（櫻井式〈重心をズラす〉）：6 格（0.1 秒）一循環的上下左右微偏＋小角度擺動，直線飛行不再死板；seed 讓每個物件不同步 */
       const WOB_P = [[1.6, -1], [2, 0.6], [0.4, 1.8], [-1.6, 1], [-2, -0.6], [-0.4, -1.8]];
       function wobble(seed, amp) { const i = (Math.floor(performance.now() / 16.7) + (seed | 0)) % 6, p = WOB_P[i], k = amp == null ? 1 : amp; return { x: p[0] * k, y: p[1] * k, r: p[1] * 0.012 * k }; }
