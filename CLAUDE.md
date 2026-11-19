@@ -60,6 +60,7 @@
 - 風格聖經：Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
 
 ## 素材處理
+- 白底水墨特效圖（v0.8.240）：`python3 tools/fx_ink.py 輸入.jpg assets/fx/名.webp`（墨色深淺→透明度，遊戲內 `add:false` 播放）；通用水墨圖是 `ink2`（**`ink.webp` 是處決橫幅舊圖，別覆蓋**），命中墨環走 `inkBurst(x,y,r,dur,row)`。
 - 黑底特效圖：`python3 tools/fx_black.py 輸入.jpg assets/fx/名.webp [列:淡出px]`（縮 1024、扣底噪 18、每格邊緣淡出 12px；畫到格邊的煙霧類用 `3:70` 加大）。
 - 洋紅底 4×4 動作表：`tools/sheet.py`（`band_cells` 可做 2×2）；有黑格線：`tools/sheetpad.py`；**不規則格子**：`tools/cut_keys.py 設定.json`（矩形裁切、統一縮放、質心對 x=450、腳底 y=560、輸出 900×600，並印出嘴部發光座標）。
 - 角色格統一：900×600 透明 webp、腳底 y=560、腳中心 x=450；縮放對齊該 Boss 的 `01_idle1` 高度。

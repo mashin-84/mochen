@@ -5,6 +5,13 @@
 
 ## 最新版本
 
+**v0.8.240 接入千鈞一擊生圖＋通用水墨特效**
+- 關鍵格（`prompts/3/18`，3×2，`cut_keys.py` match 第 3 格對 `89_ub_raise` 高 516、scale 0.6523）→ `assets/boss3b/qj1_dash、qj2_stop、qj3_raise、qj4_peak、qj5_cleave、qj6_after`，加進 S3 B extras。`g_s3b`：衝刺用 qj1、到位煞停 qj2 0.12 秒再接原起手格（`dashTo(x,dur,next)`）；集氣 qj3→qj4、劈地 qj5、收招 qj6。生圖沒照提示詞拿掉腰間雙劍（已知瑕疵）。
+- `assets/fx/boss3charge.webp`（`fx_black.py`）取代暫借的 boss5charge：列 0 聚光、1 劍閃、2 縱劈光柱、3 地裂（`FX_FOOT` 補 [252,238,249,236]）；砸下時加列 3 地裂。
+- `assets/fx/boss3fly.webp`：飛劍改畫生圖列 0（劍尖對準判定前緣、套 wobble），出劍閃列 1、被招架彈碎列 2（wave 的 `onParry`）、衝刺光痕列 3；程式畫的飛劍只剩載入失敗時的備案。
+- 新工具 `tools/fx_ink.py`（白底水墨 → 透明度＝墨色深淺、顏色統一深藍墨）→ `assets/fx/ink2.webp`（**注意：`ink.webp` 是處決橫幅用的舊圖，不可覆蓋**）；全域預載；`inkBurst(x,y,r,dur,row)` 有圖就播 ink2（一般混色、墊在角色後），受擊 0／重擊 1；千鈞一擊衝刺墨煙列 2、劈地墨爆列 1＋墨裂列 3（`FX_FOOT` ink2 [225,248,177,240]）。
+- 測試：截圖確認衝刺格＋墨煙＋光痕、集氣、劈地光柱＋墨爆；smoke 第 1、3 關通過。
+
 **v0.8.239 調參定案＋抽屜修正＋千鈞一擊演出＋櫻井式五項**
 - 使用者調參定案寫成正式值（`12_tune.js`）：頓幀 ×1.2、微震受擊 10／出手 2.5、震動 ×1.2；頓幀倍率改乘在 120ms 上限之後（原本重擊被上限吃掉）；載入時已等於正式值的手機設定自動清掉。
 - 修「天機演武與心印」關不掉：`90_input.js` 對同一顆鈕又綁了 toggle（與 `91_main.js` 的「打開」疊加＝永遠開）→ 拿掉，抽屜右上加「✕ 關閉」（`btn-drawer-close`）；抽屜開著維持暫停（MutationObserver 同時看齒輪選單與抽屜）。

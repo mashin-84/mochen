@@ -996,7 +996,7 @@
         triggerHitstopMs(heavyHit ? 100 : 70);
         triggerShake(dir, 0.3, heavyHit ? 34 : 24, heavyHit ? 0.36 : 0.28);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + (heavyHit ? 0.06 : 0.035));
-        hurtFlash(heavyHit ? 0.8 : 0.5); inkBurst(Player.x, Player.y - 60, heavyHit ? 190 : 140);
+        hurtFlash(heavyHit ? 0.8 : 0.5); inkBurst(Player.x, Player.y - 60, heavyHit ? 190 : 140, 0.32, heavyHit ? 1 : 0);
         Game.comboCount = 0;
         spawnSparks(Player.x, Player.y - 48, "hit", dir);
         spawnFloatingText(Player.x, Player.y - 100, `${tag} -${dmg}`, "#f87171", 1.1);

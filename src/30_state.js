@@ -229,7 +229,10 @@ const Config = {
       const HS_AMP = { victim: 7, attacker: 2 };
       /* v0.8.239 命中深色層（櫻井式：只靠加亮的特效在亮背景會糊，要混暗色）：重擊／完美招架時在發光特效底下墊一圈擴散的淡墨環。
          程式繪製的暫代品，正式版改生圖（prompts/common/ink_impact）。 */
-      function inkBurst(x, y, r, dur) { (Game.inks || (Game.inks = [])).push({ x, y, r, t0: performance.now(), dur: (dur || 0.32) * 1000 }); if (Game.inks.length > 8) Game.inks.shift(); }
+      function inkBurst(x, y, r, dur, row) { /* v0.8.240 生圖 ink2（0 命中墨環、1 重擊墨爆、2 衝刺墨煙、3 地面墨裂）到了就用圖，沒載到才用程式墨環 */
+        if (fxReady("ink2")) { spawnFx("ink2", row || 0, x, y, { w: r * 2, dur: Math.max(0.3, (dur || 0.32) * 1.3), add: false, alpha: 0.7, back: true }); return; }
+        (Game.inks || (Game.inks = [])).push({ x, y, r, t0: performance.now(), dur: (dur || 0.32) * 1000 }); if (Game.inks.length > 8) Game.inks.shift();
+      }
       function drawInks() {
         const L = Game.inks; if (!L || !L.length) return; const now = performance.now();
         for (let i = L.length - 1; i >= 0; i--) {

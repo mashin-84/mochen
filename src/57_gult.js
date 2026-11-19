@@ -174,11 +174,16 @@
             Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + zoom);
           };
           /* 空洞騎士式衝刺：dur 秒內真的移動到 x，沿路留單色剪影殘影（同主角瞬步的 Game.afterimages） */
-          const dashTo = (x, dur) => { U.dash = { x0: Boss.x, x1: gClampX(x), t: 0, dur, gt: 0 }; Boss.facing = x >= Boss.x ? 1 : -1; U.hold = dur + 0.15; Sound.play("b3_dash", 0.9, 1.15); if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 160, dur: 0.25 }); };
+          const dashTo = (x, dur, next) => { /* v0.8.240 衝刺用生圖 qj1_dash，煞停 qj2_stop 0.12 秒再接 next；起點衝刺光痕（boss3fly 列 3）＋墨煙（ink2 列 2） */
+            const fc = x >= Boss.x ? 1 : -1; U.dash = { x0: Boss.x, x1: gClampX(x), t: 0, dur, gt: 0, next: next || null }; Boss.facing = fc; U.hold = dur + 0.15; Sound.play("b3_dash", 0.9, 1.15);
+            if (next) fr("qj1_dash");
+            if (fxReady("boss3fly")) spawnFx("boss3fly", 3, Boss.x + fc * 140, Boss.y - 150, { w: 420, dur: 0.25, facing: fc });
+            if (fxReady("ink2")) spawnFx("ink2", 2, Boss.x + fc * 60, Boss.y - 130, { w: 380, dur: 0.45, add: false, alpha: 0.55, back: true, facing: fc });
+            else if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 160, dur: 0.25 }); };
           /* 繞背：不論多遠，都衝到主角面向的反方向 170px（背後貼場邊就改正面） */
           const blink = () => {
             const back = -Player.facing; let x = Player.x + back * 170; if (x < 140 || x > Config.worldWidth - 140) x = Player.x - back * 170;
-            const far = Math.abs(x - Boss.x); dashTo(x, Math.min(0.24, 0.12 + far / 9000)); U.follow = 170;
+            const far = Math.abs(x - Boss.x); dashTo(x, Math.min(0.24, 0.12 + far / 9000), Boss._ultFrame); U.follow = 170;
             if ((x - Player.x) * Player.facing < 0) spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.7);
           };
           const strike = (delay, dmg, post, hit, fire, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.2, delay * 0.45), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, quiet: true, label: "【千鈞鎖脈】",
@@ -197,13 +202,15 @@
           const CF = (Stages[3].fxSheets || []).includes("boss3charge") ? "boss3charge" : "boss5charge";
           const tip = () => ({ x: Boss.x + Boss.facing * 40, y: Boss.y - 340 });
           g.camZ = 0.12;
-          ev.push([T3, () => { U.ph = "charge"; U.follow = 0; fr("89_ub_raise"); Boss.facing = gSide(); Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
+          ev.push([T3, () => { U.ph = "charge"; U.follow = 0; fr("qj3_raise"); Boss.facing = gSide(); Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
             g.camZ = 0.22; g.camF = 0.72; Game.gDimOn = true; Game.ultDimRGB = "175, 215, 255"; Game.ultDimY = Boss.y - 330; Sound.play("assist", 0.45, 0.6);
             if (fxReady(CF)) { const p0 = tip(); spawnFx(CF, 0, p0.x, p0.y, { w: 560, dur: CH - FL, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: tip }); }
-            strike(CH, 1, 40, "91_ub_slam", () => { U.capPost = false; impact(60, 120, 30, 0.1); hapticBuzz([60, 20, 90]);
+            strike(CH, 1, 40, "qj5_cleave", () => { U.capPost = false; impact(60, 120, 30, 0.1); hapticBuzz([60, 20, 90]);
               Sound.play("b3_heavy", 1.0, 0.6); Sound.play("b3_plunge", 0.8, 0.8);
               Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.12; screenFlash("rgba(235,245,255,0.75)", 0.7, 0.35); addTrauma(0.35); /* 暗場瞬間放開＋亮暗閃 */
-              const ix = Boss.x + Boss.facing * 150; inkBurst(ix, G - 120, 300, 0.45);
+              const ix = Boss.x + Boss.facing * 150; inkBurst(ix, G - 140, 300, 0.45, 1);
+              if (fxReady("ink2")) spawnFx("ink2", 3, ix, groundFxY("ink2", 3, 620), { anchor: "b", w: 620, dur: 0.6, add: false, alpha: 0.75, back: true, facing: Boss.facing });
+              if (CF === "boss3charge" && fxReady(CF)) spawnFx(CF, 3, ix, groundFxY(CF, 3, 640), { anchor: "b", w: 640, dur: 0.5, facing: Boss.facing });
               if (CF === "boss3charge" && fxReady(CF)) spawnFx(CF, 2, ix, G - 330, { w: 760, dur: 0.45, facing: Boss.facing, alpha: 1 }); /* 縱劈光柱（生圖到了才有） */
               else if (fxReady("spark")) spawnFx("spark", 3, ix, G - 200, { w: 620, dur: 0.45, alpha: 0.9 });
               if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },
@@ -211,24 +218,26 @@
               onParry: () => { U.won = true; U.capPost = false; Game.gDimOn = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
                 spawnFloatingText(Boss.x, Boss.y - 260, "〔千鈞被頂回〕", "#fde047", 1.2); Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
           }]);
-          ev.push([T3 + 0.3, () => { fr("90_ub_peak"); swordOut(0); }]); /* v0.8.236 飛劍提早：第二把離最後一刀 ≥0.6 秒，避開「0.5 秒內連按招架窗口縮小」（預設值下） */
+          ev.push([T3 + 0.3, () => { fr("qj4_peak"); swordOut(0); }]); /* v0.8.236 飛劍提早：第二把離最後一刀 ≥0.6 秒，避開「0.5 秒內連按招架窗口縮小」（預設值下） */
           /* 雙劍：腰間兩把輕劍輪流飛向主角（腰高，不能跳過：招架或瞬步）；離他超過 450px 飛得更快、間隔更短＝不能跑遠 */
           const swordOut = (i) => {
             const s = gSide(), far = Math.abs(Player.x - Boss.x) > 450;
-            guWave({ x: Boss.x + s * 60, dir: s, speed: far ? 1350 : 900, kind: "parry", dmg: 70, post: 8, depth: 120, life: 3, tw: true, sword: true, label: "【飛劍】" });
+            guWave({ x: Boss.x + s * 60, dir: s, speed: far ? 1350 : 900, kind: "parry", dmg: 70, post: 8, depth: 120, life: 3, tw: true, sword: true, label: "【飛劍】",
+              onParry: (h) => { if (fxReady("boss3fly")) spawnFx("boss3fly", 2, Player.x - h.dir * 30, G - 130, { w: 320, dur: 0.35 }); } });
+            if (fxReady("boss3fly")) spawnFx("boss3fly", 1, Boss.x + s * 80, G - 130, { w: 260, dur: 0.22, facing: s });
             Sound.play("b2_sword_fly", 0.8, 1.2 + i * 0.1);
             if (i < 1) { ev.push([U.t + (far ? SG * 0.78 : SG), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
           };
           ev.push([T3 + CH - FL, () => { /* 停頓劍閃：這一閃之後 FL 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 300, dur: 0.25 });
             if (fxReady(CF)) { const p0 = tip(); spawnFx(CF, 1, p0.x, p0.y, { w: 440, dur: Math.max(0.2, FL), alpha: 0.95, follow: tip }); } g.camZ = 0.28; hapticBuzz(30); }]);
           ev.push([T3 + CH - Math.min(FL, 0.15), () => { /* 落刀前：人在遠處就衝刺貼上（逃不掉，只能招架或瞬步） */ const s = gSide(); if (Math.abs(Player.x - Boss.x) > 260) dashTo(Player.x - s * 180, 0.12); }]);
-          ev.push([T3 + CH + 0.15, () => { if (U.won) return; fr("92_ub_after"); g.rest = [U.t + 0.3, 1.5]; }]);
+          ev.push([T3 + CH + 0.15, () => { if (U.won) return; fr("qj6_after"); g.rest = [U.t + 0.3, 1.5]; }]);
           g.tick = (dt) => {
             Game.ultNoFace = GU.hz.some(h => h.needFace && !h.done); /* 背後斬期間：招架不自動轉身 */
             if (U.dash) { const D = U.dash; D.t += dt; const p = Math.min(1, D.t / D.dur), e = 1 - (1 - p) * (1 - p);
               Boss.x = D.x0 + (D.x1 - D.x0) * e; D.gt -= dt;
               if (D.gt <= 0 && Boss._curImg && Game.afterimages.length < 24) { D.gt = 0.016; Game.afterimages.push({ x: Boss.x, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.6, spr: Boss._curImg, s: bossVis(Stages[Boss.stageId]).k, f: Boss.facing, color: "#64748b", by: 40 }); }
-              if (p >= 1) { U.dash = null; Boss.facing = gSide(); if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 200, dur: 0.3, facing: Boss.facing }); triggerShake(0, 0.2, 6, 0.1); } }
+              if (p >= 1) { const nx = D.next; U.dash = null; Boss.facing = gSide(); if (nx) { fr("qj2_stop"); ev.push([U.t + 0.12, () => { if (Boss._ultFrame === "qj2_stop") fr(nx); }]); ev.sort((p2, q) => p2[0] - q[0]); } if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 200, dur: 0.3, facing: Boss.facing }); triggerShake(0, 0.2, 6, 0.1); } }
             if (U.hold > 0) U.hold -= dt;
             if (U.follow && !(U.hold > 0)) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 8); }
             if (U.ph === "charge" && !U.won && U.t < T3 + CH - FL) { /* 集氣：劍身聚光、地面微震 */
@@ -240,6 +249,11 @@
             const now = performance.now();
             for (const h of GU.hz) {
               if (!h.tw || h.done) continue;
+              if (fxReady("boss3fly")) { /* v0.8.240 生圖飛劍（列 0，圖朝右、劍尖約在格寬 0.91） */
+                const I = fxSheet("boss3fly").img, w = 330, f = Math.floor(now / 70) % 4; if (h._wb == null) h._wb = Math.floor(Math.random() * 6); const wb = wobble(h._wb);
+                ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(h.x - h.dir * w * 0.41 + wb.x, G - 130 + wb.y); ctx.rotate(wb.r); ctx.scale(h.dir, 1);
+                ctx.drawImage(I, f * 256, 0, 256, 256, -w / 2, -w / 2, w, w); ctx.restore(); continue;
+              }
               const y = G - 130, L = 150; if (h._wb == null) h._wb = Math.floor(Math.random() * 6); const wb = wobble(h._wb);
               ctx.save(); ctx.translate(h.x + wb.x, y + wb.y); ctx.rotate(wb.r); ctx.scale(h.dir * 1.5, 1.5);
               const gr = ctx.createLinearGradient(-L - 160, 0, 0, 0); gr.addColorStop(0, "rgba(186, 230, 253, 0)"); gr.addColorStop(1, "rgba(186, 230, 253, 0.7)");
