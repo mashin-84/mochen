@@ -209,7 +209,10 @@
               hintOnce("ult2bind", "被劍陣鎖住｜巨劍：光圈縮到最小時完美招架");
             }
             if (Game.ultBind) { Player.vx = 0; if (Player.state === "move") Player.state = "idle"; }
-            if (U.bx != null && t >= T.gather + 0.45 && once("cage") && fxReady("boss2bind")) spawnFx("boss2bind", 1, U.bx, groundFxY("boss2bind", 1, U.bw), { anchor: "b", w: U.bw, h: U.bw, dur: U.lockEnd - t, loop: true, fps: 6, alpha: 0.95 });
+            if (U.bx != null && t >= T.gather + 0.45 && once("cage")) {
+              if (Tune.v("gifFx") && fxReady("b2cagegif")) { const cw = U.bw * 1.25, ch = cw * 212 / 618; spawnFx("b2cagegif", 0, U.bx, groundFxY("b2cagegif", 0, ch), { anchor: "b", w: cw, h: ch, dur: U.lockEnd - t, loop: true, fps: 10, seq: true, alpha: 0.95 }); } /* v0.8.247 GIF 版劍陣光絲 */
+              else if (fxReady("boss2bind")) spawnFx("boss2bind", 1, U.bx, groundFxY("boss2bind", 1, U.bw), { anchor: "b", w: U.bw, h: U.bw, dur: U.lockEnd - t, loop: true, fps: 6, alpha: 0.95 });
+            }
             U.org = ultPt(600, 300); U.tgt = { x: Player.x, y: Player.y - 70 }; U.ga = Math.min(1, (t - T.gather) / (T.launch - T.gather - 0.2));
             return true;
           }
@@ -394,6 +397,19 @@
           if (w.cut) continue;
           const cfg = w.big ? c.big : c.low, row = w.big ? 3 : 2, S = cfg.draw, col = Math.floor(now / 70 + (w.dir > 0 ? 0 : 2)) % 4;
           const Hb = w.big ? (G + GROUND_SINK) - ultViewTop() + 260 : S; /* v0.8.162 高火牆再往上延伸（頂出畫面）；腳底對齊扣掉圖裡留白 */
+          const gs = w.big ? "b1tallgif" : "b1lowgif";
+          if (Tune.v("gifFx") && fxReady(gs)) { /* v0.8.247 GIF 版火牆：16 格連續循環（gif2sheet 長方形裁切壓成方格，這裡用寬高還原比例；前緣在圖寬 98.5%） */
+            const gi = fxSheet(gs).img, fi = Math.floor(now / 75 + (w.dir > 0 ? 0 : 8)) % 16;
+            const Wg = w.big ? 1000 : S * 1.4, Hg = w.big ? Hb : Wg * 236 / 602;
+            ctx.save(); ctx.translate(w.x, groundFxY(gs, 0, Hg)); ctx.scale(w.dir, 1);
+            if (w.big) { /* 實色深紅身體照舊（亮背景上壓得住） */
+              ctx.globalCompositeOperation = "source-over"; const gb = ctx.createLinearGradient(-Wg, 0, 30, 0);
+              gb.addColorStop(0, "rgba(90,0,18,0)"); gb.addColorStop(0.25, "rgba(110,4,24,0.55)"); gb.addColorStop(0.8, "rgba(175,14,34,0.8)"); gb.addColorStop(1, "rgba(210,40,50,0)");
+              ctx.fillStyle = gb; ctx.fillRect(-Wg * 0.95, -Hg * 0.85, Wg * 0.95 + 20, Hg * 0.85); ctx.globalCompositeOperation = "lighter";
+            }
+            ctx.globalAlpha = 0.95; ctx.drawImage(gi, (fi % 4) * 256, Math.floor(fi / 4) * 256, 256, 256, -Wg * 0.985, -Hg, Wg, Hg);
+            ctx.restore(); continue;
+          }
           ctx.save(); ctx.translate(w.x, groundFxY("boss1ult", row, Hb)); ctx.scale(w.dir, 1);
           if (w.big) { /* v0.8.161 高火牆＝滿屏；v0.8.162 加寬加厚（寬 1000）；v0.8.164 使用者要求火焰只留一層，判定不變 */
             const Hh = Hb, Wd = 1000;

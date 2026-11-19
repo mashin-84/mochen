@@ -5,6 +5,11 @@
 
 ## 最新版本
 
+### v0.8.247（2026-11-19）第 1、2 關大招 GIF 特效
+- `gif2sheet.py` 新增 `--rect`（長方形裁切壓成方格，遊戲用寬高還原）、`--blank`（擦 AI 畫的地平線）、`--tint`（依亮度重新上色）。
+- `b1lowgif`（`--frames 0:29 --loop 6 --rect 10,40,612,276`）、`b1tallgif`（`--rect 10,0,614,316`）、`b2cagegif`（`--rect 10,100,628,312 --blank 304:315 --tint 0.62,1.0,0.86`；Gemini 後半段劍身變灰，統一染玉綠）。`FX_FOOT` 補三張。
+- `55_ult.js`：火牆繪製有 GIF 版時改 16 格連播（每格 75ms、左右兩道錯開 8 格；矮火牆寬 S×1.4、高依 602:236；高火牆寬 1000 照舊墊深紅身體；前緣在圖寬 98.5%）；劍陣光絲改 `b2cagegif`（寬 bw×1.25、10fps 循環）。全部受 `gifFx` 開關控制，判定不變。
+
 ### v0.8.246（2026-11-19）刪第 3 關舊大招程式與素材
 - `55_ult.js`：刪 `ULT_CFG.b3cross／b3tornado`、`ultB3A／ultB3B／ultB3Tick／drawUltB3`、`b3img`、`Ult.b3`、`drawUltTop` 的龍捲前層與舊光圈（70.5KB → 48.6KB）。
 - 素材 47 檔約 2.5MB：`boss3/65_ua_push、68_ua_recover、71～73_ua_sw、78_ua_rel`；`boss3b/` 全部 `*_ub_*`、`obj_fly／lean／stuck`、光壁 `wall_1～8`、`uc1～uc7`、`hs2_mid`、`hs4_rec`；`fx/boss3crack、boss3bult、boss3btorn、boss3bsolid、boss3cage、boss3leaf`。保留新大招仍借用的 `61／66／67／74／75／77_ua_*`、`boss3ult`、`boss3bfx`。
