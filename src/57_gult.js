@@ -117,31 +117,31 @@
           const shd = (row, x, y, w, o) => { if (fxReady("boss3shadow")) spawnFx("boss3shadow", row, x, y, Object.assign({ w, h: w, dur: 0.45 }, o || {})); }; /* v0.8.216 生圖 boss3shadow：0 化影、1 現身、2 落刺光痕、3 落地爆光 */
           ev.push([0, () => fr("61_ua_guard")]);
           ev.push([1.2, () => hintOnce("gu3a", "寒川影殺｜每刀都能完美招架　他消失＝從背後來，先轉身")]);
-          ev.push([0.55, () => { U.follow = 125; fr("23_x_wind"); Sound.play("b3_dash", 0.8, 1.15); }]);
+          ev.push([0.55, () => { U.follow = 125; fr("23_x_wind"); Sound.play("c_dash_light", 0.85, 1.0); }]);
           let t = gChain(ev, 0.65 - 0.40, [0.40, 0.40, 0.36, 0.36], (i) => guStrike({ x: Player.x, track: true, lock: 0.15, w: 200, delay: D, kind: "parry", dmg: 72, post: 4, srcBoss: true, label: "【影殺連斬】", quiet: true, onParry: ok,
-            onFire: () => { fr(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4"][i]); Boss._kickMs = performance.now(); Sound.play("b3_twin", 0.7, 1 + i * 0.06); if (fxReady("boss3fx")) spawnFx("boss3fx", 0, Boss.x + Boss.facing * 110, Boss.y - 120, { w: 300, dur: 0.18, facing: Boss.facing }); } }));
+            onFire: () => { fr(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4"][i]); Boss._kickMs = performance.now(); Sound.play("c_slash_light", 0.8, 1 + i * 0.06); if (fxReady("boss3fx")) spawnFx("boss3fx", 0, Boss.x + Boss.facing * 110, Boss.y - 120, { w: 300, dur: 0.18, facing: Boss.facing }); } }));
           { const T0 = 0.65 - 0.40, gp = [0.40, 0.40, 0.36, 0.36], AN = [null, "ua2_wind2", null, "us5_crouch"]; let c = T0; /* v0.8.245 起手格：第 2 刀前低身沉劍、第 4 刀前蹲身收劍（出手前 0.15 秒換上，前一刀出手格先停 0.2 秒以上） */
             gp.forEach((g2, i) => { c += g2; if (AN[i]) { const k = AN[i]; ev.push([c + D - 0.15, () => fr(k)]); } }); }
           t += D; /* 第 4 刀命中時刻 */
           ev.push([t + 0.18, () => fr("us5_crouch")]); /* v0.8.245 原本 0.04 秒就換掉，第 4 刀雙刺幾乎看不到 */
           ev.push([t + 0.22, () => { /* 化影：背後出現影子 0.65 秒後背刺 */
             U.follow = 0; shd(0, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b" }); gVanish(true); const side = -Player.facing;
-            spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.9); Sound.play("b2_vanish", 0.8, 1.2);
+            spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.9); Sound.play("c_vanish", 0.85, 1.0);
             guStrike({ x: Player.x, track: true, lock: 0.2, w: 200, delay: 0.65, kind: "parry", needFace: true, ghost: true, side, srcOff: 120, shape: "cross", dmg: 88, post: 5, label: "【背刺】", onParry: ok,
-              onFire: (h) => { Boss.x = gClampX(h.x + h.side * 120); gVanish(false); Boss.facing = -h.side; fr("us6_back"); shd(1, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b", dur: 0.35 }); Sound.play("b3_dash", 0.9, 1.0); } });
+              onFire: (h) => { Boss.x = gClampX(h.x + h.side * 120); gVanish(false); Boss.facing = -h.side; fr("us6_back"); shd(1, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b", dur: 0.35 }); Sound.play("c_appear_stab", 0.95, 1.0); } });
           }]);
           t += 0.22 + 0.65;
           ev.push([t + 0.2, () => { shd(0, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b" }); gVanish(true); }]);
           ev.push([t + 0.35, () => { /* 現身空中 → 斜落刺 */
-            Boss._introHide = false; Boss._ultAir = true; fr("us7_dive"); Boss.x = gClampX(Player.x - Player.facing * 60); Boss.y = G - 330; Boss.facing = gSide(); shd(1, Boss.x, Boss.y - 150, 420, { dur: 0.3 }); shd(2, Boss.x + Boss.facing * 110, G - 190, 440, { dur: 0.7, facing: Boss.facing }); Sound.play("b2_appear", 0.7, 1.3);
+            Boss._introHide = false; Boss._ultAir = true; fr("us7_dive"); Boss.x = gClampX(Player.x - Player.facing * 60); Boss.y = G - 330; Boss.facing = gSide(); shd(1, Boss.x, Boss.y - 150, 420, { dur: 0.3 }); shd(2, Boss.x + Boss.facing * 110, G - 190, 440, { dur: 0.7, facing: Boss.facing }); Sound.play("c_vanish", 0.6, 1.25);
             U.air = guStrike({ x: Player.x, track: true, lock: 0.25, w: 210, delay: 0.7, kind: "parry", shape: "pillar", dmg: 88, post: 5, label: "【落影刺】", onParry: ok,
-              onFire: (h) => { U.air = null; Boss.x = gClampX(h.x - Boss.facing * 70); Boss.y = G; Boss._ultAir = false; fr("us8_land"); shd(3, Boss.x + Boss.facing * 60, groundFxY("boss3shadow", 3, 520), 520, { anchor: "b", dur: 0.5 }); triggerShake(0, 0.35, 16, 0.2); } });
+              onFire: (h) => { U.air = null; Boss.x = gClampX(h.x - Boss.facing * 70); Boss.y = G; Boss._ultAir = false; fr("us8_land"); shd(3, Boss.x + Boss.facing * 60, groundFxY("boss3shadow", 3, 520), 520, { anchor: "b", dur: 0.5 }); triggerShake(0, 0.35, 16, 0.2); Sound.play("c_stab_ground", 0.95, 1.0); } });
           }]);
           t += 0.35 + 0.7;
           ev.push([t + 0.2, () => { /* 十字收尾：舉劍停一拍（遲刃）再合擊 */
             U.follow = 150; fr("74_ua_r1"); Sound.play("b3_draw", 0.8, 1.0);
             guStrike({ x: Player.x, track: true, lock: 0.2, w: 300, delay: 0.8, kind: "parry", dmg: 120, post: 10, srcBoss: true, label: "【寒川十字】", onParry: ok,
-              onFire: () => { U.follow = 0; fr("77_ua_x"); Sound.play("b3_cross", 1.0, 0.9); if (fxReady("boss3ult")) { spawnFx("boss3ult", 0, Boss.x + Boss.facing * 150, Boss.y - 140, { w: 480, h: 480, dur: 0.24, nf: 3, facing: Boss.facing }); spawnFx("boss3ult", 1, Boss.x + Boss.facing * 150, Boss.y - 190, { w: 300, h: 560, dur: 0.24, nf: 3, facing: Boss.facing }); } } });
+              onFire: () => { U.follow = 0; fr("77_ua_x"); Sound.play("s3_cross", 1.0, 1.0); if (fxReady("boss3ult")) { spawnFx("boss3ult", 0, Boss.x + Boss.facing * 150, Boss.y - 140, { w: 480, h: 480, dur: 0.24, nf: 3, facing: Boss.facing }); spawnFx("boss3ult", 1, Boss.x + Boss.facing * 150, Boss.y - 190, { w: 300, h: 560, dur: 0.24, nf: 3, facing: Boss.facing }); } } });
           }]);
           ev.push([t + 0.45, () => fr("75_ua_r2")]);
           t += 0.2 + 0.8;
@@ -177,7 +177,7 @@
           };
           /* 空洞騎士式衝刺：dur 秒內真的移動到 x，沿路留單色剪影殘影（同主角瞬步的 Game.afterimages） */
           const dashTo = (x, dur, next) => { /* v0.8.240 衝刺用生圖 qj1_dash，煞停 qj2_stop 0.12 秒再接 next；起點衝刺光痕（boss3fly 列 3）＋墨煙（ink2 列 2） */
-            const fc = x >= Boss.x ? 1 : -1; U.dash = { x0: Boss.x, x1: gClampX(x), t: 0, dur, gt: 0, next: next || null }; Boss.facing = fc; U.hold = dur + 0.15; Sound.play("b3_dash", 0.9, 1.15);
+            const fc = x >= Boss.x ? 1 : -1; U.dash = { x0: Boss.x, x1: gClampX(x), t: 0, dur, gt: 0, next: next || null }; Boss.facing = fc; U.hold = dur + 0.15; Sound.play("c_dash_heavy", 0.95, 1.0);
             if (next) fr("qj1_dash");
             if (fxReady("boss3fly")) spawnFx("boss3fly", 3, Boss.x + fc * 140, Boss.y - 150, { w: 420, dur: 0.25, facing: fc });
             if (fxReady("ink2")) spawnFx("ink2", 2, Boss.x + fc * 60, Boss.y - 130, { w: 380, dur: 0.45, add: false, alpha: 0.55, back: true, facing: fc });
@@ -194,9 +194,9 @@
             hintOnce("gu3b3", "千鈞鎖脈｜背後先轉身　飛劍擋或閃　劍閃完美招架"); }]);
           /* 第一、二刀：繞背斬（要轉身招架） */
           ev.push([T1, () => { U.ph = "chain"; fr("hs1_wind"); blink();
-            strike(D1, 85, 8, "hs3_hit", () => { impact(40, 60, 14, 0.03); Sound.play("b3_heavy", 0.85, 1.15); Sound.play("hit", 0.5, 0.8); }, { needFace: true, label: "【背後斬】" }); }]);
+            strike(D1, 85, 8, "hs3_hit", () => { impact(40, 60, 14, 0.03); Sound.play("c_swing_heavy", 0.9, 1.05); Sound.play("hit", 0.5, 0.8); }, { needFace: true, label: "【背後斬】" }); }]);
           ev.push([T2, () => { fr("26_charge_wind"); blink();
-            strike(D2, 95, 10, "27_charge_hit", () => { impact(50, 70, 18, 0.04); Sound.play("b3_heavy", 0.95, 0.95); Sound.play("hit", 0.6, 0.7); }, { needFace: true, label: "【背後斬】" }); }]);
+            strike(D2, 95, 10, "27_charge_hit", () => { impact(50, 70, 18, 0.04); Sound.play("c_swing_heavy", 1.0, 0.95); Sound.play("hit", 0.6, 0.7); }, { needFace: true, label: "【背後斬】" }); }]);
           /* 第三刀 千鈞一擊：舉劍 0.4 → 集氣 1.2（雙劍輪流飛向主角）→ 頂點劍閃停 0.25 → 用力下揮 */
           /* v0.8.239 千鈞一擊演出（使用者：要像第 5 關噴火一樣有力）：全畫面暗場＋冷白光暈聚在劍上、鏡頭拉近對準他、
              劍尖聚光（光點往劍收）→ 劍閃光圈 → 砸下：縱向光柱＋地面衝擊波＋亮暗閃＋暗場瞬間放開。
@@ -204,12 +204,12 @@
           const CF = (Stages[3].fxSheets || []).includes("boss3charge") ? "boss3charge" : "boss5charge";
           const tip = () => ({ x: Boss.x + Boss.facing * 40, y: Boss.y - 340 });
           g.camZ = 0.12;
-          ev.push([T3, () => { U.ph = "charge"; U.follow = 0; fr("qj3_raise"); Boss.facing = gSide(); Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
-            g.camZ = 0.22; g.camF = 0.72; Game.gDimOn = true; Game.ultDimRGB = "175, 215, 255"; Game.ultDimY = Boss.y - 330; Sound.play("assist", 0.45, 0.6);
+          ev.push([T3, () => { U.ph = "charge"; U.follow = 0; fr("qj3_raise"); Boss.facing = gSide(); Sound.play("c_gather", 1.0, 1.0); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
+            g.camZ = 0.22; g.camF = 0.72; Game.gDimOn = true; Game.ultDimRGB = "175, 215, 255"; Game.ultDimY = Boss.y - 330;
             if (Tune.v("gifFx") && fxReady("gathergif")) { const p0 = tip(); spawnFx("gathergif", 0, p0.x, p0.y, { w: 600, dur: CH - FL, loop: true, fps: 12, seq: true, alpha: 0.9, follow: tip }); } /* v0.8.243 GIF 轉的 16 格無縫循環集氣 */
             else if (fxReady(CF)) { const p0 = tip(); spawnFx(CF, 0, p0.x, p0.y, { w: 560, dur: CH - FL, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: tip }); }
             strike(CH, 1, 40, "qj5_cleave", () => { U.capPost = false; impact(60, 120, 30, 0.1); hapticBuzz([60, 20, 90]);
-              Sound.play("b3_heavy", 1.0, 0.6); Sound.play("b3_plunge", 0.8, 0.8);
+              Sound.play("c_slam_huge", 1.0, 1.0);
               Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.12; screenFlash("rgba(235,245,255,0.75)", 0.7, 0.35); addTrauma(0.35); /* 暗場瞬間放開＋亮暗閃 */
               const ix = Boss.x + Boss.facing * 150; inkBurst(ix, G - 140, 300, 0.45, 1);
               if (fxReady("ink2")) spawnFx("ink2", 3, ix, groundFxY("ink2", 3, 620), { anchor: "b", w: 620, dur: 0.6, add: false, alpha: 0.75, back: true, facing: Boss.facing });
@@ -219,7 +219,7 @@
               else if (fxReady("spark")) spawnFx("spark", 3, ix, G - 200, { w: 620, dur: 0.45, alpha: 0.9 });
               if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },
               { w: 300, lock: 0.25, blockDmg: 150, lethal: true, dodgePlain: true, label: "【千鈞一擊】",
-              onParry: () => { U.won = true; U.capPost = false; Game.gDimOn = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
+              onParry: () => { U.won = true; U.capPost = false; Game.gDimOn = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("c_clang_big", 1.0, 1.0);
                 spawnFloatingText(Boss.x, Boss.y - 260, "〔千鈞被頂回〕", "#fde047", 1.2); Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
           }]);
           ev.push([T3 + 0.3, () => { fr("qj4_peak"); swordOut(0); }]); /* v0.8.236 飛劍提早：第二把離最後一刀 ≥0.6 秒，避開「0.5 秒內連按招架窗口縮小」（預設值下） */
@@ -229,10 +229,10 @@
             guWave({ x: Boss.x + s * 60, dir: s, speed: far ? 1350 : 900, kind: "parry", dmg: 70, post: 8, depth: 120, life: 3, tw: true, sword: true, label: "【飛劍】",
               onParry: (h) => { if (fxReady("boss3fly")) spawnFx("boss3fly", 2, Player.x - h.dir * 30, G - 130, { w: 320, dur: 0.35 }); } });
             if (fxReady("boss3fly")) spawnFx("boss3fly", 1, Boss.x + s * 80, G - 130, { w: 260, dur: 0.22, facing: s });
-            Sound.play("b2_sword_fly", 0.8, 1.2 + i * 0.1);
+            Sound.play("c_sword_throw", 0.85, 1.0 + i * 0.08);
             if (i < 1) { ev.push([U.t + (far ? SG * 0.78 : SG), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
           };
-          ev.push([T3 + CH - FL, () => { /* 停頓劍閃：這一閃之後 FL 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 300, dur: 0.25 });
+          ev.push([T3 + CH - FL, () => { /* 停頓劍閃：這一閃之後 FL 秒落刀 */ Sound.play("c_shing", 0.9, 1.0); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 300, dur: 0.25 });
             if (fxReady(CF)) { const p0 = tip(); spawnFx(CF, 1, p0.x, p0.y, { w: 440, dur: Math.max(0.2, FL), alpha: 0.95, follow: tip }); } g.camZ = 0.28; hapticBuzz(30); }]);
           ev.push([T3 + CH - Math.min(FL, 0.15), () => { /* 落刀前：人在遠處就衝刺貼上（逃不掉，只能招架或瞬步） */ const s = gSide(); if (Math.abs(Player.x - Boss.x) > 260) dashTo(Player.x - s * 180, 0.12); }]);
           ev.push([T3 + CH + 0.15, () => { if (U.won) return; fr("qj6_after"); g.rest = [U.t + 0.3, 1.5]; }]);

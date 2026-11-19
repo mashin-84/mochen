@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+### v0.8.248（2026-11-19）第 3 關大招正式音效＋通用音效庫
+- 使用者 ElevenLabs 生 13 條（`prompts/3/25`）。頻譜檢查：c_slam_huge 150Hz 以下僅 0.1%（只有劍鳴）、c_stab_ground／c_clang_big／c_dash_heavy／c_gather 也缺低頻，c_gather 還是越來越小。
+- `tools/sfx_layer_s3.py` 疊層（撞擊峰值對齊）：砸地＝原檔＋b1u_stab 0.8＋放慢 0.6 版 0.5＋b3_plunge 0.55＋雷聲放慢 0.55 餘震 0.75（1.9 秒）；刺地＋b3_plunge 0.8＋b1u_stab 0.35；大碰撞＋b3_heavy 0.3＋b1u_stab 0.22；重劍衝刺＋b3_charge 0.6＋放慢轟 0.25；集氣＋反轉 b1u_stab 0.55＋反轉放慢雷聲（漸強）0.6＝越來越大、結束在 1.4 秒。其餘只裁前空白、正規化 -1.5 dBFS 單聲道。
+- 接入 `g_s3a`：起勢 c_dash_light、四連斬 c_slash_light（變調）、化影 c_vanish、背刺 c_appear_stab、空中現身 c_vanish（變調）、落刺落地 c_stab_ground（原本無聲）、十字 s3_cross；`g_s3b`：衝刺 c_dash_heavy、背後斬 c_swing_heavy、集氣 c_gather（拿掉 assist）、飛劍 c_sword_throw、劍閃 c_shing、劈地 c_slam_huge、完美招架 c_clang_big。登記在 `11_audio.js` bossSfx。
+- 驗證：大招測試兩招，13 檔全部 200、播放名稱正確。
+
 ### v0.8.247（2026-11-19）第 1、2 關大招 GIF 特效
 - `gif2sheet.py` 新增 `--rect`（長方形裁切壓成方格，遊戲用寬高還原）、`--blank`（擦 AI 畫的地平線）、`--tint`（依亮度重新上色）。
 - `b1lowgif`（`--frames 0:29 --loop 6 --rect 10,40,612,276`）、`b1tallgif`（`--rect 10,0,614,316`）、`b2cagegif`（`--rect 10,100,628,312 --blank 304:315 --tint 0.62,1.0,0.86`；Gemini 後半段劍身變灰，統一染玉綠）。`FX_FOOT` 補三張。
