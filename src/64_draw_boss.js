@@ -360,6 +360,7 @@
           }
 
           if (!Boss._ilDraw) { /* v0.8.200 敵人刀光版：記錄換格 */
+            Boss._curImg = bossImg; /* v0.8.234 大招衝刺殘影要用當下這格 */
             const act = !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered"].includes(Boss.state);
             if (act && BOSS_XF.img && BOSS_XF.img !== bossImg && bossImg && bossImg.naturalWidth) {
               BOSS_XF.prev = BOSS_XF.img; BOSS_XF.t = performance.now();

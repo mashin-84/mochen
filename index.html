@@ -9507,7 +9507,7 @@ const Config = {
         },
         /* 二階段重劍「千鈞鎖脈」（v0.8.231 灰盒，使用者選外部顧問構想三，取代鎮岳劍獄）：
            ① 擲出腰間兩把輕劍插在左右兩側＝光壁劍陣（不能跳過），光壁慢慢往中間擠（半寬 w0→330）；
-           ② v0.8.233 起改：殘影瞬移到主角背後斬（要轉身招架）×2 → ③ 舉劍劍閃千鈞一擊。
+           ② v0.8.233 起改：空洞騎士式衝刺穿過主角到背後斬（要轉身招架）×2 → ③ 舉劍劍閃千鈞一擊。
            解法：劍陣期間用【蓄力斬】劈中插地輕劍（離劍 130px 內）＝破陣（光壁消失、架勢 +20）；
            第三刀完美招架硬頂＝千鈞被頂回（光壁同時碎、架勢 +40、踉蹌 3 秒），瞬步可閃，普通格擋會被震飛扣血。
            三連結束時光壁還在＝光壁合攏（140）；三刀傷害 80／90／180（普通格擋第三刀 150）。劍陣進行中架勢最多 95%（damageBossPosture 看 Boss._ult.cage）。光壁、輕劍、火花是程式畫的佔位（待生圖）。 */
@@ -9533,15 +9533,15 @@ const Config = {
           };
           const strike = (delay, dmg, post, hit, fire, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.2, delay * 0.45), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, quiet: true, label: "【千鈞鎖脈】",
             onFire: () => { fr(hit); Boss._kickMs = performance.now(); fire(); } }, extra || {}));
-          /* v0.8.233 殘影瞬移：從現在位置瞬移到主角背後（主角面向的反方向），沿路留 6 道殘影；背後沒空間（光壁邊）就出現在正面 */
+          /* v0.8.234 空洞騎士式衝刺：0.14 秒真的高速穿過主角衝到背後（主角面向的反方向 170px；背後在光壁外就衝到正面），
+             沿路每 0.016 秒留一張單色剪影殘影（同主角瞬步的 Game.afterimages），起點與終點揚塵 */
           const blink = () => {
             const L = C.sx - C.hw + 60, R = C.sx + C.hw - 60, back = -Player.facing;
             let x = Player.x + back * 170; if (x < L || x > R) x = Player.x - back * 170;
             x = gClampX(Math.max(L, Math.min(R, x)));
-            U.trail = { x0: Boss.x, x1: x, t: 0, fr: Boss._ultFrame, f0: Boss.facing };
-            Boss.x = x; Boss.facing = gSide(); U.hold = 0.15; U.follow = 170;
-            Sound.play("b3_dash", 0.9, 1.15); Sound.play("b2_vanish", 0.5, 1.4);
-            if (fxReady("boss3shadow")) { spawnFx("boss3shadow", 1, x, Boss.y - 20, { anchor: "b", w: 420, h: 420, dur: 0.3 }); }
+            U.dash = { x0: Boss.x, x1: x, t: 0, dur: 0.14, gt: 0 }; Boss.facing = x >= Boss.x ? 1 : -1; U.hold = 0.3; U.follow = 170;
+            Sound.play("b3_dash", 0.9, 1.15);
+            if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 160, dur: 0.25 });
             if ((x - Player.x) * Player.facing < 0) spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.7);
           };
           const chain = () => {
@@ -9577,7 +9577,10 @@ const Config = {
             if (C.on && !C.broken) { C.tgt = Math.max(330, C.tgt - dt * 38); }
             C.hw += (C.tgt - C.hw) * Math.min(1, dt * 5); C.pil[0].x = C.sx - C.hw; C.pil[1].x = C.sx + C.hw;
             Game.ultNoFace = GU.hz.some(h => h.needFace && !h.done); /* 背後斬期間：招架不自動轉身 */
-            if (U.trail) { U.trail.t += dt; if (U.trail.t > 0.35) U.trail = null; }
+            if (U.dash) { const D = U.dash; D.t += dt; const p = Math.min(1, D.t / D.dur), e = 1 - (1 - p) * (1 - p);
+              Boss.x = D.x0 + (D.x1 - D.x0) * e; D.gt -= dt;
+              if (D.gt <= 0 && Boss._curImg && Game.afterimages.length < 24) { D.gt = 0.016; Game.afterimages.push({ x: Boss.x, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.6, spr: Boss._curImg, s: bossVis(Stages[Boss.stageId]).k, f: Boss.facing, color: "#64748b", by: 40 }); }
+              if (p >= 1) { U.dash = null; Boss.facing = gSide(); if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 200, dur: 0.3, facing: Boss.facing }); triggerShake(0, 0.2, 6, 0.1); } }
             if (U.hold > 0) U.hold -= dt;
             if (U.follow && !(U.hold > 0)) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 8); }
             if (C.on && !C.broken) {
@@ -9594,13 +9597,6 @@ const Config = {
             }
           };
           g.draw = () => { /* 佔位：插地輕劍（淡藍劍身）＋光壁（淡青光幕） */
-            if (U.trail && !Boss._introHide) { /* 瞬移殘影：借 drawBossEntity，在路徑上畫 6 道淡出的身影 */
-              const T = U.trail, sx = Boss.x, sf = Boss.facing, sfr = Boss._ultFrame, fade = 1 - T.t / 0.35;
-              for (let k = 0; k < 6; k++) { const q = k / 6;
-                Boss.x = T.x0 + (T.x1 - T.x0) * q; Boss.facing = T.f0; Boss._ultFrame = T.fr; Boss._ilDraw = true;
-                ctx.save(); ctx.globalAlpha = 0.45 * fade * (0.35 + 0.65 * q);
-                try { drawBossEntity(); } finally { ctx.restore(); Boss._ilDraw = false; Boss.x = sx; Boss.facing = sf; Boss._ultFrame = sfr; } }
-            }
             if (C.rise <= 0 && C.bt <= 0) return;
             const now = performance.now(), a = C.broken ? Math.max(0, C.bt / 0.6) : C.rise;
             ctx.save();
@@ -11637,6 +11633,7 @@ const Config = {
           }
 
           if (!Boss._ilDraw) { /* v0.8.200 敵人刀光版：記錄換格 */
+            Boss._curImg = bossImg; /* v0.8.234 大招衝刺殘影要用當下這格 */
             const act = !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered"].includes(Boss.state);
             if (act && BOSS_XF.img && BOSS_XF.img !== bossImg && bossImg && bossImg.naturalWidth) {
               BOSS_XF.prev = BOSS_XF.img; BOSS_XF.t = performance.now();
