@@ -5,6 +5,10 @@
 
 ## 最新版本
 
+### v0.8.241（2026-11-19）千鈞一擊 qj3～6 去腰間雙劍
+- 使用者用 `prompts/3/21_boss3B_qianjun_keys_nosword.txt` 重生 2×2 四格（2528×1696），`tools/cut_keys.py` match 第 1 格高 516（scale 0.7078）→ 覆蓋 `assets/boss3b/qj3_raise、qj4_peak、qj5_cleave、qj6_after`；與舊圖疊對位置一致。
+- 新提示詞：`prompts/3/22_boss3hit_fx.txt`（重擊命中三段特效 `boss3hit`，黑底 4×4：閃光／衝擊波／碎屑／重劍砸地），待生圖。
+
 **v0.8.240 接入千鈞一擊生圖＋通用水墨特效**
 - 關鍵格（`prompts/3/18`，3×2，`cut_keys.py` match 第 3 格對 `89_ub_raise` 高 516、scale 0.6523）→ `assets/boss3b/qj1_dash、qj2_stop、qj3_raise、qj4_peak、qj5_cleave、qj6_after`，加進 S3 B extras。`g_s3b`：衝刺用 qj1、到位煞停 qj2 0.12 秒再接原起手格（`dashTo(x,dur,next)`）；集氣 qj3→qj4、劈地 qj5、收招 qj6。生圖沒照提示詞拿掉腰間雙劍（已知瑕疵）。
 - `assets/fx/boss3charge.webp`（`fx_black.py`）取代暫借的 boss5charge：列 0 聚光、1 劍閃、2 縱劈光柱、3 地裂（`FX_FOOT` 補 [252,238,249,236]）；砸下時加列 3 地裂。
