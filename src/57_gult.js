@@ -116,7 +116,7 @@
           const fr = (k) => { Boss._ultFrame = k; }, ok = () => { U.pp++; }, kS = bossVis(Stages[Boss.stageId]).k;
           const shd = (row, x, y, w, o) => { if (fxReady("boss3shadow")) spawnFx("boss3shadow", row, x, y, Object.assign({ w, h: w, dur: 0.45 }, o || {})); }; /* v0.8.216 生圖 boss3shadow：0 化影、1 現身、2 落刺光痕、3 落地爆光 */
           ev.push([0, () => fr("61_ua_guard")]);
-          ev.push([1.2, () => hintOnce("gu3a", "大招【寒川影殺】：每一刀都能完美招架（黃圈）！他消失時會從【背後】刺來——先按方向鍵轉身，再招架")]);
+          ev.push([1.2, () => hintOnce("gu3a", "寒川影殺｜每刀都能完美招架　他消失＝從背後來，先轉身")]);
           ev.push([0.55, () => { U.follow = 125; fr("23_x_wind"); Sound.play("b3_dash", 0.8, 1.15); }]);
           let t = gChain(ev, 0.65 - 0.40, [0.40, 0.40, 0.36, 0.36], (i) => guStrike({ x: Player.x, track: true, lock: 0.15, w: 200, delay: D, kind: "parry", dmg: 72, post: 4, srcBoss: true, label: "【影殺連斬】", quiet: true, onParry: ok,
             onFire: () => { fr(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4"][i]); Boss._kickMs = performance.now(); Sound.play("b3_twin", 0.7, 1 + i * 0.06); if (fxReady("boss3fx")) spawnFx("boss3fx", 0, Boss.x + Boss.facing * 110, Boss.y - 120, { w: 300, dur: 0.18, facing: Boss.facing }); } }));
@@ -184,7 +184,7 @@
           const strike = (delay, dmg, post, hit, fire, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.2, delay * 0.45), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, quiet: true, label: "【千鈞鎖脈】",
             onFire: () => { fr(hit); Boss._kickMs = performance.now(); fire(); } }, extra || {}));
           ev.push([0, () => { fr("uc8_command"); Boss.facing = gSide(); Sound.play("b3_draw", 0.9, 1.0);
-            hintOnce("gu3b3", "【千鈞鎖脈】他會衝到背後：先轉身再招架；集氣時飛劍逼近要擋或閃；最後一刀劍閃就完美招架，沒擋＝只剩 1 血"); }]);
+            hintOnce("gu3b3", "千鈞鎖脈｜背後先轉身　飛劍擋或閃　劍閃完美招架"); }]);
           /* 第一、二刀：繞背斬（要轉身招架） */
           ev.push([T1, () => { U.ph = "chain"; fr("hs1_wind"); blink();
             strike(D1, 85, 8, "hs3_hit", () => { impact(40, 60, 14, 0.03); Sound.play("b3_heavy", 0.85, 1.15); Sound.play("hit", 0.5, 0.8); }, { needFace: true, label: "【背後斬】" }); }]);
@@ -227,8 +227,8 @@
             const now = performance.now();
             for (const h of GU.hz) {
               if (!h.tw || h.done) continue;
-              const y = G - 130, L = 150;
-              ctx.save(); ctx.translate(h.x, y); ctx.scale(h.dir * 1.5, 1.5);
+              const y = G - 130, L = 150; if (h._wb == null) h._wb = Math.floor(Math.random() * 6); const wb = wobble(h._wb);
+              ctx.save(); ctx.translate(h.x + wb.x, y + wb.y); ctx.rotate(wb.r); ctx.scale(h.dir * 1.5, 1.5);
               const gr = ctx.createLinearGradient(-L - 160, 0, 0, 0); gr.addColorStop(0, "rgba(186, 230, 253, 0)"); gr.addColorStop(1, "rgba(186, 230, 253, 0.7)");
               ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = gr; ctx.fillRect(-L - 160, -6, L + 160, 12);
               ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = "#e2e8f0"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-22, -5); ctx.lineTo(-L, -4); ctx.lineTo(-L, 4); ctx.lineTo(-22, 5); ctx.closePath(); ctx.fill();
@@ -242,7 +242,7 @@
         /* 第 4 關 人形劍魂「六劍朝宗」：六把劍左右交錯橫穿（逐把招架，第 5 把慢半拍）→ 六劍合一從天直落（紅圈追蹤，走開或瞬步）→ 劍插地喘息 */
         g_s4: (U) => {
           const ev = [], D = 0.85;
-          ev.push([1.4, () => hintOnce("gu4", "大招【六劍朝宗】：六把劍輪流橫穿，逐把招架（黃圈）；最後天劍直落是紅圈，走開或瞬步！")]);
+          ev.push([1.4, () => hintOnce("gu4", "六劍朝宗｜逐把招架　天劍紅圈：走開或瞬步")]);
           let t = gChain(ev, 0.9 - D, [D, 0.5, 0.5, 0.5, 0.5, 0.85], (i) => guStrike({ x: Player.x, track: true, lock: 0.2, w: 190, delay: D, kind: "parry", dmg: 95, post: 9, src: Player.x + (i % 2 ? 1 : -1) * 300, side: i % 2 ? 1 : -1, shape: "cross", label: "【劍陣橫穿】" }));
           t += D;
           ev.push([t + 0.3, () => guStrike({ x: Player.x, track: true, lock: 0.45, w: 260, delay: 1.1, kind: "red", dmg: 260, shape: "pillar", label: "【天劍直落】" })]);
@@ -251,7 +251,7 @@
         /* 第 5 關 小狼「幽影噬月」：小狼化影消失 → 連續三次從天撲落（紅圈追蹤主角，持續移動或瞬步）→ 第三撲落地震出左右矮震波（跳）→ 伏地喘息 */
         g_s5a: (U) => {
           const ev = [];
-          ev.push([1.4, () => hintOnce("gu5a", "大招【幽影噬月】：紅圈會追著你，連續移動或瞬步躲三次；最後一撲落地會震出矮波，要跳！")]);
+          ev.push([1.4, () => hintOnce("gu5a", "幽影噬月｜紅圈追你：移動或瞬步 ×3　落地矮波：跳")]);
           ev.push([0.6, () => gVanish(true)]);
           [1.0, 1.85, 2.7].forEach((at, i) => ev.push([at, () => guStrike({ x: Player.x, track: true, lock: 0.32, w: i === 2 ? 240 : 180, delay: 0.8, kind: "red", dmg: i === 2 ? 220 : 160, shape: "pillar", label: "【幽影撲殺】",
             onFire: (h) => { Boss.x = gClampX(h.x); if (i === 2) { gVanish(false); Boss.facing = gSide(); guWave({ x: h.x, dir: 1, low: true, kind: "parry", speed: 760, dmg: 110, label: "【落地震波】" }); guWave({ x: h.x, dir: -1, low: true, kind: "parry", speed: 760, dmg: 110, label: "【落地震波】" }); } } })]));
@@ -263,7 +263,7 @@
           const ev = [], CH = 6.5, p = Game.partner, g = { ev, dim: [[0, 0.8]], rest: [CH + 0.5, 1.2] };
           U.broken = !ptLive(); U.hp0 = Boss.hp;
           ev.push([0.1, () => {
-            Boss._ultAir = !U.broken; Boss._gImm = !U.broken; hintOnce("gu6", "大招【血神大法】：老祖有魅月護體打不動！先去砍魅月（3 刀）破護體，再砍老祖一刀打斷蓄力");
+            Boss._ultAir = !U.broken; Boss._gImm = !U.broken; hintOnce("gu6", "血神大法｜先砍魅月 3 刀破護體，再砍老祖打斷");
             if (ptLive()) { const s = Boss.x >= Player.x ? -1 : 1; let x = Player.x + s * 430; if (x < 170 || x > Config.worldWidth - 170) x = Player.x - s * 430; p.x = gClampX(x); p.state = "ultchant"; p.kind = "shield"; p.t = 0; p.dur = CH; p.posture = 0; p.alpha = 1; spawnFloatingText(p.x, Config.groundY - 210, "魅月：奴家替老祖護法！", "#f9a8d4", 1.2); }
           }]);
           for (let t = 1.0; t < CH - 0.6; t += 1.3) ev.push([t, () => { if (!U.stop) guStrike({ x: Player.x, track: true, lock: 0.35, w: 150, delay: 0.75, kind: "red", dmg: 100, shape: "pillar", label: "【血柱】", quiet: true }); }]);
@@ -286,7 +286,7 @@
         /* 第 7 關 金甲天將「天罡雷陣」：三道天雷依序追打主角（紅圈）→ 舉盾衝鋒橫穿全場兩趟（頂天金牆：完美招架＝撞停破盾；普通格擋會被推著扣劍勢；瞬步可穿）→ 喘息 */
         g_s7a: (U) => {
           const ev = [];
-          ev.push([1.4, () => hintOnce("gu7a", "大招【天罡雷陣】：天雷是紅圈要走開；之後舉盾衝鋒是黃圈——完美招架能把他撞停、直接破盾！")]);
+          ev.push([1.4, () => hintOnce("gu7a", "天罡雷陣｜天雷紅圈：走開　盾衝黃圈：完美招架破盾")]);
           [0.9, 1.6, 2.3].forEach((at) => ev.push([at, () => guStrike({ x: Player.x, track: true, lock: 0.35, w: 170, delay: 0.8, kind: "red", dmg: 130, shape: "pillar", label: "【天雷】" })]));
           const charge = (at) => ev.push([at, () => {
             if (U.stopped) return;
@@ -306,7 +306,7 @@
            → 四隻腳連環踩踏追打主角（紅圈，間隔 0.7）→ 四足齊落不動 3 秒：全部可砍（大破綻） */
         g_s7b: (U) => {
           const ev = [], W = Config.worldWidth, cell = 230, n = Math.floor((W - 300) / cell);
-          ev.push([1.4, () => hintOnce("gu7b", "大招【玄冥噴泉】：水柱會一路掃過來，站到「沒有紅圈」的那一格；之後四隻腳連環踩下，躲完四下就能一次砍四隻腳！")]);
+          ev.push([1.4, () => hintOnce("gu7b", "玄冥噴泉｜站到沒紅圈的格子　四腳踩完＝一次砍四隻腳")]);
           const sweep = (t0, rev) => ev.push([t0, () => {
             const pi = Math.max(1, Math.min(n - 2, Math.round((Player.x - 150) / cell) + (Math.random() < 0.5 ? -2 : 2)));
             for (let i = 0; i < n; i++) { if (i === pi) continue; const k = rev ? n - 1 - i : i; guStrike({ x: 150 + cell * (i + 0.5), w: cell - 14, delay: 1.0 + k * 0.07, kind: "red", dmg: 150, shape: "pillar", label: "【玄冥水柱】", quiet: k % 3 !== 0 }); }
@@ -318,7 +318,7 @@
         /* 第 8 關一階段（人・劍修）「青雲劍訣・天河」：五把飛劍逐把射出（可折射，間隔 0.45）→ 瞬身突刺收尾（接一般危招「突刺」＝看破）*/
         g_s8a: (U) => {
           const ev = [];
-          ev.push([1.4, () => hintOnce("gu8a", "大招【天河劍訣】：五把飛劍逐把招架可折射回去；最後他會接【危】突刺——瞬步迎上去看破！")]);
+          ev.push([1.4, () => hintOnce("gu8a", "天河劍訣｜飛劍逐把招架折回　最後【危】突刺：瞬步看破")]);
           for (let i = 0; i < 5; i++) ev.push([0.9 + i * 0.45, () => { const dir = gSide(); Boss.facing = dir; Game.flyingSwords.push({ x: Boss.x + dir * 50, y: Config.groundY - 170 + (i % 3) * 35, vx: dir * 780, vy: 0, dir, damage: 105, reflected: false, life: 2.6, color: "#7dd3fc", trajectory: "linear", kind: null }); Sound.play("flysword", 0.7, 1 + i * 0.06); Boss._kickMs = performance.now(); }]);
           const g = { ev, dim: [[0, 0.8]], rest: [3.5, 0.01] };
           g.tick = () => { if (U.t >= 3.45 && !U.fin) { U.fin = true; const st = Stages[Boss.stageId]; ultEnd(false); Boss.aiCooldown = 0; triggerBossMove(st.moves.a_thrust ? "a_thrust" : "thrust_peril"); } };
@@ -327,7 +327,7 @@
         /* 第 8 關二階段（魔染）「無相魔影殺」：四道魔影站在主角左右，依序撲殺（逐下招架，越來越快，第 4 下慢半拍）→ 真身從背後擒拿（紅圈，瞬步）→ 喘息 */
         g_s8b: (U) => {
           const ev = [], D = 0.8;
-          ev.push([1.4, () => hintOnce("gu8b", "大招【無相魔影殺】：四道魔影輪流撲來，逐下招架（黃圈）；最後真身的擒拿是紅圈，瞬步閃開！")]);
+          ev.push([1.4, () => hintOnce("gu8b", "無相魔影殺｜魔影逐下招架　真身擒拿紅圈：瞬步")]);
           ev.push([0.6, () => gVanish(true)]);
           let t = gChain(ev, 0.9 - D, [D, 0.55, 0.45, 0.4, 0.8], (i) => guStrike({ x: Player.x, track: true, lock: 0.2, w: 190, delay: D, kind: "parry", dmg: 100, post: 10, src: Player.x + (i % 2 ? 1 : -1) * 260, side: i % 2 ? 1 : -1, shape: "cross", label: "【魔影撲殺】" }));
           t += D;
@@ -337,7 +337,7 @@
         /* 第 8 關三階段（天道附體）「天劫・萬象歸墟」期末考：劫雷找空格 ×2 → 矮劫波（跳）→ 頂天劫牆（瞬步穿）→ 天罰五連（逐下招架，最後一下慢）→ 長喘息 */
         g_s8c: (U) => {
           const ev = [], W = Config.worldWidth, cell = 210, D = 0.8;
-          ev.push([1.4, () => hintOnce("gu8c", "大招【萬象歸墟】：劫雷找沒有紅圈的空格 → 矮波用跳 → 高牆用瞬步 → 最後五連逐下招架。把學過的全用上！")]);
+          ev.push([1.4, () => hintOnce("gu8c", "萬象歸墟｜空格躲雷 → 矮波跳 → 高牆瞬步 → 五連招架")]);
           const field = (t0) => ev.push([t0, () => {
             const base = Player.x, safe = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 2));
             for (let i = -5; i <= 5; i++) { if (i === safe) continue; const x = base + i * cell; if (x < 100 || x > W - 100) continue; guStrike({ x, w: cell - 14, delay: 1.15, kind: "red", dmg: 150, shape: "pillar", label: "【劫雷】", quiet: i !== 0 }); }
@@ -351,7 +351,7 @@
         /* 第 9 關 心魔「三念歸一」：心魔隱去，連出五式，每式隨機是 斬（黃圈＝招架）／掃（紅色低帶＝跳）／絕（紅圈追蹤＝瞬步或走開），考讀顏色與三種動詞 → 現身喘息 */
         g_s9: (U) => {
           const ev = [], D = 0.9;
-          ev.push([1.4, () => hintOnce("gu9", "大招【三念歸一】：看預警顏色——黃圈招架、貼地紅帶要跳、紅圈走開或瞬步")]);
+          ev.push([1.4, () => hintOnce("gu9", "三念歸一｜黃圈招架　貼地紅帶跳　紅圈走開或瞬步")]);
           ev.push([0.6, () => gVanish(true)]);
           let last = -1;
           let t = gChain(ev, 1.0 - D, [D, 1.0, 1.0, 0.9, 0.9], () => {

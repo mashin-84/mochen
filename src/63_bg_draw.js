@@ -284,8 +284,10 @@
               if (fsImg) {
                 const fr = fsa.frames || [1, 2], f = fr[Math.floor(performance.now() / 1000 * (fsa.fps || 12)) % fr.length], w = fsa.w || 150, k = w / 256;
                 ctx.save();
-                ctx.translate(sw.x, sw.y);
-                ctx.rotate(Math.atan2(sw.vy, sw.vx) + (fsa.rot || 0));
+                if (sw._wb == null) sw._wb = Math.floor(Math.random() * 6);
+                const wb = wobble(sw._wb);
+                ctx.translate(sw.x + wb.x, sw.y + wb.y);
+                ctx.rotate(Math.atan2(sw.vy, sw.vx) + (fsa.rot || 0) + wb.r);
                 ctx.globalCompositeOperation = "lighter";
                 if (sw.reflected) ctx.filter = "sepia(1) saturate(3) hue-rotate(-12deg) brightness(1.15)"; /* 折射後轉金色 */
                 ctx.drawImage(fsImg, f * 256, (fsa.row || 0) * 256, 256, 256, -(fsa.tipX != null ? fsa.tipX * k : w * (fsa.tip || 0.95)), -(fsa.tipY != null ? fsa.tipY * k : w / 2), w, w); /* 劍尖對準飛劍座標 */

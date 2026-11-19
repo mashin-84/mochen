@@ -445,7 +445,20 @@
       const elScreenFlash = document.createElement("div");
       elScreenFlash.style.cssText = "position:fixed;inset:0;z-index:26;pointer-events:none;opacity:0;";
       document.body.appendChild(elScreenFlash);
+      /* v0.8.238 亮暗交替（櫻井式）：亮色閃白後 70ms 接一下暗閃（壓暗約 1/3 強度），亮背景上也有衝擊、不會只是畫面變淡 */
+      const elScreenDark = document.createElement("div");
+      elScreenDark.style.cssText = "position:fixed;inset:0;z-index:26;pointer-events:none;opacity:0;background:rgb(12,16,30);";
+      document.body.appendChild(elScreenDark);
+      let darkFlashTimer = null;
       function screenFlash(color, a, sec) {
+        const m = /rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(color || "");
+        if (m && (+m[1] + +m[2] + +m[3]) / 3 > 170 && a >= 0.3) {
+          clearTimeout(darkFlashTimer);
+          darkFlashTimer = setTimeout(() => {
+            elScreenDark.style.transition = "none"; elScreenDark.style.opacity = String(Math.min(0.3, a * 0.32)); void elScreenDark.offsetWidth;
+            elScreenDark.style.transition = "opacity 0.22s ease-out"; elScreenDark.style.opacity = "0";
+          }, 70);
+        }
         elScreenFlash.style.background = color;
         elScreenFlash.style.transition = "none";
         elScreenFlash.style.opacity = String(a);
@@ -455,7 +468,7 @@
       }
 
       const elHintToast = document.createElement("div");
-      elHintToast.style.cssText = "position:fixed;left:50%;top:17%;transform:translateX(-50%);z-index:29;pointer-events:none;opacity:0;padding:10px 28px;border-radius:999px;background:rgba(10,15,26,.9);border:1.5px solid rgba(250,204,21,.7);color:#fde68a;font-family:'Noto Serif TC',serif;font-weight:900;font-size:clamp(17px,4.2vh,30px);letter-spacing:.04em;text-align:center;max-width:88vw;box-shadow:0 6px 22px rgba(0,0,0,.7),0 0 18px rgba(250,204,21,.18);";
+      elHintToast.style.cssText = "position:fixed;left:50%;top:17%;transform:translateX(-50%);z-index:29;pointer-events:none;opacity:0;padding:10px 28px;border-radius:999px;background:rgba(10,15,26,.9);border:1.5px solid rgba(250,204,21,.7);color:#fde68a;font-family:'Noto Serif TC',serif;font-weight:900;font-size:clamp(17px,4.2vh,30px);letter-spacing:.04em;text-align:center;width:max-content;max-width:88vw;box-shadow:0 6px 22px rgba(0,0,0,.7),0 0 18px rgba(250,204,21,.18);"; /* v0.8.238 width:max-content：left:50% 會讓可用寬度只剩半個畫面，提示被擠成兩行 */
       document.body.appendChild(elHintToast);
       let hintToastTimer = null;
       function showHintToast(text) {

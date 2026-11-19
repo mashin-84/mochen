@@ -227,6 +227,9 @@ const Config = {
       /* v0.8.237 頓幀微震（參考櫻井政博〈8 種頓幀規格〉）：只動畫面不動判定；受擊方大（7px）、出手方小（2px），
          地面只橫震、空中加縱震，幅度隨剩餘頓幀時間收斂。受擊方＝剛被打的主角（hurtInv 剛設）否則是 Boss（被砍、被彈刀）。 */
       const HS_AMP = { victim: 7, attacker: 2 };
+      /* v0.8.238 投射物偏心晃動（櫻井式〈重心をズラす〉）：6 格（0.1 秒）一循環的上下左右微偏＋小角度擺動，直線飛行不再死板；seed 讓每個物件不同步 */
+      const WOB_P = [[1.6, -1], [2, 0.6], [0.4, 1.8], [-1.6, 1], [-2, -0.6], [-0.4, -1.8]];
+      function wobble(seed, amp) { const i = (Math.floor(performance.now() / 16.7) + (seed | 0)) % 6, p = WOB_P[i], k = amp == null ? 1 : amp; return { x: p[0] * k, y: p[1] * k, r: p[1] * 0.012 * k }; }
       function hsShake(who) {
         if (!(Game.hitstopT > 0) || !(Game.hsMax > 0) || (who === "boss" && Boss._ilDraw)) return { x: 0, y: 0 };
         const victim = Player.hurtInv > 0.5 ? "player" : "boss";

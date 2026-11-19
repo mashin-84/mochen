@@ -5,6 +5,14 @@
 
 ## 最新版本
 
+**v0.8.238 櫻井式小改五項（`docs/SAKURAI_NOTES.md` 第三節 C3／C4／A2／A3／E1）**
+- C3 震屏分抖法（`60_render.js`）：橫抖權重 `(trauma-0.3)/0.2`、旋轉權重 `(trauma-0.6)/0.2`（夾 0～1）＝小震只縱抖、中震加橫抖、大震再加旋轉。
+- C4 亮暗交替（`81_legacy_story.js` `screenFlash`）：亮色（RGB 平均 >170）且強度 ≥0.3 的閃白，70ms 後接一層 `rgb(12,16,30)` 暗閃（強度 ×0.32、上限 0.3，0.22 秒淡出）。
+- A2 投射物偏心晃動（`30_state.js` `wobble(seed)`）：6 格一循環的 ±2px 偏移＋小角度；套在生圖飛劍／投射物（`63_bg_draw.js`）與千鈞鎖脈飛劍佔位。
+- A3 落敗停格（`40_player.js`）：氣血歸零瞬間頓幀 120ms＋亮暗閃＋震屏 0.5（主角為受擊方會微震）。
+- E1 大招提示改「招式名｜關鍵字」：ult1、ult2bind、gu3a、gu3b3、gu4～gu9 共 13 條；提示框加 `width:max-content`（原本 `left:50%` 讓可用寬只剩半畫面而被擠成兩行）。
+- 測試：落敗時 hitstop 0.12、暗閃 opacity 0.18（110ms 時）；手機寬 915 提示一行；smoke 第 1、3、5 關通過。
+
 **v0.8.237 頓幀微震＋手機調參面板＋技巧筆記（使用者看了 kociden/sakurai-skill，要求 1、3 都做並整理可用技巧）**
 - 頓幀微震（`30_state.js` `hsShake`）：頓幀期間只動畫面不動判定，受擊方 7px、出手方 2px（受擊方＝`Player.hurtInv>0.5` 時是主角，否則 Boss），30ms 換向、空中加縱抖、隨剩餘頓幀收斂（`Game.hsMax`）；套在 `drawBossEntity`（整體平移）與 `drawPlayer`。
 - 調參面板（新檔 `src/12_tune.js`，manifest 排在 `11_audio.js` 後）：`TUNE_DEFS`（頓幀倍率、微震兩項、震動倍率、招架窗口 130ms、Boss 傷害倍率、起手時間倍率、第 3 關千鈞鎖脈五個時間）、`Tune.v()`、存 `qingyun_tune`、「複製數值」（剪貼簿，失敗退回 execCommand）。齒輪新增 🎚 鈕（`02_body.html` `btn-tune`），面板疊在齒輪選單上＝維持暫停。接線：`triggerHitstopMs`×`hsMul`、`addTrauma`×`shakeMul`、`bossDmg`×`bossDmgMul`、`50_boss_ai.js` 起手×`bossWindMul`、`Config.parryWindowMs`←`parryMs`、`g_s3b` 時間軸改由 `T1/T2/T3`＋`CH/FL/SG` 推算（預設值與 v0.8.236 相同，實測時間點一致）。

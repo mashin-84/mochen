@@ -1007,6 +1007,7 @@
           Progress.deathCount = (Progress.deathCount || 0) + 1;
           Game.cutsceneActive = true;
           Game.slowT = 1.2; Game.slowScale = 0.25;
+          triggerHitstopMs(120); screenFlash("rgba(255,236,236,0.6)", 0.55, 0.35); addTrauma(0.5); /* v0.8.238 落敗瞬間停格＋亮暗閃（櫻井式：讓玩家意識到「被打倒了」） */
           Sound.play("hit", 1.0, 0.5);
           hapticBuzz([80, 40, 120]);
           showBanner("問心失敗", "元神潰散・重整再戰", 1700, "#f87171");

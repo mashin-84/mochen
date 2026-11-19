@@ -42,9 +42,11 @@
         if (cam.trauma > 0) {
           const sh = cam.trauma * cam.trauma * Config.shakeMultiplier;
           const tt = cam.shakeClock * 28 * (cam.shakeRate || 1); /* v0.8.112 導演可放慢震動頻率 */
-          shakeOffX = 60 * sh * noise1(tt + 11.3);
+          /* v0.8.238 震屏分大中小「抖法」（櫻井式）：小震只縱抖、中震加橫抖、大震再加旋轉；不是只換幅度 */
+          const tr = cam.trauma, wX = Math.max(0, Math.min(1, (tr - 0.3) / 0.2)), wR = Math.max(0, Math.min(1, (tr - 0.6) / 0.2));
+          shakeOffX = 60 * sh * noise1(tt + 11.3) * wX;
           shakeOffY = 60 * sh * noise1(tt + 47.7);
-          shakeRoll = 0.035 * sh * noise1(tt + 91.1);
+          shakeRoll = 0.035 * sh * noise1(tt + 91.1) * wR;
         }
 
         ctx.translate(Config.baseWidth * 0.5, Config.baseHeight * 0.5);

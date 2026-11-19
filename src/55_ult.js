@@ -99,7 +99,7 @@
           Boss._ultFrame = c.img.stab; Boss._ucd = Math.max(0, (Boss._ucd || 0) - dt * 4);
           /* ③ 地火三波：每波左右各一道矮火牆 */
           if (U.wN < 3 && t >= T.w1 + U.wN * T.gap - 0.25 && once("pre" + U.wN) && fxReady("boss1ult")) spawnFx("boss1ult", 1, Boss.x + fc * c.stabDx * k, groundFxY("boss1ult", 1, 200), { anchor: "b", w: 200, h: 200, dur: 0.25, c0: 0, nf: 1 }); /* 放波前 0.25 秒插地點先閃 */
-          if (t >= 1.6 && once("hint")) hintOnce("ult1", "大招：地上的矮火牆可以招架、跳過或瞬步；最後的高火牆只能【瞬步】穿過！"); /* 等大招名橫幅（1.3 秒）消失再出提示，避免疊字 */
+          if (t >= 1.6 && once("hint")) hintOnce("ult1", "大招｜矮火牆：擋、跳或瞬步　高火牆：只能瞬步"); /* 等大招名橫幅（1.3 秒）消失再出提示，避免疊字 */
           while (U.wN < 3 && t >= T.w1 + U.wN * T.gap) {
             U.wN++; const sx = Boss.x + fc * c.stabDx * k;
             Ult.waves.push({ big: false, x: sx, dir: 1, done: false }, { big: false, x: sx, dir: -1, done: false });
@@ -212,7 +212,7 @@
               }
               Sound.play("b2_sword_cast", 1.0, 0.7); hapticBuzz([30, 30, 30]);
               spawnFloatingText(Player.x, Player.y - 150, "【劍陣鎖身】", "#a7f3d0", 1.3);
-              hintOnce("ult2bind", "被劍陣鎖住了！巨劍只能【完美招架】：抓準光圈縮到最小的瞬間按招架");
+              hintOnce("ult2bind", "被劍陣鎖住｜巨劍：光圈縮到最小時完美招架");
             }
             if (Game.ultBind) { Player.vx = 0; if (Player.state === "move") Player.state = "idle"; }
             if (U.bx != null && t >= T.gather + 0.45 && once("cage") && fxReady("boss2bind")) spawnFx("boss2bind", 1, U.bx, groundFxY("boss2bind", 1, U.bw), { anchor: "b", w: U.bw, h: U.bw, dur: U.lockEnd - t, loop: true, fps: 6, alpha: 0.95 });
