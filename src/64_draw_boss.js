@@ -89,7 +89,7 @@
       /* v0.8.200 敵人刀光版（空洞騎士式，與主角同為預設）：出招期間換格交叉淡化 70ms；進入出手（windup→active）留 3 道淡紅剪影殘影、出手中換格留 2 道 */
       const BOSS_XF = { img: null, prev: null, t: 0, st: null };
       /* v0.8.244 大招的「出手格」：換到這些格時跟一般招式一樣留 3 道剪影殘影 */
-      const ULT_SMEAR = new Set(["63_u_stab", "65_u_cross", "us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4", "us6_back", "us7_dive", "us8_land", "77_ua_x", "71_ua_sw1", "72_ua_sw2", "73_ua_sw3", "91_ub_slam", "hs3_hit", "qj1_dash", "qj5_cleave"]);
+      const ULT_SMEAR = new Set(["63_u_stab", "65_u_cross", "65_u_launch", "us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4", "us6_back", "us7_dive", "us8_land", "77_ua_x", "hs3_hit", "qj1_dash", "qj5_cleave"]);
                 function drawBossEntity() {
         if (Boss._introHide) return; /* v0.8.112 從天而降登場前，Boss 不先站在右邊 */
         if (Boss._pp && Game.mode === "battle") { drawPartsFront(); if (Boss._pp.phase !== 2 || !Stages[Boss.stageId].sprite) return; } /* v0.8.83 部位 Boss；v0.8.90 二階段有人形 sprite 照一般 Boss 畫 */

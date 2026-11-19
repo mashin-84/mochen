@@ -148,7 +148,7 @@
         M.sweep_peril.frames = F("32_low_wind", "33_low_hit", "34_low_rec");
         M.grab_peril.frames = F("24_x_hold", "25_x_hit", "22_hs_rec");
         M.heavy_slam.frames = F("20_slam_wind", "21_slam_hit", "22_slam_rec");
-        M.heavy_slash.frames = F("hs1_wind", ["hs2_mid", "hs3_hit"], "hs4_rec"); /* v0.8.225 橫斬不再和壓頂共用格（生圖 4 格） */
+        M.heavy_slash.frames = F("hs1_wind", ["hs2_mid", "hs3_hit"]); /* v0.8.225 橫斬不再和壓頂共用格（生圖 4 格） */
         M.sword_cleave.frames = F("20_slam_wind", ["21_slam_hit", "30_sweep_hit"], "31_sweep_rec");
         M.heavy_zone.frames = F("23_plunge_jump", "24_plunge_hit", "25_plunge_rec");
         M.heavy_thrust.frames = F("26_charge_wind", "27_charge_hit", "28_charge_rec");
@@ -158,17 +158,16 @@
         S3.phaseSwitchMove = "stance_switch"; /* 進二階段真的播一次拔重劍（被打斷時直接換姿） */
         S3.stances.A.extras = ["20_hs_wind", "21_hs_hit", "22_hs_rec", "23_x_wind", "24_x_hold", "25_x_hit", "26_spin_wind", "27_spin_hit", "28_spin_rec", "29_dash_wind", "30_dash_hit", "31_dash_rec", "32_low_wind", "33_low_hit", "34_low_rec", "35_draw_a"];
         S3.stances.B.extras = ["20_slam_wind", "21_slam_hit", "22_slam_rec", "23_plunge_jump", "24_plunge_hit", "25_plunge_rec", "26_charge_wind", "27_charge_hit", "28_charge_rec", "29_sweep_wind", "30_sweep_hit", "31_sweep_rec", "35_draw_a", "36_draw_b", "37_draw_c"];
-        /* v0.8.171 招牌大招：雙劍「寒川十字」（一階段）、重劍「玄鐵龍捲」（二階段），55_ult.js b3cross／b3tornado */
-        S3.moves.u_cross = { name: "寒川影殺", ult: "g_s3a", /* v0.8.209 灰盒新大招（原寒川十字 b3cross 程式暫留 55_ult.js） */ damage: 0, windup: 0.6, active: 1.2, recover: 1.5 };
+        /* 招牌大招：雙劍「寒川影殺」（一階段）、重劍「千鈞鎖脈」（二階段），57_gult.js g_s3a／g_s3b（v0.8.246 舊寒川十字／玄鐵龍捲程式與素材已刪） */
+        S3.moves.u_cross = { name: "寒川影殺", ult: "g_s3a", damage: 0, windup: 0.6, active: 1.2, recover: 1.5 };
         S3.moves.u_tornado = { name: "千鈞鎖脈", ult: "g_s3b", damage: 0, windup: 0.5, active: 3.0, recover: 3.3 };
-        S3.stances.A.extras = S3.stances.A.extras.concat(["61_ua_guard", "65_ua_push", "66_ua_pant", "67_ua_recoil", "68_ua_recover", "71_ua_sw1", "72_ua_sw2", "73_ua_sw3", "74_ua_r1", "75_ua_r2", "77_ua_x", "78_ua_rel"]);
-        S3.stances.B.extras = S3.stances.B.extras.concat(["71_ub_hold", "74_ub_pause", "75_ub_throw", "81_ub_spinA", "82_ub_spinB", "83_ub_spinC", "84_ub_spinD", "85_ub_catch", "86_ub_pull", "87_ub_land", "88_ub_rise", "89_ub_raise", "90_ub_peak", "91_ub_slam", "92_ub_after"]);
+        S3.stances.A.extras = S3.stances.A.extras.concat(["61_ua_guard", "66_ua_pant", "67_ua_recoil", "74_ua_r1", "75_ua_r2", "77_ua_x"]);
         S3.stances.A.pool.push(["u_cross", 4]); S3.stances.B.poolP2.push(["u_tornado", 5]);
         S3.hpTriggers = [{ move: "u_cross", at: 0.5, phase: 1, stance: "A" }, { move: "u_tornado", at: 0.5, phase: 2, stance: "B" }];
         S3.sigMoves = [{ move: "u_cross", phase: 1, stance: "A" }, { move: "u_tornado", phase: 2, stance: "B" }];
-        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "boss3crack", "boss3bult", "boss3btorn", "boss3bsolid", "cue", "land"); S3.fxSheets.push("boss3shadow", "boss3cage", "boss3leaf", "boss3charge", "boss3fly", "gathergif"); /* v0.8.240 千鈞一擊專屬：boss3charge（0 聚光、1 劍閃、2 縱劈光柱、3 地裂）、boss3fly（0 飛劍、1 出劍閃、2 飛劍被彈碎、3 衝刺光痕） */ /* v0.8.216 新大招特效 */
+        S3.fxSheets = ["boss3fx", "boss3bfx"]; S3.arcArt = "boss3fx"; S3.fxSheets.push("boss3ult", "cue", "land"); S3.fxSheets.push("boss3shadow", "boss3charge", "boss3fly", "gathergif"); /* v0.8.240 千鈞一擊專屬：boss3charge（0 聚光、1 劍閃、2 縱劈光柱、3 地裂）、boss3fly（0 飛劍、1 出劍閃、2 飛劍被彈碎、3 衝刺光痕） */ /* v0.8.216 新大招特效 */
         S3.stances.A.extras = S3.stances.A.extras.concat(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4", "us5_crouch", "us6_back", "us7_dive", "us8_land", "ua2_wind2"]); /* v0.8.245 ua2 起手格 */
-        S3.stances.B.extras = S3.stances.B.extras.concat(["qj1_dash", "qj2_stop", "qj3_raise", "qj4_peak", "qj5_cleave", "qj6_after", "obj_fly", "hs1_wind", "hs2_mid", "hs3_hit", "hs4_rec", "uc1_plant", "uc2_holdA", "uc3_holdB", "uc4_lean", "uc5_flinch", "uc6_blown", "uc7_kneel", "uc8_command", "wall_1", "wall_2", "wall_3", "wall_4", "wall_5", "wall_6", "wall_7", "wall_8"]); /* v0.8.171 大招 */
+        S3.stances.B.extras = S3.stances.B.extras.concat(["qj1_dash", "qj2_stop", "qj3_raise", "qj4_peak", "qj5_cleave", "qj6_after", "hs1_wind", "hs3_hit", "uc8_command"]); /* v0.8.171 大招 */
         S3.swordRainArt = "boss3fx"; /* 劍雨用 boss3fx 列 3（無圖時退回程式畫） */
         S3.zoneArt = { fire: ["boss3bfx", 2] }; /* 戒律鎮壓地面區域用陣紋循環 */
         S3.layers = [

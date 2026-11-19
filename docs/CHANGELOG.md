@@ -5,6 +5,13 @@
 
 ## 最新版本
 
+### v0.8.246（2026-11-19）刪第 3 關舊大招程式與素材
+- `55_ult.js`：刪 `ULT_CFG.b3cross／b3tornado`、`ultB3A／ultB3B／ultB3Tick／drawUltB3`、`b3img`、`Ult.b3`、`drawUltTop` 的龍捲前層與舊光圈（70.5KB → 48.6KB）。
+- 素材 47 檔約 2.5MB：`boss3/65_ua_push、68_ua_recover、71～73_ua_sw、78_ua_rel`；`boss3b/` 全部 `*_ub_*`、`obj_fly／lean／stuck`、光壁 `wall_1～8`、`uc1～uc7`、`hs2_mid`、`hs4_rec`；`fx/boss3crack、boss3bult、boss3btorn、boss3bsolid、boss3cage、boss3leaf`。保留新大招仍借用的 `61／66／67／74／75／77_ua_*`、`boss3ult`、`boss3bfx`。
+- `21_stages.js` extras／fxSheets、`ULT_SMEAR`、`FX_FOOT` 同步；`ULT_SMEAR` 補第 2 關 `65_u_launch`。
+- 新提示詞 `prompts/3/25_boss3_ult_sfx.txt`（寒川影殺 6 條、千鈞鎖脈 7 條）。
+- 驗證：check、smoke 第 3 關；大招測試跑第 1、2、3（兩招）關，無錯誤、無 404。
+
 ### v0.8.245（2026-11-19）寒川影殺起手格
 - 生圖（`prompts/3/24`，2×2、有黑格線）切圖：`cut_keys.py` 以第 4 格高對 `us4_strike4`（451，scale 0.5554）。疊圖比對：第 1 格≈us2、第 3 格≈us3、第 4 格≈us4（Gemini 照描參考圖），只有第 2 格「低身沉劍」可用 → `assets/boss3/ua2_wind2.webp`（加進 S3 A extras）。
 - `g_s3a`：第 2 刀出手前 0.15 秒換 `ua2_wind2`、第 4 刀前換 `us5_crouch`（化影前蹲身，雙劍甩後＝雙刺蓄勢）；換到出手格有 v0.8.244 殘影。
