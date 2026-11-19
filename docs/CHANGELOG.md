@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+### v0.8.245（2026-11-19）寒川影殺起手格
+- 生圖（`prompts/3/24`，2×2、有黑格線）切圖：`cut_keys.py` 以第 4 格高對 `us4_strike4`（451，scale 0.5554）。疊圖比對：第 1 格≈us2、第 3 格≈us3、第 4 格≈us4（Gemini 照描參考圖），只有第 2 格「低身沉劍」可用 → `assets/boss3/ua2_wind2.webp`（加進 S3 A extras）。
+- `g_s3a`：第 2 刀出手前 0.15 秒換 `ua2_wind2`、第 4 刀前換 `us5_crouch`（化影前蹲身，雙劍甩後＝雙刺蓄勢）；換到出手格有 v0.8.244 殘影。
+- 修：第 4 刀後 `us5_crouch` 原本 0.04 秒就換上，雙刺幾乎看不到 → 0.18 秒。
+- 教訓：附「出手格」當參考圖時 Gemini 會照描；起手格提示詞只附站姿參考、用文字描述姿勢。
+
 ### v0.8.244（2026-11-19）大招也套刀光版
 - 原因：`64_draw_boss.js` 刀光版只在 windup／active／recover／hurt／staggered 換格淡化，大招期間 `Boss.state="ult"` 不在清單 → 第 1～3 關大招全部硬切格。
 - 修：清單加 `ult`（換格交叉淡化 70ms）；新 `ULT_SMEAR` 出手格表（第 1 關 63_u_stab、65_u_cross；寒川影殺 us1～4、us6_back、us7_dive、us8_land、77_ua_x；舊 71～73_ua_sw、91_ub_slam；千鈞 hs3_hit、qj1_dash、qj5_cleave），換到這些格留 3 道淡紅剪影殘影。

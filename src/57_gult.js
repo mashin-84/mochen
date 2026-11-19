@@ -120,8 +120,10 @@
           ev.push([0.55, () => { U.follow = 125; fr("23_x_wind"); Sound.play("b3_dash", 0.8, 1.15); }]);
           let t = gChain(ev, 0.65 - 0.40, [0.40, 0.40, 0.36, 0.36], (i) => guStrike({ x: Player.x, track: true, lock: 0.15, w: 200, delay: D, kind: "parry", dmg: 72, post: 4, srcBoss: true, label: "【影殺連斬】", quiet: true, onParry: ok,
             onFire: () => { fr(["us1_strike1", "us2_strike2", "us3_strike3", "us4_strike4"][i]); Boss._kickMs = performance.now(); Sound.play("b3_twin", 0.7, 1 + i * 0.06); if (fxReady("boss3fx")) spawnFx("boss3fx", 0, Boss.x + Boss.facing * 110, Boss.y - 120, { w: 300, dur: 0.18, facing: Boss.facing }); } }));
+          { const T0 = 0.65 - 0.40, gp = [0.40, 0.40, 0.36, 0.36], AN = [null, "ua2_wind2", null, "us5_crouch"]; let c = T0; /* v0.8.245 起手格：第 2 刀前低身沉劍、第 4 刀前蹲身收劍（出手前 0.15 秒換上，前一刀出手格先停 0.2 秒以上） */
+            gp.forEach((g2, i) => { c += g2; if (AN[i]) { const k = AN[i]; ev.push([c + D - 0.15, () => fr(k)]); } }); }
           t += D; /* 第 4 刀命中時刻 */
-          ev.push([t + 0.04, () => fr("us5_crouch")]);
+          ev.push([t + 0.18, () => fr("us5_crouch")]); /* v0.8.245 原本 0.04 秒就換掉，第 4 刀雙刺幾乎看不到 */
           ev.push([t + 0.22, () => { /* 化影：背後出現影子 0.65 秒後背刺 */
             U.follow = 0; shd(0, Boss.x, Boss.y - 20, 560 * kS * 0.95, { anchor: "b" }); gVanish(true); const side = -Player.facing;
             spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.9); Sound.play("b2_vanish", 0.8, 1.2);
