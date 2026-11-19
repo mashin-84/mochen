@@ -9379,7 +9379,7 @@ const Config = {
           Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
           if (h.onParry && Progress.parryCount > pc) h.onParry(h);
           else if (h.blockDmg && wasParry && Player.hp === hp0 && !(Player.invulnTimer > 0)) { /* v0.8.231 千鈞一擊：普通格擋擋不住，被震飛扣血 */
-            takeDamage(bossDmg(h.blockDmg), dir, "【千鈞壓頂】普通格擋擋不住！"); Player.vx = dir * 520;
+            takeDamage(bossDmg(h.blockDmg), dir, "【千鈞壓頂】普通格擋擋不住！"); Player.vx = dir * 820;
           }
           return;
         }
@@ -9522,21 +9522,37 @@ const Config = {
           ev.push([0, () => { fr("uc8_command"); Boss.facing = gSide(); Sound.play("b3_draw", 0.9, 1.0); }]);
           ev.push([0.55, () => { /* 擲雙劍插地：光壁升起 */
             C.on = true; Sound.play("b2_sword_fly", 0.9, 1.1); Sound.play("b3_plunge", 0.9, 1.2); triggerShake(0, 0.4, 18, 0.25);
-            hintOnce("gu3b2", "【千鈞鎖脈】蓄力斬劈斷插地輕劍＝破陣；三刀「快、慢、極慢」，最後一刀完美招架或瞬步");
+            hintOnce("gu3b2", "【千鈞鎖脈】蓄力斬劈斷插地輕劍＝破陣；三刀越來越重，最後一刀劍閃就按完美招架");
           }]);
           ev.push([1.0, () => { U.ph = "drag"; U.dragT = 0; }]);
-          const strike = (delay, dmg, post, wind, hit, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.25, delay * 0.4), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, label: "【千鈞鎖脈】", onFire: () => { fr(hit); Boss._kickMs = performance.now(); Sound.play("b3_heavy", 0.9, 1.0); triggerShake(Boss.facing, 0.3, 14, 0.15); } }, extra || {}));
+          /* v0.8.232 加快＋力量感：出手瞬間踏步突進（lunge px）、命中頓幀、震屏、鏡頭推近；三刀總長約 3.9 秒 → 2 秒 */
+          const impact = (lunge, stopMs, shk, zoom) => {
+            const s = gSide(); Boss.facing = s; Boss.x = gClampX(Player.x - s * Math.max(150, Math.abs(Player.x - Boss.x) - lunge)); U.hold = 0.22; /* 突進但不貼穿主角（至少隔 150） */ /* 突進後 0.22 秒不被 follow 拉回 */
+            triggerHitstopMs(stopMs); triggerShake(s, 0.3, shk, 0.18); addTrauma(shk / 80);
+            Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + zoom);
+          };
+          const strike = (delay, dmg, post, hit, fire, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.2, delay * 0.45), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, quiet: true, label: "【千鈞鎖脈】",
+            onFire: () => { fr(hit); Boss._kickMs = performance.now(); fire(); } }, extra || {}));
           const chain = () => {
-            U.ph = "chain"; U.follow = 160; const t0 = U.t;
-            fr("hs1_wind"); strike(0.35, 80, 8, "hs1_wind", "hs3_hit");
-            ev.push([t0 + 0.75, () => { fr("26_charge_wind"); Sound.play("b3_charge", 0.7, 1.1); strike(0.75, 90, 10, "26_charge_wind", "27_charge_hit"); }]);
-            ev.push([t0 + 1.85, () => { /* 千鈞一擊：舉劍過頭停 1.5 秒 */
-              fr("89_ub_raise"); U.follow = 150; Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 260, "千鈞一擊！", "#fca5a5", 1.0);
-              ev.push([U.t + 0.4, () => fr("90_ub_peak")]);
-              strike(1.5, 180, 40, "90_ub_peak", "91_ub_slam", { w: 300, blockDmg: 150, label: "【千鈞一擊】",
-                onParry: () => { U.won = true; fr("22_slam_rec"); shatter("〔千鈞被頂回！劍陣崩碎〕"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.35; Game.slowScale = 0.35; Sound.play("mikiri", 1.0, 0.7);
-                  g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
-              ev.push([U.t + 1.5 + 0.15, () => { if (U.won) return; fr("92_ub_after"); U.follow = 0;
+            U.ph = "chain"; U.follow = 230; const t0 = U.t;
+            /* 第一刀：快（0.22 秒） */
+            fr("hs1_wind"); Sound.play("b3_draw", 0.6, 1.3);
+            strike(0.22, 80, 8, "hs3_hit", () => { impact(90, 60, 14, 0.03); Sound.play("b3_heavy", 0.85, 1.15); Sound.play("hit", 0.5, 0.8); });
+            /* 第二刀：起手後頓一下才砍（0.40 秒；前 0.28 秒舉劍、後 0.12 秒劍閃） */
+            ev.push([t0 + 0.40, () => { fr("26_charge_wind"); Sound.play("b3_charge", 0.6, 1.25);
+              ev.push([U.t + 0.28, () => { if (fxReady("spark")) spawnFx("spark", 1, Boss.x + Boss.facing * 60, Boss.y - 230, { w: 120, dur: 0.15 }); }]); ev.sort((p, q) => p[0] - q[0]);
+              strike(0.40, 90, 10, "27_charge_hit", () => { impact(110, 70, 18, 0.04); Sound.play("b3_heavy", 0.95, 0.95); Sound.play("hit", 0.6, 0.7); }); }]);
+            /* 第三刀 千鈞一擊：舉劍 0.45 秒 → 頂點停住劍閃 0.25 秒 → 瞬間砸下 */
+            ev.push([t0 + 1.05, () => {
+              fr("89_ub_raise"); U.follow = 260; Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 260, "千鈞一擊！", "#fca5a5", 0.8);
+              ev.push([U.t + 0.45, () => { fr("90_ub_peak"); U.follow = 0; Sound.play("mikiri", 0.5, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 220, dur: 0.22 }); }]);
+              strike(0.70, 180, 40, "91_ub_slam", () => { impact(140, 120, 30, 0.08); hapticBuzz([60, 20, 90]);
+                Sound.play("b3_heavy", 1.0, 0.6); Sound.play("b3_plunge", 0.8, 0.8);
+                if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },
+                { w: 300, blockDmg: 150, label: "【千鈞一擊】",
+                onParry: () => { U.won = true; fr("22_slam_rec"); shatter("〔千鈞被頂回！劍陣崩碎〕"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
+                  Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
+              ev.push([U.t + 0.70 + 0.15, () => { if (U.won) return; fr("92_ub_after"); U.follow = 0;
                 if (!C.broken) { C.tgt = 40; ev.push([U.t + 0.45, () => { if (C.broken) return; Sound.play("b3_heavy", 1.0, 0.55); triggerShake(0, 1, 40, 0.5); hapticBuzz([80, 30, 120]);
                   if (Player.state !== "execution") { if (Player.invulnTimer > 0) perfectDodgeFx("【瞬步閃過合攏】", 6); else if (!ultHardBlock(140, gSide(), "【硬接光壁】")) takeDamage(bossDmg(140), gSide(), "【光壁合攏】"); }
                   C.broken = true; C.bt = 0.6; }]); ev.sort((p, q) => p[0] - q[0]); }
@@ -9557,7 +9573,8 @@ const Config = {
               U.snd = (U.snd || 0) - dt; if (U.snd <= 0) { U.snd = 0.35; Sound.play("block", 0.25, 0.6 + Math.random() * 0.2); }
               if (Math.abs(Player.x - Boss.x) <= 230 || U.dragT >= 2.6) chain();
             }
-            if (U.follow) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 8); }
+            if (U.hold > 0) U.hold -= dt;
+            if (U.follow && !(U.hold > 0)) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 8); }
             if (C.on && !C.broken) {
               const L = Math.max(40, C.sx - C.hw + 50), R = Math.min(W - 40, C.sx + C.hw - 50);
               if (Player.x < L) { Player.x = L; if (Player.vx < 0) Player.vx = 0; } else if (Player.x > R) { Player.x = R; if (Player.vx > 0) Player.vx = 0; }
