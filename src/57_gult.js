@@ -197,13 +197,13 @@
               onParry: () => { U.won = true; U.capPost = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
                 spawnFloatingText(Boss.x, Boss.y - 260, "〔千鈞被頂回〕", "#fde047", 1.2); Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
           }]);
-          ev.push([2.25, () => { fr("90_ub_peak"); swordOut(0); }]);
+          ev.push([2.15, () => { fr("90_ub_peak"); swordOut(0); }]); /* v0.8.236 飛劍提早：第二把最晚約 2.8 秒到，離最後一刀 ≥0.6 秒，避開「0.5 秒內連按招架窗口縮小」 */
           /* 雙劍：腰間兩把輕劍輪流飛向主角（腰高，不能跳過：招架或瞬步）；離他超過 450px 飛得更快、間隔更短＝不能跑遠 */
           const swordOut = (i) => {
             const s = gSide(), far = Math.abs(Player.x - Boss.x) > 450;
             guWave({ x: Boss.x + s * 60, dir: s, speed: far ? 1350 : 900, kind: "parry", dmg: 70, post: 8, depth: 120, life: 3, tw: true, sword: true, label: "【飛劍】" });
             Sound.play("b2_sword_fly", 0.8, 1.2 + i * 0.1);
-            if (i < 1) { ev.push([U.t + (far ? 0.4 : 0.6), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
+            if (i < 1) { ev.push([U.t + (far ? 0.35 : 0.45), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
           };
           ev.push([3.2, () => { /* 停頓劍閃：這一閃之後 0.25 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 260, dur: 0.25 }); }]);
           ev.push([3.3, () => { /* 落刀前：人在遠處就衝刺貼上（逃不掉，只能招架或瞬步） */ const s = gSide(); if (Math.abs(Player.x - Boss.x) > 260) dashTo(Player.x - s * 180, 0.12); }]);
