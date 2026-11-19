@@ -236,7 +236,9 @@ const Config = {
       /* v0.8.242 重擊三段命中（SAKURAI C2）：生圖 heavyhit（0 閃光、1 衝擊波、2 碎屑、3 重劍砸地），三段同時生成、時長遞增
          ＝閃光先蓋住、退去後露出擴散的衝擊波，最後碎屑飛散。dir＝力道方向（圖朝右）；s＝大小倍率。沒圖回傳 false 讓呼叫端用舊特效。 */
       function heavyHitFx(x, y, dir, s) {
-        if (!fxReady("heavyhit")) return false; const k = s || 1, f = dir < 0 ? -1 : 1;
+        const k = s || 1, f = dir < 0 ? -1 : 1;
+        if (Tune.v("gifFx") && fxReady("heavyhitgif")) { spawnFx("heavyhitgif", 0, x + f * 30 * k, y, { seq: true, w: 380 * k, dur: 0.5, facing: f }); return true; } /* v0.8.243 GIF 轉的 16 格連續版 */
+        if (!fxReady("heavyhit")) return false;
         spawnFx("heavyhit", 0, x, y, { w: 270 * k, dur: 0.18, facing: f });
         spawnFx("heavyhit", 1, x + f * 24 * k, y, { w: 300 * k, dur: 0.3, facing: f, alpha: 0.9 });
         spawnFx("heavyhit", 2, x + f * 40 * k, y, { w: 330 * k, dur: 0.46, facing: f, alpha: 0.95 });

@@ -5,6 +5,13 @@
 
 ## 最新版本
 
+### v0.8.243（2026-11-19）GIF 特效試驗
+- Gemini 產的 GIF 實為 640×360、30 格、每格 0.1 秒（左右有黑邊，內容 x 74～566）。集氣那張粒子確實內收，但核心一路變大、沒有照提示詞循環。
+- 新工具 `tools/gif2sheet.py`：選格範圍、裁正方形、`--loop K` 頭尾交叉淡化、`--fadeout K` 收尾淡出、扣底噪 18、每格邊緣淡出 → 4×4 序列圖。
+- `assets/fx/gathergif.webp`（`--frames 8:29 --center 320,180 --size 360 --loop 6 --edge 30`）、`assets/fx/heavyhitgif.webp`（`--frames 0:17 --center 336,178 --size 480 --fadeout 5`）。
+- `70_fx.js`：`spawnFx` 新增 `seq:true`（nf 預設 16，格數超過 4 自動跨列）。`heavyHitFx` 有 GIF 版時改播 `heavyhitgif`（寬 380、0.5 秒、往力道方向偏 30）；千鈞集氣改 `gathergif`（寬 600、12fps 循環）。
+- 調參面板新增 `gifFx`（預設 1；0＝舊的分格圖），讓使用者手機切換比較。
+
 ### v0.8.242（2026-11-19）重擊三段命中特效（SAKURAI C2）
 - 生圖 `prompts/3/22_boss3hit_fx.txt` → `tools/fx_black.py … 2:60 3:45`（第 3 列霧、第 4 列砸地塵灰底加大邊緣淡出）→ `assets/fx/heavyhit.webp`，加進 `70_fx.js` 預載清單，`FX_FOOT.heavyhit` 第 4 列腳底 218。
 - `30_state.js` 新 `heavyHitFx(x,y,dir,s)`：三列同時生成，閃光 0.18 秒（寬 270）、衝擊波 0.3 秒（300，往力道方向偏 24）、碎屑 0.46 秒（330，偏 40）；閃光先蓋、退去露出衝擊波與碎屑。

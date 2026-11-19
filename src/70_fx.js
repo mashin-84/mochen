@@ -41,7 +41,7 @@
           facing: o.facing || 1, anchor: o.anchor || "c", rot: o.rot || 0, alpha: o.alpha == null ? 1 : o.alpha,
           loop: !!o.loop, fps: o.fps || 12, follow: o.follow || null, add: o.add !== false,
           vx: o.vx || 0, vy: o.vy || 0, grav: o.grav || 0, grow: o.grow || 0,
-          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back, c0: o.c0 || 0, nf: o.nf || 4 /* v0.8.94 只播該列的第 c0 起 nf 格（2 格一組的特效） */
+          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back, c0: o.c0 || 0, nf: o.nf || (o.seq ? 16 : 4) /* v0.8.243 seq:true＝16 格連播（gif2sheet.py 轉的序列圖，格數超過 4 自動跨列）； v0.8.94 只播該列的第 c0 起 nf 格（2 格一組的特效） */
         });
         if (Game.fxList.length > 140) Game.fxList.shift(); /* v0.8.124 灰塵也走 fxList，上限 60→140 */
       }
@@ -93,12 +93,12 @@
           let dx = -w / 2, dy = -h / 2;
           if (f.anchor === "l") dx = 0;
           if (f.anchor === "b") dy = -h;
-          ctx.drawImage(sh.img, col * 256, f.row * 256, 256, 256, dx, dy, w, h);
+          ctx.drawImage(sh.img, (col % 4) * 256, (f.row + Math.floor(col / 4)) * 256, 256, 256, dx, dy, w, h);
           ctx.restore();
         }
       }
       function initAmbient() {
-        ["slash", "air", "spark", "boss1", "boss2", "ult", "mark", "scene", "exec", "exec2", "ink", "ink2", "heavyhit", "exec_t1", "exec_t2"].forEach(fxSheet); /* 預載，避免第一次出招沒有特效 */
+        ["slash", "air", "spark", "boss1", "boss2", "ult", "mark", "scene", "exec", "exec2", "ink", "ink2", "heavyhit", "heavyhitgif", "exec_t1", "exec_t2"].forEach(fxSheet); /* 預載，避免第一次出招沒有特效 */
         Game.leaves = []; Game.mist = [];
         if (Boss.stageId !== 1) return;
         const cx = Game.camera ? Game.camera.x : 0;
