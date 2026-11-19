@@ -211,7 +211,7 @@
         if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫寒川拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
         if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, m.sfx.p || 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
-        const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
+        const phaseMod = (Config.bossPhase === 2 ? 0.82 : 1.0) * Tune.v("bossWindMul"); /* v0.8.237 調參面板：起手時間倍率 */
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
         Boss._cueDone = false; Boss._orbDone = false; Boss._ringDone = false; Boss._beamOn = false;

@@ -41,6 +41,7 @@
 
 ## 最高原則
 - **夠精緻**：參考各式動作遊戲的手法（空洞騎士、隻狼、九日 Nine Sols、死亡細胞、褻瀆神明、奧日、火影忍者式大招演出等），但維持本作淡彩、透光、薄霧的風格聖經；學手法不學色調。
+- **手感／特效／音效技巧**：`docs/SAKURAI_NOTES.md`（櫻井政博式原則改寫＋對照本專案＋改進清單）；做招式、特效、音效前先看它的檢查清單。
 - 路線圖與製作流程見 `HANDOFF.md` 第一節（M0～M9、單關七步、完成定義）與 `STAGE_PIPELINE.md`；九關設計卡在 `docs/DESIGN.md`。
 
 ## 分工
@@ -78,6 +79,7 @@
 - **灰盒大招與關卡機制**（第 4～9 關）：`57_gult.js`（`GULT[種類]` 時間軸、`guStrike`／`guWave`、`ultHardBlock` 大招次佳解＝完美招架硬接 25%、`mechTick` 金光盾／三階段 `mechPhase3Intercept`、平台 `Game.plats`＋`PG()`＝主角腳下地面，主角相關「是否在地面」一律用 `PG()`）。
 - **超大型部位戰**（第 7 關玄武）：`58_colossus.js`（`Stages[7].colossus`、`xwAI`／`xwTick`／`xwTryHit`、`drawXwBack`／`drawXwFront`）。
 - **主角性能固定**（v0.8.183～185）：招架 150ms、普攻不扣劍勢、招架無冷卻但連按縮窗口（`PARRY_SPAM_K`）；心印 `SEALS_FROZEN`、通關回響 `ECHOES_FROZEN` 已封存（原問心印架勢 ×2 併入基準）。
+- **手機調參面板**（v0.8.237）：`src/12_tune.js` 的 `TUNE_DEFS`＋`Tune.v("鍵")`（齒輪 → 🎚 手感調參，存 `qingyun_tune`，「複製數值」貼回給 Claude 寫成正式值）；新招的關鍵時間都要加進去。頓幀微震 `hsShake`（`30_state.js`）。
 - 玄天珠（輔助技）：`assistStart`／`activateAssist`／`applyAssistEffect`（靈光／替身兩種，營地選擇）
 - 美術特效：`spawnFx(sheet,row,x,y,{w,h,dur,loop,fps,facing,follow,c0,nf,vx,vy,alpha,anchor})`／`updateFx`／`drawFx`（`assets/fx/*.webp`，4×4 格、每格 256px）、`spawnMoveFx`、`executionFx`、`drawUltArt`、`landingFx`
 - Boss 繪製：`drawBossEntity`、`getBossSprite`、`bossVis`、`getWalkNorm`；玩家：`drawPlayer`

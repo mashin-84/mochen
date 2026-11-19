@@ -126,6 +126,14 @@
         });
       }
 
+      { /* v0.8.237 手感調參面板（開著時齒輪選單保持開啟＝遊戲維持暫停） */
+        Tune.apply();
+        const b = document.getElementById("btn-tune"), t = document.getElementById("menu-tune-txt");
+        const sync = () => { if (t) t.textContent = "手感調參" + (Tune.changed() ? "（已改 " + Tune.changed() + " 項）" : ""); };
+        sync();
+        if (b) b.addEventListener("click", () => { Tune.open(); });
+        document.addEventListener("click", (e) => { if (e.target.closest && e.target.closest("#tune-panel")) setTimeout(sync, 0); });
+      }
       { /* v0.8.220 整體音量：大→中→小→極小 循環 */
         const b = document.getElementById("btn-volume"), t = document.getElementById("menu-volume-txt");
         const sync = () => { if (t) t.textContent = "整體音量：" + Sound.LEVEL_NAMES[Sound.levelIdx]; };

@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+**v0.8.237 頓幀微震＋手機調參面板＋技巧筆記（使用者看了 kociden/sakurai-skill，要求 1、3 都做並整理可用技巧）**
+- 頓幀微震（`30_state.js` `hsShake`）：頓幀期間只動畫面不動判定，受擊方 7px、出手方 2px（受擊方＝`Player.hurtInv>0.5` 時是主角，否則 Boss），30ms 換向、空中加縱抖、隨剩餘頓幀收斂（`Game.hsMax`）；套在 `drawBossEntity`（整體平移）與 `drawPlayer`。
+- 調參面板（新檔 `src/12_tune.js`，manifest 排在 `11_audio.js` 後）：`TUNE_DEFS`（頓幀倍率、微震兩項、震動倍率、招架窗口 130ms、Boss 傷害倍率、起手時間倍率、第 3 關千鈞鎖脈五個時間）、`Tune.v()`、存 `qingyun_tune`、「複製數值」（剪貼簿，失敗退回 execCommand）。齒輪新增 🎚 鈕（`02_body.html` `btn-tune`），面板疊在齒輪選單上＝維持暫停。接線：`triggerHitstopMs`×`hsMul`、`addTrauma`×`shakeMul`、`bossDmg`×`bossDmgMul`、`50_boss_ai.js` 起手×`bossWindMul`、`Config.parryWindowMs`←`parryMs`、`g_s3b` 時間軸改由 `T1/T2/T3`＋`CH/FL/SG` 推算（預設值與 v0.8.236 相同，實測時間點一致）。
+- 文件：新增 `docs/SAKURAI_NOTES.md`（原則改寫成繁中並對照本專案、檢查清單、18 項改進清單；來源倉庫無授權條款，故不複製原文）；`CLAUDE.md` 加指引；`STAGE_PIPELINE.md` 驗收清單加 7、8 項與關鍵格提示詞的動作原則。
+- 測試：千鈞鎖脈全完美招架 0 傷害＋踉蹌、不擋剩 1 血（時間點同前版）；面板拉桿即時寫入 localStorage；smoke 第 1、3 關通過。
+
 **v0.8.236 千鈞鎖脈飛劍提早（使用者：擋完第二把飛劍來不及擋最後一刀）**：原因是第二把飛劍約 3.0 秒到、最後一刀 3.45 秒，兩次招架間隔 <0.5 秒觸發連按懲罰（`PARRY_SPAM_K` 完美窗口 150→70ms）。改：第一把 2.25→2.15 秒（`90_ub_peak` 同步）、間隔 0.6／0.4→0.45／0.35 秒；實測第二把在 2.73～2.77 秒被招架，離最後一刀 0.66 秒以上。
 
 **v0.8.235 千鈞鎖脈改「繞背 ×2 → 集氣飛劍 → 千鈞一擊」（使用者定案：光壁沒意義、不要蓄力斬，沒擋＝剩 1 血，飛劍 2 把）**：`src/57_gult.js` `g_s3b` 重寫。

@@ -1606,7 +1606,30 @@
     .gauge-posture-track.capped .posture-tick { background: #ffffff; box-shadow: 0 0 8px #ffffff, 0 0 3px #000; transform: scaleY(1.6); }
     .gauge-posture-track.capped .gauge-posture-fill { filter: grayscale(0.7) brightness(0.8); }
     .gauge-posture-fill.hpout { background: linear-gradient(90deg, #7f1d1d 0%, #ef4444 50%, #7f1d1d 100%) !important; box-shadow: 0 0 14px rgba(239, 68, 68, 0.95) !important; animation: pulse-posture 0.22s infinite alternate !important; }
+    /* v0.8.237 手感調參面板 */
+    #tune-panel { position: fixed; inset: 0; z-index: 9000; display: none; align-items: center; justify-content: center; background: rgba(8, 12, 24, 0.55); }
+    #tune-panel.open { display: flex; }
+    #tune-panel .tune-box { position: relative; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 24px); display: flex; flex-direction: column; background: rgba(20, 26, 40, 0.96); border: 1px solid rgba(253, 224, 71, 0.45); border-radius: 14px; color: #f1f5f9; font-family: 'Noto Serif TC', serif; }
+    #tune-panel .tune-head { padding: 10px 14px 6px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+    #tune-panel .tune-head b { font-size: 17px; color: #fde68a; }
+    #tune-panel .tune-head span { font-size: 12px; color: #94a3b8; }
+    #tune-panel .tune-list { overflow-y: auto; padding: 0 14px 6px; -webkit-overflow-scrolling: touch; }
+    #tune-panel .tune-g { margin: 10px 0 4px; font-size: 13px; color: #fca5a5; border-bottom: 1px solid rgba(148, 163, 184, 0.3); padding-bottom: 2px; }
+    #tune-panel .tune-row { padding: 3px 0 0; }
+    #tune-panel .tune-row.mod .tune-top span:first-child { color: #fde047; }
+    #tune-panel .tune-top { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    #tune-panel .tune-top span:first-child { flex: 1; }
+    #tune-panel .tune-val { min-width: 44px; text-align: right; font-weight: 800; color: #e0f2fe; }
+    #tune-panel .tune-top button { width: 30px; height: 26px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #cbd5e1; }
+    #tune-panel input[type=range] { width: 100%; height: 26px; margin: 0; accent-color: #f59e0b; }
+    #tune-panel .tune-def { font-size: 11px; color: #64748b; }
+    #tune-panel .tune-foot { display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid rgba(148, 163, 184, 0.25); }
+    #tune-panel .tune-foot button { flex: 1; height: 38px; border-radius: 9px; border: 1px solid #64748b; background: #334155; color: #f8fafc; font-size: 14px; font-family: inherit; }
+    #tune-panel .tune-foot button[data-a=copy] { background: #92400e; border-color: #f59e0b; }
+    #tune-panel .tune-toast { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); padding: 6px 14px; border-radius: 8px; font-size: 13px; color: #fde68a; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+    #tune-panel .tune-toast.on { opacity: 1; }
 </style>
+
 
 </head>
 <body>
@@ -2001,6 +2024,10 @@
           <button type="button" id="btn-hint-reset" class="menu-tile-btn">
             <span>💡</span>
             <span>重看教學提示</span>
+          </button>
+          <button type="button" id="btn-tune" class="menu-tile-btn">
+            <span>🎚</span>
+            <span id="menu-tune-txt">手感調參</span>
           </button>
           <button type="button" id="btn-volume" class="menu-tile-btn">
             <span>🔉</span>
@@ -2405,6 +2432,87 @@
         }
       };
       Music.init();
+
+      /* =========================================================================
+       * v0.8.237 手機調參面板（參考櫻井政博〈調整をしやすくする仕組み〉：數值不寫死、執行中一鍵生效，試的次數決定調整深度）
+       * 齒輪 → 🎚 手感調參：拉桿即時生效、存在這台手機（localStorage qingyun_tune）；「複製數值」把改過的值複製起來貼給 Claude 寫進程式。
+       * 新增參數：在 TUNE_DEFS 加一行，程式裡用 Tune.v("鍵") 取值（預設值＝目前程式的正式值）。
+       * ========================================================================= */
+      const TUNE_DEFS = [
+        { g: "手感（全部關卡）" },
+        { k: "hsMul", n: "頓幀長度倍率", d: 1, min: 0, max: 2, s: 0.1 },
+        { k: "hsVictim", n: "頓幀微震：受擊方（px）", d: 7, min: 0, max: 16, s: 1 },
+        { k: "hsAttacker", n: "頓幀微震：出手方（px）", d: 2, min: 0, max: 8, s: 0.5 },
+        { k: "shakeMul", n: "畫面震動倍率", d: 1, min: 0, max: 2, s: 0.1 },
+        { k: "parryMs", n: "完美招架窗口（ms，不含關卡加成）", d: 130, min: 60, max: 250, s: 5 },
+        { k: "bossDmgMul", n: "Boss 傷害倍率", d: 1, min: 0.3, max: 2, s: 0.05 },
+        { k: "bossWindMul", n: "Boss 一般招式起手時間倍率", d: 1, min: 0.6, max: 1.6, s: 0.05 },
+        { g: "第 3 關二階大招【千鈞鎖脈】" },
+        { k: "s3b_d1", n: "第一刀：衝到背後後幾秒砍", d: 0.55, min: 0.25, max: 1.2, s: 0.05 },
+        { k: "s3b_d2", n: "第二刀：衝到背後後幾秒砍", d: 0.5, min: 0.25, max: 1.2, s: 0.05 },
+        { k: "s3b_charge", n: "千鈞一擊：舉劍到砸下（秒）", d: 1.6, min: 0.8, max: 3, s: 0.1 },
+        { k: "s3b_swGap", n: "兩把飛劍間隔（秒）", d: 0.45, min: 0.2, max: 1, s: 0.05 },
+        { k: "s3b_flash", n: "劍閃到砸下（秒）", d: 0.25, min: 0.1, max: 0.6, s: 0.05 }
+      ];
+      const Tune = {
+        o: {},
+        load() { try { this.o = JSON.parse(localStorage.getItem("qingyun_tune") || "{}") || {}; } catch (e) { this.o = {}; } },
+        save() { try { localStorage.setItem("qingyun_tune", JSON.stringify(this.o)); } catch (e) { } },
+        def(k) { return TUNE_DEFS.find(d => d.k === k); },
+        v(k) { const d = this.def(k); const x = this.o[k]; return typeof x === "number" && isFinite(x) ? x : (d ? d.d : 0); },
+        set(k, x) { const d = this.def(k); if (!d) return; if (Math.abs(x - d.d) < 1e-9) delete this.o[k]; else this.o[k] = x; this.save(); this.apply(); },
+        reset() { this.o = {}; this.save(); this.apply(); },
+        changed() { return Object.keys(this.o).length; },
+        apply() { if (typeof Config !== "undefined") Config.parryWindowMs = this.v("parryMs"); }, /* 直接寫進 Config 的參數 */
+        fmt(k, x) { const d = this.def(k); const dec = (String(d.s).split(".")[1] || "").length; return x.toFixed(dec); },
+        el: null,
+        open() {
+          if (!this.el) this.build();
+          this.render(); this.el.classList.add("open");
+        },
+        close() { if (this.el) this.el.classList.remove("open"); },
+        build() {
+          const el = document.createElement("div"); el.id = "tune-panel";
+          el.innerHTML = '<div class="tune-box"><div class="tune-head"><b>🎚 手感調參</b><span>拉桿即時生效，只存在這台手機</span></div><div class="tune-list"></div>' +
+            '<div class="tune-foot"><button type="button" data-a="copy">複製數值</button><button type="button" data-a="reset">全部重設</button><button type="button" data-a="close">關閉</button></div><div class="tune-toast"></div></div>';
+          el.addEventListener("click", (e) => {
+            const a = e.target.closest("button"); if (!a) return;
+            if (a.dataset.a === "close") this.close();
+            else if (a.dataset.a === "reset") { this.reset(); this.render(); this.toast("已全部重設為正式值"); }
+            else if (a.dataset.a === "copy") this.copy();
+            else if (a.dataset.r) { this.set(a.dataset.r, this.def(a.dataset.r).d); this.render(); }
+          });
+          el.addEventListener("input", (e) => {
+            const r = e.target; if (!r.dataset || !r.dataset.k) return;
+            const k = r.dataset.k, x = parseFloat(r.value); this.set(k, x);
+            const row = r.closest(".tune-row"); row.querySelector(".tune-val").textContent = this.fmt(k, x); row.classList.toggle("mod", k in this.o);
+          });
+          document.body.appendChild(el); this.el = el;
+        },
+        render() {
+          const L = this.el.querySelector(".tune-list"); let h = "";
+          for (const d of TUNE_DEFS) {
+            if (d.g) { h += '<div class="tune-g">' + d.g + "</div>"; continue; }
+            const x = this.v(d.k);
+            h += '<div class="tune-row' + (d.k in this.o ? " mod" : "") + '"><div class="tune-top"><span>' + d.n + '</span><small class="tune-def">正式 ' + this.fmt(d.k, d.d) + '</small><span class="tune-val">' + this.fmt(d.k, x) + '</span><button type="button" data-r="' + d.k + '" title="回正式值">↺</button></div>' +
+              '<input type="range" data-k="' + d.k + '" min="' + d.min + '" max="' + d.max + '" step="' + d.s + '" value="' + x + '"></div>';
+          }
+          L.innerHTML = h;
+        },
+        copy() {
+          const out = {}; for (const k of Object.keys(this.o)) out[k] = this.o[k];
+          const txt = this.changed() ? "墨塵傳調參（" + new Date().toLocaleDateString() + "）\n" + TUNE_DEFS.filter(d => d.k && d.k in out).map(d => d.n + "（" + d.k + "）：" + this.fmt(d.k, d.d) + " → " + this.fmt(d.k, out[d.k])).join("\n") : "（沒有改過任何數值）";
+          const done = () => this.toast("已複製，直接貼給 Claude");
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => this.copyFallback(txt, done)); else this.copyFallback(txt, done);
+        },
+        copyFallback(txt, done) {
+          const ta = document.createElement("textarea"); ta.value = txt; ta.style.cssText = "position:fixed;left:0;top:0;opacity:0"; document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); done(); } catch (e) { this.toast("複製失敗，請截圖"); }
+          ta.remove();
+        },
+        toast(s) { const t = this.el.querySelector(".tune-toast"); t.textContent = s; t.classList.add("on"); clearTimeout(this._tt); this._tt = setTimeout(() => t.classList.remove("on"), 1800); }
+      };
+      Tune.load();
 
       /* =========================================================================
        * 2. 全九難關卡資料庫 (ALL 9 STAGES DATABASE)
@@ -3643,7 +3751,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
       const ctx = canvas.getContext("2d");
 
       const BOSS_DMG_K = 1.25; /* v0.8.159 Boss 招式傷害倍率（招式、飛劍、部位招；地面煞氣與火柱不乘） */
-function bossDmg(n) { return Math.round(n * BOSS_DMG_K); }
+function bossDmg(n) { return Math.round(n * BOSS_DMG_K * Tune.v("bossDmgMul")); }
 const Config = {
         worldWidth: 3200,
         baseWidth: 1280,
@@ -3858,7 +3966,20 @@ const Config = {
 
       /* v0.8.8 定格改毫秒制：只凍結 Boss 與主角，粒子、鏡頭、輸入緩衝照跑；上限 120ms */
       function triggerHitstopMs(ms) {
-        Game.hitstopT = Math.max(Game.hitstopT || 0, Math.min(120, ms) / 1000);
+        const was = Game.hitstopT || 0;
+        Game.hitstopT = Math.max(was, Math.min(120, ms * Tune.v("hsMul")) / 1000);
+        Game.hsMax = was > 0 ? Math.max(Game.hsMax || 0, Game.hitstopT) : Game.hitstopT; /* 微震收斂用的起始長度 */
+      }
+      /* v0.8.237 頓幀微震（參考櫻井政博〈8 種頓幀規格〉）：只動畫面不動判定；受擊方大（7px）、出手方小（2px），
+         地面只橫震、空中加縱震，幅度隨剩餘頓幀時間收斂。受擊方＝剛被打的主角（hurtInv 剛設）否則是 Boss（被砍、被彈刀）。 */
+      const HS_AMP = { victim: 7, attacker: 2 };
+      function hsShake(who) {
+        if (!(Game.hitstopT > 0) || !(Game.hsMax > 0) || (who === "boss" && Boss._ilDraw)) return { x: 0, y: 0 };
+        const victim = Player.hurtInv > 0.5 ? "player" : "boss";
+        const amp = (who === victim ? Tune.v("hsVictim") : Tune.v("hsAttacker")) * Math.min(1, Game.hitstopT / Game.hsMax);
+        const ph = Math.floor(performance.now() / 30) % 2 ? 1 : -1, ent = who === "player" ? Player : Boss;
+        const air = ent.y < Config.groundY - 6;
+        return { x: ph * amp, y: air ? -ph * amp * 0.6 : 0 };
       }
       function triggerHitstop(frames) { triggerHitstopMs(frames * 1000 / 60); }
       function hitstopByDmg(dmg) { return Math.max(50, Math.min(100, 40 + dmg * 0.5)); }
@@ -3871,7 +3992,7 @@ const Config = {
         const a = (_nh(i) * 2 - 1) * f, b = (_nh(i + 1) * 2 - 1) * (f - 1);
         return (a + (b - a) * u) * 2;
       }
-      function addTrauma(v) { const c = Game.camera; c.trauma = Math.min(1, (c.trauma || 0) + v); }
+      function addTrauma(v) { const c = Game.camera; c.trauma = Math.min(1, (c.trauma || 0) + v * Tune.v("shakeMul")); }
       function triggerShake(dx, dy, amp, dur) {
         addTrauma(Math.max(0.25, Math.min(0.65, 0.3 + (amp - 11) * 0.013)));
       }
@@ -5316,7 +5437,7 @@ const Config = {
         if (m.isSwitch && !m.isTransform) hintOnce("stance", "【換姿】莫寒川拔劍換姿時有破綻，趁機攻擊！");
         Boss.state = "windup";
         if (m.sfx && m.sfx.w) Sound.play(m.sfx.w, 0.85, m.sfx.p || 1); /* v0.8.34 招式前搖聲（低吼／嚎叫） */
-        const phaseMod = Config.bossPhase === 2 ? 0.82 : 1.0;
+        const phaseMod = (Config.bossPhase === 2 ? 0.82 : 1.0) * Tune.v("bossWindMul"); /* v0.8.237 調參面板：起手時間倍率 */
         Boss.stateTimer = m.windup * phaseMod;
         Boss.stateDur = m.windup * phaseMod;
         Boss._cueDone = false; Boss._orbDone = false; Boss._ringDone = false; Boss._beamOn = false;
@@ -9518,7 +9639,9 @@ const Config = {
         g_s3b: (U) => {
           const ev = [], G = Config.groundY;
           const fr = (k) => { Boss._ultFrame = k; };
-          const g = { ev, dim: [[0, 0.5], [1.85, 3.75]], rest: [99, 1.5], restText: "〔收劍喘息〕" };
+          const D1 = Tune.v("s3b_d1"), D2 = Tune.v("s3b_d2"), CH = Tune.v("s3b_charge"), FL = Tune.v("s3b_flash"), SG = Tune.v("s3b_swGap"); /* v0.8.237 時間可在調參面板改 */
+          const T1 = 0.25, T2 = T1 + D1 + 0.25, T3 = T2 + D2 + 0.3; /* 第一刀衝刺、第二刀衝刺、舉劍集氣 */
+          const g = { ev, dim: [[0, 0.5], [T3, T3 + CH + 0.3]], rest: [99, 1.5], restText: "〔收劍喘息〕" };
           U.ph = "open"; U.follow = 0; U.capPost = true; /* 大招進行中架勢最多 95%：要靠最後一刀完美招架才破 */
           /* 力量感：命中頓幀、震屏、鏡頭推近；lunge＝往主角踏步（最近停在主角前 150px） */
           const impact = (lunge, stopMs, shk, zoom) => {
@@ -9539,30 +9662,30 @@ const Config = {
           ev.push([0, () => { fr("uc8_command"); Boss.facing = gSide(); Sound.play("b3_draw", 0.9, 1.0);
             hintOnce("gu3b3", "【千鈞鎖脈】他會衝到背後：先轉身再招架；集氣時飛劍逼近要擋或閃；最後一刀劍閃就完美招架，沒擋＝只剩 1 血"); }]);
           /* 第一、二刀：繞背斬（要轉身招架） */
-          ev.push([0.25, () => { U.ph = "chain"; fr("hs1_wind"); blink();
-            strike(0.55, 85, 8, "hs3_hit", () => { impact(40, 60, 14, 0.03); Sound.play("b3_heavy", 0.85, 1.15); Sound.play("hit", 0.5, 0.8); }, { needFace: true, label: "【背後斬】" }); }]);
-          ev.push([1.05, () => { fr("26_charge_wind"); blink();
-            strike(0.50, 95, 10, "27_charge_hit", () => { impact(50, 70, 18, 0.04); Sound.play("b3_heavy", 0.95, 0.95); Sound.play("hit", 0.6, 0.7); }, { needFace: true, label: "【背後斬】" }); }]);
+          ev.push([T1, () => { U.ph = "chain"; fr("hs1_wind"); blink();
+            strike(D1, 85, 8, "hs3_hit", () => { impact(40, 60, 14, 0.03); Sound.play("b3_heavy", 0.85, 1.15); Sound.play("hit", 0.5, 0.8); }, { needFace: true, label: "【背後斬】" }); }]);
+          ev.push([T2, () => { fr("26_charge_wind"); blink();
+            strike(D2, 95, 10, "27_charge_hit", () => { impact(50, 70, 18, 0.04); Sound.play("b3_heavy", 0.95, 0.95); Sound.play("hit", 0.6, 0.7); }, { needFace: true, label: "【背後斬】" }); }]);
           /* 第三刀 千鈞一擊：舉劍 0.4 → 集氣 1.2（雙劍輪流飛向主角）→ 頂點劍閃停 0.25 → 用力下揮 */
-          ev.push([1.85, () => { U.ph = "charge"; U.follow = 0; fr("89_ub_raise"); Boss.facing = gSide(); Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
-            strike(1.6, 1, 40, "91_ub_slam", () => { U.capPost = false; impact(60, 120, 30, 0.08); hapticBuzz([60, 20, 90]);
+          ev.push([T3, () => { U.ph = "charge"; U.follow = 0; fr("89_ub_raise"); Boss.facing = gSide(); Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
+            strike(CH, 1, 40, "91_ub_slam", () => { U.capPost = false; impact(60, 120, 30, 0.08); hapticBuzz([60, 20, 90]);
               Sound.play("b3_heavy", 1.0, 0.6); Sound.play("b3_plunge", 0.8, 0.8);
               if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },
               { w: 300, lock: 0.25, blockDmg: 150, lethal: true, dodgePlain: true, label: "【千鈞一擊】",
               onParry: () => { U.won = true; U.capPost = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
                 spawnFloatingText(Boss.x, Boss.y - 260, "〔千鈞被頂回〕", "#fde047", 1.2); Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
           }]);
-          ev.push([2.15, () => { fr("90_ub_peak"); swordOut(0); }]); /* v0.8.236 飛劍提早：第二把最晚約 2.8 秒到，離最後一刀 ≥0.6 秒，避開「0.5 秒內連按招架窗口縮小」 */
+          ev.push([T3 + 0.3, () => { fr("90_ub_peak"); swordOut(0); }]); /* v0.8.236 飛劍提早：第二把離最後一刀 ≥0.6 秒，避開「0.5 秒內連按招架窗口縮小」（預設值下） */
           /* 雙劍：腰間兩把輕劍輪流飛向主角（腰高，不能跳過：招架或瞬步）；離他超過 450px 飛得更快、間隔更短＝不能跑遠 */
           const swordOut = (i) => {
             const s = gSide(), far = Math.abs(Player.x - Boss.x) > 450;
             guWave({ x: Boss.x + s * 60, dir: s, speed: far ? 1350 : 900, kind: "parry", dmg: 70, post: 8, depth: 120, life: 3, tw: true, sword: true, label: "【飛劍】" });
             Sound.play("b2_sword_fly", 0.8, 1.2 + i * 0.1);
-            if (i < 1) { ev.push([U.t + (far ? 0.35 : 0.45), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
+            if (i < 1) { ev.push([U.t + (far ? SG * 0.78 : SG), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
           };
-          ev.push([3.2, () => { /* 停頓劍閃：這一閃之後 0.25 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 260, dur: 0.25 }); }]);
-          ev.push([3.3, () => { /* 落刀前：人在遠處就衝刺貼上（逃不掉，只能招架或瞬步） */ const s = gSide(); if (Math.abs(Player.x - Boss.x) > 260) dashTo(Player.x - s * 180, 0.12); }]);
-          ev.push([3.6, () => { if (U.won) return; fr("92_ub_after"); g.rest = [U.t + 0.3, 1.5]; }]);
+          ev.push([T3 + CH - FL, () => { /* 停頓劍閃：這一閃之後 FL 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 260, dur: 0.25 }); }]);
+          ev.push([T3 + CH - Math.min(FL, 0.15), () => { /* 落刀前：人在遠處就衝刺貼上（逃不掉，只能招架或瞬步） */ const s = gSide(); if (Math.abs(Player.x - Boss.x) > 260) dashTo(Player.x - s * 180, 0.12); }]);
+          ev.push([T3 + CH + 0.15, () => { if (U.won) return; fr("92_ub_after"); g.rest = [U.t + 0.3, 1.5]; }]);
           g.tick = (dt) => {
             Game.ultNoFace = GU.hz.some(h => h.needFace && !h.done); /* 背後斬期間：招架不自動轉身 */
             if (U.dash) { const D = U.dash; D.t += dt; const p = Math.min(1, D.t / D.dur), e = 1 - (1 - p) * (1 - p);
@@ -9571,7 +9694,7 @@ const Config = {
               if (p >= 1) { U.dash = null; Boss.facing = gSide(); if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 200, dur: 0.3, facing: Boss.facing }); triggerShake(0, 0.2, 6, 0.1); } }
             if (U.hold > 0) U.hold -= dt;
             if (U.follow && !(U.hold > 0)) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 8); }
-            if (U.ph === "charge" && !U.won && U.t < 3.45) { /* 集氣：劍身聚光、地面微震 */
+            if (U.ph === "charge" && !U.won && U.t < T3 + CH - FL) { /* 集氣：劍身聚光、地面微震 */
               U.cg = (U.cg || 0) - dt; if (U.cg <= 0) { U.cg = 0.14; if (fxReady("spark")) spawnFx("spark", 1, Boss.x + Boss.facing * (20 + Math.random() * 60), Boss.y - 300 - Math.random() * 60, { w: 70 + Math.random() * 50, dur: 0.3 }); }
               Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.12);
             }
@@ -11437,6 +11560,7 @@ const Config = {
         }
         ctx.globalAlpha = globalA;
 
+        { const hs = hsShake("boss"); ctx.translate(hs.x, hs.y); } /* v0.8.237 頓幀微震 */
         ctx.translate(Boss.x, Boss.y + crouchY);
         ctx.rotate(leanAngle);
         ctx.translate(-Boss.x, -(Boss.y + crouchY));
@@ -12312,7 +12436,7 @@ const Config = {
           if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, PG() - Player.y)) playerEllipse();
           ctx.save();
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
-          ctx.translate(Player.x, Player.y + GROUND_SINK);
+          { const hs = hsShake("player"); ctx.translate(Player.x + hs.x, Player.y + GROUND_SINK + hs.y); }
           const S = MC_SCALE * (MC_FRAME_SCALE[frame] || 1);
           let sqY = 1, sqX = 1;
           if (Game._squashT > 0 && !isAirborne) { /* 以腳底為軸：先壓扁、再緩回（0.15 秒） */
@@ -14367,6 +14491,14 @@ const Config = {
         });
       }
 
+      { /* v0.8.237 手感調參面板（開著時齒輪選單保持開啟＝遊戲維持暫停） */
+        Tune.apply();
+        const b = document.getElementById("btn-tune"), t = document.getElementById("menu-tune-txt");
+        const sync = () => { if (t) t.textContent = "手感調參" + (Tune.changed() ? "（已改 " + Tune.changed() + " 項）" : ""); };
+        sync();
+        if (b) b.addEventListener("click", () => { Tune.open(); });
+        document.addEventListener("click", (e) => { if (e.target.closest && e.target.closest("#tune-panel")) setTimeout(sync, 0); });
+      }
       { /* v0.8.220 整體音量：大→中→小→極小 循環 */
         const b = document.getElementById("btn-volume"), t = document.getElementById("menu-volume-txt");
         const sync = () => { if (t) t.textContent = "整體音量：" + Sound.LEVEL_NAMES[Sound.levelIdx]; };

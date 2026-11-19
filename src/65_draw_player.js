@@ -185,7 +185,7 @@
           if (!drawSpriteShadow(playerImg, Player.x, 529, MC_SCALE * (MC_FRAME_SCALE[frame] || 1), Player.facing, PG() - Player.y)) playerEllipse();
           ctx.save();
           if (Player.flashFrames > 0) ctx.filter = "brightness(2.5)";
-          ctx.translate(Player.x, Player.y + GROUND_SINK);
+          { const hs = hsShake("player"); ctx.translate(Player.x + hs.x, Player.y + GROUND_SINK + hs.y); }
           const S = MC_SCALE * (MC_FRAME_SCALE[frame] || 1);
           let sqY = 1, sqX = 1;
           if (Game._squashT > 0 && !isAirborne) { /* 以腳底為軸：先壓扁、再緩回（0.15 秒） */

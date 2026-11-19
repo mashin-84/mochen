@@ -183,6 +183,7 @@
         }
         ctx.globalAlpha = globalA;
 
+        { const hs = hsShake("boss"); ctx.translate(hs.x, hs.y); } /* v0.8.237 頓幀微震 */
         ctx.translate(Boss.x, Boss.y + crouchY);
         ctx.rotate(leanAngle);
         ctx.translate(-Boss.x, -(Boss.y + crouchY));

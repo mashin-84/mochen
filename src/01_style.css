@@ -1589,4 +1589,27 @@
     .gauge-posture-track.capped .posture-tick { background: #ffffff; box-shadow: 0 0 8px #ffffff, 0 0 3px #000; transform: scaleY(1.6); }
     .gauge-posture-track.capped .gauge-posture-fill { filter: grayscale(0.7) brightness(0.8); }
     .gauge-posture-fill.hpout { background: linear-gradient(90deg, #7f1d1d 0%, #ef4444 50%, #7f1d1d 100%) !important; box-shadow: 0 0 14px rgba(239, 68, 68, 0.95) !important; animation: pulse-posture 0.22s infinite alternate !important; }
+    /* v0.8.237 手感調參面板 */
+    #tune-panel { position: fixed; inset: 0; z-index: 9000; display: none; align-items: center; justify-content: center; background: rgba(8, 12, 24, 0.55); }
+    #tune-panel.open { display: flex; }
+    #tune-panel .tune-box { position: relative; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 24px); display: flex; flex-direction: column; background: rgba(20, 26, 40, 0.96); border: 1px solid rgba(253, 224, 71, 0.45); border-radius: 14px; color: #f1f5f9; font-family: 'Noto Serif TC', serif; }
+    #tune-panel .tune-head { padding: 10px 14px 6px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+    #tune-panel .tune-head b { font-size: 17px; color: #fde68a; }
+    #tune-panel .tune-head span { font-size: 12px; color: #94a3b8; }
+    #tune-panel .tune-list { overflow-y: auto; padding: 0 14px 6px; -webkit-overflow-scrolling: touch; }
+    #tune-panel .tune-g { margin: 10px 0 4px; font-size: 13px; color: #fca5a5; border-bottom: 1px solid rgba(148, 163, 184, 0.3); padding-bottom: 2px; }
+    #tune-panel .tune-row { padding: 3px 0 0; }
+    #tune-panel .tune-row.mod .tune-top span:first-child { color: #fde047; }
+    #tune-panel .tune-top { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    #tune-panel .tune-top span:first-child { flex: 1; }
+    #tune-panel .tune-val { min-width: 44px; text-align: right; font-weight: 800; color: #e0f2fe; }
+    #tune-panel .tune-top button { width: 30px; height: 26px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #cbd5e1; }
+    #tune-panel input[type=range] { width: 100%; height: 26px; margin: 0; accent-color: #f59e0b; }
+    #tune-panel .tune-def { font-size: 11px; color: #64748b; }
+    #tune-panel .tune-foot { display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid rgba(148, 163, 184, 0.25); }
+    #tune-panel .tune-foot button { flex: 1; height: 38px; border-radius: 9px; border: 1px solid #64748b; background: #334155; color: #f8fafc; font-size: 14px; font-family: inherit; }
+    #tune-panel .tune-foot button[data-a=copy] { background: #92400e; border-color: #f59e0b; }
+    #tune-panel .tune-toast { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); padding: 6px 14px; border-radius: 8px; font-size: 13px; color: #fde68a; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+    #tune-panel .tune-toast.on { opacity: 1; }
 </style>
+

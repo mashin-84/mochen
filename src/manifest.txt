@@ -3,6 +3,7 @@
 02_body.html
 10_boot.js
 11_audio.js
+12_tune.js
 20_legacy_stages.js
 21_stages.js
 22_mirror.js

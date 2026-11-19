@@ -5,7 +5,7 @@
       const ctx = canvas.getContext("2d");
 
       const BOSS_DMG_K = 1.25; /* v0.8.159 Boss 招式傷害倍率（招式、飛劍、部位招；地面煞氣與火柱不乘） */
-function bossDmg(n) { return Math.round(n * BOSS_DMG_K); }
+function bossDmg(n) { return Math.round(n * BOSS_DMG_K * Tune.v("bossDmgMul")); }
 const Config = {
         worldWidth: 3200,
         baseWidth: 1280,
@@ -220,7 +220,20 @@ const Config = {
 
       /* v0.8.8 定格改毫秒制：只凍結 Boss 與主角，粒子、鏡頭、輸入緩衝照跑；上限 120ms */
       function triggerHitstopMs(ms) {
-        Game.hitstopT = Math.max(Game.hitstopT || 0, Math.min(120, ms) / 1000);
+        const was = Game.hitstopT || 0;
+        Game.hitstopT = Math.max(was, Math.min(120, ms * Tune.v("hsMul")) / 1000);
+        Game.hsMax = was > 0 ? Math.max(Game.hsMax || 0, Game.hitstopT) : Game.hitstopT; /* 微震收斂用的起始長度 */
+      }
+      /* v0.8.237 頓幀微震（參考櫻井政博〈8 種頓幀規格〉）：只動畫面不動判定；受擊方大（7px）、出手方小（2px），
+         地面只橫震、空中加縱震，幅度隨剩餘頓幀時間收斂。受擊方＝剛被打的主角（hurtInv 剛設）否則是 Boss（被砍、被彈刀）。 */
+      const HS_AMP = { victim: 7, attacker: 2 };
+      function hsShake(who) {
+        if (!(Game.hitstopT > 0) || !(Game.hsMax > 0) || (who === "boss" && Boss._ilDraw)) return { x: 0, y: 0 };
+        const victim = Player.hurtInv > 0.5 ? "player" : "boss";
+        const amp = (who === victim ? Tune.v("hsVictim") : Tune.v("hsAttacker")) * Math.min(1, Game.hitstopT / Game.hsMax);
+        const ph = Math.floor(performance.now() / 30) % 2 ? 1 : -1, ent = who === "player" ? Player : Boss;
+        const air = ent.y < Config.groundY - 6;
+        return { x: ph * amp, y: air ? -ph * amp * 0.6 : 0 };
       }
       function triggerHitstop(frames) { triggerHitstopMs(frames * 1000 / 60); }
       function hitstopByDmg(dmg) { return Math.max(50, Math.min(100, 40 + dmg * 0.5)); }
@@ -233,7 +246,7 @@ const Config = {
         const a = (_nh(i) * 2 - 1) * f, b = (_nh(i + 1) * 2 - 1) * (f - 1);
         return (a + (b - a) * u) * 2;
       }
-      function addTrauma(v) { const c = Game.camera; c.trauma = Math.min(1, (c.trauma || 0) + v); }
+      function addTrauma(v) { const c = Game.camera; c.trauma = Math.min(1, (c.trauma || 0) + v * Tune.v("shakeMul")); }
       function triggerShake(dx, dy, amp, dur) {
         addTrauma(Math.max(0.25, Math.min(0.65, 0.3 + (amp - 11) * 0.013)));
       }
