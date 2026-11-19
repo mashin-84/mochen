@@ -20,6 +20,11 @@
             takeDamage(bossDmg(h.dmg), dir, "【背後中劍】要先轉身！"); return;
           }
           const hp0 = Player.hp, wasParry = Player.state === "parry";
+          if (h.dodgePlain && Player.invulnTimer > 0) { Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx; spawnFloatingText(Player.x, Player.y - 95, "閃過", "#94a3b8", 0.8); return; } /* v0.8.235 瞬步可閃但沒獎勵 */
+          if (h.lethal && !wasParry) { /* v0.8.235 千鈞一擊沒擋：只剩 1 血＋擊飛 */
+            Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
+            if (Player.hp > 1) takeDamage(Player.hp - 1, dir, "【千鈞壓頂】"); Player.vx = dir * 1000; triggerHitstopMs(120); addTrauma(0.8); return;
+          }
           resolveBossStrike({ damage: h.dmg, parryPostureDmg: h.post });
           Boss.x = sx; Boss.isPerilous = sp; Boss.perilType = st; Boss.vx = svx;
           if (h.onParry && Progress.parryCount > pc) h.onParry(h);
@@ -150,77 +155,60 @@
           };
           return g;
         },
-        /* 二階段重劍「千鈞鎖脈」（v0.8.231 灰盒，使用者選外部顧問構想三，取代鎮岳劍獄）：
-           ① 擲出腰間兩把輕劍插在左右兩側＝光壁劍陣（不能跳過），光壁慢慢往中間擠（半寬 w0→330）；
-           ② v0.8.233 起改：空洞騎士式衝刺穿過主角到背後斬（要轉身招架）×2 → ③ 舉劍劍閃千鈞一擊。
-           解法：劍陣期間用【蓄力斬】劈中插地輕劍（離劍 130px 內）＝破陣（光壁消失、架勢 +20）；
-           第三刀完美招架硬頂＝千鈞被頂回（光壁同時碎、架勢 +40、踉蹌 3 秒），瞬步可閃，普通格擋會被震飛扣血。
-           三連結束時光壁還在＝光壁合攏（140）；三刀傷害 80／90／180（普通格擋第三刀 150）。劍陣進行中架勢最多 95%（damageBossPosture 看 Boss._ult.cage）。光壁、輕劍、火花是程式畫的佔位（待生圖）。 */
+        /* 二階段重劍「千鈞鎖脈」（v0.8.235 使用者定案，拿掉光壁與蓄力斬破陣）：
+           ① 不論距離，空洞騎士式衝刺到主角背後斬 ×2（0.55／0.50 秒，要轉身招架）；
+           ② 舉重劍過頭 0.4 秒＋集氣 1.2 秒，期間腰間兩把輕劍輪流飛向主角（腰高、招架或瞬步；離他 >450px 飛更快更密＝不能跑遠）；
+           ③ 頂點劍閃 0.25 秒 → 下揮（人在遠處先衝刺貼上）：完美招架＝踉蹌 3 秒＋架勢 +20；瞬步＝閃過無獎勵；普通格擋＝扣 150 擊飛；沒擋＝只剩 1 血＋擊飛。
+           大招期間架勢最多 95%（capPost）。飛劍是程式畫的佔位（待生圖）。 */
         g_s3b: (U) => {
-          const ev = [], G = Config.groundY, W = Config.worldWidth;
+          const ev = [], G = Config.groundY;
           const fr = (k) => { Boss._ultFrame = k; };
-          const g = { ev, dim: [[0, 0.7]], rest: [99, 1.5], restText: "〔收劍喘息〕" };
-          const cx = Math.max(500, Math.min(W - 500, (Boss.x + Player.x) / 2)), w0 = Math.max(560, Math.min(820, Math.abs(Boss.x - Player.x) / 2 + 300));
-          U.cage = { sx: cx, hw: w0, tgt: w0, on: false, broken: false, rise: 0, bt: 0, pil: [{ x: cx - w0, ok: true }, { x: cx + w0, ok: true }] };
-          const C = U.cage; U.ph = "throw"; U.follow = 0;
-          const shatter = (why) => { if (C.broken) return; C.broken = true; C.bt = 0.6; Sound.play("b2u_shatter", 0.9, 1.1); triggerShake(0, 0.5, 26, 0.3); spawnFloatingText(C.sx, G - 300, why, "#fde047", 1.3); };
-          ev.push([0, () => { fr("uc8_command"); Boss.facing = gSide(); Sound.play("b3_draw", 0.9, 1.0); }]);
-          ev.push([0.55, () => { /* 擲雙劍插地：光壁升起 */
-            C.on = true; Sound.play("b2_sword_fly", 0.9, 1.1); Sound.play("b3_plunge", 0.9, 1.2); triggerShake(0, 0.4, 18, 0.25);
-            hintOnce("gu3b2", "【千鈞鎖脈】蓄力斬劈斷插地劍＝破陣；瞬移到背後要先轉身招架；最後一刀劍閃就完美招架");
-          }]);
-          ev.push([0.95, () => chain()]); /* v0.8.233 拿掉拖劍：光壁一成形就瞬移背後連斬 */
-          /* v0.8.232 加快＋力量感：出手瞬間踏步突進（lunge px）、命中頓幀、震屏、鏡頭推近；三刀總長約 3.9 秒 → 2 秒 */
+          const g = { ev, dim: [[0, 0.5], [1.85, 3.75]], rest: [99, 1.5], restText: "〔收劍喘息〕" };
+          U.ph = "open"; U.follow = 0; U.capPost = true; /* 大招進行中架勢最多 95%：要靠最後一刀完美招架才破 */
+          /* 力量感：命中頓幀、震屏、鏡頭推近；lunge＝往主角踏步（最近停在主角前 150px） */
           const impact = (lunge, stopMs, shk, zoom) => {
-            const s = gSide(); Boss.facing = s; Boss.x = gClampX(Player.x - s * Math.max(150, Math.abs(Player.x - Boss.x) - lunge)); U.hold = 0.22; /* 突進但不貼穿主角（至少隔 150） */ /* 突進後 0.22 秒不被 follow 拉回 */
+            const s = gSide(); Boss.facing = s; Boss.x = gClampX(Player.x - s * Math.max(150, Math.abs(Player.x - Boss.x) - lunge)); U.hold = 0.22;
             triggerHitstopMs(stopMs); triggerShake(s, 0.3, shk, 0.18); addTrauma(shk / 80);
             Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + zoom);
           };
-          const strike = (delay, dmg, post, hit, fire, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.2, delay * 0.45), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, quiet: true, label: "【千鈞鎖脈】",
-            onFire: () => { fr(hit); Boss._kickMs = performance.now(); fire(); } }, extra || {}));
-          /* v0.8.234 空洞騎士式衝刺：0.14 秒真的高速穿過主角衝到背後（主角面向的反方向 170px；背後在光壁外就衝到正面），
-             沿路每 0.016 秒留一張單色剪影殘影（同主角瞬步的 Game.afterimages），起點與終點揚塵 */
+          /* 空洞騎士式衝刺：dur 秒內真的移動到 x，沿路留單色剪影殘影（同主角瞬步的 Game.afterimages） */
+          const dashTo = (x, dur) => { U.dash = { x0: Boss.x, x1: gClampX(x), t: 0, dur, gt: 0 }; Boss.facing = x >= Boss.x ? 1 : -1; U.hold = dur + 0.15; Sound.play("b3_dash", 0.9, 1.15); if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 160, dur: 0.25 }); };
+          /* 繞背：不論多遠，都衝到主角面向的反方向 170px（背後貼場邊就改正面） */
           const blink = () => {
-            const L = C.sx - C.hw + 60, R = C.sx + C.hw - 60, back = -Player.facing;
-            let x = Player.x + back * 170; if (x < L || x > R) x = Player.x - back * 170;
-            x = gClampX(Math.max(L, Math.min(R, x)));
-            U.dash = { x0: Boss.x, x1: x, t: 0, dur: 0.14, gt: 0 }; Boss.facing = x >= Boss.x ? 1 : -1; U.hold = 0.3; U.follow = 170;
-            Sound.play("b3_dash", 0.9, 1.15);
-            if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 160, dur: 0.25 });
+            const back = -Player.facing; let x = Player.x + back * 170; if (x < 140 || x > Config.worldWidth - 140) x = Player.x - back * 170;
+            const far = Math.abs(x - Boss.x); dashTo(x, Math.min(0.24, 0.12 + far / 9000)); U.follow = 170;
             if ((x - Player.x) * Player.facing < 0) spawnFloatingText(Player.x, Player.y - 150, "背後！", "#fde047", 0.7);
           };
-          const chain = () => {
-            U.ph = "chain"; const t0 = U.t;
-            /* 第一刀：瞬移背後 → 0.55 秒後斬（要轉身招架） */
-            fr("hs1_wind"); blink();
-            strike(0.55, 85, 8, "hs3_hit", () => { impact(40, 60, 14, 0.03); Sound.play("b3_heavy", 0.85, 1.15); Sound.play("hit", 0.5, 0.8); }, { needFace: true, label: "【背後斬】" });
-            /* 第二刀：再瞬移到背後 → 0.50 秒後斬 */
-            ev.push([t0 + 0.80, () => { fr("26_charge_wind"); blink();
-              strike(0.50, 95, 10, "27_charge_hit", () => { impact(50, 70, 18, 0.04); Sound.play("b3_heavy", 0.95, 0.95); Sound.play("hit", 0.6, 0.7); }, { needFace: true, label: "【背後斬】" }); }]);
-            /* 第三刀 千鈞一擊：舉劍 0.45 秒 → 頂點停住劍閃 0.25 秒 → 瞬間砸下 */
-            ev.push([t0 + 1.55, () => {
-              fr("89_ub_raise"); U.follow = 260; Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 260, "千鈞一擊！", "#fca5a5", 0.8);
-              ev.push([U.t + 0.45, () => { fr("90_ub_peak"); U.follow = 0; Sound.play("mikiri", 0.5, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 220, dur: 0.22 }); }]);
-              strike(0.70, 180, 40, "91_ub_slam", () => { impact(140, 120, 30, 0.08); hapticBuzz([60, 20, 90]);
-                Sound.play("b3_heavy", 1.0, 0.6); Sound.play("b3_plunge", 0.8, 0.8);
-                if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },
-                { w: 300, blockDmg: 150, label: "【千鈞一擊】",
-                onParry: () => { U.won = true; fr("22_slam_rec"); shatter("〔千鈞被頂回！劍陣崩碎〕"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
-                  Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
-              ev.push([U.t + 0.70 + 0.15, () => { if (U.won) return; fr("92_ub_after"); U.follow = 0;
-                if (!C.broken) { C.tgt = 40; ev.push([U.t + 0.45, () => { if (C.broken) return; Sound.play("b3_heavy", 1.0, 0.55); triggerShake(0, 1, 40, 0.5); hapticBuzz([80, 30, 120]);
-                  if (Player.state !== "execution") { if (Player.invulnTimer > 0) perfectDodgeFx("【瞬步閃過合攏】", 6); else if (!ultHardBlock(140, gSide(), "【硬接光壁】")) takeDamage(bossDmg(140), gSide(), "【光壁合攏】"); }
-                  C.broken = true; C.bt = 0.6; }]); ev.sort((p, q) => p[0] - q[0]); }
-                g.rest = [U.t + (C.broken ? 0.3 : 0.75), 1.5]; }]);
-              ev.sort((p, q) => p[0] - q[0]);
-            }]);
-            ev.sort((p, q) => p[0] - q[0]);
+          const strike = (delay, dmg, post, hit, fire, extra) => guStrike(Object.assign({ x: Player.x, track: true, lock: Math.min(0.2, delay * 0.45), w: 260, delay, kind: "parry", dmg, post, srcBoss: true, quiet: true, label: "【千鈞鎖脈】",
+            onFire: () => { fr(hit); Boss._kickMs = performance.now(); fire(); } }, extra || {}));
+          ev.push([0, () => { fr("uc8_command"); Boss.facing = gSide(); Sound.play("b3_draw", 0.9, 1.0);
+            hintOnce("gu3b3", "【千鈞鎖脈】他會衝到背後：先轉身再招架；集氣時飛劍逼近要擋或閃；最後一刀劍閃就完美招架，沒擋＝只剩 1 血"); }]);
+          /* 第一、二刀：繞背斬（要轉身招架） */
+          ev.push([0.25, () => { U.ph = "chain"; fr("hs1_wind"); blink();
+            strike(0.55, 85, 8, "hs3_hit", () => { impact(40, 60, 14, 0.03); Sound.play("b3_heavy", 0.85, 1.15); Sound.play("hit", 0.5, 0.8); }, { needFace: true, label: "【背後斬】" }); }]);
+          ev.push([1.05, () => { fr("26_charge_wind"); blink();
+            strike(0.50, 95, 10, "27_charge_hit", () => { impact(50, 70, 18, 0.04); Sound.play("b3_heavy", 0.95, 0.95); Sound.play("hit", 0.6, 0.7); }, { needFace: true, label: "【背後斬】" }); }]);
+          /* 第三刀 千鈞一擊：舉劍 0.4 → 集氣 1.2（雙劍輪流飛向主角）→ 頂點劍閃停 0.25 → 用力下揮 */
+          ev.push([1.85, () => { U.ph = "charge"; U.follow = 0; fr("89_ub_raise"); Boss.facing = gSide(); Sound.play("b3_charge", 1.0, 0.8); spawnFloatingText(Boss.x, Boss.y - 280, "千鈞一擊！", "#fca5a5", 1.0);
+            strike(1.6, 1, 40, "91_ub_slam", () => { U.capPost = false; impact(60, 120, 30, 0.08); hapticBuzz([60, 20, 90]);
+              Sound.play("b3_heavy", 1.0, 0.6); Sound.play("b3_plunge", 0.8, 0.8);
+              if (fxReady("boss3shadow")) spawnFx("boss3shadow", 3, Boss.x + Boss.facing * 120, groundFxY("boss3shadow", 3, 560), { anchor: "b", w: 560, dur: 0.5, facing: Boss.facing }); },
+              { w: 300, lock: 0.25, blockDmg: 150, lethal: true, dodgePlain: true, label: "【千鈞一擊】",
+              onParry: () => { U.won = true; U.capPost = false; fr("22_slam_rec"); damageBossPosture(20, "【以小博大】架勢 +"); triggerHitstopMs(120); addTrauma(0.6); Game.slowT = 0.45; Game.slowScale = 0.3; Sound.play("mikiri", 1.0, 0.7);
+                spawnFloatingText(Boss.x, Boss.y - 260, "〔千鈞被頂回〕", "#fde047", 1.2); Boss.x = gClampX(Boss.x - gSide() * 120); g.rest = [U.t + 0.05, 3.0]; g.restText = "〔千鈞被頂回・莫寒川踉蹌〕"; fr("16_stagger"); } });
+          }]);
+          ev.push([2.25, () => { fr("90_ub_peak"); swordOut(0); }]);
+          /* 雙劍：腰間兩把輕劍輪流飛向主角（腰高，不能跳過：招架或瞬步）；離他超過 450px 飛得更快、間隔更短＝不能跑遠 */
+          const swordOut = (i) => {
+            const s = gSide(), far = Math.abs(Player.x - Boss.x) > 450;
+            guWave({ x: Boss.x + s * 60, dir: s, speed: far ? 1350 : 900, kind: "parry", dmg: 70, post: 8, depth: 120, life: 3, tw: true, sword: true, label: "【飛劍】" });
+            Sound.play("b2_sword_fly", 0.8, 1.2 + i * 0.1);
+            if (i < 1) { ev.push([U.t + (far ? 0.4 : 0.6), () => swordOut(i + 1)]); ev.sort((p, q) => p[0] - q[0]); }
           };
+          ev.push([3.2, () => { /* 停頓劍閃：這一閃之後 0.25 秒落刀 */ Sound.play("mikiri", 0.6, 1.6); if (fxReady("spark")) spawnFx("spark", 2, Boss.x + Boss.facing * 40, Boss.y - 330, { w: 260, dur: 0.25 }); }]);
+          ev.push([3.3, () => { /* 落刀前：人在遠處就衝刺貼上（逃不掉，只能招架或瞬步） */ const s = gSide(); if (Math.abs(Player.x - Boss.x) > 260) dashTo(Player.x - s * 180, 0.12); }]);
+          ev.push([3.6, () => { if (U.won) return; fr("92_ub_after"); g.rest = [U.t + 0.3, 1.5]; }]);
           g.tick = (dt) => {
-            if (C.bt > 0) C.bt -= dt;
-            C.rise = Math.min(1, C.rise + (C.on && !C.broken ? dt * 4 : -dt * 3));
-            if (C.on && !C.broken) { C.tgt = Math.max(330, C.tgt - dt * 38); }
-            C.hw += (C.tgt - C.hw) * Math.min(1, dt * 5); C.pil[0].x = C.sx - C.hw; C.pil[1].x = C.sx + C.hw;
             Game.ultNoFace = GU.hz.some(h => h.needFace && !h.done); /* 背後斬期間：招架不自動轉身 */
             if (U.dash) { const D = U.dash; D.t += dt; const p = Math.min(1, D.t / D.dur), e = 1 - (1 - p) * (1 - p);
               Boss.x = D.x0 + (D.x1 - D.x0) * e; D.gt -= dt;
@@ -228,31 +216,24 @@
               if (p >= 1) { U.dash = null; Boss.facing = gSide(); if (fxReady("spark")) spawnFx("spark", 1, Boss.x, G - 10, { w: 200, dur: 0.3, facing: Boss.facing }); triggerShake(0, 0.2, 6, 0.1); } }
             if (U.hold > 0) U.hold -= dt;
             if (U.follow && !(U.hold > 0)) { const s = gSide(); Boss.facing = s; Boss.x += (gClampX(Player.x - s * U.follow) - Boss.x) * Math.min(1, dt * 8); }
-            if (C.on && !C.broken) {
-              const L = Math.max(40, C.sx - C.hw + 50), R = Math.min(W - 40, C.sx + C.hw - 50);
-              if (Player.x < L) { Player.x = L; if (Player.vx < 0) Player.vx = 0; } else if (Player.x > R) { Player.x = R; if (Player.vx > 0) Player.vx = 0; }
-              Boss.x = Math.max(L, Math.min(R, Boss.x));
-              const slashing = Player.state === "attack" && Player.isChargedAttack && Player.stateTimer > 0.1;
-              if (slashing && !U._cs) {
-                U._cs = true;
-                const p = C.pil.find(q => q.ok && Math.abs(Player.x - q.x) < 130);
-                if (p) { p.ok = false; shatter("〔劍斷陣破！〕"); damageBossPosture(10, "【破陣】架勢 +"); triggerHitstopMs(100); hapticBuzz([40, 20, 60]); if (fxReady("spark")) spawnFx("spark", 2, p.x, G - 120, { w: 360, dur: 0.4 }); }
-              }
-              if (!slashing) U._cs = false;
+            if (U.ph === "charge" && !U.won && U.t < 3.45) { /* 集氣：劍身聚光、地面微震 */
+              U.cg = (U.cg || 0) - dt; if (U.cg <= 0) { U.cg = 0.14; if (fxReady("spark")) spawnFx("spark", 1, Boss.x + Boss.facing * (20 + Math.random() * 60), Boss.y - 300 - Math.random() * 60, { w: 70 + Math.random() * 50, dur: 0.3 }); }
+              Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.12);
             }
           };
-          g.draw = () => { /* 佔位：插地輕劍（淡藍劍身）＋光壁（淡青光幕） */
-            if (C.rise <= 0 && C.bt <= 0) return;
-            const now = performance.now(), a = C.broken ? Math.max(0, C.bt / 0.6) : C.rise;
-            ctx.save();
-            C.pil.forEach((p, i) => {
-              const sd = i ? 1 : -1, x = p.x, top = G - 560 * a;
-              const gr = ctx.createLinearGradient(x - sd * 110, 0, x + sd * 14, 0); gr.addColorStop(0, "rgba(56, 189, 248, 0)"); gr.addColorStop(1, `rgba(14, 116, 144, ${0.6 * a})`);
-              ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = gr; ctx.fillRect(Math.min(x - sd * 110, x + sd * 14), top, 124, G - top);
-              ctx.strokeStyle = `rgba(224, 242, 254, ${0.9 * a * (0.7 + 0.3 * Math.sin(now / 90 + i))})`; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x, G); ctx.lineTo(x, top); ctx.stroke();
-              if (p.ok || C.bt > 0) { ctx.globalAlpha = a; ctx.fillStyle = "#cbd5e1"; ctx.fillRect(x - 5, G - 150, 10, 150); ctx.fillStyle = "#7c2d12"; ctx.fillRect(x - 3, G - 190, 6, 40); ctx.fillStyle = "#94a3b8"; ctx.fillRect(x - 16, G - 154, 32, 6); ctx.globalAlpha = 1; }
-            });
-            ctx.restore();
+          g.draw = () => { /* 佔位：飛劍（淡藍劍身＋拖光），待生圖 */
+            const now = performance.now();
+            for (const h of GU.hz) {
+              if (!h.tw || h.done) continue;
+              const y = G - 130, L = 150;
+              ctx.save(); ctx.translate(h.x, y); ctx.scale(h.dir * 1.5, 1.5);
+              const gr = ctx.createLinearGradient(-L - 160, 0, 0, 0); gr.addColorStop(0, "rgba(186, 230, 253, 0)"); gr.addColorStop(1, "rgba(186, 230, 253, 0.7)");
+              ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = gr; ctx.fillRect(-L - 160, -6, L + 160, 12);
+              ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = "#e2e8f0"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-22, -5); ctx.lineTo(-L, -4); ctx.lineTo(-L, 4); ctx.lineTo(-22, 5); ctx.closePath(); ctx.fill();
+              ctx.strokeStyle = "#475569"; ctx.lineWidth = 1.5; ctx.stroke();
+              ctx.fillStyle = "#94a3b8"; ctx.fillRect(-L - 6, -12, 6, 24); ctx.fillStyle = "#7c2d12"; ctx.fillRect(-L - 40, -3.5, 34, 7);
+              ctx.restore();
+            }
           };
           return g;
         },

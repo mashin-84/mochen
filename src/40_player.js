@@ -803,7 +803,7 @@
           amount *= 0.5; fromAtk = false; cap = big ? null : Boss.maxPosture * 0.95; /* v0.8.186 一般收招只能推到 95%（原本一輪普攻就補滿，等於不用防守）；最後一下仍要彈刀／看破／踩頭，或等大招喘息、擊落、定身的大破綻 */
         }
         if (fromAtk) { const c60 = Boss.maxPosture * 0.6; cap = cap ? Math.min(cap, c60) : c60; } /* v0.8.157 攻擊類（普攻、重斬、蓄力、凌空斬／下劈）一律最多把架勢加到 60%；最後 40% 只能靠完美招架、踏劍看破、凌空踩頭、折射 */
-        { const Uc = Boss._ult && Boss._ult.cage; if (Uc && Uc.on && !Uc.broken) { const c95 = Boss.maxPosture * 0.95; cap = cap ? Math.min(cap, c95) : c95; } } /* v0.8.229 鎮岳劍獄進行中架勢最多 95%：要靠蓄力斬破獄，不能招架劍氣就把他打破防 */
+        { const Uc = Boss._ult; if (Uc && Uc.capPost) { const c95 = Boss.maxPosture * 0.95; cap = cap ? Math.min(cap, c95) : c95; } } /* v0.8.235 大招標 capPost 時架勢最多 95%（第 3 關千鈞鎖脈：要靠最後一刀完美招架才破） */
         if (partsBusy()) { if (partsMode()) partsPosture(amount, label); return; } /* v0.8.83 部位 Boss 一階段：架勢加在巨手 */
         if (Boss.state === "staggered") return;
         
