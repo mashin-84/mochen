@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+**v0.8.261 第 4 關：古靈站立呼吸、專屬音效、封印碎裂與劍碎 GIF（使用者生成；提示詞 `prompts/4/V5a`、`6_boss4_sfx.txt`、`7a`／`7b`）**
+- **站立呼吸**：Gemini 影片（直式 720×1280、24fps、4 秒 96 幀、綠幕）→ 找首尾最接近段（第 4 幀起、週期 68 幀，差 1.5；第 1 關 0.9、大狼 2.0）→ `tools/proc.py` 每 2 幀取 1、`refH=492` 對齊 `01_idle1` → `assets/boss4s/idle_01～34`；`64_draw_boss.js` `SPRITE_ANIM.boss4s = {idle:34}`（只往前播 12 格／秒）。影片裡裙擺淡紫霧比原圖淡。
+- **音效**（裁開頭靜音、尾端淡出、峰值 −1.5 dBFS、單聲道 44.1k 96k mp3，登記在 `11_audio.js` `bossSfx`）：`s4_seal_break`（封印斷，取代 execution；整體偏小聲 mean −31.9，待實測）、`s4_form_split`（巨劍崩六劍，取代 execution＋hit）、`s4_summon`（大招召劍，3 版頻譜相近，取第 1 版）、`s4_sword_planted`（飛劍彈飛插地，取第 3 版：鏗＋插地兩個瞬態清楚）、`s4_sky_merge`（匯聚開始，劍越多越大聲越低沉）、`s4_sky_swing`（改在開始下劈時播，越凝實越低沉；命中瞬間不再另播揮擊音）、`s4_sky_shatter`（天劍碎裂三種情況）。
+- **GIF**（`tools/gif2sheet.py`，640×360、30 格）：`b4sealgif`（取第 14～29 格＝裂開到爆散、`--fadeout 3`），接一階段封印斷（360px、alpha 0.8）；`b4shattergif`（第 0～25 格、`--fadeout 4`），接二階段劍被打落（含 2A 劍氣全反，440px、alpha 0.85）。有 GIF 時不再疊原本的大火花（實測會整團過白）。受調參面板「GIF 版特效」開關。
+- 驗證：無 404、無頁面錯誤；截圖確認站立格、封印碎裂與劍碎前後兩個時間點；機器人全完美仍破防；smoke。**聲音本機聽不到，請手機實測音量與時機。**
+
 **v0.8.260 第 4 關補關鍵格 8 張接入（使用者生圖 `prompts/4/5_boss4s_extra_keys.txt`）**
 - `tools/cut_keys.py`（4×2、以第 3 格對 idle 身高 492、縮放 0.7773）→ `assets/boss4s/`：Gemini 第 1 格（舉劍到後上方，不是要求的「往後下方揮到底」）當 `u8_reraise`、第 2 格（手臂往後水平）當 `u7_follow`，順序「下劈→手往後→舉到後上→舉臂」連貫；`u2_point` 重生（只拿一把劍，覆蓋舊檔）；`21b_spin_back`、`21c_spin_end`、`23r_fly_rec`、`13r_sweep_rec`、`24a_rain_cmd`。
 - 接入：環劍旋斬 active 改 3 格陣列（21→21b→21c，一刀一格）；劍指飛劍收招 23r；劍魂掃地收招 13r；萬劍歸宗・疾出招 24a。大招天劍最後一刀改擺聚劍時，上一刀排好的繞上／舉臂不再蓋掉它。

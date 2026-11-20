@@ -328,7 +328,7 @@
           const swordResolve = (s) => { /* 劍碰到主角：完美招架＝彈飛插地；其他（被砍、普通格擋、瞬步閃過）＝飛回空中 */
             s.hit = true; const pc = Progress.parryCount;
             guHit(s.lx, s.h);
-            if (s.ok) { s.st = "bounce"; s.t = 0; s.bx0 = s.x; s.by0 = s.y; s.bx1 = gClampX(Player.x + s.side * (150 + Math.random() * 60)); Sound.play("c_clang_big", 0.55, 1.3); spawnFloatingText(s.bx1, G - 250, "劍落！", "#fde047", 0.8); }
+            if (s.ok) { s.st = "bounce"; s.t = 0; s.bx0 = s.x; s.by0 = s.y; s.bx1 = gClampX(Player.x + s.side * (150 + Math.random() * 60)); Sound.play("s4_sword_planted", 0.95, 1.0); spawnFloatingText(s.bx1, G - 250, "劍落！", "#fde047", 0.8); }
             else { s.st = "ret"; s.t = 0; Sound.play("c_slash_light", 0.6, 1.0); }
           };
           const swing = (i, cnt) => {
@@ -349,24 +349,24 @@
               if (fxReady("gathergif") && Tune.v("gifFx")) spawnFx("gathergif", 0, sky.pv.x, sky.pv.y, { w: 560, dur: FIN, loop: true, fps: 12, seq: true, alpha: 0.85, follow: mid });
               at(FIN, () => { Game.ultLock = true; Player.vx = 0; sky.flash = 1; g.camZ = 0.1; hapticBuzz(30); }); /* 時停：主角不能動，天劍高舉懸停 */
               at(FIN + FRZ, () => { Game.ultLock = false; Sound.play("c_shing", 1.0, 0.9); screenFlash("rgba(240,249,255,0.6)", 0.5, 0.18); /* 閃光＝出手訊號 */
-                if (fxReady("spark")) { const p0 = tip(); spawnFx("spark", 2, p0.x, p0.y, { w: 420, dur: 0.3 }); } startCut(); fr("u6_swing"); });
-            } else at(wind - TS, () => { startCut(); fr("u6_swing"); Sound.play("c_sword_throw", 0.8, 0.75); });
+                if (fxReady("spark")) { const p0 = tip(); spawnFx("spark", 2, p0.x, p0.y, { w: 420, dur: 0.3 }); } startCut(); fr("u6_swing"); Sound.play("s4_sky_swing", 1.0, 0.85); });
+            } else at(wind - TS, () => { startCut(); fr("u6_swing"); Sound.play("s4_sky_swing", 0.9, 1.12 - sky.lv * 0.04); }); /* v0.8.261 天劍揮擊音在開始下劈時播（由遠到近），越凝實越低沉 */
             guStrike({ x: Player.x, track: true, lock: TS + 0.02, w: 900, delay: wind, kind: "parry", dmg: last ? 110 : 70, src: sky.pv.x, quiet: true, noDraw: true, noDodge: true, blockDmg: 25, label: "【天劍】",
               onParry: () => { U.swOk++; if (last) U.lastOk = true; },
               onFire: () => {
                 const d = -gSide();
                 if (fxReady("boss4ult2")) spawnFx("boss4ult2", 3, Player.x - d * 30, Player.y - 105, { w: last ? 520 : 380, dur: 0.4, facing: -d }); /* 命中閃 */
-                Sound.play("c_swing_heavy", 0.9, 1.15 - sky.lv * 0.04); triggerShake(-d, 0.3, 12 + sky.lv * 3, 0.2); hapticBuzz(20 + sky.lv * 6);
+                triggerShake(-d, 0.3, 12 + sky.lv * 3, 0.2); /* 揮擊音改在下劈開始（s4_sky_swing），命中由招架／受擊音負責 */ hapticBuzz(20 + sky.lv * 6);
                 if (!last) { swing(i + 1, cnt); return; }
                 U.fin = false; Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.08; g.camF = 0; screenFlash("rgba(235,245,255,0.75)", 0.7, 0.35); addTrauma(0.45); triggerHitstopMs(100); /* 暗場瞬間放開＋亮暗閃 */
                 if (U.swOk === cnt) { /* 天劍每一下都完美＝以小博大：架勢直接打滿 */
-                  U.noPost = false; Game.slowT = 0.5; Game.slowScale = 0.3; Sound.play("c_clang_big", 1.0, 0.9); triggerHitstopMs(120); addTrauma(0.6);
+                  U.noPost = false; Game.slowT = 0.5; Game.slowScale = 0.3; Sound.play("c_clang_big", 1.0, 0.9); Sound.play("s4_sky_shatter", 1.0, 0.95); triggerHitstopMs(120); addTrauma(0.6);
                   showBanner("六劍歸一", "天　劍　崩　碎", 1300, "#7dd3fc"); sky.broken = 1;
                   { const m0 = mid(); if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 620, dur: 0.7 }); } /* 天劍崩碎（生圖） */
                   damageBossPosture(Boss.maxPosture, "【天劍崩碎】架勢打滿！", null, true);
                 } else if (U.lastOk) { /* v0.8.258 方案 A：最後一下完美＝一定有大回饋（慢動作、天劍當場彈碎、重擊音），架勢依「天劍完美幾下／共幾下」給比例 */
                   const pct = U.swOk / cnt, m0 = mid();
-                  U.noPost = false; Game.slowT = 0.35; Game.slowScale = 0.35; Sound.play("c_clang_big", 1.0, 1.0); triggerHitstopMs(110); addTrauma(0.45); hapticBuzz([40, 20, 60]);
+                  U.noPost = false; Game.slowT = 0.35; Game.slowScale = 0.35; Sound.play("c_clang_big", 1.0, 1.0); Sound.play("s4_sky_shatter", 0.9, 1.0); triggerHitstopMs(110); addTrauma(0.45); hapticBuzz([40, 20, 60]);
                   sky.broken = 1; sky.gh.length = 0;
                   if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 600 * Math.max(0.8, sky.z), dur: 0.7 });
                   if (fxReady("boss4ult")) spawnFx("boss4ult", 2, sky.pv.x, sky.pv.y, { w: 340 * Math.max(0.8, sky.z), dur: 0.45 });
@@ -378,14 +378,14 @@
                     if (sky.broken) return; const m0 = mid(); sky.broken = 1; sky.gh.length = 0;
                     if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 560 * Math.max(0.8, sky.z), dur: 0.7 });
                     if (fxReady("boss4ult")) spawnFx("boss4ult", 2, sky.pv.x, sky.pv.y, { w: 320 * Math.max(0.8, sky.z), dur: 0.45 });
-                    Sound.play("c_clang_big", 0.5, 1.4); Sound.play("hit", 0.4, 1.6); triggerShake(0, 0.2, 8, 0.15);
+                    Sound.play("s4_sky_shatter", 0.85, 1.05); triggerShake(0, 0.2, 8, 0.15);
                   }]); g.ev.sort((p2, q) => p2[0] - q[0]);
                 }
                 g.rest = [U.t + 0.45, 2.2];
                 frOr("u7_follow", "u6_swing"); g.ev.push([U.t + 0.45, () => { if (Boss._ult) frOr("17_kneel", "u6_swing"); }]); g.ev.sort((p2, q) => p2[0] - q[0]); /* 力竭喘息格 */
               } });
           };
-          g.ev.push([0, () => { fr("u1_summon"); Boss.facing = gSide(); Sound.play("c_gather", 0.9, 1.1); }]);
+          g.ev.push([0, () => { fr("u1_summon"); Boss.facing = gSide(); Sound.play("s4_summon", 1.0, 1.0); }]); /* v0.8.261 專屬召劍音 */
           U.sw.forEach((s, i) => g.ev.push([0.35 + i * 0.09, () => { const p = slot(i); if (fxReady("boss4ult")) spawnFx("boss4ult", 0, p.x, p.y, { w: 230, dur: 0.5 }); s.x = p.x; s.y = p.y; s.a = 1; }])); /* v0.8.250 召劍光（生圖） */
           g.ev.push([1.4, () => { U.ph = "atk"; U.atkEnd = U.t + ATK; fr("u2_point"); hintOnce("gu4n", "六劍朝宗｜完美招架＝打落飛劍　空中剩越多，天劍砍越多下"); }]);
           g.tick = (dt) => {
@@ -413,7 +413,7 @@
               if (U.next <= 0 && t + A + F < U.atkEnd && air.length && !U.sw.some(s => s.st === "aim")) { const s = air[Math.floor(Math.random() * air.length)]; launch(s); U.next = GAP * (0.85 + Math.random() * 0.3); }
               const allDown = !U.sw.some(s => s.st !== "planted");
               if ((t >= U.atkEnd || allDown) && !busy) { /* ③ 匯聚 */
-                U.ph = "merge"; U.n = U.sw.filter(s => s.st === "air").length; fr("u4_gather");
+                U.ph = "merge"; U.n = U.sw.filter(s => s.st === "air").length; fr("u4_gather"); if (U.n) Sound.play("s4_sky_merge", 0.75 + U.n * 0.04, 1.08 - U.n * 0.03); /* v0.8.261 天劍凝實音（越多劍越大聲、越低沉） */
                 if (U.n && Tune.v("gifFx") && fxReady("b4mergegif")) spawnFx("b4mergegif", 0, sky.x, sky.y + 225, { w: 600, dur: 0.6 + U.n * 0.2 + 0.3, loop: true, fps: 12, seq: true, alpha: 0.85, follow: mid }); /* v0.8.250 劍匯天劍 GIF */ g.dim.push([t, t + 0.6 + U.n * 0.2 + 0.9]);
                 let k = 0; for (const s of U.sw) if (s.st === "air") { s.st = "merge"; s.t = -k * 0.2; k++; }
                 spawnFloatingText(sky.x, G - 560, U.n ? `${U.n} 劍歸宗` : "天劍無劍可歸", U.n ? "#fca5a5" : "#a5f3fc", 1.2);

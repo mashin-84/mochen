@@ -463,7 +463,7 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         const S4 = Stages[4];
         S4.moves.u_liujian = U("六劍朝宗", "g_s4", 6.5);
         S4.spriteExtras = S4.spriteExtras.concat(["u1_summon", "u2_point", "u3_back", "u4_gather", "u5_swingw", "u6_swing", "17_kneel", "u7_follow", "u8_reraise", "21b_spin_back", "21c_spin_end", "23r_fly_rec", "13r_sweep_rec", "24a_rain_cmd"]); /* v0.8.250 大招關鍵格（生圖）；v0.8.259 17_kneel 當大招力竭喘息格 */
-        S4.fxSheets = (S4.fxSheets || []).concat(["boss4ult", "boss4ult2", "b4mergegif", "b4auragif", "b4burstgif"]); /* v0.8.250 大招特效（生圖＋GIF） */
+        S4.fxSheets = (S4.fxSheets || []).concat(["boss4ult", "boss4ult2", "b4mergegif", "b4auragif", "b4burstgif", "b4sealgif", "b4shattergif"]); /* v0.8.261 封印碎裂、劍碎 GIF */ /* v0.8.250 大招特效（生圖＋GIF） */
         S4.ultMax = { u_liujian: 2 };
         /* v0.8.260 補關鍵格（prompts/4/5_boss4s_extra_keys.txt）：環劍旋斬 3 刀各一格、飛劍收招、掃地收招、萬劍歸宗出招 */
         S4.moves.ring_slash.frames = { windup: "20_spin_wind", active: ["21_spin_hit", "21b_spin_back", "21c_spin_end"], recover: "25_spin_rec" };

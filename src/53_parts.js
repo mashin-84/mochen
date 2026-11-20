@@ -182,14 +182,14 @@
         const P = Boss._pp, sw = P.sword, G = Config.groundY;
         P.seals--;
         sw.flash = 6;
-        Sound.play("execution", 0.9, 1.25);
-        Sound.play("parry", 1.0, 0.8);
+        Sound.play("s4_seal_break", 1.0, 1.0); Sound.play("parry", 0.8, 0.8); /* v0.8.261 專屬封印碎裂音 */
         triggerHitstopMs(115); addTrauma(0.55); hapticBuzz([40, 30, 70]);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.08);
-        spawnSparks(sw.x, G - 190, "execution", Player.facing);
-        if (fxReady("spark")) spawnFx("spark", 3, sw.x, G - 190, { w: 520, dur: 0.6 });
+        const gifS = Tune.v("gifFx") && fxReady("b4sealgif"); /* v0.8.261 有封印碎裂 GIF 時不再疊大火花（會整團過白） */
+        if (!gifS) { spawnSparks(sw.x, G - 190, "execution", Player.facing); if (fxReady("spark")) spawnFx("spark", 3, sw.x, G - 190, { w: 520, dur: 0.6 }); }
         { const A = partsDef().art, ry = sw.tip - (A ? A.ringY[P.seals - 1] || 420 : 420); /* 封印環：裂開→爆散（boss4fx 列 2 第 2、3 格） */
-          if (A && fxReady(A.fx)) { spawnFx(A.fx, 2, sw.x, ry, { w: 190, dur: 0.14, col: 2 }); setTimeout(() => spawnFx(A.fx, 2, sw.x, ry, { w: 260, dur: 0.45, col: 3 }), 140); } }
+          if (gifS) spawnFx("b4sealgif", 0, sw.x, ry, { w: 360, dur: 0.75, fps: 21, seq: true, alpha: 0.8 }); /* v0.8.261 封印碎裂 GIF */
+          else if (A && fxReady(A.fx)) { spawnFx(A.fx, 2, sw.x, ry, { w: 190, dur: 0.14, col: 2 }); setTimeout(() => spawnFx(A.fx, 2, sw.x, ry, { w: 260, dur: 0.45, col: 3 }), 140); } }
         const dots = "●".repeat(P.seals) + "○".repeat((partsDef().seals || 3) - P.seals);
         spawnFloatingText(sw.x, G - 330, `封印斷！ ${dots}`, "#fde047", 1.4);
         setTelemetry(`★ 蓄力斬斬斷劍柄封印！剩餘封印 ${P.seals}`);
@@ -212,7 +212,7 @@
         P.hands = F.slots.map((off, i) => ({ side: off < 0 ? -1 : 1, slot: off, lift: F.lift[i % F.lift.length], design: F.designs[i % F.designs.length], x: x0, y: G - 260, tx: x0, ty: G - 260, ang: 0, tang: 0, posture: 0, pdelay: 0, flash: 4, brokenT: 0, busy: false, dead: false, planted: false }));
         P.form = true; P.facts = []; P.cd = 2.2; P.lastHand = null;
         Player.invulnTimer = Math.max(Player.invulnTimer, 1.6);
-        Sound.play("execution", 1.0, 0.9); Sound.play("hit", 1.0, 0.6);
+        Sound.play("s4_form_split", 1.0, 1.0); /* v0.8.261 專屬：巨劍崩成六劍 */
         triggerHitstopMs(110); addTrauma(0.7); hapticBuzz([50, 30, 90]);
         screenFlash("rgba(224,242,254,0.8)", 0.5, 0.5);
         showBanner("劍陣・六合", "主　劍　崩　分", 1500, "#7dd3fc");
@@ -231,8 +231,9 @@
         Sound.play("execution", 0.85, 1.3); Sound.play("parry", 1.0, 0.9);
         triggerHitstopMs(100); addTrauma(0.5); hapticBuzz([40, 30, 70]);
         Game.camera.zoom = Math.max(Game.camera.zoom, Game.camera.targetZoom + 0.06);
-        spawnSparks(h.x, G - 120, "execution", Player.facing);
-        if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, h.x, G - 110, { c0: 2, nf: 2, w: 440, dur: 0.5 });
+        const gifD = Tune.v("gifFx") && fxReady("b4shattergif"); if (!gifD) spawnSparks(h.x, G - 120, "execution", Player.facing); /* v0.8.261 有劍碎 GIF 時不再疊大火花 */
+        if (gifD) spawnFx("b4shattergif", 0, h.x, G - 140, { w: 440, dur: 0.85, fps: 19, seq: true, facing: Player.facing, alpha: 0.85 }); /* v0.8.261 劍碎 GIF */
+        else if (fxReady("boss4fx3")) spawnFx("boss4fx3", 3, h.x, G - 110, { c0: 2, nf: 2, w: 440, dur: 0.5 });
         const n = formAlive().length, tot = P.hands.length;
         spawnFloatingText(h.x, G - 300, `劍落！ ${"◆".repeat(n)}${"◇".repeat(tot - n)}`, "#fde047", 1.3);
         setTelemetry(`★ 蓄力斬擊落一劍！劍陣剩 ${n} 把`);
