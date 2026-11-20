@@ -60,6 +60,7 @@
 - 風格聖經：Style bible: quiet fantasy-journey anime aesthetic set in ancient China. Soft muted pastel palette (pale sky blue, sage green, cream white, lavender, warm beige) with small accents of cinnabar red and jade green, thin delicate line art with slightly stronger outer silhouette lines, soft cel shading with slightly feathered shadow edges, subtle highlights, slender natural proportions, restrained but distinct expressions, each character with a small signature gesture. Luminous light, soft haze, layered depth in any scenery; backgrounds look hand-painted with watercolor-like texture. Icons and items in the same soft pastel cel style with thin dark outlines and one soft highlight, readable at small size.
 
 ## 素材處理
+- **音效響度校正（v0.8.262）**：新增或替換 `assets/sfx/` 音檔後跑 `python3 tools/sfx_loudness.py`（量每檔最響 0.3 秒響度，寫進 `src/11_audio.js` 的 `SFX_NORM` 校正表，原檔不動；分層：關鍵回饋 -13、Boss 招式 -16、呼嘯位移 -20），再 build。音檔處理仍是峰值 -1.5 dBFS；短促脆響類（整體能量低）先輕度壓縮再正規化。
 - 白底水墨特效圖（v0.8.240）：`python3 tools/fx_ink.py 輸入.jpg assets/fx/名.webp`（墨色深淺→透明度，遊戲內 `add:false` 播放）；通用水墨圖是 `ink2`（**`ink.webp` 是處決橫幅舊圖，別覆蓋**），命中墨環走 `inkBurst(x,y,r,dur,row)`。
 - 黑底特效圖：`python3 tools/fx_black.py 輸入.jpg assets/fx/名.webp [列:淡出px]`（縮 1024、扣底噪 18、每格邊緣淡出 12px；畫到格邊的煙霧類用 `3:70` 加大）。
 - 洋紅底 4×4 動作表：`tools/sheet.py`（`band_cells` 可做 2×2）；有黑格線：`tools/sheetpad.py`；**不規則格子**：`tools/cut_keys.py 設定.json`（矩形裁切、統一縮放、質心對 x=450、腳底 y=560、輸出 900×600，並印出嘴部發光座標）。

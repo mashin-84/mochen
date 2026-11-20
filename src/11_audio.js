@@ -70,7 +70,7 @@
               fetch(assetUrl(`sfx/${list[k]}.mp3`))
                 .then((r) => r.arrayBuffer())
                 .then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no)))
-                .then((buf) => { this.buffers[k] = buf; })
+                .then((buf) => { buf._g = sfxNormGain(list[k]); this.buffers[k] = buf; })
                 .catch(() => { });
             } catch (e) { }
           });
@@ -160,13 +160,13 @@
             const n = dict[k] || 1;
             for (let i = 1; i <= n; i++) {
               const f = i === 1 ? `${pre}${k}` : `${pre}${k}_${i}`;
-              try { fetch(assetUrl(`sfx/${f}.mp3`)).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { (this.variants[k] = this.variants[k] || []).push(buf); this.buffers[k] = this.variants[k][0]; this.ext[k] = true; }).catch(() => { }); } catch (e) { }
+              try { fetch(assetUrl(`sfx/${f}.mp3`)).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { buf._g = sfxNormGain(f); (this.variants[k] = this.variants[k] || []).push(buf); this.buffers[k] = this.variants[k][0]; this.ext[k] = true; }).catch(() => { }); } catch (e) { }
             }
           }));
         },
         bakeWolf() {
           this.extSfx.forEach((k) => {
-            try { fetch(assetUrl(`sfx/${k}.mp3`)).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { this.buffers[k] = buf; }).catch(() => { }); } catch (e) { }
+            try { fetch(assetUrl(`sfx/${k}.mp3`)).then((r) => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then((b) => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then((buf) => { buf._g = sfxNormGain(k); this.buffers[k] = buf; }).catch(() => { }); } catch (e) { }
           });
         },
 
@@ -195,7 +195,7 @@
             s.buffer = buf;
             s.playbackRate.value = rate;
             const g = this.ctx.createGain();
-            g.gain.value = vol;
+            g.gain.value = vol * (buf._g || 1); /* v0.8.262 響度校正 */
             s.connect(g);
             if (!this.ext[name] && name.indexOf("s_") !== 0 && name.indexOf("w_") !== 0 && name.indexOf("m_") !== 0) { /* v0.8.16 程式合成音一律過低通，削掉尖銳高頻；外部取樣不處理 */
               const lp = this.ctx.createBiquadFilter();
@@ -211,6 +211,9 @@
       /* v0.8.122 武器類別音效庫：Stages[n].sfxClass = "heavy"｜"light"，引擎依招式標記自動配對「類別 × 招式型態」，只有特殊招式才需要專屬音效（move.sfx 或 Stages[n].sfx 事件優先）。
          型態：swing 普通揮擊、combo 連擊每下、thrust 突刺、sweep 橫掃、slam 砸地／震退、charge 衝鋒、leap 躍起、leapLand 躍斬落地、throw 投擲、rage 怒氣、zone 陣法、mobility 位移。
          另可用 Stages[n].sfxPitch（音高倍率，體型大壓低）。檔案都是 assets/sfx/ 現有的 b2_／b3_／m_ 音效（見 Sound.bossSfx／extSfx）。 */
+      /* v0.8.262 音效響度校正（每個音檔載入時乘上校正量，原檔不動；分層：關鍵回饋 -13、Boss 招式 -16、呼嘯位移 -20）。新增音效後跑 tools/sfx_loudness.py */
+      /* @SFX_NORM 由 tools/sfx_loudness.py 產生，勿手改 */ const SFX_NORM = { b1u_bigwave: -1.6, b1u_charge: 4.0, b1u_stab: 3.1, b1u_wave: 3.1, b2_appear: -0.7, b2_appear_2: -1.9, b2_fan: -1.4, b2_fan_2: 1.3, b2_shard_hit: 5.4, b2_shatter: 6.9, b2_shatter_2: 8.0, b2_split: -5.3, b2_split_2: -4.9, b2_sword_cast: 4.4, b2_sword_cast_2: 0.9, b2_sword_fly: -5.4, b2_sword_fly_2: -4.1, b2_sword_rain: -1.3, b2_sword_rain_2: -1.9, b2_thrust: -0.6, b2_thrust_2: 4.5, b2_vanish: -3.1, b2_vanish_2: 1.4, b2_vortex: -1.4, b2u_clash: -1.8, b2u_gather: 2.9, b2u_giant: -3.4, b2u_rain: 1.3, b2u_rise: -1.1, b2u_shatter: 2.1, b3_charge: 2.9, b3_cross: -0.7, b3_cross_2: 3.5, b3_dash: 2.3, b3_dash_2: 0.2, b3_draw: -0.8, b3_heavy: 0.8, b3_low: 3.5, b3_low_2: 4.3, b3_plunge: 4.0, b3_rain: -0.9, b3_seal: -7.1, b3_spin: -1.3, b3_spin_2: 1.0, b3_sweep: 1.1, b3_twin: 4.2, c_appear_stab: 4.3, c_clang_big: 4.3, c_dash_heavy: -1.6, c_dash_light: -0.4, c_gather: 0.4, c_shing: 3.6, c_slam_huge: 3.5, c_slash_light: 2.6, c_stab_ground: 3.9, c_swing_heavy: -0.8, c_sword_throw: -3.1, c_vanish: -5.1, g_assist: -5.2, g_block: 4.5, g_execution: 2.6, g_flysword: -2.2, g_gourd: 3.5, g_hit: 3.9, g_mikiri: 2.2, g_parry: 6.1, g_peril: 1.8, g_slash: 4.0, g_victory: -0.0, s3_cross: 3.1, s4_form_split: -2.0, s4_seal_break: 2.8, s4_sky_merge: 0.7, s4_sky_shatter: -0.1, s4_sky_swing: 4.3, s4_summon: -1.7, s4_sword_planted: 3.9, sfx_hit: 3.2, sfx_hurt: 2.2, sfx_skill: -3.0, sfx_thunder: -2.8, sfx_ult: -0.1 }; /* @SFX_NORM_END */
+      function sfxNormGain(file) { const db = SFX_NORM[file]; return db == null ? 1 : Math.pow(10, db / 20); }
       const SFX_HI = new Set(["execution", "mikiri", "parry", "s_ult", "peril", "hit", "s_hit", "s_hurt", "b2u_shatter", "b2_shatter"]); /* v0.8.239 高層音效（見 Sound.play） */
       const SFX_CLASS = {
         heavy: { swing: "b3_heavy", combo: "b3_heavy", thrust: "b3_dash", sweep: "b3_sweep", slam: "b3_plunge", charge: "b3_charge", leap: "b3_dash", leapLand: "b3_plunge", throw: "b2_sword_fly", rage: "b3_heavy", rageW: "m_roar", zone: "b3_seal", mobility: "b3_dash" },

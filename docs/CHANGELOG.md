@@ -5,6 +5,13 @@
 
 ## 最新版本
 
+**v0.8.262 全遊戲音效響度校正（使用者：有時突然某個音效太大聲；問是否把高頻拿掉）**
+- 查證：音效鏈＝各音 → 總音量 → 高頻壓低（4.5kHz 以上 −7dB，v0.8.220，不是拿掉）→ 限幅器 → 喇叭；只有程式合成舊音另過 2.4kHz 低通。
+- 成因：音檔一直只做「峰值 −1.5 dBFS」正規化，實際響度差很多。新工具 `tools/sfx_loudness.py`：量每檔「最響 0.3 秒」響度（120Hz 一階高通近似耳朵），範圍 −8.9（`b3_seal`）～−29（`s4_seal_break`），差 20 dB。依分層目標算校正：關鍵回饋（g_parry／hit／mikiri／execution／peril／block、sfx_hit／hurt／ult、b2u_shatter、b2_shatter、c_clang_big）−13；呼嘯位移（瞬移、衝刺、飛劍、c_shing、c_slash_light、g_gourd／assist、s4_summon…）−20；其餘 −16。限制 −12～+9 dB 且放大後峰值 ≤ +2 dB。寫進 `src/11_audio.js` `SFX_NORM`（82 筆），載入時記在 buffer `_g`、`play()` 乘上（原檔不動、呼叫端音量不變）。例：b3_seal −7.1、b2_split −5.3、招架 +6.1、受擊 +3.9。
+- `s4_seal_break` 重做：輕度壓縮（threshold −26dB、ratio 5、makeup 8）再正規化，響度 −29→−25.6（加校正 +2.8）。
+- **發現：第 5 關狼聲 12 檔是壞檔**（v0.8.36～37 接入時處理出錯，整段幾乎靜音、只有尾端一點雜訊；git 歷史第一版就這樣），校正表跳過，待重生。
+- 驗證：瀏覽器內確認各 buffer 校正值；check。**實際聽感請手機實測。**
+
 **v0.8.261 第 4 關：古靈站立呼吸、專屬音效、封印碎裂與劍碎 GIF（使用者生成；提示詞 `prompts/4/V5a`、`6_boss4_sfx.txt`、`7a`／`7b`）**
 - **站立呼吸**：Gemini 影片（直式 720×1280、24fps、4 秒 96 幀、綠幕）→ 找首尾最接近段（第 4 幀起、週期 68 幀，差 1.5；第 1 關 0.9、大狼 2.0）→ `tools/proc.py` 每 2 幀取 1、`refH=492` 對齊 `01_idle1` → `assets/boss4s/idle_01～34`；`64_draw_boss.js` `SPRITE_ANIM.boss4s = {idle:34}`（只往前播 12 格／秒）。影片裡裙擺淡紫霧比原圖淡。
 - **音效**（裁開頭靜音、尾端淡出、峰值 −1.5 dBFS、單聲道 44.1k 96k mp3，登記在 `11_audio.js` `bossSfx`）：`s4_seal_break`（封印斷，取代 execution；整體偏小聲 mean −31.9，待實測）、`s4_form_split`（巨劍崩六劍，取代 execution＋hit）、`s4_summon`（大招召劍，3 版頻譜相近，取第 1 版）、`s4_sword_planted`（飛劍彈飛插地，取第 3 版：鏗＋插地兩個瞬態清楚）、`s4_sky_merge`（匯聚開始，劍越多越大聲越低沉）、`s4_sky_swing`（改在開始下劈時播，越凝實越低沉；命中瞬間不再另播揮擊音）、`s4_sky_shatter`（天劍碎裂三種情況）。
