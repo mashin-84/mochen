@@ -1,0 +1,43 @@
+第 5 關狼聲重生 12 條（ElevenLabs Sound Effects）
+原檔 v0.8.36～37 起就幾乎靜音（峰值 −26～−47 dB），全部重生。檔名＝每條代號，原樣覆蓋 assets/sfx/。
+ElevenLabs 最短 0.5 秒：標「遊戲用 x 秒」的由 Claude 裁短、起音對齊。每條建議生 2～4 個挑最乾淨的。
+小狼＝幽影魔狼（大型犬體型、快、尖）；大狼＝九幽狼王（主角 2.5 倍大、半身白骨、背上魔焰，低沉厚重）。
+Prompt Influence 建議 0.6～0.7。
+
+【小狼 w_*】
+1. w_snarl（1.0 秒；小狼幾乎每招的前搖、登場蹲伏低吼）
+Exactly 1.0 seconds long. A lean wild wolf crouching and snarling with bared teeth, a tense rising throaty growl with a sharp hiss of breath, close-up and dry, single animal, no music, no human voice. The sound starts immediately and ends cleanly at 1.0 seconds.
+
+2. w_snap（遊戲用 0.25 秒；撕咬出招、連環撕咬每一下）
+Exactly 0.5 seconds long. A wolf's jaws snapping shut hard in a single fast bite, a sharp wet clack of teeth with a tiny grunt at the very start, close-up and dry, single animal, no music, no human voice. The sound starts immediately and ends cleanly at 0.5 seconds.
+
+3. w_claw（遊戲用 0.5 秒；血爪每一下、甩尾、幽影閃、後撤、衝步）
+Exactly 0.5 seconds long. A fast wolf claw swipe tearing through the air, a short sharp whoosh with a light scrape of claws, no animal vocal, close-up and dry, no music, no human voice. The sound starts immediately and ends cleanly at 0.5 seconds.
+
+4. w_bark（遊戲用 0.4 秒；疾撲、狂暴衝撲出招、登場衝刺）
+Exactly 0.5 seconds long. A single aggressive wolf bark as it lunges forward, one short explosive snarling bark with a hard attack, close-up and dry, single animal, no music, no human voice. The sound starts immediately and ends cleanly at 0.5 seconds.
+
+5. w_yelp（遊戲用 0.4 秒；小狼被砍中，會很常響）
+Exactly 0.5 seconds long. A wolf getting hit, one short pained yelp mixed with an angry grunt, not whimpering, close-up and dry, single animal, no music, no human voice. The sound starts immediately and ends cleanly at 0.5 seconds.
+
+6. w_howl（2.0 秒；嗜血狂亂前搖、蛻變長嘯開頭）
+Exactly 2.0 seconds long. A lone wild wolf throwing its head back and letting out a fierce rising howl that turns into a menacing snarl at the end, slightly distant open-plain reverb, single animal, no music, no human voice. The sound starts immediately and ends cleanly at 2.0 seconds.
+
+【大狼 m_*】
+7. m_growl（1.5 秒；大狼每招前搖、被砍中時也會響）
+Exactly 1.5 seconds long. A colossal monstrous wolf beast growling low and deep, a rumbling chest-deep growl with heavy breathing and a faint crackle of fire, very low pitch, close and heavy, single creature, no music, no human voice. The sound starts immediately and ends cleanly at 1.5 seconds.
+
+8. m_roar（1.7 秒；咆哮震波、躍壓、衝撞、魔焰獸玉出招、二階段覺醒）
+Exactly 1.7 seconds long. A gigantic undead demon wolf roaring with full force, a huge deep bellowing roar with a rough bony rasp and a burst of roaring flame underneath, powerful attack, short tail, single creature, no music, no human voice. The sound starts immediately and ends cleanly at 1.7 seconds.
+
+9. m_bite（0.8 秒；噬魂吞咬出招）
+Exactly 0.8 seconds long. A giant monster wolf lunging and slamming its huge jaws shut, a short deep grunt then a massive heavy crunch of enormous teeth with a bony crack, close and heavy, single creature, no music, no human voice. The sound starts immediately and ends cleanly at 0.8 seconds.
+
+10. m_swipe（0.6 秒；巨爪橫掃、魔尾裂風掃、亂爪每一下）
+Exactly 0.6 seconds long. A massive monster claw sweeping through the air, a deep heavy wind whoosh with a low rumble of displaced air, no animal vocal, no music, no human voice. The sound starts immediately and ends cleanly at 0.6 seconds.
+
+11. m_stomp（0.7 秒；地面連錘每一下）
+Exactly 0.7 seconds long. A gigantic beast paw slamming into dry rocky ground, a deep heavy thud with cracking earth and a short rumble of scattering dirt, no animal vocal, no music, no human voice. The sound starts immediately and ends cleanly at 0.7 seconds.
+
+12. m_howl（2.7 秒；登場遠處狼嚎、血海狼嚎前搖、過關）
+Exactly 2.7 seconds long. A gigantic demon wolf king letting out a long haunting howl across an empty wasteland at sunset, deep and powerful, rising then slowly falling, with wide open distant echo, single creature, no music, no human voice. The sound starts immediately and ends cleanly at 2.7 seconds.
