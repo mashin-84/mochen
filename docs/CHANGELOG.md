@@ -5,6 +5,11 @@
 
 ## 最新版本
 
+**v0.8.263 修：登場／階段轉換演出中角色一直抖（使用者：第 1 關敵人落下後瘋狂震動，直到戰鬥開始後一下下才停）**
+- 成因：v0.8.237 頓幀微震 `hsShake` 依 `Game.hitstopT` 判斷；但 `updatePhysics` 在 `Game.dir`（導演演出）與 `Game.introT`（開場等待）時提早 return，`hitstopT` 遞減那行跑不到。第 1 關落地 `triggerHitstopMs(110)` 之後計時器卡住，角色每 30ms 左右抖，直到 `dirEnd` 把 `hitstopT` 歸零。所有關的登場／階段轉換演出裡有觸發頓幀的都會中。
+- 修法（`51_physics.js`）：演出與開場等待期間也遞減 `hitstopT`。
+- 驗證：第 1 關登場逐 0.1 秒記錄：落地 1.4 秒時頓幀 0.08、Boss 微震 6px，下一格歸零；之後只剩設計中的落地重震（鏡頭 trauma 0.98→0.62，1.6 秒），名牌出現時歸零。
+
 **v0.8.262 全遊戲音效響度校正（使用者：有時突然某個音效太大聲；問是否把高頻拿掉）**
 - 查證：音效鏈＝各音 → 總音量 → 高頻壓低（4.5kHz 以上 −7dB，v0.8.220，不是拿掉）→ 限幅器 → 喇叭；只有程式合成舊音另過 2.4kHz 低通。
 - 成因：音檔一直只做「峰值 −1.5 dBFS」正規化，實際響度差很多。新工具 `tools/sfx_loudness.py`：量每檔「最響 0.3 秒」響度（120Hz 一階高通近似耳朵），範圍 −8.9（`b3_seal`）～−29（`s4_seal_break`），差 20 dB。依分層目標算校正：關鍵回饋（g_parry／hit／mikiri／execution／peril／block、sfx_hit／hurt／ult、b2u_shatter、b2_shatter、c_clang_big）−13；呼嘯位移（瞬移、衝刺、飛劍、c_shing、c_slash_light、g_gourd／assist、s4_summon…）−20；其餘 −16。限制 −12～+9 dB 且放大後峰值 ≤ +2 dB。寫進 `src/11_audio.js` `SFX_NORM`（82 筆），載入時記在 buffer `_g`、`play()` 乘上（原檔不動、呼叫端音量不變）。例：b3_seal −7.1、b2_split −5.3、招架 +6.1、受擊 +3.9。

@@ -6265,6 +6265,7 @@ const Config = {
 
         // Pause active combat actions only during story cutscenes
         if (Game.cutsceneActive) return;
+        if (Game.hitstopT > 0 && (Game.dir || Game.introT > 0)) Game.hitstopT = Math.max(0, Game.hitstopT - dt); /* v0.8.263 修：演出／開場期間頓幀計時器原本不會遞減 → 頓幀微震（hsShake）一路抖到演出結束 */
         if (Game.dir) { dirUpdate(dt); return; } /* v0.8.105 戰場上的登場／階段轉換：戰鬥暫停，鏡頭＋姿勢＋特效 */
         if (Game.introT > 0) {
           Game.introT -= dt;
