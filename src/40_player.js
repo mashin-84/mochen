@@ -797,7 +797,7 @@
         syncAssistUI();
       }
 
-      function damageBossPosture(amount, label, cap, noSeal, fromAtk) {
+      function damageBossPosture(amount, label, cap, noSeal, fromAtk, force) { /* force：大招刻意設計的破防收尾（第 2 關角力、第 4 關天劍全完美），不延後 */
         if (Boss._ult && Boss._ult.noPost) return; /* v0.8.249 第 4 關六劍朝宗：整招不累積架勢（只有天劍最後一下全完美才一次打滿） */
         if (fromAtk && Boss._hpOut) { /* v0.8.153 血見底後只有彈刀／招架類能補滿架勢；v0.8.183 例外：Boss 收招／大招喘息／被擊落的破綻中砍，可以慢慢推最後 20%（避免一直出不能招架的招時卡死） */
           const big = Boss._ultRest || Boss.state === "grounded" || Boss.state === "frozen";
@@ -820,6 +820,11 @@
         else Boss.posture = Math.min(Boss.maxPosture, Boss.posture + postureGain);
         Boss.postureDecayDelay = 3.0;
 
+        if (Boss.posture >= Boss.maxPosture && Boss._ult && !Boss._ultRest && !force) { /* v0.8.264 破防延後（使用者選 A）：大招進行中打滿架勢先不倒，大招收勢（喘息或結束）那一刻才破防，讓大招放完 */
+          Boss.posture = Boss.maxPosture; Boss._capFlash = performance.now();
+          if (!Boss._breakPend) { Boss._breakPend = true; spawnFloatingText(Boss.x, Boss.y - 150, "【架勢已滿】大招收勢即破防！", "#fde047", 1.3); Sound.play("parry", 0.7, 0.75); hapticBuzz([20, 20, 30]); }
+          return;
+        }
         if (Boss.posture >= Boss.maxPosture) {
           Boss.posture = Boss.maxPosture;
           Boss.state = "staggered";

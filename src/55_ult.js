@@ -53,6 +53,7 @@
         if (fxReady("spark")) spawnFx("spark", 2, Player.x, Player.y - 120, { w: 340, dur: 0.5 });
       }
       function ultEnd(cancel) {
+        const pend = Boss._breakPend && !cancel; Boss._breakPend = false; /* v0.8.264 延後的破防：大招正常結束時生效；被中斷（死亡、換關）就取消 */
         gultCleanup(cancel);
         const U = Boss._ult; Boss._ult = null; Boss._ultRest = false; Boss._ultFrame = null; Boss._ucd = 0; Boss._ultCue = null;
         if (U && U.m && Boss.hp > 0 && (Progress.hitCount || 0) === U.hc0 && (Progress.parryCount || 0) - U.pc0 >= 2) ultPraise(U.m); /* v0.8.239 讚美演出：整招沒被打中且至少完美招架 2 次 */
@@ -63,6 +64,7 @@
         if (cancel) { Ult.waves.length = 0; if (Game.fxList) Game.fxList = Game.fxList.filter(f => f.sheet !== "boss2bind"); return; } /* 中斷時劍陣一起清掉 */
         Boss.state = "idle"; Boss.stateTimer = 0; Boss.moveType = null; Boss.aiCooldown = 0.5;
         if (U && U.m) Boss.ultCd = 18;
+        if (pend && Boss.hp > 0) damageBossPosture(Boss.maxPosture, null, null, true, false, true);
         Boss._sigNext = performance.now() + 15000; /* 招式池 15 秒內不再抽大招（v0.8.172 使用者：20→15） */
       }
       /* 每幀：updateBossAI 開頭呼叫；回傳 true＝本幀 Boss 由大招接管 */
@@ -70,7 +72,8 @@
         ultWavesTick(dt); gultTick(dt);
         if (ultTestTick(dt)) return true; /* v0.8.163 大招測試倒數 */
         const U = Boss._ult; if (!U) return false;
-        if (Boss.state === "staggered" || Boss.hp <= 0 || Game.bossDeath || Game.mode !== "battle") { ultEnd(true); return false; } /* 被打破防（招架火牆累積架勢）＝大招中斷 */
+        if (Boss.state === "staggered" || Boss.hp <= 0 || Game.bossDeath || Game.mode !== "battle") { ultEnd(true); return false; }
+        if (Boss._breakPend) { Boss.posture = Boss.maxPosture; Boss._capFlash = performance.now(); if (Boss._ultRest) { Boss._breakPend = false; ultEnd(true); damageBossPosture(Boss.maxPosture, null, null, true, false, true); return false; } } /* v0.8.264 大招進入喘息＝延後的破防生效（先結束大招，否則喘息每幀會把狀態蓋回 recover） */ /* 被打破防（招架火牆累積架勢）＝大招中斷 */
         if (GULT[U.kind]) return gultStep(U, dt); /* v0.8.180 灰盒大招 */
         if (U.kind === "b2sword") return ultB2(U, dt);
         const c = U.c, T = c.t, once = (k) => (U.ev[k] ? false : (U.ev[k] = true));
@@ -274,7 +277,7 @@
           setLift(0); Boss.y = G; Boss._ultAir = false;
           if (fxReady("land")) spawnFx("land", 1, Boss.x, groundFxY("land", 1, 420), { anchor: "b", w: 420, dur: 0.7 });
           triggerShake(0, 0.5, 22, 0.3);
-          damageBossPosture(9999, null); /* 架勢打滿＝破防（下一幀 ultUpdate 看到 staggered 會收尾） */
+          damageBossPosture(9999, null, null, false, false, true); /* 架勢打滿＝破防（下一幀 ultUpdate 看到 staggered 會收尾）；刻意的收尾，不延後 */
           return true;
         }
         /* 沒有折射：巨劍插地 → 碎裂；長老緩緩落地喘息 */

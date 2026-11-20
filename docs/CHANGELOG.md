@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+**v0.8.264 大招破防延後（使用者：大招還沒放完就把架勢打滿會破防，很可惜；選方案 A，全關）**
+- `40_player.js` `damageBossPosture` 新增第 6 參數 `force`：大招進行中（`Boss._ult` 且非喘息 `_ultRest`）架勢打滿 → 不進 staggered，改 `Boss._breakPend = true`、架勢釘在滿格、架勢條閃白（`_capFlash`）、浮字「【架勢已滿】大招收勢即破防！」＋輕震。
+- `55_ult.js` `ultUpdate`：待破防時每幀釘住架勢；大招一進喘息 → 先 `ultEnd(true)` 再強制破防（若不先結束，喘息分支每幀會把狀態蓋回 recover，實測破防被吃掉）；`ultEnd(false)`（沒有喘息段的大招正常結束）也會補破防；被中斷（死亡、換關）取消；`loadStage` 歸零。
+- 不延後（force）：第 2 關羅天萬劍角力推贏、第 4 關天劍全完美。
+- 驗證：第 1 關血煞焚岳戟第 1.05 秒打滿 → 大招放完、進喘息瞬間破防；第 3 關寒川影殺第 1.0 秒打滿 → 5.45 秒喘息時破防；第 4 關全完美仍立刻破防；smoke 第 1～4 關 ok。
+
 **v0.8.263 修：登場／階段轉換演出中角色一直抖（使用者：第 1 關敵人落下後瘋狂震動，直到戰鬥開始後一下下才停）**
 - 成因：v0.8.237 頓幀微震 `hsShake` 依 `Game.hitstopT` 判斷；但 `updatePhysics` 在 `Game.dir`（導演演出）與 `Game.introT`（開場等待）時提早 return，`hitstopT` 遞減那行跑不到。第 1 關落地 `triggerHitstopMs(110)` 之後計時器卡住，角色每 30ms 左右抖，直到 `dirEnd` 把 `hitstopT` 歸零。所有關的登場／階段轉換演出裡有觸發頓幀的都會中。
 - 修法（`51_physics.js`）：演出與開場等待期間也遞減 `hitstopT`。

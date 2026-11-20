@@ -363,7 +363,7 @@
                   U.noPost = false; Game.slowT = 0.5; Game.slowScale = 0.3; Sound.play("c_clang_big", 1.0, 0.9); Sound.play("s4_sky_shatter", 1.0, 0.95); triggerHitstopMs(120); addTrauma(0.6);
                   showBanner("六劍歸一", "天　劍　崩　碎", 1300, "#7dd3fc"); sky.broken = 1;
                   { const m0 = mid(); if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 620, dur: 0.7 }); } /* 天劍崩碎（生圖） */
-                  damageBossPosture(Boss.maxPosture, "【天劍崩碎】架勢打滿！", null, true);
+                  damageBossPosture(Boss.maxPosture, "【天劍崩碎】架勢打滿！", null, true, false, true);
                 } else if (U.lastOk) { /* v0.8.258 方案 A：最後一下完美＝一定有大回饋（慢動作、天劍當場彈碎、重擊音），架勢依「天劍完美幾下／共幾下」給比例 */
                   const pct = U.swOk / cnt, m0 = mid();
                   U.noPost = false; Game.slowT = 0.35; Game.slowScale = 0.35; Sound.play("c_clang_big", 1.0, 1.0); Sound.play("s4_sky_shatter", 0.9, 1.0); triggerHitstopMs(110); addTrauma(0.45); hapticBuzz([40, 20, 60]);
