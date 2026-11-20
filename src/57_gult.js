@@ -359,7 +359,15 @@
                   showBanner("六劍歸一", "天　劍　崩　碎", 1300, "#7dd3fc"); sky.broken = 1;
                   { const m0 = mid(); if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 620, dur: 0.7 }); } /* 天劍崩碎（生圖） */
                   damageBossPosture(Boss.maxPosture, "【天劍崩碎】架勢打滿！", null, true);
-                } else spawnFloatingText(Boss.x, Boss.y - 240, U.swOk ? `〔天劍未破：${cnt} 下要全部完美〕` : "〔劍魂收劍〕", "#cbd5e1", 1.3);
+                } else {
+                  spawnFloatingText(Boss.x, Boss.y - 240, U.swOk ? `〔天劍未破：${cnt} 下要全部完美〕` : "〔劍魂收劍〕", "#cbd5e1", 1.3);
+                  g.ev.push([U.t + 0.28, () => { /* v0.8.257 最後一刀揮完：巨手與天劍一起碎裂消失（不再停在空中再不見） */
+                    if (sky.broken) return; const m0 = mid(); sky.broken = 1; sky.gh.length = 0;
+                    if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 560 * Math.max(0.8, sky.z), dur: 0.7 });
+                    if (fxReady("boss4ult")) spawnFx("boss4ult", 2, sky.pv.x, sky.pv.y, { w: 320 * Math.max(0.8, sky.z), dur: 0.45 });
+                    Sound.play("c_clang_big", 0.5, 1.4); Sound.play("hit", 0.4, 1.6); triggerShake(0, 0.2, 8, 0.15);
+                  }]); g.ev.sort((p2, q) => p2[0] - q[0]);
+                }
                 g.rest = [U.t + 0.45, 2.2];
               } });
           };
@@ -468,7 +476,6 @@
                 if ((sky.z >= 0.85) === front && sky.sa > 0) body(sky.pv.x, sky.pv.y, sky.th, sky.L, Math.min(1, al) * sky.sa * (sky.z < 0.85 ? 0.8 : 1), false, sky.z);
               };
               U.drawSky(false);
-              if (!sky.lv && sky.a >= 1 && U.ph !== "summon") { ctx.save(); ctx.globalAlpha = 0.45; ctx.setLineDash([10, 8]); ctx.strokeStyle = "#e0f2fe"; ctx.lineWidth = 2; ctx.translate(sky.pv.x, sky.pv.y); ctx.rotate(sky.th - Math.PI / 2); ctx.strokeRect(-28, -sky.L * 0.1, 56, sky.L); ctx.restore(); } /* 虛弱天劍：虛線輪廓 */
               if (U.ph === "merge" || (U.ph === "swing" && !sky.sw)) { ctx.save(); ctx.font = "800 22px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = sky.lv >= N ? "#fca5a5" : "#e0f2fe"; ctx.globalAlpha = 0.9; ctx.fillText("天劍 " + "◆".repeat(sky.lv) + "◇".repeat(N - sky.lv), sky.pv.x, sky.pv.y - 120); ctx.restore(); }
             }
             for (const s of U.sw) {
