@@ -283,18 +283,23 @@
           const F = Math.min(0.32, FLY * 0.4), A = FLY - F; /* 每把：瞄準 A 秒 → 飛 F 秒 */
           const g = { ev: [], dim: [[0, 1.3]], rest: [999, 2.2], restText: "〔劍魂力竭〕", camZ: 0.08 };
           U.noPost = true; U.ph = "summon"; U.side = Player.x >= Boss.x ? -1 : 1; U.next = 0; U.swOk = 0; U.trail = [];
-          const sky = U.sky = { x: gClampX((Boss.x + Player.x) / 2), y: G - 480, lv: 0, a: 0, flash: 0, cx: 0, cy: 0, th: Math.PI / 2, path: null, gh: [], ghT: 0 };
-          sky.cx = sky.x; sky.cy = sky.y + 225; /* 天劍以劍身中點 (cx,cy)＋劍尖方向 th 表示；匯聚前直立懸在 (x, y＝劍首) */
-          const DES = ["fs1", "fs3", "fs2", "fs4", "fs1", "fs3"]; /* 飛劍沿用劍陣 4 種劍圖 */
-          const mid = () => ({ x: sky.cx, y: sky.cy }); /* 天劍劍身中點 */
-          /* v0.8.251 天劍軌跡（使用者手繪）：從他頭上高處往主角那側俯衝、越過主角頭頂、在主角身後低處迴旋，再貼地橫掃穿過主角（命中在回掃）、衝回他那側。
-             段 1：二次貝茲 P0→L（控制點在主角身後高處）T1 秒；段 2：L→E 直線 T2 秒（主角在 L、E 之間的固定比例處＝命中時刻）。 */
-          const T1 = 0.42, T2 = 0.3, LX = 260, EX = 280, FR = LX / (LX + EX), DIVE = T1 + T2 * FR; /* 俯衝開始到穿過主角的秒數 */
-          const dive = (px) => {
-            const d = px >= Boss.x ? 1 : -1, P0 = { x: sky.cx, y: sky.cy }, L = { x: px + d * LX, y: G - 125 }, C = { x: px + d * 400, y: G - 560 }, E = { x: px - d * EX, y: G - 125 };
-            sky.path = { t: 0, P0, C, L, E, d, turned: false };
-          };
+          const sky = U.sky = { x: gClampX((Boss.x + Player.x) / 2), y: G - 480, lv: 0, a: 0, flash: 0, pv: null, L: 450, th: Math.PI / 2, sw: null, gh: [], ghT: 0, ha: 0 };
+          sky.pv = { x: sky.x, y: sky.y }; /* v0.8.252 天劍以握點 pv（巨手握處＝劍柄）＋劍尖方向 th＋劍長 L 表示；匯聚前直立懸在 (x, y) */
           const slot = (i) => ({ x: sky.x + (i - (N - 1) / 2) * 125, y: G - 300 - (2.5 - Math.abs(i - (N - 1) / 2)) * 26 });
+          const DES = ["fs1", "fs3", "fs2", "fs4", "fs1", "fs3"]; /* 飛劍沿用劍陣 4 種劍圖 */
+          const mid = () => ({ x: sky.pv.x + Math.cos(sky.th) * sky.L * 0.4, y: sky.pv.y + Math.sin(sky.th) * sky.L * 0.4 }); /* 天劍劍身中點 */
+          /* v0.8.252 天劍揮擊（使用者 2026-11-20）：天劍懸在古靈頭頂，由第一階段那隻半透明巨手（boss4intro 列 2）握住劍柄，
+             每下：舉到後上方 → 在空中斜著往下揮向主角（劍長拉到剛好砍到主角胸口）→ 順勢揮到他腳邊。劍尖畫出使用者手繪的那條弧線。 */
+          const TS = 0.28, FT = 0.2, TAU = Math.PI * 2; /* TS：開始下揮到砍中主角；FT：砍中後順勢 */
+          const handPos = () => ({ x: gClampX(Boss.x + gSide() * 40), y: G - 400 });
+          const raiseAng = (big) => -Math.PI / 2 - gSide() * (big ? 0.75 : 0.45); /* 舉到頭頂偏後（背對主角那側） */
+          const unwrap = (from, to, dir) => { let dl = (((to - from) % TAU) + TAU) % TAU; if (dir < 0 && dl > 0) dl -= TAU; return from + dl; }; /* dir＞0 順時針（角度變大） */
+          const chest = () => ({ x: Player.x, y: Player.y - 100 });
+          const startCut = () => { /* 開始下揮：鎖定主角位置 */
+            const d = gSide(), c = chest(), hit = Math.atan2(c.y - sky.pv.y, c.x - sky.pv.x);
+            const Lh = Math.max(450, Math.min(1150, Math.hypot(c.x - sky.pv.x, c.y - sky.pv.y) + 70));
+            sky.sw = { t: 0, a0: sky.th, a1: unwrap(sky.th, hit, d), d, L0: sky.L, Lh }; /* 劍在下揮中才伸長到砍得到主角 */
+          };
           U.sw = []; for (let i = 0; i < N; i++) U.sw.push({ i, st: "rise", x: Boss.x, y: Boss.y - 160, phi: Math.PI / 2, t: 0, a: 0, d: DES[i] });
           const fr = (k) => { Boss._ultFrame = k; };
           const ease = (o, x, y, k) => { o.x += (x - o.x) * k; o.y += (y - o.y) * k; };
@@ -313,23 +318,23 @@
           const swing = (i, cnt) => {
             const last = i === cnt - 1; /* 只揮一下時，那一下就是最後一下 */
             const FIN = 1.2, FRZ = 0.3; /* 最後一下：暗場聚光 FIN 秒 → 時停 FRZ 秒 → 閃光同時俯衝 */
-            const wind = last ? FIN + FRZ + DIVE : i === 0 ? 1.1 : (cnt >= 4 && i === cnt - 2 ? SWG + 0.4 : SWG);
+            const wind = last ? FIN + FRZ + TS : i === 0 ? 1.1 : (cnt >= 4 && i === cnt - 2 ? SWG + 0.4 : SWG);
             fr("u5_swingw");
-            if (i === cnt - 2 && cnt >= 4) spawnFloatingText(sky.cx, sky.cy - 280, "…", "#e0f2fe", 0.9);
+            if (i === cnt - 2 && cnt >= 4) spawnFloatingText(sky.pv.x, sky.pv.y - 120, "…", "#e0f2fe", 0.9);
             const t0 = U.t, at = (dtv, fn) => { g.ev.push([t0 + dtv, fn]); g.ev.sort((p2, q) => p2[0] - q[0]); };
             if (last) { /* 大招最後一下的統一演出（第 3、5 關同款）：暗場＋聚光＋鏡頭拉近 → 時停 → 閃光 → 出手 → 命中亮暗閃、暗場放開 */
-              U.fin = true; Game.gDimOn = true; Game.ultDimRGB = "186, 230, 253"; Game.ultDimY = sky.cy; g.camZ = 0.06; g.camF = 0.5; g.dim.push([t0, t0 + wind + 0.1]); fr("u4_gather"); /* 鏡頭對準兩人中間，主角要看得到自己 */
-              sky.home = { x: gClampX(Boss.x + (Player.x - Boss.x) * 0.35), y: G - 340 };
-              Sound.play("c_gather", 1.0, 0.95); spawnFloatingText(sky.cx, sky.cy - 290, "天劍・終", "#fca5a5", 1.1);
-              if (fxReady("gathergif") && Tune.v("gifFx")) spawnFx("gathergif", 0, sky.cx, sky.cy, { w: 560, dur: FIN, loop: true, fps: 12, seq: true, alpha: 0.85, follow: mid });
-              at(FIN, () => { Game.ultLock = true; Player.vx = 0; sky.flash = 1; g.camZ = 0.1; hapticBuzz(30); Game.ultDimY = sky.cy; }); /* 時停：主角不能動，天劍懸停 */
-              at(FIN + FRZ, () => { Game.ultLock = false; fr("u5_swingw"); Sound.play("c_shing", 1.0, 0.9); screenFlash("rgba(240,249,255,0.6)", 0.5, 0.18); /* 閃光＝出手訊號 */
-                if (fxReady("spark")) spawnFx("spark", 2, sky.cx, sky.cy, { w: 420, dur: 0.3 }); dive(Player.x); fr("u6_swing"); });
-            } else at(wind - DIVE, () => { dive(Player.x); fr("u6_swing"); });
-            guStrike({ x: Player.x, track: true, lock: DIVE + 0.02, w: 900, delay: wind, kind: "parry", dmg: last ? 110 : 70, src: sky.cx, quiet: true, noDraw: true, noDodge: true, blockDmg: 25, label: "【天劍】",
+              U.fin = true; Game.gDimOn = true; Game.ultDimRGB = "186, 230, 253"; Game.ultDimY = sky.pv.y; g.camZ = 0.06; g.camF = 0.5; g.dim.push([t0, t0 + wind + 0.1]); fr("u4_gather"); /* 鏡頭對準兩人中間，主角要看得到自己 */
+              Sound.play("c_gather", 1.0, 0.95); spawnFloatingText(sky.pv.x, sky.pv.y - 150, "天劍・終", "#fca5a5", 1.1);
+              const tip = () => ({ x: sky.pv.x + Math.cos(sky.th) * sky.L * 0.95, y: sky.pv.y + Math.sin(sky.th) * sky.L * 0.95 });
+              if (fxReady("gathergif") && Tune.v("gifFx")) spawnFx("gathergif", 0, sky.pv.x, sky.pv.y, { w: 560, dur: FIN, loop: true, fps: 12, seq: true, alpha: 0.85, follow: mid });
+              at(FIN, () => { Game.ultLock = true; Player.vx = 0; sky.flash = 1; g.camZ = 0.1; hapticBuzz(30); }); /* 時停：主角不能動，天劍高舉懸停 */
+              at(FIN + FRZ, () => { Game.ultLock = false; Sound.play("c_shing", 1.0, 0.9); screenFlash("rgba(240,249,255,0.6)", 0.5, 0.18); /* 閃光＝出手訊號 */
+                if (fxReady("spark")) { const p0 = tip(); spawnFx("spark", 2, p0.x, p0.y, { w: 420, dur: 0.3 }); } startCut(); fr("u6_swing"); });
+            } else at(wind - TS, () => { startCut(); fr("u6_swing"); Sound.play("c_sword_throw", 0.8, 0.75); });
+            guStrike({ x: Player.x, track: true, lock: TS + 0.02, w: 900, delay: wind, kind: "parry", dmg: last ? 110 : 70, src: sky.pv.x, quiet: true, noDraw: true, noDodge: true, blockDmg: 25, label: "【天劍】",
               onParry: () => { U.swOk++; },
               onFire: () => {
-                const d = sky.path ? sky.path.d : 1;
+                const d = -gSide();
                 if (fxReady("boss4ult2")) spawnFx("boss4ult2", 3, Player.x - d * 30, Player.y - 105, { w: last ? 520 : 380, dur: 0.4, facing: -d }); /* 命中閃 */
                 Sound.play("c_swing_heavy", 0.9, 1.15 - sky.lv * 0.04); triggerShake(-d, 0.3, 12 + sky.lv * 3, 0.2); hapticBuzz(20 + sky.lv * 6);
                 if (!last) { swing(i + 1, cnt); return; }
@@ -357,7 +362,7 @@
               else if (s.st === "fly") { const p = Math.min(1, s.t / F), tx = s.h ? s.h.x : Player.x; s.x = s.fx0 + (tx - s.fx0) * p; s.y = s.fy0 + (G - 110 - s.fy0) * p; }
               else if (s.st === "bounce") { const p = Math.min(1, s.t / 0.4); s.x = s.bx0 + (s.bx1 - s.bx0) * p; s.y = s.by0 + (G + 22 - s.by0) * p - Math.sin(p * Math.PI) * 160; s.phi += dt * 22 * s.side; if (p >= 1) { s.st = "planted"; s.phi = Math.PI / 2 + s.side * 0.22; s.x = s.bx1; s.y = G + 22; if (fxReady("boss4ult")) spawnFx("boss4ult", 3, s.x, groundFxY("boss4ult", 3, 240), { anchor: "b", w: 240, dur: 0.5 }); emitDust(s.x, G, 1, 3, 1.0); emitDust(s.x, G, -1, 3, 1.0); addTrauma(0.15); } }
               else if (s.st === "ret") { const p = slot(s.i); ease(s, p.x, p.y, Math.min(1, dt * 6)); s.phi += (Math.PI / 2 - s.phi) * Math.min(1, dt * 5); if (s.t > 0.55) s.st = "air"; }
-              else if (s.st === "merge") { if (s.t >= 0) { ease(s, sky.cx, sky.cy, Math.min(1, dt * 7)); s.phi += (Math.PI / 2 - s.phi) * Math.min(1, dt * 8); if (s.t > 0.35) { s.st = "gone"; sky.lv++; sky.flash = 1; { const m0 = mid(); if (fxReady("boss4ult2")) spawnFx("boss4ult2", 1, m0.x, m0.y - 60, { w: 260, dur: 0.4 }); } Sound.play("c_gather", 0.45, 1.3 + sky.lv * 0.06); hapticBuzz(12); } } }
+              else if (s.st === "merge") { if (s.t >= 0) { { const m0 = mid(); ease(s, m0.x, m0.y, Math.min(1, dt * 7)); } s.phi += (Math.PI / 2 - s.phi) * Math.min(1, dt * 8); if (s.t > 0.35) { s.st = "gone"; sky.lv++; sky.flash = 1; { const m0 = mid(); if (fxReady("boss4ult2")) spawnFx("boss4ult2", 1, m0.x, m0.y - 60, { w: 260, dur: 0.4 }); } Sound.play("c_gather", 0.45, 1.3 + sky.lv * 0.06); hapticBuzz(12); } } }
               if (U.ph === "rest" && s.st === "planted") s.a = Math.max(0, s.a - dt * 0.6);
             }
             if (U.ph === "atk") {
@@ -381,24 +386,22 @@
               hintOnce("gu4sw", "天劍 " + (U.n + 1) + " 下｜瞬步閃不開　全部完美＝破架勢");
               swing(0, U.n + 1);
             }
-            if (U.ph === "swing" || U.ph === "rest") { /* 天劍沿軌跡飛；沒在俯衝時回到他頭上懸停、劍尖指向主角 */
-              const ox = sky.cx, oy = sky.cy, P = sky.path;
-              if (P && !Game.ultLock) {
-                P.t += dt;
-                if (P.t < T1) { const u = P.t / T1, v = 1 - u; sky.cx = v * v * P.P0.x + 2 * u * v * P.C.x + u * u * P.L.x; sky.cy = v * v * P.P0.y + 2 * u * v * P.C.y + u * u * P.L.y; }
-                else if (P.t < T1 + T2) {
-                  if (!P.turned) { P.turned = true; if (fxReady("boss4ult")) spawnFx("boss4ult", 1, P.L.x, P.L.y, { w: 640, h: 300, dur: T2 + 0.12, facing: -P.d, follow: () => ({ x: sky.cx + P.d * 260, y: sky.cy }) }); Sound.play("c_sword_throw", 0.9, 0.8); } /* 回掃拖光 */
-                  const u = (P.t - T1) / T2; sky.cx = P.L.x + (P.E.x - P.L.x) * u; sky.cy = P.L.y;
-                } else { sky.path = null; }
-                const vx = sky.cx - ox, vy = sky.cy - oy; if (vx * vx + vy * vy > 4) sky.th = Math.atan2(vy, vx); /* 劍尖朝飛行方向 */
-                sky.ghT -= dt; if (sky.ghT <= 0) { sky.ghT = 0.025; sky.gh.push({ x: sky.cx, y: sky.cy, th: sky.th, a: 0.5 }); }
-              } else if (!Game.ultLock) {
-                const h = (U.fin && sky.home) || { x: gClampX(Boss.x + (Player.x - Boss.x) * 0.2), y: G - 380 };
-                sky.cx += (h.x - sky.cx) * Math.min(1, dt * 3.5); sky.cy += (h.y - sky.cy) * Math.min(1, dt * 3.5);
-                const aim = Math.atan2(Player.y - 110 - sky.cy, Player.x - sky.cx); let da = aim - sky.th; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
-                sky.th += da * Math.min(1, dt * 5);
+            if (U.ph === "swing" || U.ph === "rest") { /* 巨手握劍懸在他頭頂：沒在揮時舉到後上方；揮時沿弧線斜劈 */
+              sky.ha = Math.min(0.9, sky.ha + dt * 2);
+              const hp = handPos(), k = Math.min(1, dt * 6); sky.pv.x += (hp.x - sky.pv.x) * k; sky.pv.y += (hp.y - sky.pv.y) * k;
+              const W = sky.sw;
+              if (W && !Game.ultLock) {
+                W.t += dt;
+                if (W.t < TS) { const u = W.t / TS; sky.th = W.a0 + (W.a1 - W.a0) * u * u; sky.L = W.L0 + (W.Lh - W.L0) * Math.min(1, u * 1.6); } /* 加速下劈、劍身伸長 */
+                else if (W.t < TS + FT) { const u = (W.t - TS) / FT; sky.th = W.a1 + W.d * 0.6 * (1 - (1 - u) * (1 - u)); } /* 順勢揮到腳邊 */
+                else sky.sw = null;
+                sky.ghT -= dt; if (sky.ghT <= 0) { sky.ghT = 0.02; sky.gh.push({ x: sky.pv.x, y: sky.pv.y, th: sky.th, L: sky.L, a: 0.55 }); }
+              } else if (!Game.ultLock && U.ph === "swing") { /* 舉劍：劍縮回原長（畫面內看得到） */
+                sky.L += (420 - sky.L) * Math.min(1, dt * 5);
+                const ra = raiseAng(U.fin); let da = ra - sky.th; while (da > Math.PI) da -= TAU; while (da < -Math.PI) da += TAU;
+                sky.th += da * Math.min(1, dt * (U.fin ? 3 : 6)) + (U.fin ? Math.sin(performance.now() / 40) * 0.004 : 0);
               }
-            } else { sky.cx = sky.x; sky.cy = sky.y + 225; sky.th = Math.PI / 2; }
+            } else { sky.pv.x = sky.x; sky.pv.y = sky.y; sky.th = Math.PI / 2; sky.L = 450; sky.ha = Math.max(0, sky.ha - dt * 2); }
             for (let i = sky.gh.length - 1; i >= 0; i--) { sky.gh[i].a -= dt * 3; if (sky.gh[i].a <= 0) sky.gh.splice(i, 1); }
             if (g.rested && U.ph !== "rest") U.ph = "rest";
             for (let i = U.trail.length - 1; i >= 0; i--) { U.trail[i].t += dt; if (U.trail[i].t > 0.3) U.trail.splice(i, 1); }
@@ -420,22 +423,27 @@
               ctx.beginPath(); ctx.arc(tr.x, tr.y, 420, Math.PI / 2 - Math.max(tr.a0, tr.a1), Math.PI / 2 - Math.min(tr.a0, tr.a1)); ctx.stroke(); ctx.restore();
             }
             if (sky.a > 0 && !sky.broken) {
-              const K = SW ? 450 / SW.naturalHeight : 1, sw = SW ? SW.naturalWidth * K : 50;
-              const body = (x, y, th, a, ghost) => { /* 劍身中點 (x,y)、劍尖朝 th；sw1 圖劍尖朝下 */
+              const HD = fxReady("boss4intro") && fxSheet("boss4intro").img;
+              const body = (x, y, th, L, a, ghost) => { /* 握點 (x,y)＝劍柄；sw1 圖劍首在上、劍尖朝下，握處約在圖長 10% */
+                const K = SW ? L / SW.naturalHeight : 1, sw = SW ? Math.min(SW.naturalWidth * K, 150) : 50;
                 ctx.save(); ctx.translate(x, y); ctx.rotate(th - Math.PI / 2); ctx.globalAlpha = a;
                 if (ghost) ctx.globalCompositeOperation = "lighter";
-                if (SW) { if (sky.flash > 0 && !ghost) ctx.filter = "brightness(1.8)"; ctx.drawImage(SW, -sw / 2, -225, sw, 450); ctx.filter = "none"; }
-                else { ctx.fillStyle = "#bae6fd"; ctx.fillRect(-25, -225, 50, 450); }
+                if (SW) { if (sky.flash > 0 && !ghost) ctx.filter = "brightness(1.8)"; ctx.drawImage(SW, -sw / 2, -L * 0.1, sw, L); ctx.filter = "none"; }
+                else { ctx.fillStyle = "#bae6fd"; ctx.fillRect(-25, -L * 0.1, 50, L); }
                 if (!ghost && AU && sky.lv >= 3) { /* 凝實光焰（GIF 16 格循環，圖已壓成正方形：還原 160:360 比例） */
-                  const f = Math.floor(now / 80) % 16, H = 520, W = H * 160 / 360; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = sky.a * (sky.lv >= N ? 1 : 0.55);
-                  ctx.drawImage(AU, (f % 4) * 256, Math.floor(f / 4) * 256, 256, 256, -W / 2, -265, W, H);
+                  const f = Math.floor(now / 80) % 16, H = L * 1.15, W = Math.min(H * 160 / 360, 230); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = sky.a * (sky.lv >= N ? 1 : 0.55);
+                  ctx.drawImage(AU, (f % 4) * 256, Math.floor(f / 4) * 256, 256, 256, -W / 2, -L * 0.18, W, H);
+                }
+                if (!ghost && HD && sky.ha > 0) { /* 第一階段那隻半透明巨手（boss4intro 列 2，手腕在上、握處約在格內 (125,165)） */
+                  const S = 380 / 256, col = Math.floor(now / 160) % 4; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = sky.ha;
+                  ctx.drawImage(HD, col * 256, 512, 256, 256, -125 * S, -165 * S, 256 * S, 256 * S);
                 }
                 ctx.restore();
               };
-              for (const q of sky.gh) body(q.x, q.y, q.th, q.a * Math.min(1, al) * 0.6, true); /* 飛行殘影（同一張天劍圖） */
-              body(sky.cx, sky.cy, sky.th, Math.min(1, al), false);
-              if (!sky.lv && sky.a >= 1 && U.ph !== "summon") { ctx.save(); ctx.globalAlpha = 0.45; ctx.setLineDash([10, 8]); ctx.strokeStyle = "#e0f2fe"; ctx.lineWidth = 2; ctx.translate(sky.cx, sky.cy); ctx.rotate(sky.th - Math.PI / 2); ctx.strokeRect(-28, -225, 56, 450); ctx.restore(); } /* 虛弱天劍：虛線輪廓 */
-              if (U.ph === "merge" || (U.ph === "swing" && !sky.path)) { ctx.save(); ctx.font = "800 22px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = sky.lv >= N ? "#fca5a5" : "#e0f2fe"; ctx.globalAlpha = 0.9; ctx.fillText("天劍 " + "◆".repeat(sky.lv) + "◇".repeat(N - sky.lv), sky.cx, sky.cy - 260); ctx.restore(); }
+              for (const q of sky.gh) body(q.x, q.y, q.th, q.L, q.a * Math.min(1, al) * 0.6, true); /* 揮劍殘影（同一張天劍圖） */
+              body(sky.pv.x, sky.pv.y, sky.th, sky.L, Math.min(1, al), false);
+              if (!sky.lv && sky.a >= 1 && U.ph !== "summon") { ctx.save(); ctx.globalAlpha = 0.45; ctx.setLineDash([10, 8]); ctx.strokeStyle = "#e0f2fe"; ctx.lineWidth = 2; ctx.translate(sky.pv.x, sky.pv.y); ctx.rotate(sky.th - Math.PI / 2); ctx.strokeRect(-28, -sky.L * 0.1, 56, sky.L); ctx.restore(); } /* 虛弱天劍：虛線輪廓 */
+              if (U.ph === "merge" || (U.ph === "swing" && !sky.sw)) { ctx.save(); ctx.font = "800 22px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = sky.lv >= N ? "#fca5a5" : "#e0f2fe"; ctx.globalAlpha = 0.9; ctx.fillText("天劍 " + "◆".repeat(sky.lv) + "◇".repeat(N - sky.lv), sky.pv.x, sky.pv.y - 120); ctx.restore(); }
             }
             for (const s of U.sw) {
               if (s.st === "gone" || s.a <= 0) continue;
