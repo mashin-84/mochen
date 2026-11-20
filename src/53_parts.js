@@ -784,6 +784,21 @@
           ctx.restore();
         }
       }
+      /* v0.8.259 空洞騎士式劍影殘影（一、二階段巨劍／副劍、三階段大招飛劍共用）：記錄「圖、劍尖位置、角度、畫法偏移」，畫單色剪影、0.22 秒淡出 */
+      const SWORD_GHOSTS = [];
+      function swordGhost(img, x, y, ang, dx, dy, w, h, a) { if (img && SWORD_GHOSTS.length < 60) SWORD_GHOSTS.push({ img, x, y, ang, dx, dy, w, h, a: a || 0.6, life: 0.22, t: 0 }); }
+      function swordGhostTick(dt) { for (let i = SWORD_GHOSTS.length - 1; i >= 0; i--) { const g = SWORD_GHOSTS[i]; g.t += dt; if (g.t >= g.life) SWORD_GHOSTS.splice(i, 1); } } /* 用遊戲時間淡出（頓幀、慢動作時一起停） */
+      function swordGhostMove(o, key, img, x, y, ang, dx, dy, w, h, step) { /* 物件每移動 step px 留一道 */
+        const k = "_g" + key; if (!o[k]) { o[k] = { x, y }; return; }
+        if (Math.hypot(x - o[k].x, y - o[k].y) >= (step || 30)) { o[k].x = x; o[k].y = y; swordGhost(img, x, y, ang, dx, dy, w, h); }
+      }
+      function drawSwordGhosts() {
+        for (let i = SWORD_GHOSTS.length - 1; i >= 0; i--) {
+          const g = SWORD_GHOSTS[i], k = 1 - g.t / g.life; if (k <= 0) continue;
+          const sil = silImg(g.img, "#64748b"); if (!sil) continue;
+          ctx.save(); ctx.globalAlpha = g.a * k; ctx.translate(g.x, g.y); ctx.rotate(g.ang); ctx.drawImage(sil, g.dx, g.dy, g.w, g.h); ctx.restore();
+        }
+      }
       /* 前景：巨劍、巨手、封印、核心（drawBossEntity 改畫這個） */
       function drawPartsFront() {
         const P = Boss._pp, G = Config.groundY, now = performance.now() / 1000;
@@ -798,6 +813,7 @@
           const simg = A && partImg(sw.mode === "stuck" ? "sw2" : sw.mode === "crack" ? "sw3" : "sw1");
           if (simg) { /* 生圖巨劍：劍尖對準 (sw.x, sw.tip) */
             const K = A.swK, tp = A.swTip[sw.mode === "stuck" ? 1 : 0];
+            if (sw.mode === "fall" || sw.mode === "sweep") swordGhostMove(sw, "m", simg, sw.x, sw.tip, sw.ang, -tp[0] * K, -tp[1] * K, simg.naturalWidth * K, simg.naturalHeight * K, 36); else sw._gm = null; /* 天劍斬落、橫掃千軍 */
             if (fl) ctx.filter = "brightness(2.2)";
             ctx.drawImage(simg, -tp[0] * K, -tp[1] * K, simg.naturalWidth * K, simg.naturalHeight * K);
             ctx.filter = "none";
@@ -839,6 +855,7 @@
           ctx.translate(h.x, h.y); ctx.rotate(h.ang);
           if (img) {
             const K = SWORD_L / img.naturalHeight;
+            { const a = [P.act, ...(P.facts || [])].find(x => x && x.hand === h); if (a && a.st === "active" && (a.key === "grab" || a.key === "pincer" || a.key === "palm")) swordGhostMove(h, "h", img, h.x, h.y, h.ang, -img.naturalWidth * K / 2, -SWORD_L, img.naturalWidth * K, SWORD_L, 30); else h._gh = null; } /* 劍陣橫穿、雙劍合圍、劍落 */
             if (fl) ctx.filter = "brightness(2.2)";
             ctx.drawImage(img, -img.naturalWidth * K / 2, -SWORD_L, img.naturalWidth * K, SWORD_L);
             ctx.filter = "none";

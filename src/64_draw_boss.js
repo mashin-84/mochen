@@ -364,6 +364,11 @@
 
           if (!Boss._ilDraw) { /* v0.8.200 敵人刀光版：記錄換格 */
             Boss._curImg = bossImg; /* v0.8.234 大招衝刺殘影要用當下這格 */
+            if (stage.dashTrail && Boss.state === "active" && bossImg && !Game.bossDeath) { /* v0.8.259 空洞騎士式衝刺殘影：出招中每移動 26px 留一道單色剪影 */
+              if (Boss._trX == null || Boss._trS !== "active") Boss._trX = Boss.x;
+              if (Math.abs(Boss.x - Boss._trX) >= 26 && Game.afterimages.length < 30) { Boss._trX = Boss.x; Game.afterimages.push({ x: Boss.x, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.55, spr: bossImg, s: bossVis(stage).k, f: Boss.facing, color: "#64748b", by: 40 }); }
+            }
+            Boss._trS = Boss.state;
             const act = !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered", "ult"].includes(Boss.state); /* v0.8.244 大招也換格淡化（原本漏掉 ult，大招一格一格硬切） */
             if (act && BOSS_XF.img && BOSS_XF.img !== bossImg && bossImg && bossImg.naturalWidth) {
               BOSS_XF.prev = BOSS_XF.img; BOSS_XF.t = performance.now();

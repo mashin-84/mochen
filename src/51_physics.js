@@ -511,6 +511,7 @@
               color: Player.y < Config.groundY - 2 ? "#86efac" : Player.state === "attack" ? "#bae6fd" : "#7dd3fc" });
           }
         }
+        swordGhostTick(dt); /* v0.8.259 劍影殘影 */
         for (let i = Game.afterimages.length - 1; i >= 0; i--) {
           const img = Game.afterimages[i];
           img.alpha -= dt * 2.8;

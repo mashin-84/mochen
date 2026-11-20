@@ -312,6 +312,7 @@
           };
           U.sw = []; for (let i = 0; i < N; i++) U.sw.push({ i, st: "rise", x: Boss.x, y: Boss.y - 160, phi: Math.PI / 2, t: 0, a: 0, d: DES[i] });
           const fr = (k) => { Boss._ultFrame = k; };
+          const frOr = (k, fb) => { const SP = getBossSprite(Stages[Boss.stageId].sprite), im = SP && SP.imgs[k]; fr(im && im.naturalWidth ? k : fb); }; /* v0.8.259 新關鍵格還沒生好就用替代格 */
           const ease = (o, x, y, k) => { o.x += (x - o.x) * k; o.y += (y - o.y) * k; };
           const launch = (s) => {
             let side = U.side = -U.side; if (Player.x + side * 420 > Config.worldWidth - 80 || Player.x + side * 420 < 80) side = U.side = -side;
@@ -334,7 +335,11 @@
             const last = i === cnt - 1; /* 只揮一下時，那一下就是最後一下 */
             const FIN = 1.2, FRZ = 0.3; /* 最後一下：暗場聚光 FIN 秒 → 時停 FRZ 秒 → 閃光同時俯衝 */
             const wind = last ? FIN + FRZ + TS : i === 0 ? 1.1 : (cnt >= 4 && i === cnt - 2 ? SWG + 0.4 : SWG);
-            fr("u5_swingw");
+            if (i === 0) fr("u5_swingw");
+            else { /* v0.8.259 上一刀命中後：順勢（u7）→ 手從身後繞上來（u8）→ 舉臂（u5）；原本命中瞬間就切回舉臂 */
+              const t1 = U.t; frOr("u7_follow", "u6_swing");
+              const tu = Math.max(0.2, Math.min(0.4, wind - TS - 0.02)); g.ev.push([t1 + Math.min(0.18, tu - 0.02), () => frOr("u8_reraise", "u5_swingw")], [t1 + tu, () => fr("u5_swingw")]); g.ev.sort((p2, q) => p2[0] - q[0]);
+            }
             if (i === cnt - 2 && cnt >= 4) spawnFloatingText(sky.pv.x, sky.pv.y - 120, "…", "#e0f2fe", 0.9);
             const t0 = U.t, at = (dtv, fn) => { g.ev.push([t0 + dtv, fn]); g.ev.sort((p2, q) => p2[0] - q[0]); };
             if (last) { /* 大招最後一下的統一演出（第 3、5 關同款）：暗場＋聚光＋鏡頭拉近 → 時停 → 閃光 → 出手 → 命中亮暗閃、暗場放開 */
@@ -377,6 +382,7 @@
                   }]); g.ev.sort((p2, q) => p2[0] - q[0]);
                 }
                 g.rest = [U.t + 0.45, 2.2];
+                frOr("u7_follow", "u6_swing"); g.ev.push([U.t + 0.45, () => { if (Boss._ult) frOr("17_kneel", "u6_swing"); }]); g.ev.sort((p2, q) => p2[0] - q[0]); /* 力竭喘息格 */
               } });
           };
           g.ev.push([0, () => { fr("u1_summon"); Boss.facing = gSide(); Sound.play("c_gather", 0.9, 1.1); }]);
@@ -493,7 +499,8 @@
               if (s.st === "aim") { ctx.save(); ctx.strokeStyle = "rgba(253, 224, 71, 0.55)"; ctx.setLineDash([12, 10]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(Player.x, Player.y - 100); ctx.stroke(); ctx.restore(); }
               const img = partImg(s.d + (s.st === "aim" || s.st === "fly" ? "2" : "1"));
               if (img) { /* v0.8.250 劍陣生圖（劍尖朝下、劍尖約在 (147, 398)）：以劍尖為準旋到 phi 方向 */
-                const K = 0.45; ctx.save(); ctx.globalAlpha = s.a * (planted ? 0.9 : 1);
+                const K = 0.45;
+                if (s.st === "fly") swordGhostMove(s, "f", img, s.x, s.y, s.phi - Math.PI / 2, -147 * K, -398 * K, img.naturalWidth * K, img.naturalHeight * K, 40); else s._gf = null; /* v0.8.259 飛劍剪影殘影 */ ctx.save(); ctx.globalAlpha = s.a * (planted ? 0.9 : 1);
                 if (planted) { ctx.beginPath(); ctx.rect(s.x - 300, s.y - 600, 600, G + 4 - (s.y - 600)); ctx.clip(); } /* 插進地裡的部分不畫 */
                 ctx.translate(s.x, s.y); ctx.rotate(s.phi - Math.PI / 2);
                 ctx.drawImage(img, -147 * K, -398 * K, img.naturalWidth * K, img.naturalHeight * K); ctx.restore();

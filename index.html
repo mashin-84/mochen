@@ -3497,9 +3497,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         /* 第 4 關 人形劍魂 */
         const S4 = Stages[4];
         S4.moves.u_liujian = U("六劍朝宗", "g_s4", 6.5);
-        S4.spriteExtras = S4.spriteExtras.concat(["u1_summon", "u2_point", "u3_back", "u4_gather", "u5_swingw", "u6_swing"]); /* v0.8.250 大招關鍵格（生圖） */
+        S4.spriteExtras = S4.spriteExtras.concat(["u1_summon", "u2_point", "u3_back", "u4_gather", "u5_swingw", "u6_swing", "17_kneel"]); /* v0.8.250 大招關鍵格（生圖）；v0.8.259 17_kneel 當大招力竭喘息格 */
         S4.fxSheets = (S4.fxSheets || []).concat(["boss4ult", "boss4ult2", "b4mergegif", "b4auragif", "b4burstgif"]); /* v0.8.250 大招特效（生圖＋GIF） */
-        S4.ultMax = { u_liujian: 2 }; /* v0.8.249 天劍全完美＝架勢直接打滿，限三階段最多放 2 次（血 60% 必放一次＋招式池再一次） */
+        S4.ultMax = { u_liujian: 2 };
+        S4.dashTrail = true; /* v0.8.259 三階段人形古靈：出招位移留空洞騎士式剪影殘影（突進、驚鴻、掃地、旋斬） */ /* v0.8.249 天劍全完美＝架勢直接打滿，限三階段最多放 2 次（血 60% 必放一次＋招式池再一次） */
         S4.hpTriggers = [{ move: "u_liujian", at: 0.6, phase: 2 }]; S4.sigMove = "u_liujian";
         S4.pool = S4.pool.concat([["u_liujian", 4]]); S4.poolP2 = S4.pool; addCue(S4);
         /* 第 5 關 小狼（一階段）；大狼＝魔焰獸玉（已有） */
@@ -6739,6 +6740,7 @@ const Config = {
               color: Player.y < Config.groundY - 2 ? "#86efac" : Player.state === "attack" ? "#bae6fd" : "#7dd3fc" });
           }
         }
+        swordGhostTick(dt); /* v0.8.259 劍影殘影 */
         for (let i = Game.afterimages.length - 1; i >= 0; i--) {
           const img = Game.afterimages[i];
           img.alpha -= dt * 2.8;
@@ -7761,6 +7763,21 @@ const Config = {
           ctx.restore();
         }
       }
+      /* v0.8.259 空洞騎士式劍影殘影（一、二階段巨劍／副劍、三階段大招飛劍共用）：記錄「圖、劍尖位置、角度、畫法偏移」，畫單色剪影、0.22 秒淡出 */
+      const SWORD_GHOSTS = [];
+      function swordGhost(img, x, y, ang, dx, dy, w, h, a) { if (img && SWORD_GHOSTS.length < 60) SWORD_GHOSTS.push({ img, x, y, ang, dx, dy, w, h, a: a || 0.6, life: 0.22, t: 0 }); }
+      function swordGhostTick(dt) { for (let i = SWORD_GHOSTS.length - 1; i >= 0; i--) { const g = SWORD_GHOSTS[i]; g.t += dt; if (g.t >= g.life) SWORD_GHOSTS.splice(i, 1); } } /* 用遊戲時間淡出（頓幀、慢動作時一起停） */
+      function swordGhostMove(o, key, img, x, y, ang, dx, dy, w, h, step) { /* 物件每移動 step px 留一道 */
+        const k = "_g" + key; if (!o[k]) { o[k] = { x, y }; return; }
+        if (Math.hypot(x - o[k].x, y - o[k].y) >= (step || 30)) { o[k].x = x; o[k].y = y; swordGhost(img, x, y, ang, dx, dy, w, h); }
+      }
+      function drawSwordGhosts() {
+        for (let i = SWORD_GHOSTS.length - 1; i >= 0; i--) {
+          const g = SWORD_GHOSTS[i], k = 1 - g.t / g.life; if (k <= 0) continue;
+          const sil = silImg(g.img, "#64748b"); if (!sil) continue;
+          ctx.save(); ctx.globalAlpha = g.a * k; ctx.translate(g.x, g.y); ctx.rotate(g.ang); ctx.drawImage(sil, g.dx, g.dy, g.w, g.h); ctx.restore();
+        }
+      }
       /* 前景：巨劍、巨手、封印、核心（drawBossEntity 改畫這個） */
       function drawPartsFront() {
         const P = Boss._pp, G = Config.groundY, now = performance.now() / 1000;
@@ -7775,6 +7792,7 @@ const Config = {
           const simg = A && partImg(sw.mode === "stuck" ? "sw2" : sw.mode === "crack" ? "sw3" : "sw1");
           if (simg) { /* 生圖巨劍：劍尖對準 (sw.x, sw.tip) */
             const K = A.swK, tp = A.swTip[sw.mode === "stuck" ? 1 : 0];
+            if (sw.mode === "fall" || sw.mode === "sweep") swordGhostMove(sw, "m", simg, sw.x, sw.tip, sw.ang, -tp[0] * K, -tp[1] * K, simg.naturalWidth * K, simg.naturalHeight * K, 36); else sw._gm = null; /* 天劍斬落、橫掃千軍 */
             if (fl) ctx.filter = "brightness(2.2)";
             ctx.drawImage(simg, -tp[0] * K, -tp[1] * K, simg.naturalWidth * K, simg.naturalHeight * K);
             ctx.filter = "none";
@@ -7816,6 +7834,7 @@ const Config = {
           ctx.translate(h.x, h.y); ctx.rotate(h.ang);
           if (img) {
             const K = SWORD_L / img.naturalHeight;
+            { const a = [P.act, ...(P.facts || [])].find(x => x && x.hand === h); if (a && a.st === "active" && (a.key === "grab" || a.key === "pincer" || a.key === "palm")) swordGhostMove(h, "h", img, h.x, h.y, h.ang, -img.naturalWidth * K / 2, -SWORD_L, img.naturalWidth * K, SWORD_L, 30); else h._gh = null; } /* 劍陣橫穿、雙劍合圍、劍落 */
             if (fl) ctx.filter = "brightness(2.2)";
             ctx.drawImage(img, -img.naturalWidth * K / 2, -SWORD_L, img.naturalWidth * K, SWORD_L);
             ctx.filter = "none";
@@ -9714,6 +9733,7 @@ const Config = {
           };
           U.sw = []; for (let i = 0; i < N; i++) U.sw.push({ i, st: "rise", x: Boss.x, y: Boss.y - 160, phi: Math.PI / 2, t: 0, a: 0, d: DES[i] });
           const fr = (k) => { Boss._ultFrame = k; };
+          const frOr = (k, fb) => { const SP = getBossSprite(Stages[Boss.stageId].sprite), im = SP && SP.imgs[k]; fr(im && im.naturalWidth ? k : fb); }; /* v0.8.259 新關鍵格還沒生好就用替代格 */
           const ease = (o, x, y, k) => { o.x += (x - o.x) * k; o.y += (y - o.y) * k; };
           const launch = (s) => {
             let side = U.side = -U.side; if (Player.x + side * 420 > Config.worldWidth - 80 || Player.x + side * 420 < 80) side = U.side = -side;
@@ -9736,7 +9756,11 @@ const Config = {
             const last = i === cnt - 1; /* 只揮一下時，那一下就是最後一下 */
             const FIN = 1.2, FRZ = 0.3; /* 最後一下：暗場聚光 FIN 秒 → 時停 FRZ 秒 → 閃光同時俯衝 */
             const wind = last ? FIN + FRZ + TS : i === 0 ? 1.1 : (cnt >= 4 && i === cnt - 2 ? SWG + 0.4 : SWG);
-            fr("u5_swingw");
+            if (i === 0) fr("u5_swingw");
+            else { /* v0.8.259 上一刀命中後：順勢（u7）→ 手從身後繞上來（u8）→ 舉臂（u5）；原本命中瞬間就切回舉臂 */
+              const t1 = U.t; frOr("u7_follow", "u6_swing");
+              const tu = Math.max(0.2, Math.min(0.4, wind - TS - 0.02)); g.ev.push([t1 + Math.min(0.18, tu - 0.02), () => frOr("u8_reraise", "u5_swingw")], [t1 + tu, () => fr("u5_swingw")]); g.ev.sort((p2, q) => p2[0] - q[0]);
+            }
             if (i === cnt - 2 && cnt >= 4) spawnFloatingText(sky.pv.x, sky.pv.y - 120, "…", "#e0f2fe", 0.9);
             const t0 = U.t, at = (dtv, fn) => { g.ev.push([t0 + dtv, fn]); g.ev.sort((p2, q) => p2[0] - q[0]); };
             if (last) { /* 大招最後一下的統一演出（第 3、5 關同款）：暗場＋聚光＋鏡頭拉近 → 時停 → 閃光 → 出手 → 命中亮暗閃、暗場放開 */
@@ -9779,6 +9803,7 @@ const Config = {
                   }]); g.ev.sort((p2, q) => p2[0] - q[0]);
                 }
                 g.rest = [U.t + 0.45, 2.2];
+                frOr("u7_follow", "u6_swing"); g.ev.push([U.t + 0.45, () => { if (Boss._ult) frOr("17_kneel", "u6_swing"); }]); g.ev.sort((p2, q) => p2[0] - q[0]); /* 力竭喘息格 */
               } });
           };
           g.ev.push([0, () => { fr("u1_summon"); Boss.facing = gSide(); Sound.play("c_gather", 0.9, 1.1); }]);
@@ -9895,7 +9920,8 @@ const Config = {
               if (s.st === "aim") { ctx.save(); ctx.strokeStyle = "rgba(253, 224, 71, 0.55)"; ctx.setLineDash([12, 10]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(Player.x, Player.y - 100); ctx.stroke(); ctx.restore(); }
               const img = partImg(s.d + (s.st === "aim" || s.st === "fly" ? "2" : "1"));
               if (img) { /* v0.8.250 劍陣生圖（劍尖朝下、劍尖約在 (147, 398)）：以劍尖為準旋到 phi 方向 */
-                const K = 0.45; ctx.save(); ctx.globalAlpha = s.a * (planted ? 0.9 : 1);
+                const K = 0.45;
+                if (s.st === "fly") swordGhostMove(s, "f", img, s.x, s.y, s.phi - Math.PI / 2, -147 * K, -398 * K, img.naturalWidth * K, img.naturalHeight * K, 40); else s._gf = null; /* v0.8.259 飛劍剪影殘影 */ ctx.save(); ctx.globalAlpha = s.a * (planted ? 0.9 : 1);
                 if (planted) { ctx.beginPath(); ctx.rect(s.x - 300, s.y - 600, 600, G + 4 - (s.y - 600)); ctx.clip(); } /* 插進地裡的部分不畫 */
                 ctx.translate(s.x, s.y); ctx.rotate(s.phi - Math.PI / 2);
                 ctx.drawImage(img, -147 * K, -398 * K, img.naturalWidth * K, img.naturalHeight * K); ctx.restore();
@@ -10596,6 +10622,7 @@ const Config = {
         }
 
         drawTelegraphs();
+        drawSwordGhosts(); /* v0.8.259 劍影殘影（在角色與部位後面） */
 
         for (const img of Game.afterimages) {
           if (img.spr) { /* v0.8.96 角色剪影殘影 */
@@ -11943,6 +11970,11 @@ const Config = {
 
           if (!Boss._ilDraw) { /* v0.8.200 敵人刀光版：記錄換格 */
             Boss._curImg = bossImg; /* v0.8.234 大招衝刺殘影要用當下這格 */
+            if (stage.dashTrail && Boss.state === "active" && bossImg && !Game.bossDeath) { /* v0.8.259 空洞騎士式衝刺殘影：出招中每移動 26px 留一道單色剪影 */
+              if (Boss._trX == null || Boss._trS !== "active") Boss._trX = Boss.x;
+              if (Math.abs(Boss.x - Boss._trX) >= 26 && Game.afterimages.length < 30) { Boss._trX = Boss.x; Game.afterimages.push({ x: Boss.x, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.55, spr: bossImg, s: bossVis(stage).k, f: Boss.facing, color: "#64748b", by: 40 }); }
+            }
+            Boss._trS = Boss.state;
             const act = !deathRot && !Game.bossDeath && ["windup", "active", "recover", "hurt", "staggered", "ult"].includes(Boss.state); /* v0.8.244 大招也換格淡化（原本漏掉 ult，大招一格一格硬切） */
             if (act && BOSS_XF.img && BOSS_XF.img !== bossImg && bossImg && bossImg.naturalWidth) {
               BOSS_XF.prev = BOSS_XF.img; BOSS_XF.t = performance.now();

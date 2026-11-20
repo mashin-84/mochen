@@ -133,6 +133,7 @@
         }
 
         drawTelegraphs();
+        drawSwordGhosts(); /* v0.8.259 劍影殘影（在角色與部位後面） */
 
         for (const img of Game.afterimages) {
           if (img.spr) { /* v0.8.96 角色剪影殘影 */
