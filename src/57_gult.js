@@ -71,6 +71,7 @@
       }
       function guCue() { /* 最近一次會打到主角的倒數（秒）與顏色列：0 黃、1 紅 */
         let best = null;
+        { const Uc = Boss._ult; if (Uc && Uc.g && Uc.g.cue) { const c = Uc.g.cue(); if (c) best = c; } } /* v0.8.256 大招自訂倒數（第 4 關飛劍） */
         for (const h of GU.hz) {
           if (h.done) continue; let tl;
           if (h.type === "strike") { if (Math.abs(Player.x - h.x) > h.w * 0.5 + (h.track ? 400 : 0)) continue; tl = h.delay - h.t; }
@@ -317,12 +318,17 @@
             s.st = "aim"; s.t = 0; s.side = side; s.ok = false; s.lx = Player.x + side * 420; s.ly = G - 160;
             fr((s.lx - Boss.x) * Boss.facing < 0 ? "u3_back" : "u2_point"); /* 劍從他背後出手＝回指 */
             Sound.play("c_shing", 0.55, 1.15 + Math.random() * 0.1);
-            s.h = guStrike({ x: Player.x, track: true, lock: F + 0.06, w: 200, delay: A + F, kind: "parry", dmg: 80, src: s.lx, quiet: true, noDraw: true, dodgePlain: true, label: "【六劍・飛斬】",
-              onParry: () => { s.ok = true; if (fxReady("boss4ult")) spawnFx("boss4ult", 2, Player.x + s.side * 45, G - 125, { w: 280, dur: 0.4, facing: s.side }); },
-              onFire: (h) => {
-                if (s.ok) { s.st = "bounce"; s.t = 0; s.bx0 = s.x; s.by0 = s.y; s.bx1 = gClampX(h.x + s.side * (150 + Math.random() * 60)); Sound.play("c_clang_big", 0.55, 1.3); spawnFloatingText(s.bx1, G - 250, "劍落！", "#fde047", 0.8); }
-                else { s.st = "ret"; s.t = 0; Sound.play("c_slash_light", 0.6, 1.0); }
-              } });
+            /* v0.8.256 飛劍改「真的飛」判定（使用者：走開、甚至往劍走都打不到）：瞄準期間跟著主角保持 420px；出手後朝主角胸口直線飛，
+               到胸口高度後水平繼續飛（走路躲不掉、迎上去更早碰到）；劍尖碰到主角身體那一刻才結算招架（guHit）。 */
+            s.hit = false;
+            s.h = { kind: "parry", dmg: 80, post: 18, dodgePlain: true, label: "【六劍・飛斬】",
+              onParry: () => { s.ok = true; if (fxReady("boss4ult")) spawnFx("boss4ult", 2, Player.x + s.side * 45, Player.y - 125, { w: 280, dur: 0.4, facing: s.side }); } };
+          };
+          const swordResolve = (s) => { /* 劍碰到主角：完美招架＝彈飛插地；其他（被砍、普通格擋、瞬步閃過）＝飛回空中 */
+            s.hit = true; const pc = Progress.parryCount;
+            guHit(s.lx, s.h);
+            if (s.ok) { s.st = "bounce"; s.t = 0; s.bx0 = s.x; s.by0 = s.y; s.bx1 = gClampX(Player.x + s.side * (150 + Math.random() * 60)); Sound.play("c_clang_big", 0.55, 1.3); spawnFloatingText(s.bx1, G - 250, "劍落！", "#fde047", 0.8); }
+            else { s.st = "ret"; s.t = 0; Sound.play("c_slash_light", 0.6, 1.0); }
           };
           const swing = (i, cnt) => {
             const last = i === cnt - 1; /* 只揮一下時，那一下就是最後一下 */
@@ -366,9 +372,14 @@
             for (const s of U.sw) {
               s.t += dt;
               if (s.st === "rise" || s.st === "air") { const p = slot(s.i); ease(s, p.x, p.y + Math.sin(performance.now() / 600 + s.i) * 8, Math.min(1, dt * 5)); s.phi += (Math.PI / 2 - s.phi) * Math.min(1, dt * 6); s.a = Math.min(1, s.a + dt * 2.5); if (s.st === "rise" && s.t > 0.8) s.st = "air"; }
-              else if (s.st === "aim") { ease(s, s.lx, s.ly, Math.min(1, dt * 9)); const ty = Player.y - 100; s.phi = Math.atan2(ty - s.y, Player.x - s.x); if (s.t >= A) { s.st = "fly"; s.t = 0; s.fx0 = s.x; s.fy0 = s.y; Sound.play("c_sword_throw", 0.75, 1.1 + Math.random() * 0.1);
+              else if (s.st === "aim") { s.lx = gClampX(Player.x + s.side * 420); ease(s, s.lx, s.ly, Math.min(1, dt * 9)); const ty = Player.y - 100; s.phi = Math.atan2(ty - s.y, Player.x - s.x); if (s.t >= A) { s.st = "fly"; s.t = 0;
+                  const tx = Player.x, ty2 = Player.y - 110, dx = tx - s.x, dy = ty2 - s.y, dd = Math.max(1, Math.hypot(dx, dy)), sp = dd / F; s.vx = dx / dd * sp; s.vy = dy / dd * sp; s.ty = ty2; s.dir = dx >= 0 ? 1 : -1; s.vx = s.dir * Math.max(Math.abs(s.vx), 900);
+                  Sound.play("c_sword_throw", 0.75, 1.1 + Math.random() * 0.1);
                 if (fxReady("boss4ult")) { const fd = Math.cos(s.phi) >= 0 ? 1 : -1; spawnFx("boss4ult", 1, s.x, s.y, { w: 340, h: 200, dur: F + 0.1, facing: fd, follow: () => ({ x: s.x - fd * 120, y: s.y }) }); } } }
-              else if (s.st === "fly") { const p = Math.min(1, s.t / F), tx = s.h ? s.h.x : Player.x; s.x = s.fx0 + (tx - s.fx0) * p; s.y = s.fy0 + (G - 110 - s.fy0) * p; }
+              else if (s.st === "fly") { /* 直線飛：到胸口高度後改水平；劍尖碰到主角身體＝結算；飛過主角 320px 或出場＝沒中、飛回 */
+                s.x += s.vx * dt; s.y += s.vy * dt; if ((s.vy > 0 && s.y >= s.ty) || (s.vy < 0 && s.y <= s.ty)) { s.y = s.ty; s.vy = 0; } s.phi = Math.atan2(s.vy, s.vx);
+                if (!s.hit && Player.state !== "execution" && Math.abs(s.x - Player.x) < 40 && s.y > Player.y - 235 && s.y < Player.y + 6) swordResolve(s);
+                else if ((s.x - Player.x) * s.dir > 320 || s.x < 60 || s.x > Config.worldWidth - 60 || s.t > 2.5) { s.st = "ret"; s.t = 0; } }
               else if (s.st === "bounce") { const p = Math.min(1, s.t / 0.4); s.x = s.bx0 + (s.bx1 - s.bx0) * p; s.y = s.by0 + (G + 22 - s.by0) * p - Math.sin(p * Math.PI) * 160; s.phi += dt * 22 * s.side; if (p >= 1) { s.st = "planted"; s.phi = Math.PI / 2 + s.side * 0.22; s.x = s.bx1; s.y = G + 22; if (fxReady("boss4ult")) spawnFx("boss4ult", 3, s.x, groundFxY("boss4ult", 3, 240), { anchor: "b", w: 240, dur: 0.5 }); emitDust(s.x, G, 1, 3, 1.0); emitDust(s.x, G, -1, 3, 1.0); addTrauma(0.15); } }
               else if (s.st === "ret") { const p = slot(s.i); ease(s, p.x, p.y, Math.min(1, dt * 6)); s.phi += (Math.PI / 2 - s.phi) * Math.min(1, dt * 5); if (s.t > 0.55) s.st = "air"; }
               else if (s.st === "merge") { if (s.t >= 0) { { const m0 = mid(); ease(s, m0.x, m0.y, Math.min(1, dt * 7)); } s.phi += (Math.PI / 2 - s.phi) * Math.min(1, dt * 8); if (s.t > 0.35) { s.st = "gone"; sky.lv++; sky.flash = 1; { const m0 = mid(); if (fxReady("boss4ult2")) spawnFx("boss4ult2", 1, m0.x, m0.y - 60, { w: 260, dur: 0.4 }); } Sound.play("c_gather", 0.45, 1.3 + sky.lv * 0.06); hapticBuzz(12); } } }
@@ -477,6 +488,16 @@
             }
           };
           g.drawTop = () => { if (U.drawSky && !sky.broken && sky.a > 0) U.drawSky(true); };
+          g.cue = () => { /* 招架光圈：依劍實際還要多久碰到主角倒數（與判定同源） */
+            let best = null;
+            for (const s of U.sw) {
+              let tl = null;
+              if (s.st === "fly" && !s.hit) { const d = (Player.x - s.x) * s.dir; if (d > -40) tl = Math.max(0, d - 40) / Math.abs(s.vx); }
+              else if (s.st === "aim") tl = (A - s.t) + F * 0.9;
+              if (tl != null && (!best || tl < best.tl)) best = { tl, row: 0 };
+            }
+            return best;
+          };
           return g;
         },
         /* 第 5 關 小狼「幽影噬月」：小狼化影消失 → 連續三次從天撲落（紅圈追蹤主角，持續移動或瞬步）→ 第三撲落地震出左右矮震波（跳）→ 伏地喘息 */
