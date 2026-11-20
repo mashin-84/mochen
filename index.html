@@ -9695,13 +9695,13 @@ const Config = {
           /* v0.8.253 天劍有景深（使用者 2026-11-20）：一開始在古靈頭頂後上方「遠處」（小、淡）→ 斜著往下揮、同時朝鏡頭衝過來（越來越大）
              → 砍中主角時最大 → 順勢衝出鏡頭（更大、淡出）→ 下一下再從遠處出現。巨手跟著劍一起縮放。
              z＝縮放（遠 0.42 → 命中 1.25 → 衝出 2.0）；z<0.85 畫在角色後面，之後畫在最上層（從鏡頭前掠過）。 */
-          const TS = 0.32, FT = 0.24, TAU = Math.PI * 2, ZF = 0.42, ZH = 1.25, ZO = 2.0, BL = 450; /* TS：開始下揮到砍中主角；FT：砍中後衝出鏡頭 */
+          const TS = 0.32, FT = 0.16, TR = 0.3, TAU = Math.PI * 2, ZF = 0.42, ZH = 1.25, ZO = 1.55, BL = 450; /* TS：開始下揮到砍中主角；FT：砍中後順勢；TR：從他身後繞回遠處 */
           const farPos = () => ({ x: gClampX(Boss.x + gSide() * 30), y: G - 370 }); /* 他頭頂上方遠處（畫在他身後） */
           const raiseAng = (big) => -Math.PI / 2 - gSide() * (big ? 0.7 : 0.45); /* 遠處舉劍：劍尖朝上偏後 */
           const unwrap = (from, to, dir) => { let dl = (((to - from) % TAU) + TAU) % TAU; if (dir < 0 && dl > 0) dl -= TAU; return from + dl; }; /* dir＞0 順時針（角度變大） */
           const chest = () => ({ x: Player.x, y: Player.y - 100 });
-          const startCut = () => { /* 開始下揮：鎖定主角位置；命中時劍尖剛好在主角胸口、劍斜 45° 由他那側劈下 */
-            const d = gSide(), c = chest(), a1 = Math.atan2(0.75, d * 0.66), reach = BL * 0.9 * ZH;
+          const startCut = () => { /* 開始下揮：鎖定主角位置；命中時「劍身中段」掃過主角胸口（v0.8.254 不是劍尖戳），劍斜 45° 由他那側劈下、劍尖越過主角繼續往下 */
+            const d = gSide(), c = chest(), a1 = Math.atan2(0.75, d * 0.66), reach = BL * 0.5 * ZH;
             const Np = { x: c.x - Math.cos(a1) * reach, y: c.y - Math.sin(a1) * reach };
             sky.sw = { t: 0, a0: sky.th, a1: unwrap(sky.th, a1, d), d, P0: { x: sky.pv.x, y: sky.pv.y }, C: { x: (sky.pv.x + Np.x) / 2, y: Math.min(sky.pv.y, Np.y) - 60 }, Np, z0: sky.z };
           };
@@ -9800,10 +9800,15 @@ const Config = {
                   const u = W.t / TS, e = u * u, v = 1 - u;
                   sky.pv.x = v * v * W.P0.x + 2 * u * v * W.C.x + u * u * W.Np.x; sky.pv.y = v * v * W.P0.y + 2 * u * v * W.C.y + u * u * W.Np.y;
                   sky.th = W.a0 + (W.a1 - W.a0) * (1 - (1 - u) * (1 - u)); sky.z = W.z0 + (ZH - W.z0) * e; sky.sa = Math.min(1, sky.sa + dt * 6);
-                } else if (W.t < TS + FT) { /* 順勢衝出鏡頭：再放大、往下掠過、淡出 */
-                  const u = (W.t - TS) / FT; sky.th = W.a1 + W.d * 0.45 * u; sky.z = ZH + (ZO - ZH) * u; sky.sa = 1 - u;
-                  sky.pv.x = W.Np.x + W.d * 260 * u; sky.pv.y = W.Np.y + 200 * u;
-                } else { sky.sw = null; sky.gone = true; const f = farPos(); sky.pv.x = f.x; sky.pv.y = f.y; sky.z = ZF; sky.sa = 0; sky.th = raiseAng(U.fin); sky.gh.length = 0; }
+                } else if (W.t < TS + FT) { /* 順勢：劍繼續轉、再放大一點（從鏡頭前掠過） */
+                  const u = (W.t - TS) / FT, e = 1 - (1 - u) * (1 - u); sky.th = W.a1 + W.d * 0.8 * e; sky.z = ZH + (ZO - ZH) * e;
+                  sky.pv.x = W.Np.x + W.d * 90 * e; sky.pv.y = W.Np.y + 60 * e;
+                } else if (W.t < TS + FT + TR) { /* v0.8.254 從他身後繞回遠處（連續、不瞬移）：劍照同方向繼續轉一圈回到舉劍角度，邊飛邊縮小 */
+                  if (!W.R) { const f = farPos(); W.R = { P0: { x: sky.pv.x, y: sky.pv.y }, C: { x: Boss.x - W.d * 300, y: G - 140 }, F: f, a0: sky.th, a1: unwrap(sky.th, raiseAng(U.fin), W.d), z0: sky.z }; }
+                  const R = W.R, u = (W.t - TS - FT) / TR, e = u * u * (3 - 2 * u), v = 1 - e;
+                  sky.pv.x = v * v * R.P0.x + 2 * e * v * R.C.x + e * e * R.F.x; sky.pv.y = v * v * R.P0.y + 2 * e * v * R.C.y + e * e * R.F.y;
+                  sky.th = R.a0 + (R.a1 - R.a0) * e; sky.z = R.z0 + (ZF - R.z0) * e; sky.sa = 1;
+                } else { sky.sw = null; }
                 sky.L = BL * sky.z;
                 sky.ghT -= dt; if (sky.ghT <= 0) { sky.ghT = 0.02; sky.gh.push({ x: sky.pv.x, y: sky.pv.y, th: sky.th, L: sky.L, z: sky.z, a: 0.5 * sky.sa }); }
               } else if (!Game.ultLock && U.ph === "swing") { /* 遠處舉劍：回到他頭頂後上方、縮小、淡淡出現 */
