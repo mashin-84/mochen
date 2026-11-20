@@ -338,7 +338,7 @@
             if (i === 0) fr("u5_swingw");
             else { /* v0.8.259 上一刀命中後：順勢（u7）→ 手從身後繞上來（u8）→ 舉臂（u5）；原本命中瞬間就切回舉臂 */
               const t1 = U.t; frOr("u7_follow", "u6_swing");
-              const tu = Math.max(0.2, Math.min(0.4, wind - TS - 0.02)); g.ev.push([t1 + Math.min(0.18, tu - 0.02), () => frOr("u8_reraise", "u5_swingw")], [t1 + tu, () => fr("u5_swingw")]); g.ev.sort((p2, q) => p2[0] - q[0]);
+              const tu = Math.max(0.2, Math.min(0.4, wind - TS - 0.02)); g.ev.push([t1 + Math.min(0.18, tu - 0.02), () => { if (!U.fin) frOr("u8_reraise", "u5_swingw"); }], [t1 + tu, () => { if (!U.fin) fr("u5_swingw"); }]); /* 最後一刀改擺聚劍，不被蓋掉 */ g.ev.sort((p2, q) => p2[0] - q[0]);
             }
             if (i === cnt - 2 && cnt >= 4) spawnFloatingText(sky.pv.x, sky.pv.y - 120, "…", "#e0f2fe", 0.9);
             const t0 = U.t, at = (dtv, fn) => { g.ev.push([t0 + dtv, fn]); g.ev.sort((p2, q) => p2[0] - q[0]); };
