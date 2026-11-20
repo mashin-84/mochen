@@ -347,7 +347,7 @@
                 if (fxReady("spark")) { const p0 = tip(); spawnFx("spark", 2, p0.x, p0.y, { w: 420, dur: 0.3 }); } startCut(); fr("u6_swing"); });
             } else at(wind - TS, () => { startCut(); fr("u6_swing"); Sound.play("c_sword_throw", 0.8, 0.75); });
             guStrike({ x: Player.x, track: true, lock: TS + 0.02, w: 900, delay: wind, kind: "parry", dmg: last ? 110 : 70, src: sky.pv.x, quiet: true, noDraw: true, noDodge: true, blockDmg: 25, label: "【天劍】",
-              onParry: () => { U.swOk++; },
+              onParry: () => { U.swOk++; if (last) U.lastOk = true; },
               onFire: () => {
                 const d = -gSide();
                 if (fxReady("boss4ult2")) spawnFx("boss4ult2", 3, Player.x - d * 30, Player.y - 105, { w: last ? 520 : 380, dur: 0.4, facing: -d }); /* 命中閃 */
@@ -359,6 +359,14 @@
                   showBanner("六劍歸一", "天　劍　崩　碎", 1300, "#7dd3fc"); sky.broken = 1;
                   { const m0 = mid(); if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 620, dur: 0.7 }); } /* 天劍崩碎（生圖） */
                   damageBossPosture(Boss.maxPosture, "【天劍崩碎】架勢打滿！", null, true);
+                } else if (U.lastOk) { /* v0.8.258 方案 A：最後一下完美＝一定有大回饋（慢動作、天劍當場彈碎、重擊音），架勢依「天劍完美幾下／共幾下」給比例 */
+                  const pct = U.swOk / cnt, m0 = mid();
+                  U.noPost = false; Game.slowT = 0.35; Game.slowScale = 0.35; Sound.play("c_clang_big", 1.0, 1.0); triggerHitstopMs(110); addTrauma(0.45); hapticBuzz([40, 20, 60]);
+                  sky.broken = 1; sky.gh.length = 0;
+                  if (fxReady("boss4ult2")) spawnFx("boss4ult2", 2, m0.x, m0.y, { w: 600 * Math.max(0.8, sky.z), dur: 0.7 });
+                  if (fxReady("boss4ult")) spawnFx("boss4ult", 2, sky.pv.x, sky.pv.y, { w: 340 * Math.max(0.8, sky.z), dur: 0.45 });
+                  showBanner("天劍彈碎", `完　美　${U.swOk}／${cnt}`, 1100, "#7dd3fc");
+                  damageBossPosture(Boss.maxPosture * pct, `【天劍彈碎】架勢 +${Math.round(pct * 100)}%`, null, true);
                 } else {
                   spawnFloatingText(Boss.x, Boss.y - 240, U.swOk ? `〔天劍未破：${cnt} 下要全部完美〕` : "〔劍魂收劍〕", "#cbd5e1", 1.3);
                   g.ev.push([U.t + 0.28, () => { /* v0.8.257 最後一刀揮完：巨手與天劍一起碎裂消失（不再停在空中再不見） */
@@ -424,16 +432,16 @@
                 else if (W.t < TS + TB) { const u = (W.t - TS) / TB; sky.th = W.ahit + (W.aend - W.ahit) * (1 - (1 - u) * (1 - u)); } /* 繼續轉、經過他身後回到上方（減速） */
                 else { sky.th = W.aend; sky.sw = null; }
                 sky.z = zAt(sky.th, W);
-                sky.ghT -= dt; if (sky.ghT <= 0) { sky.ghT = 0.02; }
+                sky.ghT -= dt; if (sky.ghT <= 0) { sky.ghT = 0.04; } /* 殘影每 0.04 秒一道（約 5 道） */
               } else if (!Game.ultLock && U.ph === "swing") { /* 舉劍：慢慢轉到上方偏後、縮小 */
                 const ra = raiseAng(U.fin); let da = ra - sky.th; while (da > Math.PI) da -= TAU; while (da < -Math.PI) da += TAU;
                 sky.th += da * Math.min(1, dt * (U.fin ? 3 : 6)) + (U.fin ? Math.sin(performance.now() / 40) * 0.004 : 0);
                 sky.z += ((U.fin ? 0.55 : ZF) - sky.z) * Math.min(1, dt * 5);
               }
               sky.L = BL * sky.z; sky.pv.x = sky.C.x + Math.cos(sky.th) * R0 * sky.z; sky.pv.y = sky.C.y + Math.sin(sky.th) * R0 * sky.z; /* 握點＝圓心沿劍身方向 R0 */
-              if (W && !Game.ultLock && sky.ghT === 0.02) sky.gh.push({ x: sky.pv.x, y: sky.pv.y, th: sky.th, L: sky.L, z: sky.z, a: 0.5 });
+              if (W && !Game.ultLock && sky.ghT === 0.04) sky.gh.push({ x: sky.pv.x, y: sky.pv.y, th: sky.th, L: sky.L, z: sky.z, a: 0.45 });
             } else { sky.pv.x = sky.x; sky.pv.y = sky.y; sky.th = Math.PI / 2; sky.L = 450; sky.z = 1; sky.sa = 1; sky.ha = Math.max(0, sky.ha - dt * 2); }
-            for (let i = sky.gh.length - 1; i >= 0; i--) { sky.gh[i].a -= dt * 3; if (sky.gh[i].a <= 0) sky.gh.splice(i, 1); }
+            for (let i = sky.gh.length - 1; i >= 0; i--) { sky.gh[i].a -= dt * 2.25; if (sky.gh[i].a <= 0) sky.gh.splice(i, 1); } /* 0.2 秒淡出 */
             if (g.rested && U.ph !== "rest") U.ph = "rest";
             for (let i = U.trail.length - 1; i >= 0; i--) { U.trail[i].t += dt; if (U.trail[i].t > 0.3) U.trail.splice(i, 1); }
           };
@@ -458,8 +466,9 @@
               const body = (x, y, th, L, a, ghost, z) => { /* 握點 (x,y)＝劍柄；sw1 圖劍首在上、劍尖朝下，握處約在圖長 10%；z＝景深縮放 */
                 z = z || 1; const K = SW ? L / SW.naturalHeight : 1, sw = SW ? SW.naturalWidth * K : 50;
                 ctx.save(); ctx.translate(x, y); ctx.rotate(th - Math.PI / 2); ctx.globalAlpha = a;
-                if (ghost) ctx.globalCompositeOperation = "lighter";
-                if (SW) { if (sky.flash > 0 && !ghost) ctx.filter = "brightness(1.8)"; ctx.drawImage(SW, -sw / 2, -L * 0.1, sw, L); ctx.filter = "none"; }
+                const SL = ghost && SW ? silImg(SW, "#94a3b8") : null; /* v0.8.258 空洞騎士式：殘影＝單色劍形剪影（不再是發光複製） */
+                if (SL) ctx.drawImage(SL, -sw / 2, -L * 0.1, sw, L);
+                else if (SW) { if (sky.flash > 0 && !ghost) ctx.filter = "brightness(1.8)"; ctx.drawImage(SW, -sw / 2, -L * 0.1, sw, L); ctx.filter = "none"; }
                 else { ctx.fillStyle = "#bae6fd"; ctx.fillRect(-25, -L * 0.1, 50, L); }
                 if (!ghost && AU && sky.lv >= 3) { /* 凝實光焰（GIF 16 格循環，圖已壓成正方形：還原 160:360 比例） */
                   const f = Math.floor(now / 80) % 16, H = L * 1.15, W = H * 160 / 360; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = sky.a * (sky.lv >= N ? 1 : 0.55);
@@ -472,7 +481,7 @@
                 ctx.restore();
               };
               U.drawSky = (front) => { /* 遠（z<0.85）畫在角色後面、近的畫在最上層 */
-                for (const q of sky.gh) if ((q.z >= 0.85) === front) body(q.x, q.y, q.th, q.L, q.a * Math.min(1, al) * 0.6, true, q.z); /* 揮劍殘影 */
+                for (const q of sky.gh) if ((q.z >= 0.85) === front) body(q.x, q.y, q.th, q.L, q.a * Math.min(1, al), true, q.z); /* 揮劍殘影（單色剪影） */
                 if ((sky.z >= 0.85) === front && sky.sa > 0) body(sky.pv.x, sky.pv.y, sky.th, sky.L, Math.min(1, al) * sky.sa * (sky.z < 0.85 ? 0.8 : 1), false, sky.z);
               };
               U.drawSky(false);
