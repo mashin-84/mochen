@@ -5,6 +5,11 @@
 
 ## 最新版本
 
+**v0.8.265 第 1～4 關總體驗收（使用者：1～4 關算完成）**
+- 測試：smoke 40 秒 ×4 關 ok（招式 5／5／6／4 種、無錯誤、無讀不到的檔）；`audit_fx` 第 1～3 關 0 盲點（第 4 關部位戰是已知誤報、不跑）；**完整通關流程** 1～4 關各一次（Playwright：最後一擊處決 → 結算「〇〇 伏誅」→ `qingyun_cleared` 寫入 → 解鎖下一關 → 返回營地 hub、目前關卡＝下一關），無頁面錯誤。
+- 缺件：第 4 關古靈半身像 `assets/portrait/boss4.webp`（`tools/missing_ok.txt` 早已列為缺；對話時沒頭像）→ 提示詞 `prompts/4/9_boss4_portrait.txt`（2 格：一般、讚許微笑）。
+- HANDOFF 狀態表：第 3、4 關標完成。
+
 **v0.8.264 大招破防延後（使用者：大招還沒放完就把架勢打滿會破防，很可惜；選方案 A，全關）**
 - `40_player.js` `damageBossPosture` 新增第 6 參數 `force`：大招進行中（`Boss._ult` 且非喘息 `_ultRest`）架勢打滿 → 不進 staggered，改 `Boss._breakPend = true`、架勢釘在滿格、架勢條閃白（`_capFlash`）、浮字「【架勢已滿】大招收勢即破防！」＋輕震。
 - `55_ult.js` `ultUpdate`：待破防時每幀釘住架勢；大招一進喘息 → 先 `ultEnd(true)` 再強制破防（若不先結束，喘息分支每幀會把狀態蓋回 recover，實測破防被吃掉）；`ultEnd(false)`（沒有喘息段的大招正常結束）也會補破防；被中斷（死亡、換關）取消；`loadStage` 歸零。
