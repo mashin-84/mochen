@@ -5,6 +5,8 @@
 
 ## 最新版本
 
+**v0.8.266 第 4 關古靈半身像接入**：使用者生圖（`prompts/4/9_boss4_portrait.txt`，2912×1440 兩格）→ 洋紅去背、留最大連通塊、裁邊、統一高 1000 → `assets/portrait/boss4.webp`（826×1000，一般）、`boss4_alt.webp`（816×1000，讚許微笑）。對話框自動依左右位置翻轉；截圖確認第 4 關開場對話顯示正常。`tools/missing_ok.txt` 拿掉 boss4 半身像。第 1～4 關素材全齊。
+
 **v0.8.265 第 1～4 關總體驗收（使用者：1～4 關算完成）**
 - 測試：smoke 40 秒 ×4 關 ok（招式 5／5／6／4 種、無錯誤、無讀不到的檔）；`audit_fx` 第 1～3 關 0 盲點（第 4 關部位戰是已知誤報、不跑）；**完整通關流程** 1～4 關各一次（Playwright：最後一擊處決 → 結算「〇〇 伏誅」→ `qingyun_cleared` 寫入 → 解鎖下一關 → 返回營地 hub、目前關卡＝下一關），無頁面錯誤。
 - 缺件：第 4 關古靈半身像 `assets/portrait/boss4.webp`（`tools/missing_ok.txt` 早已列為缺；對話時沒頭像）→ 提示詞 `prompts/4/9_boss4_portrait.txt`（2 格：一般、讚許微笑）。

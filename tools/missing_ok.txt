@@ -27,7 +27,6 @@
 /assets/boss5b/walk_10.webp
 /assets/boss5b/walk_11.webp
 /assets/boss5b/walk_12.webp
-/assets/portrait/boss4.webp
 /assets/portrait/boss4_alt.webp
 /assets/portrait/boss5.webp
 /assets/portrait/boss5_alt.webp
