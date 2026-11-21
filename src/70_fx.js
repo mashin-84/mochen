@@ -86,6 +86,7 @@
           ctx.save();
           ctx.globalCompositeOperation = f.add ? "lighter" : "source-over";
           ctx.globalAlpha = Math.max(0, Math.min(1, a));
+          if (f.filter) ctx.filter = f.filter; /* v0.8.270 濾鏡（第 5 關白色光焰柱佔位：火柱去彩提亮） */
           ctx.translate(f.x, f.y);
           if (f.rot) ctx.rotate(f.rot);
           ctx.scale(f.facing, 1);
