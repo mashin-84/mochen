@@ -480,7 +480,10 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         S5.hpTriggers = [{ move: "u_shiyue", at: 0.5, phase: 1, stance: "A" }, { move: "u_mohuo", at: 0.5, phase: 2, stance: "B" }];
         S5.sigMoves = [{ move: "u_shiyue", phase: 1, stance: "A" }, { move: "u_mohuo", phase: 2, stance: "B" }]; S5.sigMove = "u_mohuo";
         S5.stances.A.pool.push(["u_shiyue", 4]);
-        S5.stances.B.pool = S5.stances.B.pool.filter(e => e[0] !== "b_breath").concat([["u_mohuo", 4]]); /* 舊 b_breath 留著（火柱資料共用），不再出現在招式池 */
+        S5.stances.B.pool = S5.stances.B.pool.filter(e => e[0] !== "b_breath").concat([["u_mohuo", 4]]);
+        S5.fxSheets = S5.fxSheets.concat(["boss5white", "boss5shadow", "b5washgif", "b5rockgif"]); /* v0.8.273 兩招大招生圖特效 */
+        S5.stances.A.extras = S5.stances.A.extras.concat(["u5_hover", "u5_dive", "u5_knock", "u5_crash"]); /* v0.8.273 小狼大招關鍵格 */
+        S5.stances.B.extras = S5.stances.B.extras.concat(["u5_turn", "u5_spent", "u5_lowgather", "u5_firedown", "u5_fireup", "u5_recoil"]); /* v0.8.273 大狼大招關鍵格 */ /* 舊 b_breath 留著（火柱資料共用），不再出現在招式池 */
         /* 第 6 關 化血老祖＋魅月 */
         const S6 = Stages[6];
         S6.moves.u_xueshen = U("血神大法", "g_s6", 7.0);

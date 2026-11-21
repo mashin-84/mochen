@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+**v0.8.273 第 5 關兩招大招生圖接入（使用者生圖 6 份，`prompts/5/10～15`）**
+- 大狼 6 格（`tools/cut_keys.py`，以第 1 格高 420 對齊 `69_br_fire2`、縮放 0.671）→ `assets/boss5b/u5_turn／u5_spent／u5_lowgather／u5_firedown／u5_fireup／u5_recoil`；嘴部座標 turn (196,−305)、lowgather (196,−152)、firedown (190,−169)、fireup (177,−402)。用法：前噴＋橫掃 `u5_turn`、噴完 `u5_spent`、白色集氣 `u5_lowgather`、朝下打地 `u5_firedown`、上甩 p>0.45 換 `u5_fireup`（火柱起點在兩格嘴之間 smoothstep 內插，`U.mo`）、劍劈後 `u5_recoil` 0.7 秒再 `16_stagger`、沒擋收招 `u5_spent`。**Gemini 第 1 格沒畫成「轉頭朝鏡頭」**（跟噴火格幾乎一樣），橫掃仍靠火牆演出。
+- 小狼 4 格（縮放 0.38，對齊 `50_sp_dive` 長度）→ `assets/boss5/u5_hover／u5_dive／u5_knock／u5_crash`：懸空 `u5_hover`、俯衝（三撲）`u5_dive`、彈飛 `u5_knock`、摔地破綻 `u5_crash`。生圖小狼臉上多一道紅疤（與原設定略有出入）。
+- 特效：`assets/fx/boss5white.webp`（`fx_black.py`；列 1 熱線另處理：嘴端不淡出、尾端 60px 淡出、上下 14px）：列 0 白色集氣、列 1 白色熱線（取代去彩火柱，高 640）、列 2 打地爆光、列 3 劍劈分流（星芒在格寬 0.39，跟著光柱角度）；`assets/fx/boss5shadow.webp`（`fx_ink.py` 白底水墨，`add:false`）：列 0／1 落點黑影（取代程式漸層，橢圓中心格高 0.55）、列 2 撲落墨濺、列 3 化影竄起；`assets/fx/b5washgif.webp`（`gif2sheet.py --frames 0:29 --rect 0,0,640,360 --edge 1`）：火牆依橫掃進度 s 選格（0.6→−0.6＝第 0→15 格，噴火方向朝右時鏡像），程式漸層降到 0.55 墊底；`assets/fx/b5rockgif.webp`（`--frames 4:29`，去掉 GIF 前段多畫的橘色光束）：沿地碎石炸裂（16:9 還原、腳底 228）。`FX_FOOT` 補三張；`Stages[5].fxSheets`／姿態 extras 補登記。新圖沒載入時全部退回舊格／舊特效（`gFrOr`）。
+- 驗證：截圖（小狼黑影、俯衝、懸空；大狼前噴、打地碎石、劍劈分流）、smoke 第 5 關 30 秒 ok。
+
 **v0.8.272 第 5 關魔焰獸玉：橫掃加速度＋火焰噴完衰弱；生圖提示詞 6 份（使用者：要加速度感、甩到背後不要馬上消失、需要生圖盡量生圖）**
 - 橫掃回頭改三次方緩入緩出（`e＝p<0.5 ? 4p³ : 1−(−2p+2)³/2`，s＝cos(πe)）：起步慢 → 掠過鏡頭最快 → 甩到身後再變慢；`s5b_sweep` 預設 1.0→1.4。
 - 甩到身後後新增衰弱段 `s5b_decay` 1.0 秒（取代原本停 0.4 秒就消失）：強度＝(1−q)²×閃爍，火柱變細（高 ×(0.3+0.7√強度)）、變淡、長度 1500→750；傷害跟著衰減，強度 <0.2 不再傷人；結束時嘴邊殘煙（`boss5flame` 列 3）＋喘一口，再接第二次（白色）集氣。
