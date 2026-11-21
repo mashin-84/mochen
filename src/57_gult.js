@@ -646,7 +646,7 @@
           at(T1, () => { if (U.stop) return; U.ch = false; Game.gDimOn = false; fr("69_br_fire2"); U.f0 = Boss.facing; beamOn(false, 200);
             if (fxReady("boss5charge")) spawnFx("boss5charge", 2, Boss.x + Boss.facing * 464, Boss.y - 280, { w: 800, dur: 0.55, facing: Boss.facing, alpha: 0.95 }); });
           at(TSW, () => { if (U.stop) return; U.sw = { t: 0, crossed: false }; spawnFloatingText(Boss.x, G - 480, "橫掃回頭！", "#f0abfc", 1.0); Sound.play("m_roar", 0.9, 0.95); Sound.play("peril", 0.8, 0.6); });
-          at(TS, () => { if (U.stop) return; U.sw = null; beamOff(); fr("63_br_rec"); Sound.play("m_growl", 0.8, 1.2); });
+          at(TS, () => { if (U.stop) return; U.sw = null; U.ov = null; beamOff(); fr("63_br_rec"); Sound.play("m_growl", 0.8, 1.2); });
           at(TC, () => { if (U.stop) return; /* 低頭白色集氣（大招最後一下的統一演出） */
             Boss.facing = gSide(); fr("64_br_deep"); U.fin = true; Game.gDimOn = true; Game.ultDimRGB = "225, 235, 255"; g.camZ = 0.06; g.camF = 0.5; g.dim.push([TC, TF + DH + UP + 0.4]);
             spawnFloatingText(Boss.x, G - 500, "魔焰獸玉・終", "#e0f2fe", 1.1); Sound.play("c_gather", 1.0, 0.8); Sound.play("m_growl", 0.9, 0.7);
@@ -697,19 +697,34 @@
             if (U.sw && !U.sw.crossed && near && side === -U.f0) return { tl: TSW + SW * 0.5 - U.t + 0.08, row: 1 };
             return null;
           };
+          g.drawTop = () => { /* v0.8.271 橫掃回頭掠過鏡頭：一面火牆從前方往身後橫掃過整面螢幕（螢幕座標；紅圈倒數畫在它上面） */
+            const O = U.ov; if (!O || O.k < 0.01 || !U.sw) return;
+            const cv = ctx.canvas, W = cv.width, H = cv.height, cx = W / 2 + U.f0 * O.s * W * 2.2, ww = W * 1.7, x0 = cx - ww / 2; /* 從前方那側掃進、身後那側掃出（s：0.6→−0.6） */
+            ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+            const gr = ctx.createLinearGradient(x0, 0, x0 + ww, 0);
+            gr.addColorStop(0, "rgba(90, 10, 90, 0)"); gr.addColorStop(0.22, "rgba(120, 20, 120, 0.85)"); gr.addColorStop(0.5, "rgba(255, 140, 225, 0.95)"); gr.addColorStop(0.78, "rgba(120, 20, 120, 0.85)"); gr.addColorStop(1, "rgba(90, 10, 90, 0)");
+            ctx.globalAlpha = O.k; ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+            if (fxReady("boss5beam")) { const img = fxSheet("boss5beam").img, c0 = Math.floor(performance.now() / 70);
+              ctx.globalCompositeOperation = "lighter";
+              for (let i = 0; i < 3; i++) { const c = (c0 + i) % 4, y = H * (0.2 + 0.32 * i);
+                ctx.save(); ctx.globalAlpha = O.k * 0.85; ctx.translate(x0 + (i % 2 ? ww : 0), y); ctx.scale(i % 2 ? -1 : 1, 1); ctx.drawImage(img, c * 256, 2 * 256, 256, 256, 0, -H * 0.9, ww, H * 1.8); ctx.restore(); } }
+            ctx.restore();
+          };
           g.tick = (dt) => {
             gMove(U, dt);
             if (U.fin) Game.ultDimY = mouth().y;
             const B = U.bm;
             if (U.sw && B) { /* 橫掃回頭：s 由 1 → −1（cos），|s|＝火柱可見長度，過 0＝掠過鏡頭、頭轉向身後 */
               const S = U.sw; S.t += dt; const p = Math.min(1, S.t / SW), e = p * p * (3 - 2 * p), s = Math.cos(Math.PI * e);
-              B.dir = s >= 0 ? U.f0 : -U.f0; B.L = B.Lt = Math.max(40, 1500 * Math.abs(s)); Boss.facing = B.dir;
+              B.dir = s >= 0 ? U.f0 : -U.f0; B.L = B.Lt = 1500; Boss.facing = B.dir; /* v0.8.271 不再縮短：轉向鏡頭時火牆糊滿整面螢幕（drawTop），最濃時在幕後轉到身後 */
+              const kk = Math.max(0, 1 - Math.abs(s) / 0.6); U.ov = { k: kk * kk * (3 - 2 * kk), s };
+              if (U.ov.k > 0.5) { Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.55); if (!S.wh) { S.wh = true; Sound.play("c_dash_heavy", 1.0, 0.7); hapticBuzz([30, 20, 60]); } }
               if (!S.crossed && s < 0) { S.crossed = true; const m = bmo(); /* 掠過鏡頭：口部大閃光 */
                 if (fxReady("boss5charge")) spawnFx("boss5charge", 1, m.x, m.y, { w: 820, dur: 0.35, alpha: 1 }); screenFlash("rgba(230,180,255,0.55)", 0.45, 0.22); addTrauma(0.4); hapticBuzz(40); Sound.play("execution", 0.7, 0.7); }
             }
             if (B) {
               B.L += (B.Lt - B.L) * Math.min(1, dt * 16);
-              if (B.f) { B.f.w = B.L; B.f.h = 1250 * Math.max(0.45, Math.min(1, Math.sqrt(B.L / 1500))); B.f.facing = B.dir; B.f.rot = B.rot * B.dir; }
+              if (B.f) { B.f.w = B.L; B.f.h = 1250 * Math.max(0.45, Math.min(1, Math.sqrt(B.L / 1500))) * (1 + (U.sw && U.ov ? U.ov.k * 1.1 : 0)); B.f.facing = B.dir; B.f.rot = B.rot * B.dir; } /* 轉向鏡頭時火柱變粗 */
               Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.28);
               if (B.dmg && Player.state !== "execution") { /* 水平火柱：頂天、從嘴往前 L 的範圍持續傷害（每 0.3 秒） */
                 const m = bmo(), lo = Math.min(m.x, m.x + B.dir * B.L), hi = Math.max(m.x, m.x + B.dir * B.L);
