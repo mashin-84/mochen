@@ -24,7 +24,7 @@ def loud(a, sr):
 rows = []
 for p in sorted(glob.glob(os.path.join(ROOT, "assets/sfx/*.mp3"))):
     n = os.path.splitext(os.path.basename(p))[0]; a, sr = load(p); L, pk = loud(a, sr)
-    if pk < -20 or n.startswith(("w_", "m_")): rows.append((n, L, pk, None, "壞檔?")); continue  # 第 5 關狼聲原檔壞掉（v0.8.36～37），等重生
+    if pk < -20: rows.append((n, L, pk, None, "壞檔?")); continue  # v0.8.267 狼聲 11 檔已用原檔重做；m_roar 仍是壞檔（等使用者原檔或重生）
     t = T_HI if HI.match(n) else T_LOW if LOW.match(n) else T_MID
     g = max(-12.0, min(9.0, t - L, 2.0 - pk))  # 放大後峰值不超過 +2 dB（避免限幅器硬壓失真）
     rows.append((n, L, pk, round(g, 1), "HI" if t == T_HI else "LOW" if t == T_LOW else "MID"))

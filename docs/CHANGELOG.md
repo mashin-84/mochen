@@ -5,6 +5,8 @@
 
 ## 最新版本
 
+**v0.8.267 第 5 關狼聲 11 檔用原檔重做**：使用者從 ElevenLabs 紀錄找回 v0.8.36～37 的原檔（48k 立體聲，原本峰值 −1～−17 dB 都正常；壞的是當時的處理）。重新處理：ffmpeg `silenceremove`（頭 −50 dB／尾 −55 dB）→ 單聲道 44.1k → 峰值正規化 −1.5 dBFS → 淡入 5ms／淡出 40ms → mp3 128k，覆蓋 `assets/sfx/w_snarl／w_bark／w_snap／w_claw／w_howl／w_yelp／m_growl／m_bite／m_swipe／m_stomp／m_howl.mp3`（1.04／0.42／0.24／0.52／2.01／0.44／1.52／0.84／0.65／0.65／2.82 秒，與 v0.8.36 紀錄長度一致）。`tools/sfx_loudness.py` 拿掉 `w_`／`m_` 一律跳過的規則（只剩峰值 < −20 視為壞檔），重跑校正表（w_howl −7.9、w_snap +4.2 等）。**`m_roar`（大狼咆哮）原檔沒找到，仍是壞檔（靜音）**，等使用者找到或用 `prompts/5/9_wolf_voice_sfx.txt` 第 8 條重生。待使用者手機實測音色與音量。
+
 **v0.8.266 第 4 關古靈半身像接入**：使用者生圖（`prompts/4/9_boss4_portrait.txt`，2912×1440 兩格）→ 洋紅去背、留最大連通塊、裁邊、統一高 1000 → `assets/portrait/boss4.webp`（826×1000，一般）、`boss4_alt.webp`（816×1000，讚許微笑）。對話框自動依左右位置翻轉；截圖確認第 4 關開場對話顯示正常。`tools/missing_ok.txt` 拿掉 boss4 半身像。第 1～4 關素材全齊。
 
 **v0.8.265 第 1～4 關總體驗收（使用者：1～4 關算完成）**
