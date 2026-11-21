@@ -476,9 +476,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         /* 第 5 關 小狼（一階段）；大狼＝魔焰獸玉（已有） */
         const S5 = Stages[5];
         S5.moves.u_shiyue = U("幽影噬月", "g_s5a", 4.0);
-        S5.hpTriggers = [{ move: "u_shiyue", at: 0.5, phase: 1, stance: "A" }];
-        S5.sigMoves = [{ move: "u_shiyue", phase: 1, stance: "A" }, { move: "b_breath", phase: 2, stance: "B" }];
+        S5.moves.u_mohuo = U("魔焰獸玉", "g_s5b", 6.0); /* v0.8.269 原 b_breath（一般招式）改成大招四拍：蓄力（繞背／砍頭打斷）→ 前噴 → 甩頭回噴 → 魔焰彈（完美招架彈回） */
+        S5.hpTriggers = [{ move: "u_shiyue", at: 0.5, phase: 1, stance: "A" }, { move: "u_mohuo", at: 0.5, phase: 2, stance: "B" }];
+        S5.sigMoves = [{ move: "u_shiyue", phase: 1, stance: "A" }, { move: "u_mohuo", phase: 2, stance: "B" }]; S5.sigMove = "u_mohuo";
         S5.stances.A.pool.push(["u_shiyue", 4]);
+        S5.stances.B.pool = S5.stances.B.pool.filter(e => e[0] !== "b_breath").concat([["u_mohuo", 4]]); /* 舊 b_breath 留著（火柱資料共用），不再出現在招式池 */
         /* 第 6 關 化血老祖＋魅月 */
         const S6 = Stages[6];
         S6.moves.u_xueshen = U("血神大法", "g_s6", 7.0);

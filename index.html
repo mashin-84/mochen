@@ -2487,7 +2487,14 @@
         { k: "s4_atk", n: "飛劍攻擊期（秒）", d: 7, min: 4, max: 12, s: 0.5 },
         { k: "s4_gap", n: "飛劍出手間隔（秒，±15% 亂數）", d: 0.75, min: 0.45, max: 1.4, s: 0.05 },
         { k: "s4_fly", n: "每把飛劍：瞄準＋飛行（秒）", d: 0.8, min: 0.5, max: 1.4, s: 0.05 },
-        { k: "s4_swGap", n: "天劍每下間隔（秒）", d: 0.8, min: 0.5, max: 1.4, s: 0.05 }
+        { k: "s4_swGap", n: "天劍每下間隔（秒）", d: 0.8, min: 0.5, max: 1.4, s: 0.05 },
+        { g: "第 5 關大招【幽影噬月／魔焰獸玉】" },
+        { k: "s5a_fin", n: "噬月第三撲：懸空聚氣（秒）", d: 0.9, min: 0.4, max: 2, s: 0.1 },
+        { k: "s5b_charge", n: "獸玉蓄力（秒）", d: 2.3, min: 1.2, max: 4, s: 0.1 },
+        { k: "s5b_headN", n: "獸玉：砍頭幾下打斷", d: 3, min: 1, max: 6, s: 1 },
+        { k: "s5b_beam1", n: "獸玉：前噴火柱（秒）", d: 1.6, min: 0.8, max: 3, s: 0.1 },
+        { k: "s5b_turn", n: "獸玉：甩頭回噴前搖（秒）", d: 0.75, min: 0.4, max: 1.5, s: 0.05 },
+        { k: "s5b_beam2", n: "獸玉：回噴火柱（秒）", d: 1.3, min: 0.6, max: 3, s: 0.1 }
       ];
       const Tune = {
         o: {},
@@ -3515,9 +3522,11 @@ Stages[1].sprite = "boss1"; /* 有 sprite 的關卡使用 assets/<sprite>/ 圖�
         /* 第 5 關 小狼（一階段）；大狼＝魔焰獸玉（已有） */
         const S5 = Stages[5];
         S5.moves.u_shiyue = U("幽影噬月", "g_s5a", 4.0);
-        S5.hpTriggers = [{ move: "u_shiyue", at: 0.5, phase: 1, stance: "A" }];
-        S5.sigMoves = [{ move: "u_shiyue", phase: 1, stance: "A" }, { move: "b_breath", phase: 2, stance: "B" }];
+        S5.moves.u_mohuo = U("魔焰獸玉", "g_s5b", 6.0); /* v0.8.269 原 b_breath（一般招式）改成大招四拍：蓄力（繞背／砍頭打斷）→ 前噴 → 甩頭回噴 → 魔焰彈（完美招架彈回） */
+        S5.hpTriggers = [{ move: "u_shiyue", at: 0.5, phase: 1, stance: "A" }, { move: "u_mohuo", at: 0.5, phase: 2, stance: "B" }];
+        S5.sigMoves = [{ move: "u_shiyue", phase: 1, stance: "A" }, { move: "u_mohuo", phase: 2, stance: "B" }]; S5.sigMove = "u_mohuo";
         S5.stances.A.pool.push(["u_shiyue", 4]);
+        S5.stances.B.pool = S5.stances.B.pool.filter(e => e[0] !== "b_breath").concat([["u_mohuo", 4]]); /* 舊 b_breath 留著（火柱資料共用），不再出現在招式池 */
         /* 第 6 關 化血老祖＋魅月 */
         const S6 = Stages[6];
         S6.moves.u_xueshen = U("血神大法", "g_s6", 7.0);
@@ -9548,6 +9557,23 @@ const Config = {
       const gSide = () => (Player.x >= Boss.x ? 1 : -1);
       const gClampX = (x) => Math.max(140, Math.min(Config.worldWidth - 140, x));
       function gVanish(on) { Boss._introHide = on; Boss._ultAir = on; if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 100, { w: 300, dur: 0.35 }); Sound.play("mikiri", 0.5, on ? 1.7 : 1.3); }
+      function gMove(U, dt) { /* v0.8.269 大招補間移動 Boss：U.mv={x0,y0,x1,y1,t,dur,ease:in|out|arc|lin,trail}；trail＝殘影 */
+        const M = U.mv; if (!M) return;
+        M.t += dt; const p = Math.min(1, M.t / M.dur), e = M.ease === "in" ? p * p : M.ease === "out" ? 1 - (1 - p) * (1 - p) : p;
+        Boss.x = M.x0 + (M.x1 - M.x0) * e; Boss.y = M.y0 + (M.y1 - M.y0) * e - (M.ease === "arc" ? Math.sin(Math.PI * p) * 170 : 0);
+        if (M.trail && !Boss._introHide) { M.gt = (M.gt || 0) - dt; if (M.gt <= 0 && Boss._curImg && Game.afterimages.length < 24) { M.gt = 0.02; Game.afterimages.push({ x: Boss.x, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.55, spr: Boss._curImg, s: bossVis(Stages[Boss.stageId]).k, f: Boss.facing, color: "#7c3aed", by: 40 }); } }
+        if (p >= 1) U.mv = null;
+      }
+      function gShadows() { /* v0.8.269 第 5 關幽影噬月：落點上的黑影（程式畫的佔位，待換生圖）；越接近落下越濃越大 */
+        const G = Config.groundY;
+        for (const h of GU.hz) {
+          if (!h.shadow || h.done || h.type !== "strike") continue;
+          const pr = Math.min(1, h.t / h.delay), w = h.w * (0.55 + 0.45 * pr);
+          ctx.save(); const gr = ctx.createRadialGradient(h.x, G + 2, 4, h.x, G + 2, w * 0.6);
+          gr.addColorStop(0, `rgba(16, 4, 34, ${0.55 + 0.4 * pr})`); gr.addColorStop(0.6, `rgba(30, 8, 60, ${0.35 + 0.35 * pr})`); gr.addColorStop(1, "rgba(20, 6, 40, 0)");
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(h.x, G + 2, w * 0.6, 22 + 10 * pr, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+      }
       function gChain(ev, t0, gaps, mk) { let t = t0; gaps.forEach((gp, i) => { t += gp; const at = t, idx = i; ev.push([at, () => mk(idx)]); }); return t; }
       const GULT = {
         /* ===== v0.8.209 第 3 關新大招灰盒（取代寒川十字／玄鐵龍捲；關鍵格先借現有圖，圈與波是程式畫的佔位） ===== */
@@ -9963,14 +9989,168 @@ const Config = {
           };
           return g;
         },
-        /* 第 5 關 小狼「幽影噬月」：小狼化影消失 → 連續三次從天撲落（紅圈追蹤主角，持續移動或瞬步）→ 第三撲落地震出左右矮震波（跳）→ 伏地喘息 */
+        /* v0.8.269 第 5 關兩招大招重做（使用者 2026-11-21 定案「都做」）。共用：U.mv 補間移動 Boss（in／out／arc）＋殘影 */
+        /* 小狼「幽影噬月」：每一撲都看得到（原本整隻隱身、只有紅圈）。伏身 → 竄上天出畫面 → 地上黑影追著主角（＝紅圈）→ 從天俯衝落下（紅：移動或瞬步）×2
+           → 第三撲＝大招最後一下統一演出：竄起懸在主角頭上（暗場＋聚光＋拉近）→ 時停 0.3 → 閃光 → 俯衝（黃：完美招架＝彈飛摔地、架勢 +35、破綻 3 秒；
+             瞬步＝閃過無獎勵；沒擋／閃開＝落地震出左右矮波（跳）→ 伏地喘息）。黑影是程式畫的佔位。 */
         g_s5a: (U) => {
-          const ev = [];
-          ev.push([1.4, () => hintOnce("gu5a", "幽影噬月｜紅圈追你：移動或瞬步 ×3　落地矮波：跳")]);
-          ev.push([0.6, () => gVanish(true)]);
-          [1.0, 1.85, 2.7].forEach((at, i) => ev.push([at, () => guStrike({ x: Player.x, track: true, lock: 0.32, w: i === 2 ? 240 : 180, delay: 0.8, kind: "red", dmg: i === 2 ? 220 : 160, shape: "pillar", label: "【幽影撲殺】",
-            onFire: (h) => { Boss.x = gClampX(h.x); if (i === 2) { gVanish(false); Boss.facing = gSide(); guWave({ x: h.x, dir: 1, low: true, kind: "parry", speed: 760, dmg: 110, label: "【落地震波】" }); guWave({ x: h.x, dir: -1, low: true, kind: "parry", speed: 760, dmg: 110, label: "【落地震波】" }); } } })]));
-          return { ev, dim: [[0, 0.6]], rest: [3.9, 1.8], restText: "〔小狼力竭喘息〕" };
+          const ev = [], G = Config.groundY, fr = (k) => { Boss._ultFrame = k; };
+          const FIN = Tune.v("s5a_fin"), FRZ = 0.3, DV = 0.3, HV = 290; /* HV＝第三撲懸空高度（太高會在鏡頭拉近時出畫面） */
+          const g = { ev, dim: [[0, 0.5]], rest: [99, 1.8], restText: "〔小狼力竭喘息〕", camZ: 0.1 };
+          const at = (t, fn) => { ev.push([t, fn]); ev.sort((p, q) => p[0] - q[0]); };
+          const mv = (x1, y1, dur, ease, trail) => { U.mv = { x0: Boss.x, y0: Boss.y, x1, y1, t: 0, dur, ease, trail }; };
+          const landFx = (x, big) => { Boss.y = G; emitDust(x, G, -1, 3, big ? 1.6 : 1.1); emitDust(x, G, 1, 3, big ? 1.6 : 1.1);
+            if (fxReady("wolf2")) spawnFx("wolf2", 3, x, groundFxY("wolf2", 3, big ? 520 : 400), { anchor: "b", w: big ? 520 : 400, dur: 0.45 }); triggerShake(0, 0.3, big ? 18 : 10, 0.2); };
+          const coil = () => { fr("48_sp_coil"); Boss.y = G; Boss.facing = gSide(); Sound.play("w_snarl", 0.7, 1.15); };
+          const rise = (x1, y1, dur) => { fr("49_sp_rise"); Boss._ultAir = true; mv(x1, y1, dur, y1 < G - 600 ? "in" : "out", true); Sound.play("w_claw", 0.8, 0.9); emitDust(Boss.x, G, -Boss.facing, 3, 1.0); };
+          ev.push([0.05, () => { fr("59_s_howl"); Sound.play("w_howl", 0.8, 1.15); hintOnce("gu5a", "幽影噬月｜地上黑影＝落點：前兩撲移動或瞬步　第三撲完美招架"); }]);
+          const pounce = (t0, i) => {
+            at(t0, coil);
+            at(t0 + 0.15, () => {
+              rise(Boss.x + Boss.facing * 140, G - 900, 0.26);
+              at(U.t + 0.26, () => { Boss._introHide = true; });
+              const h = guStrike({ x: Player.x, track: true, lock: 0.32, w: 190, delay: 0.95 - i * 0.08, kind: "red", dmg: 160, shape: "pillar", shadow: true, quiet: true, label: "【幽影撲殺】",
+                onFire: (hh) => { U.mv = null; Boss.x = gClampX(hh.x); Boss._ultAir = false; fr("51_sp_land"); landFx(Boss.x, false); Sound.play("w_snap", 0.9, 1.0); } });
+              at(U.t + h.delay - DV, () => { Boss._introHide = false; Boss.facing = Player.x >= h.x ? 1 : -1; Boss.x = gClampX(h.x - Boss.facing * 200); Boss.y = G - 720; fr("50_sp_dive");
+                mv(gClampX(h.x), G, DV, "in", true); Sound.play("w_bark", 0.9, 1.05); });
+            });
+          };
+          pounce(0.7, 0); pounce(2.15, 1);
+          const T3 = 3.5;
+          at(T3, coil);
+          at(T3 + 0.15, () => { /* 第三撲：竄起懸在主角頭上（看得到），聚氣 */
+            const s = gSide(); rise(gClampX(Player.x - s * 90), G - HV, 0.32); Sound.play("w_howl", 0.6, 1.35);
+            U.fin = true; Game.gDimOn = true; Game.ultDimRGB = "196, 150, 255"; g.camZ = 0.08; g.camF = 0.5; g.dim.push([U.t, U.t + 0.32 + FIN + FRZ + DV + 0.1]);
+            spawnFloatingText(Player.x, G - 470, "幽影噬月・終", "#d8b4fe", 1.1); Sound.play("c_gather", 0.9, 1.15);
+            const fo = () => ({ x: Boss.x, y: Boss.y - 60 });
+            if (Tune.v("gifFx") && fxReady("gathergif")) spawnFx("gathergif", 0, fo().x, fo().y, { w: 420, dur: 0.32 + FIN, loop: true, fps: 12, seq: true, alpha: 0.8, follow: fo });
+            else if (fxReady("boss5charge")) spawnFx("boss5charge", 0, fo().x, fo().y, { w: 460, dur: 0.32 + FIN, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.85, follow: fo });
+            const h = guStrike({ x: Player.x, track: true, lock: FRZ + DV + 0.02, w: 240, delay: 0.32 + FIN + FRZ + DV, kind: "parry", dmg: 220, post: 30, dodgePlain: true, shadow: true, quiet: true, label: "【幽影噬月】",
+              onParry: () => { U.won = true; },
+              onFire: (hh) => {
+                U.mv = null; U.fin = false; Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.06; g.camF = 0; screenFlash("rgba(245,235,255,0.75)", 0.7, 0.35); addTrauma(0.45); triggerHitstopMs(100); /* 暗場瞬間放開＋亮暗閃 */
+                if (U.won) { /* 完美招架：小狼被彈飛、摔地破綻 */
+                  const d = -Boss.facing; fr("15_hurt"); Boss._ultAir = true; mv(gClampX(Boss.x + d * 320), G, 0.45, "arc", true); /* 往俯衝的反方向彈開 */
+                  damageBossPosture(35, "【彈飛幽影】架勢 +"); Sound.play("c_clang_big", 1.0, 1.1); Sound.play("w_yelp", 1.0, 0.95); Game.slowT = 0.35; Game.slowScale = 0.35; triggerHitstopMs(120); addTrauma(0.6);
+                  spawnFloatingText(Player.x, Player.y - 150, "〔看破幽影〕", "#fde047", 1.2);
+                  at(U.t + 0.45, () => { Boss._ultAir = false; landFx(Boss.x, true); fr("16_stagger"); });
+                  g.rest = [U.t + 0.5, 3.0]; g.restText = "〔小狼被彈飛・摔地破綻〕";
+                } else { /* 沒擋或閃開：落地震出左右矮波 */
+                  Boss.x = gClampX(hh.x); Boss._ultAir = false; fr("51_sp_land"); landFx(Boss.x, true); Sound.play("m_stomp", 0.7, 1.35); Boss.facing = gSide();
+                  guWave({ x: hh.x, dir: 1, low: true, kind: "parry", speed: 760, dmg: 110, label: "【落地震波】" }); guWave({ x: hh.x, dir: -1, low: true, kind: "parry", speed: 760, dmg: 110, label: "【落地震波】" });
+                  at(U.t + 0.6, () => fr("17_kneel")); g.rest = [U.t + 0.6, 1.8];
+                }
+              } });
+            at(U.t + 0.32, () => { fr("23_pounce_fly"); U.hover = h; });
+            at(U.t + 0.32 + FIN, () => { U.hover = null; U.mv = null; Game.ultLock = true; Player.vx = 0; g.camZ = 0.12; hapticBuzz(30); }); /* 時停：懸在空中 */
+            at(U.t + 0.32 + FIN + FRZ, () => { Game.ultLock = false; Sound.play("c_shing", 1.0, 1.05); screenFlash("rgba(245,235,255,0.6)", 0.5, 0.18); /* 閃光＝出手訊號 */
+              if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 60, { w: 340, dur: 0.3 });
+              Boss.facing = h.x >= Boss.x ? 1 : -1; fr("50_sp_dive"); mv(gClampX(h.x - Boss.facing * 40), G, DV, "in", true); Sound.play("w_bark", 1.0, 0.9); });
+          });
+          g.tick = (dt) => {
+            gMove(U, dt);
+            if (U.hover) { const s = Boss.x <= U.hover.x ? 1 : -1; Boss.facing = s; Boss.x += (gClampX(U.hover.x - s * 90) - Boss.x) * Math.min(1, dt * 4); Boss.y = G - HV + Math.sin(U.t * 7) * 8; }
+            if (U.fin) Game.ultDimY = Boss.y - 60;
+          };
+          g.draw = () => gShadows();
+          return g;
+        },
+        /* 大狼「魔焰獸玉」（原本是一般招式、只有一拍：蓄力時衝到背後就沒事做）→ 大招四拍：
+           ①蓄力（暗場、獸玉凝聚）：繞到背後躲，或【跳起砍頭 N 下】＝獸玉在口中爆裂（重創、架勢 +45、破綻 3.5 秒）
+           ②火柱往前噴 → ③甩頭回噴身後（背後的人要再穿回前面；紅圈倒數）→ ④最後一下統一演出：聚氣 → 時停 → 閃光 → 吐魔焰彈（黃：完美招架＝彈回狼臉、架勢 +50、破綻 3.2 秒） */
+        g_s5b: (U) => {
+          const ev = [], G = Config.groundY, fr = (k) => { Boss._ultFrame = k; };
+          const CH = Tune.v("s5b_charge"), N = Math.round(Tune.v("s5b_headN")), B1 = Tune.v("s5b_beam1"), TW = Tune.v("s5b_turn"), B2 = Tune.v("s5b_beam2"), FIN = 0.9, FRZ = 0.3;
+          const g = { ev, dim: [], rest: [99, 1.4], restText: "〔狼王噴焰力竭〕", camZ: 0.1 };
+          const at = (t, fn) => { ev.push([t, fn]); ev.sort((p, q) => p[0] - q[0]); };
+          const MO = { "64_br_deep": [194, -150], "65_br_g1": [180, -250], "66_br_g2": [180, -250], "67_br_coil2": [136, -380], "68_br_lunge": [236, -286], "69_br_fire2": [236, -286], "63_br_rec": [200, -260] }; /* 嘴部座標（同 b_breath.beam） */
+          const mouth = () => { const m = MO[Boss._ultFrame] || [200, -260]; return { x: Boss.x + Boss.facing * m[0], y: Boss.y + m[1] }; };
+          const fxH = (...a) => { const n = Game.fxList.length; spawnFx(...a); const f = Game.fxList.length > n ? Game.fxList[Game.fxList.length - 1] : null; if (f) (U.fxs = U.fxs || []).push(f); return f; };
+          const bm = Stages[5].moves.b_breath.beam;
+          const beam = (dur) => {
+            const fc = Boss.facing; fr("69_br_fire2"); U.beamF = fc;
+            Game.hazardZones.push({ x: Boss.x + fc * 925, y: G, w: 1500, h: 30, duration: dur, maxDur: dur, type: "beam", damagePerSec: 260, warningTimer: 0.05, tall: true, noDraw: true });
+            const fb = () => ({ x: Boss.x + fc * (bm.mx + bm.w / 2), y: Boss.y + bm.my });
+            if (fxReady("boss5beam")) { spawnFx("boss5beam", 2, fb().x, fb().y, { w: bm.w, h: bm.h, dur: Math.max(0.3, dur - 0.4), loop: true, fps: 14, facing: fc, alpha: 0.96, follow: fb });
+              at(U.t + dur - 0.42, () => spawnFx("boss5beam", 3, fb().x, fb().y, { w: bm.w, h: bm.h, dur: 0.45, facing: fc, alpha: 0.95, follow: fb })); }
+            if (fxReady("boss5charge")) {
+              spawnFx("boss5charge", 2, Boss.x + fc * (bm.mx + 224), Boss.y + bm.my, { w: 800, dur: 0.55, facing: fc, alpha: 0.95 });
+              [420, 900, 1380].forEach((d, q) => spawnFx("boss5charge", 3, Boss.x + fc * (bm.mx + d), Boss.y + bm.my - 20, { w: 900, h: 900, dur, loop: true, fps: 7 + q, facing: q % 2 ? -fc : fc, alpha: 0.5 }));
+            }
+            screenFlash("rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); hapticBuzz([40, 20, 60]); Sound.play("execution", 0.8, 0.5); Sound.play("m_roar", 1.0, 0.85);
+            U.beamT = dur;
+          };
+          /* 背後離牆太近：先往場中挪一步，否則繞不到身後 */
+          { const s = gSide(), back = s > 0 ? Boss.x - 140 : Config.worldWidth - 140 - Boss.x;
+            if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
+          const T0 = 0.4, T1 = T0 + CH, T2 = T1 + B1 + TW, T3 = T2 + B2;
+          at(T0, () => { U.ch = true; U.hp0 = Boss.hp; U.ff0 = Boss.flashFrames || 0; U.head = 0; Boss.facing = gSide(); fr("64_br_deep");
+            Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.dim.push([T0, T1]); Sound.play("m_growl", 1.0, 0.85);
+            hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後，或跳起砍頭 ${N} 下打斷　甩頭回噴：再穿回前面　魔焰彈：完美招架彈回`); });
+          ["65_br_g1", "66_br_g2", "67_br_coil2"].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) fr(k); }));
+          at(T0 + 0.5, () => { if (U.stop) return; const m = mouth();
+            fxH("boss5beam", 0, m.x, m.y, { w: 340, dur: CH - 0.5, alpha: 0.95, follow: mouth });
+            fxH("boss5charge", 0, m.x, m.y, { w: 620, dur: CH - 0.5, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: mouth });
+            Sound.play("c_gather", 0.9, 0.8); Sound.play("peril", 0.8, 0.45); hapticBuzz([20, 20, 30]); });
+          at(T1 - 0.3, () => { if (U.stop) return; const m = mouth(); fxH("boss5charge", 1, m.x, m.y, { w: 460, dur: 0.3, alpha: 0.95, follow: mouth }); Sound.play("assist", 0.7, 1.6); hapticBuzz(30); });
+          at(T1, () => { if (U.stop) return; U.ch = false; Game.gDimOn = false; beam(B1); });
+          at(T1 + B1, () => { if (U.stop) return; fr("63_br_rec"); });
+          at(T1 + B1 + 0.15, () => { if (U.stop) return; /* 甩頭回噴：轉向身後重新蓄口 */
+            Boss.facing = -U.beamF; fr("67_br_coil2"); U.turn = true; const m = mouth();
+            spawnFloatingText(Boss.x, G - 470, "甩頭回噴！", "#f0abfc", 1.0); Sound.play("m_growl", 1.0, 1.1); Sound.play("peril", 0.9, 0.6);
+            if (fxReady("boss5charge")) spawnFx("boss5charge", 1, m.x, m.y, { w: 420, dur: TW - 0.15, alpha: 0.9, follow: mouth }); });
+          at(T2, () => { if (U.stop) return; U.turn = false; beam(B2); });
+          at(T3, () => { if (U.stop) return; /* 最後一下：聚氣 → 時停 → 閃光 → 吐魔焰彈 */
+            Boss.facing = gSide(); fr("67_br_coil2"); U.fin = true; Game.gDimOn = true; Game.ultDimRGB = "220, 140, 255"; g.camZ = 0.06; g.camF = 0.5; g.dim.push([T3, T3 + FIN + FRZ + 2]);
+            spawnFloatingText(Boss.x, G - 520, "魔焰獸玉・終", "#f0abfc", 1.1); Sound.play("c_gather", 1.0, 0.85); Sound.play("m_growl", 0.9, 0.8);
+            if (Tune.v("gifFx") && fxReady("gathergif")) spawnFx("gathergif", 0, mouth().x, mouth().y, { w: 520, dur: FIN, loop: true, fps: 12, seq: true, alpha: 0.85, follow: mouth });
+            else if (fxReady("boss5charge")) spawnFx("boss5charge", 0, mouth().x, mouth().y, { w: 560, dur: FIN, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: mouth });
+            if (fxReady("boss5beam")) spawnFx("boss5beam", 0, mouth().x, mouth().y, { w: 260, dur: FIN + FRZ, alpha: 0.95, follow: mouth }); });
+          at(T3 + FIN, () => { if (U.stop) return; Game.ultLock = true; Player.vx = 0; g.camZ = 0.1; hapticBuzz(30); });
+          at(T3 + FIN + FRZ, () => { if (U.stop) return; Game.ultLock = false; Sound.play("c_shing", 1.0, 0.95); screenFlash("rgba(250,235,255,0.6)", 0.5, 0.18);
+            Boss.facing = gSide(); fr("68_br_lunge"); const m = mouth(); Sound.play("m_roar", 0.9, 1.15); addTrauma(0.3);
+            guWave({ x: m.x, dir: Boss.facing, speed: 820, depth: 130, kind: "parry", dmg: 200, post: 0, noDraw: true, life: 3, fb: true, label: "【魔焰彈】",
+              onParry: (h) => { U.won = true; U.rf = { x: Player.x - h.dir * 30, y: G - 140, t: 0, dur: 0.35 }; Sound.play("c_clang_big", 1.0, 1.0); triggerHitstopMs(110); Game.slowT = 0.4; Game.slowScale = 0.35;
+                spawnFloatingText(Player.x, Player.y - 150, "〔魔焰彈折返〕", "#fde047", 1.1); } });
+            const h = GU.hz[GU.hz.length - 1]; U.fbH = h;
+            if (fxReady("boss5beam")) spawnFx("boss5beam", 0, m.x, m.y, { w: 240, dur: 3, alpha: 0.95, follow: () => U.rf ? { x: U.rf.x, y: U.rf.y } : (!h.done && GU.hz.includes(h) ? { x: h.x, y: G - 140 - Math.max(0, 0.25 - h.t) / 0.25 * 146 } : { x: -9999, y: -9999 }) });
+          });
+          const finish = () => { U.fin = false; Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.06; g.camF = 0; screenFlash("rgba(250,235,255,0.75)", 0.7, 0.35); addTrauma(0.45); triggerHitstopMs(100); };
+          const interrupt = () => { /* 砍頭 N 下：獸玉在口中爆裂 */
+            U.stop = true; U.ch = false; (U.fxs || []).forEach(f => { f.age = f.dur; f.loop = false; });
+            const m = mouth(); Game.gDimOn = false; Game.ultDim *= 0.25; screenFlash("rgba(230,170,255,0.8)", 0.7, 0.4); addTrauma(0.7); triggerHitstopMs(120); hapticBuzz([60, 30, 90]);
+            if (fxReady("boss5charge")) spawnFx("boss5charge", 1, m.x, m.y, { w: 640, dur: 0.45 });
+            if (fxReady("boss5flame")) spawnFx("boss5flame", 3, m.x, m.y + 40, { w: 560, dur: 0.8, alpha: 0.9 });
+            if (fxReady("spark")) spawnFx("spark", 3, m.x, m.y, { w: 520, dur: 0.5 });
+            Sound.play("execution", 1.0, 0.6); Sound.play("m_roar", 1.0, 1.3);
+            Boss.hp = Math.max(1, Boss.hp - 150); damageBossPosture(45, "【獸玉爆裂】架勢 +"); showBanner("獸玉爆裂", "斬　首　破　招", 1200, "#d8b4fe");
+            fr("15_hurt"); at(U.t + 0.35, () => fr("17_kneel")); g.rest = [U.t + 0.3, 3.5]; g.restText = "〔獸玉在口中爆裂・狼王重創〕";
+          };
+          g.cue = () => { /* 火柱沒有 guStrike：自訂紅圈倒數（站在會被噴到的那一側才顯示） */
+            if (U.stop) return null;
+            const side = Player.x >= Boss.x ? 1 : -1, inR = (f) => side === f && Math.abs(Player.x - Boss.x) < 1700;
+            if (U.ch && U.t > T1 - 1.0 && inR(Boss.facing)) return { tl: T1 - U.t, row: 1 };
+            if (U.turn && inR(Boss.facing)) return { tl: T2 - U.t, row: 1 };
+            return null;
+          };
+          g.tick = (dt) => {
+            gMove(U, dt);
+            if (U.fin) Game.ultDimY = mouth().y;
+            if (U.beamT > 0) { U.beamT -= dt; Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.3); }
+            if (U.ch) { /* 砍頭計數：空中砍中（扣血或受擊閃白）算一下 */
+              const ff = Boss.flashFrames || 0, hitNow = Boss.hp < U.hp0 - 0.5 || ff > U.ff0;
+              if (hitNow && Player.y < G - 100) { U.head++; const m = mouth(); if (fxReady("spark")) spawnFx("spark", 2, m.x, m.y, { w: 260, dur: 0.3 }); Sound.play("parry", 0.7, 1.2 + U.head * 0.08);
+                spawnFloatingText(m.x, m.y - 60, `砍頭 ${U.head}／${N}`, "#fde047", 1.0); if (U.head >= N) interrupt(); }
+              U.hp0 = Boss.hp; U.ff0 = ff;
+            }
+            if (U.rf) { const R = U.rf; R.t += dt; const m = mouth(), p = Math.min(1, R.t / R.dur); R.x += (m.x - R.x) * Math.min(1, dt * 14); R.y += (m.y - R.y) * Math.min(1, dt * 14);
+              if (p >= 1) { U.rf = null; finish(); /* 魔焰彈彈回狼臉 */
+                if (fxReady("boss5charge")) spawnFx("boss5charge", 1, m.x, m.y, { w: 600, dur: 0.4 }); if (fxReady("boss5flame")) spawnFx("boss5flame", 3, m.x, m.y + 40, { w: 520, dur: 0.8, alpha: 0.9 });
+                Sound.play("execution", 1.0, 0.65); Sound.play("m_roar", 1.0, 1.3); Boss.hp = Math.max(1, Boss.hp - 100); damageBossPosture(50, "【獸玉折返】架勢 +");
+                fr("16_stagger"); g.rest = [U.t + 0.1, 3.2]; g.restText = "〔獸玉反噬・狼王破防〕"; } }
+            else if (U.fbH && !U.won && !U.fbEnd && (U.fbH.done || !GU.hz.includes(U.fbH))) { U.fbEnd = true; finish(); fr("63_br_rec"); g.rest = [U.t + 0.4, 1.4]; }
+          };
+          return g;
         },
         /* 第 6 關 化血老祖「血神大法」：老祖蓄血神子（6.5 秒，月華護體＝無敵），魅月在主角另一側全力護法；
            主角要先砍魅月 3 刀打到失神 → 護體碎 → 砍老祖一刀＝打斷（老祖重創、長破綻）。期間腳下不斷冒血柱（紅圈）。沒打斷＝全場血爆（只能瞬步無敵幀躲）。 */
