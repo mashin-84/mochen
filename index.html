@@ -2493,7 +2493,8 @@
         { k: "s5b_charge", n: "獸玉蓄力（秒）", d: 2.3, min: 1.2, max: 4, s: 0.1 },
         { k: "s5b_headN", n: "獸玉：砍頭幾下打斷", d: 3, min: 1, max: 6, s: 1 },
         { k: "s5b_beam1", n: "獸玉：前噴火柱（秒）", d: 1.6, min: 0.8, max: 3, s: 0.1 },
-        { k: "s5b_sweep", n: "獸玉：橫掃回頭（秒）", d: 1.0, min: 0.5, max: 2.5, s: 0.1 },
+        { k: "s5b_sweep", n: "獸玉：橫掃回頭（秒，慢→快→慢）", d: 1.4, min: 0.6, max: 3, s: 0.1 },
+        { k: "s5b_decay", n: "獸玉：甩到身後後火焰衰弱（秒）", d: 1.0, min: 0.3, max: 2.5, s: 0.1 },
         { k: "s5b_charge2", n: "獸玉：低頭白色集氣（秒）", d: 1.4, min: 0.6, max: 3, s: 0.1 }
       ];
       const Tune = {
@@ -10064,7 +10065,7 @@ const Config = {
         g_s5b: (U) => {
           const ev = [], G = Config.groundY, fr = (k) => { Boss._ultFrame = k; };
           const CH = Tune.v("s5b_charge"), N = Math.round(Tune.v("s5b_headN")), B1 = Tune.v("s5b_beam1"), SW = Tune.v("s5b_sweep"), CH2 = Tune.v("s5b_charge2");
-          const HB = 0.4, FRZ = 0.3, DH = 0.35, UP = 0.45, A0 = 0.78, A1 = -1.05; /* 停在身後、時停、朝下打地、上甩；角度：+45° 朝下 → −60° 朝上 */
+          const DEC = Tune.v("s5b_decay"), FRZ = 0.3, DH = 0.35, UP = 0.45, A0 = 0.78, A1 = -1.05; /* DEC＝掃到身後後火焰逐漸衰弱噴完（v0.8.272）；時停、朝下打地、上甩；角度：+45° 朝下 → −60° 朝上 */
           const g = { ev, dim: [], rest: [99, 1.4], restText: "〔狼王噴焰力竭〕", camZ: 0.1 };
           const at = (t, fn) => { ev.push([t, fn]); ev.sort((p, q) => p[0] - q[0]); };
           const MO = { "64_br_deep": [194, -150], "65_br_g1": [180, -250], "66_br_g2": [180, -250], "67_br_coil2": [136, -380], "68_br_lunge": [236, -286], "69_br_fire2": [236, -286], "63_br_rec": [200, -260] }; /* 嘴部座標（同 b_breath.beam） */
@@ -10082,7 +10083,7 @@ const Config = {
           /* 背後離牆太近：先往場中挪一步，否則繞不到身後 */
           { const s = gSide(), back = s > 0 ? Boss.x - 140 : Config.worldWidth - 140 - Boss.x;
             if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
-          const T0 = 0.4, T1 = T0 + CH, TSW = T1 + B1, TS = TSW + SW + HB, TC = TS + 0.3, TF = TC + CH2 + FRZ;
+          const T0 = 0.4, T1 = T0 + CH, TSW = T1 + B1, TS = TSW + SW + DEC, TC = TS + 0.3, TF = TC + CH2 + FRZ;
           at(T0, () => { U.ch = true; U.hp0 = Boss.hp; U.ff0 = Boss.flashFrames || 0; U.head = 0; Boss.facing = gSide(); fr("64_br_deep");
             Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.dim.push([T0, T1]); Sound.play("m_growl", 1.0, 0.85);
             hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後，或跳起砍頭 ${N} 下打斷　橫掃回頭：趁火柱掃過穿回前面　白色熱線：完美招架劈開`); });
@@ -10095,7 +10096,9 @@ const Config = {
           at(T1, () => { if (U.stop) return; U.ch = false; Game.gDimOn = false; fr("69_br_fire2"); U.f0 = Boss.facing; beamOn(false, 200);
             if (fxReady("boss5charge")) spawnFx("boss5charge", 2, Boss.x + Boss.facing * 464, Boss.y - 280, { w: 800, dur: 0.55, facing: Boss.facing, alpha: 0.95 }); });
           at(TSW, () => { if (U.stop) return; U.sw = { t: 0, crossed: false }; spawnFloatingText(Boss.x, G - 480, "橫掃回頭！", "#f0abfc", 1.0); Sound.play("m_roar", 0.9, 0.95); Sound.play("peril", 0.8, 0.6); });
-          at(TS, () => { if (U.stop) return; U.sw = null; U.ov = null; beamOff(); fr("63_br_rec"); Sound.play("m_growl", 0.8, 1.2); });
+          at(TSW + SW, () => { if (U.stop) return; U.sw = null; U.ov = null; U.dec = { t: 0 }; }); /* 火焰甩到身後：這口氣慢慢噴完 */
+          at(TS, () => { if (U.stop) return; U.dec = null; beamOff(); fr("63_br_rec"); Sound.play("m_growl", 0.8, 1.25); /* 噴完：嘴邊殘煙、喘一口 */
+            const m = bmo(); if (fxReady("boss5flame")) spawnFx("boss5flame", 3, m.x, m.y + 30, { w: 360, dur: 0.9, alpha: 0.7 }); emitDust(m.x, m.y + 20, Boss.facing, 3, 0.6); });
           at(TC, () => { if (U.stop) return; /* 低頭白色集氣（大招最後一下的統一演出） */
             Boss.facing = gSide(); fr("64_br_deep"); U.fin = true; Game.gDimOn = true; Game.ultDimRGB = "225, 235, 255"; g.camZ = 0.06; g.camF = 0.5; g.dim.push([TC, TF + DH + UP + 0.4]);
             spawnFloatingText(Boss.x, G - 500, "魔焰獸玉・終", "#e0f2fe", 1.1); Sound.play("c_gather", 1.0, 0.8); Sound.play("m_growl", 0.9, 0.7);
@@ -10164,7 +10167,7 @@ const Config = {
             if (U.fin) Game.ultDimY = mouth().y;
             const B = U.bm;
             if (U.sw && B) { /* 橫掃回頭：s 由 1 → −1（cos），|s|＝火柱可見長度，過 0＝掠過鏡頭、頭轉向身後 */
-              const S = U.sw; S.t += dt; const p = Math.min(1, S.t / SW), e = p * p * (3 - 2 * p), s = Math.cos(Math.PI * e);
+              const S = U.sw; S.t += dt; const p = Math.min(1, S.t / SW), e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2, s = Math.cos(Math.PI * e); /* v0.8.272 三次方緩入緩出：起步慢 → 掠過鏡頭最快 → 甩到身後再變慢 */
               B.dir = s >= 0 ? U.f0 : -U.f0; B.L = B.Lt = 1500; Boss.facing = B.dir; /* v0.8.271 不再縮短：轉向鏡頭時火牆糊滿整面螢幕（drawTop），最濃時在幕後轉到身後 */
               const kk = Math.max(0, 1 - Math.abs(s) / 0.6); U.ov = { k: kk * kk * (3 - 2 * kk), s };
               if (U.ov.k > 0.5) { Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.55); if (!S.wh) { S.wh = true; Sound.play("c_dash_heavy", 1.0, 0.7); hapticBuzz([30, 20, 60]); } }
@@ -10173,13 +10176,15 @@ const Config = {
             }
             if (B) {
               B.L += (B.Lt - B.L) * Math.min(1, dt * 16);
-              if (B.f) { B.f.w = B.L; B.f.h = 1250 * Math.max(0.45, Math.min(1, Math.sqrt(B.L / 1500))) * (1 + (U.sw && U.ov ? U.ov.k * 1.1 : 0)); B.f.facing = B.dir; B.f.rot = B.rot * B.dir; } /* 轉向鏡頭時火柱變粗 */
-              Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.28);
-              if (B.dmg && Player.state !== "execution") { /* 水平火柱：頂天、從嘴往前 L 的範圍持續傷害（每 0.3 秒） */
+              let str = 1; if (U.dec) { U.dec.t += dt; const q = Math.min(1, U.dec.t / DEC); str = (1 - q) * (1 - q) * (0.82 + 0.18 * Math.sin(U.dec.t * 47)); B.Lt = 1500 * (0.5 + 0.5 * (1 - q)); } /* 衰弱：變細、變淡、變短、閃爍 */
+              B.str = str;
+              if (B.f) { B.f.w = B.L; B.f.h = 1250 * Math.max(0.45, Math.min(1, Math.sqrt(B.L / 1500))) * (1 + (U.sw && U.ov ? U.ov.k * 1.1 : 0)) * (0.3 + 0.7 * Math.sqrt(str)); B.f.alpha = 0.96 * (0.2 + 0.8 * Math.sqrt(str)); B.f.facing = B.dir; B.f.rot = B.rot * B.dir; } /* 轉向鏡頭時火柱變粗 */
+              Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.28 * B.str);
+              if (B.dmg && B.str > 0.2 && Player.state !== "execution") { /* 水平火柱：頂天、從嘴往前 L 的範圍持續傷害（每 0.3 秒） */
                 const m = bmo(), lo = Math.min(m.x, m.x + B.dir * B.L), hi = Math.max(m.x, m.x + B.dir * B.L);
                 if (Player.x >= lo && Player.x <= hi && Player.invulnTimer <= 0) {
                   if (!B.hb) { B.hb = true; if (ultHardBlock(130, B.dir, "【硬接火柱】")) B.k = 0.25; }
-                  B.bt -= dt; if (B.bt <= 0) { B.bt = 0.3; zoneDamage(260 * 0.3 * (B.k || 1), "身陷魔焰！"); }
+                  B.bt -= dt; if (B.bt <= 0) { B.bt = 0.3; zoneDamage(260 * 0.3 * (B.k || 1) * Math.max(0.35, B.str), "身陷魔焰！"); }
                 } else B.bt = Math.min(B.bt, 0.05);
               }
             }
