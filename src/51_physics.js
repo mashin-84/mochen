@@ -515,7 +515,7 @@
         swordGhostTick(dt); /* v0.8.259 劍影殘影 */
         for (let i = Game.afterimages.length - 1; i >= 0; i--) {
           const img = Game.afterimages[i];
-          img.alpha -= dt * 2.8;
+          img.alpha -= dt * (img.decay || 2.8); if (img.vx) img.x += img.vx * dt; if (img.vy) img.y += img.vy * dt; /* v0.8.277 殘影可漂移、可調淡出速度 */
           if (img.alpha <= 0) Game.afterimages.splice(i, 1);
         }
 
