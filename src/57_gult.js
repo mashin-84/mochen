@@ -632,10 +632,12 @@
           const g = { ev, dim: [], rest: [99, 1.4], restText: "〔狼王噴焰力竭〕", camZ: 0.1 };
           const at = (t, fn) => { ev.push([t, fn]); ev.sort((p, q) => p[0] - q[0]); };
           const MO = { "64_br_deep": [194, -150], "65_br_g1": [180, -250], "66_br_g2": [180, -250], "67_br_coil2": [136, -380], "68_br_lunge": [236, -286], "69_br_fire2": [236, -286], "63_br_rec": [200, -260] }; /* 嘴部座標（同 b_breath.beam） */
-          const mouth = () => { const m = MO[Boss._ultFrame] || [200, -260]; return { x: Boss.x + Boss.facing * m[0], y: Boss.y + m[1] }; };
+          const mouth = () => { const k = Boss._ultFrame, m = MO[k]; if (!m) return { x: Boss.x + Boss.facing * 200, y: Boss.y - 260 }; return toW(k, m); };
           const BMO = { "69_br_fire2": [236, -286], u5_turn: [196, -305], u5_firedown: [190, -169], u5_fireup: [177, -402] }; /* v0.8.273 噴射格的嘴（cut_keys 量） */
           Object.assign(MO, BMO, { u5_lowgather: [196, -152], u5_spent: [200, -250], u5_recoil: [190, -330] });
-          const bmo = () => { if (U.mo) return U.mo; const m = BMO[Boss._ultFrame] || BMO["69_br_fire2"]; return { x: Boss.x + Boss.facing * m[0], y: Boss.y + m[1] }; }; /* 火柱起點；上甩時 U.mo 在兩格嘴之間內插 */
+          const IMO = { u5_turn: 1, u5_firedown: 1, u5_fireup: 1, u5_lowgather: 1, u5_spent: 1, u5_recoil: 1 }; /* v0.8.276 新生圖格的嘴座標是原圖像素：要乘上大狼縮放 k、加 GROUND_SINK（原本沒乘，偏 5%） */
+          const toW = (k, m) => { const K = IMO[k] ? bossVis(Stages[Boss.stageId]).k : 1; return { x: Boss.x + Boss.facing * m[0] * K, y: Boss.y + (IMO[k] ? GROUND_SINK : 0) + m[1] * K }; };
+          const bmo = () => { if (U.mo) return U.mo; const k = BMO[Boss._ultFrame] ? Boss._ultFrame : "69_br_fire2"; return toW(k, BMO[k]); }; /* 火柱起點；上甩時 U.mo 在兩格嘴之間內插 */
           const fxH = (...a) => { const n = Game.fxList.length; spawnFx(...a); const f = Game.fxList.length > n ? Game.fxList[Game.fxList.length - 1] : null; if (f) (U.fxs = U.fxs || []).push(f); return f; };
           const beamOn = (white, L0) => { /* 自繪火柱：每幀改 w（長度）、facing（方向）、rot（仰俯角） */
             const m = bmo(), W5 = white && fxReady("boss5white");
@@ -780,8 +782,8 @@
                 return;
               }
               const p = Math.max(0, Math.min(1, (D.t - DH) / UP)); B.rot = A0 + (A1 - A0) * p * p;
-              { const a = BMO.u5_firedown, b = BMO.u5_fireup, SPn = getBossSprite("boss5b"), ok = SPn && SPn.imgs.u5_fireup && SPn.imgs.u5_fireup.naturalWidth; /* v0.8.273 上甩：頭由下往上，火柱起點跟著嘴移動 */
-                if (ok) { if (p > 0.45 && Boss._ultFrame !== "u5_fireup") fr("u5_fireup"); const k = p * p * (3 - 2 * p); U.mo = { x: Boss.x + Boss.facing * (a[0] + (b[0] - a[0]) * k), y: Boss.y + a[1] + (b[1] - a[1]) * k }; } }
+              { const want = B.rot > 0.3 ? "u5_firedown" : B.rot > -0.4 ? "u5_turn" : "u5_fireup"; /* v0.8.276 依光柱角度換頭：朝下 → 平噴 → 抬頭；起點＝當下那張圖的嘴（原本兩格嘴之間內插、頭卻在 45% 一次跳，光柱與頭各自往上） */
+                if (Boss._ultFrame !== want) gFrOr(want, Boss._ultFrame); U.mo = null; }
               if (B.rot > 0.06) { const m = bmo(), cx = m.x + U.f1 * ((G - m.y) / Math.tan(B.rot)); /* 光柱與地面交點 */
                 if (D.lastX == null) { D.lastX = cx; erupt(cx, true); Sound.play("b3_plunge", 0.9, 0.7); }
                 else if (Math.abs(cx - D.lastX) >= 110) { D.lastX = cx; erupt(cx, false); if ((D.n = (D.n || 0) + 1) % 2 === 0) Sound.play("b3_plunge", 0.6, 0.85 + Math.random() * 0.2); } }
