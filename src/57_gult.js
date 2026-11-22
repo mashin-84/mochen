@@ -743,7 +743,7 @@
             if (U.fin) Game.ultDimY = mouth().y;
             const B = U.bm;
             if (U.sw && B) { /* 橫掃回頭：s 由 1 → −1（cos），|s|＝火柱可見長度，過 0＝掠過鏡頭、頭轉向身後 */
-              const S = U.sw; S.t += dt; const hi = SWI * 0.5, tt = S.t; /* v0.8.274 三段：起步慢（s 1→0.6）→ 掠過鏡頭等速 CR 秒（0.6→−0.6，使用者要約 0.5 秒）→ 甩到身後變慢（−0.6→−1） */
+              const S = U.sw; S.t += dt; const hi = SWI * 0.5, tt = S.t; /* v0.8.274 三段：起步慢（s 1→0.6）→ 掠過鏡頭等速 CR 秒（0.6→−0.6，使用者調參定案 1.5 秒）→ 甩到身後變慢（−0.6→−1） */
               const s = tt < hi ? 1 - 0.4 * Math.pow(tt / hi, 2) : tt < hi + CR ? 0.6 - 1.2 * (tt - hi) / CR : -1 + 0.4 * Math.pow(1 - Math.min(1, (tt - hi - CR) / hi), 2);
               B.dir = s >= 0 ? U.f0 : -U.f0; B.L = B.Lt = 1500; Boss.facing = B.dir; /* v0.8.271 不再縮短：轉向鏡頭時火牆糊滿整面螢幕（drawTop），最濃時在幕後轉到身後 */
               const kk = Math.max(0, 1 - Math.abs(s) / 0.6); U.ov = { k: kk * kk * (3 - 2 * kk), s };

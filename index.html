@@ -2494,7 +2494,7 @@
         { k: "s5b_headN", n: "獸玉：砍頭幾下打斷", d: 3, min: 1, max: 6, s: 1 },
         { k: "s5b_beam1", n: "獸玉：前噴火柱（秒）", d: 1.6, min: 0.8, max: 3, s: 0.1 },
         { k: "s5b_sweep", n: "獸玉：橫掃起步＋收尾（秒）", d: 0.9, min: 0.4, max: 3, s: 0.1 },
-        { k: "s5b_cross", n: "獸玉：回頭掠過鏡頭（秒）", d: 0.5, min: 0.2, max: 1.5, s: 0.05 },
+        { k: "s5b_cross", n: "獸玉：回頭掠過鏡頭（秒）", d: 1.5, min: 0.2, max: 3, s: 0.05 }, /* v0.8.275 使用者調參定案 0.5→1.5 */
         { k: "s5b_decay", n: "獸玉：甩到身後後火焰衰弱（秒）", d: 1.0, min: 0.3, max: 2.5, s: 0.1 },
         { k: "s5b_charge2", n: "獸玉：低頭白色集氣（秒）", d: 1.4, min: 0.6, max: 3, s: 0.1 }
       ];
@@ -10197,7 +10197,7 @@ const Config = {
             if (U.fin) Game.ultDimY = mouth().y;
             const B = U.bm;
             if (U.sw && B) { /* 橫掃回頭：s 由 1 → −1（cos），|s|＝火柱可見長度，過 0＝掠過鏡頭、頭轉向身後 */
-              const S = U.sw; S.t += dt; const hi = SWI * 0.5, tt = S.t; /* v0.8.274 三段：起步慢（s 1→0.6）→ 掠過鏡頭等速 CR 秒（0.6→−0.6，使用者要約 0.5 秒）→ 甩到身後變慢（−0.6→−1） */
+              const S = U.sw; S.t += dt; const hi = SWI * 0.5, tt = S.t; /* v0.8.274 三段：起步慢（s 1→0.6）→ 掠過鏡頭等速 CR 秒（0.6→−0.6，使用者調參定案 1.5 秒）→ 甩到身後變慢（−0.6→−1） */
               const s = tt < hi ? 1 - 0.4 * Math.pow(tt / hi, 2) : tt < hi + CR ? 0.6 - 1.2 * (tt - hi) / CR : -1 + 0.4 * Math.pow(1 - Math.min(1, (tt - hi - CR) / hi), 2);
               B.dir = s >= 0 ? U.f0 : -U.f0; B.L = B.Lt = 1500; Boss.facing = B.dir; /* v0.8.271 不再縮短：轉向鏡頭時火牆糊滿整面螢幕（drawTop），最濃時在幕後轉到身後 */
               const kk = Math.max(0, 1 - Math.abs(s) / 0.6); U.ov = { k: kk * kk * (3 - 2 * kk), s };
