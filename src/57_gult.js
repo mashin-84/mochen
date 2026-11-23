@@ -715,8 +715,8 @@
             const img = fxSheet(real ? "boss5rubble" : "b5rockgif").img;
             ctx.save(); ctx.globalAlpha = a * (real ? 1 : 0.16); if (ph) ctx.globalCompositeOperation = "lighter";
             for (const r of R) { const w = 270 * r.s, k = real ? r.i : 10 + (r.i % 2); /* 佔位：碎石動圖第 9～11 格（地面殘煙碎石） */
-              const h = real ? w : w * 0.5625, foot = real ? 0.97 : 228 / 256;
-              ctx.save(); ctx.translate(r.x, G + 6); ctx.scale(r.f, 1); ctx.drawImage(img, (k % 4) * 256, Math.floor(k / 4) * 256, 256, 256, -w / 2, -h * foot, w, h); ctx.restore(); }
+              const h = real ? w : w * 0.5625, foot = real ? 250 / 256 : 228 / 256; /* v0.8.279 生圖碎石：地面帶在格內 y155～250，上緣比地平線高約 30px、往下延伸 */
+              ctx.save(); ctx.translate(r.x, G + (real ? 0.25 * w : 6)); ctx.scale(r.f, 1); ctx.drawImage(img, (k % 4) * 256, Math.floor(k / 4) * 256, 256, 256, -w / 2, -h * foot, w, h); ctx.restore(); }
             ctx.restore();
           };
           const erupt = (x, big) => { /* 沿地面炸出碎石（演出，不扣血） */
@@ -824,7 +824,7 @@
                 U.cp = { x: cx, y: G }; U.cpx = cx;
                 if (!U.cpFx && fxReady("boss5white")) U.cpFx = fxH("boss5white", 2, cx, groundFxY("boss5white", 2, 380), { anchor: "b", w: 380, dur: 99, loop: true, fps: 16, c0: 1, nf: 3, follow: () => ({ x: U.cpx, y: groundFxY("boss5white", 2, 380) }) }); /* v0.8.278 落點持續爆光 */
                 if (D.lastX == null) { D.lastX = cx; erupt(cx, true); rubble(cx); Sound.play("b3_plunge", 0.9, 0.7); }
-                else while (Math.abs(cx - D.lastX) >= 65) { D.lastX += Math.sign(cx - D.lastX) * 65; D.k2 = (D.k2 || 0) + 1; if (D.k2 % 2 === 0) erupt(D.lastX, false); else emitDust(D.lastX, G, U.f1 || 1, 2, 0.9); rubble(D.lastX); if ((D.n = (D.n || 0) + 1) % 3 === 0) Sound.play("b3_plunge", 0.6, 0.85 + Math.random() * 0.2); } }
+                else while (Math.abs(cx - D.lastX) >= 65) { D.lastX += Math.sign(cx - D.lastX) * 65; D.k2 = (D.k2 || 0) + 1; if (D.k2 % 2 === 0) { erupt(D.lastX, false); rubble(D.lastX); } else emitDust(D.lastX, G, U.f1 || 1, 2, 0.9); if ((D.n = (D.n || 0) + 1) % 3 === 0) Sound.play("b3_plunge", 0.6, 0.85 + Math.random() * 0.2); } }
               else killCp();
               if (D.t >= DH + UP + 0.3) { U.dn = null; U.mo = null; beamOff(); if (!U.won) { gFrOr("u5_spent", "63_br_rec"); g.rest = [U.t + 0.3, 1.5]; } }
             }
