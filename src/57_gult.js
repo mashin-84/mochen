@@ -651,14 +651,15 @@
             screenFlash(white ? "rgba(240,245,255,0.7)" : "rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); hapticBuzz([40, 20, 60]);
             Sound.play("execution", 0.8, white ? 0.7 : 0.5); Sound.play("m_roar", 1.0, white ? 0.72 : 0.85);
           };
-          const beamOff = () => { const B = U.bm; if (!B) return; if (B.f) { B.f.dur = B.f.age + 0.3; } U.bm = null; };
+          const killCp = () => { if (U.cpFx) { U.cpFx.dur = U.cpFx.age + 0.15; U.cpFx.loop = false; } U.cpFx = null; U.cp = null; };
+          const beamOff = () => { killCp(); const B = U.bm; if (!B) return; if (B.f) { B.f.dur = B.f.age + 0.3; } U.bm = null; };
           /* 背後離牆太近：先往場中挪一步，否則繞不到身後 */
           { const s = gSide(), back = s > 0 ? Boss.x - 140 : Config.worldWidth - 140 - Boss.x;
             if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
-          const T0 = 0.4, T1 = T0 + CH, TSW = T1 + B1, TS = TSW + SW + DEC, TC = TS + 0.3, TF = TC + CH2 + FRZ;
+          const PA = Tune.v("s5b_hold"), T0 = 0.4, T1 = T0 + CH, TH = T1 + B1, TSW = TH + PA + FRZ, TS = TSW + SW + DEC, TC = TS + 0.3, TF = TC + CH2 + FRZ;
           at(T0, () => { U.ch = true; U.hp0 = Boss.hp; U.ff0 = Boss.flashFrames || 0; U.head = 0; Boss.facing = gSide(); fr("64_br_deep");
             Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.dim.push([T0, T1]); Sound.play("m_growl", 1.0, 0.85);
-            hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後，或跳起砍頭 ${N} 下打斷　橫掃回頭：趁火柱掃過穿回前面　白色熱線：完美招架劈開`); });
+            hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後，或跳起砍頭 ${N} 下打斷　回頭回掃：紅圈縮到底按瞬步　白色熱線：完美招架劈開`); });
           ["65_br_g1", "66_br_g2", "67_br_coil2"].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) fr(k); }));
           at(T0 + 0.5, () => { if (U.stop) return; const m = mouth();
             fxH("boss5beam", 0, m.x, m.y, { w: 340, dur: CH - 0.5, alpha: 0.95, follow: mouth });
@@ -667,7 +668,15 @@
           at(T1 - 0.3, () => { if (U.stop) return; const m = mouth(); fxH("boss5charge", 1, m.x, m.y, { w: 460, dur: 0.3, alpha: 0.95, follow: mouth }); Sound.play("assist", 0.7, 1.6); hapticBuzz(30); });
           at(T1, () => { if (U.stop) return; U.ch = false; Game.gDimOn = false; gFrOr("u5_turn", "69_br_fire2"); U.f0 = Boss.facing; beamOn(false, 200);
             if (fxReady("boss5charge")) spawnFx("boss5charge", 2, Boss.x + Boss.facing * 464, Boss.y - 280, { w: 800, dur: 0.55, facing: Boss.facing, alpha: 0.95 }); });
-          at(TSW, () => { if (U.stop) return; U.sw = { t: 0, crossed: false }; spawnFloatingText(Boss.x, G - 480, "橫掃回頭！", "#f0abfc", 1.0); Sound.play("m_roar", 0.9, 0.95); Sound.play("peril", 0.8, 0.6); });
+          at(TH, () => { if (U.stop) return; /* v0.8.278 回頭前：暗場＋鏡頭拉近（火柱照噴、不再扣血）→ 時停 → 閃光 → 回頭；回頭掠過鏡頭那一刻＝紅（只能瞬步） */
+            if (U.bm) U.bm.dmg = false; U.hold = true; Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.camZ = 0.08; g.camF = 0.5; g.dim.push([TH, TSW]);
+            spawnFloatingText(Boss.x, G - 480, "要回頭了！", "#f0abfc", 1.0); Sound.play("m_growl", 1.0, 0.8); Sound.play("peril", 0.8, 0.6); hapticBuzz([20, 20, 30]);
+            hintOnce("gu5b3", "魔焰回掃｜紅圈縮到底（火牆蓋過你）那一刻按瞬步");
+            U.wh = guStrike({ x: Player.x, track: true, lock: 0, w: 99999, delay: PA + FRZ + SWI * 0.5 + CR * 0.5, kind: "red", dmg: 220, quiet: true, noDraw: true, label: "【魔焰回掃】" }); });
+          at(TH + PA, () => { if (U.stop) return; Game.ultLock = true; Player.vx = 0; g.camZ = 0.11; hapticBuzz(30); }); /* 時停 */
+          at(TSW, () => { if (U.stop) return; Game.ultLock = false; U.hold = false; Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.1; g.camF = 0;
+            Sound.play("c_shing", 1.0, 0.8); screenFlash("rgba(240,190,255,0.6)", 0.5, 0.2); /* 閃光＝出手訊號 */
+            U.sw = { t: 0, crossed: false }; Sound.play("m_roar", 0.9, 0.95); });
           at(TSW + SW, () => { if (U.stop) return; U.sw = null; U.ov = null; U.dec = { t: 0 }; }); /* 火焰甩到身後：這口氣慢慢噴完 */
           at(TS, () => { if (U.stop) return; U.dec = null; beamOff(); gFrOr("u5_spent", "63_br_rec"); Sound.play("m_growl", 0.8, 1.25); /* 噴完：嘴邊殘煙、喘一口 */
             const m = bmo(); if (fxReady("boss5flame")) spawnFx("boss5flame", 3, m.x, m.y + 30, { w: 360, dur: 0.9, alpha: 0.7 }); emitDust(m.x, m.y + 20, Boss.facing, 3, 0.6); });
@@ -689,7 +698,7 @@
               onFire: () => {
                 finish();
                 if (!U.won) return;
-                U.split = { t: 0, rot: U.bm ? U.bm.rot : 0 }; Game.ultLock = true; Player.vx = 0; /* 劈開光柱：光柱停在主角身上 0.6 秒 */
+                killCp(); U.split = { t: 0, rot: U.bm ? U.bm.rot : 0 }; Game.ultLock = true; Player.vx = 0; /* 劈開光柱：光柱停在主角身上 0.6 秒 */
                 Sound.play("c_clang_big", 1.0, 0.95); triggerHitstopMs(120); Game.slowT = 0.35; Game.slowScale = 0.4; spawnFloatingText(Player.x, Player.y - 160, "〔劍劈熱線〕", "#fde047", 1.2);
                 const sw = () => ({ x: Player.x + Player.facing * 30, y: Player.y - 110 });
                 if (fxReady("boss5white")) { const z = 640; fxH("boss5white", 3, sw().x, sw().y, { w: z, h: z, dur: 0.75, loop: true, fps: 14, facing: U.f1, anchor: "l", alpha: 1, rot: U.split.rot * U.f1, follow: () => { const q = sw(), r = U.split ? U.split.rot : 0; return { x: q.x - U.f1 * Math.cos(r) * z * 0.39, y: q.y - Math.sin(r) * z * 0.39 }; } }); } /* v0.8.273 生圖劍劈分流（星芒在格寬 0.39） */
@@ -698,10 +707,22 @@
             U.f1 = Boss.facing;
             hintOnce("gu5b2", "白焰熱線掃過你的那一刻：完美招架＝劍劈開光柱");
           });
+          const rubble = (x) => { if (x < 40 || x > Config.worldWidth - 40) return; (U.rub = U.rub || []).push({ x, i: Math.floor(Math.random() * 16), f: Math.random() < 0.5 ? 1 : -1, s: 0.85 + Math.random() * 0.3 }); }; /* v0.8.278 光柱經過的地面留下碎石，到大招攻擊結束才淡掉 */
+          g.draw = () => {
+            const R = U.rub; if (!R || !R.length) return;
+            const a = U.t < g.rest[0] ? 1 : Math.max(0, 1 - (U.t - g.rest[0]) / 0.6); if (a <= 0) return;
+            const real = fxReady("boss5rubble"), ph = !real && fxReady("b5rockgif"); if (!real && !ph) return;
+            const img = fxSheet(real ? "boss5rubble" : "b5rockgif").img;
+            ctx.save(); ctx.globalAlpha = a * (real ? 1 : 0.16); if (ph) ctx.globalCompositeOperation = "lighter";
+            for (const r of R) { const w = 270 * r.s, k = real ? r.i : 10 + (r.i % 2); /* 佔位：碎石動圖第 9～11 格（地面殘煙碎石） */
+              const h = real ? w : w * 0.5625, foot = real ? 0.97 : 228 / 256;
+              ctx.save(); ctx.translate(r.x, G + 6); ctx.scale(r.f, 1); ctx.drawImage(img, (k % 4) * 256, Math.floor(k / 4) * 256, 256, 256, -w / 2, -h * foot, w, h); ctx.restore(); }
+            ctx.restore();
+          };
           const erupt = (x, big) => { /* 沿地面炸出碎石（演出，不扣血） */
             if (x < 60 || x > Config.worldWidth - 60) return;
             emitDust(x, G, -1, 3, big ? 1.8 : 1.3); emitDust(x, G, 1, 3, big ? 1.8 : 1.3);
-            if (fxReady("b5rockgif")) { const w = big ? 720 : 520; spawnFx("b5rockgif", 0, x, groundFxY("b5rockgif", 0, w * 0.5625), { anchor: "b", w, h: w * 0.5625, dur: 0.95, seq: true, facing: Math.random() < 0.5 ? 1 : -1 }); } /* v0.8.273 生圖碎石炸裂 */
+            if (fxReady("b5rockgif")) { const w = big ? 720 : 420; spawnFx("b5rockgif", 0, x, groundFxY("b5rockgif", 0, w * 0.5625), { anchor: "b", w, h: w * 0.5625, dur: 0.95, seq: true, facing: Math.random() < 0.5 ? 1 : -1 }); } /* v0.8.273 生圖碎石炸裂 */
             else if (fxReady("heavyhit")) spawnFx("heavyhit", big ? 3 : 2, x, groundFxY("heavyhit", big ? 3 : 2, big ? 520 : 380), { anchor: "b", w: big ? 520 : 380, dur: 0.55, facing: U.f1 || 1 });
             if (big && fxReady("boss5white")) spawnFx("boss5white", 2, x, groundFxY("boss5white", 2, 520), { anchor: "b", w: 520, dur: 0.5 }); /* 打地爆光 */
             else if (fxReady("wolf2") && !fxReady("b5rockgif")) spawnFx("wolf2", 3, x, groundFxY("wolf2", 3, big ? 460 : 320), { anchor: "b", w: big ? 460 : 320, dur: 0.45 });
@@ -722,29 +743,40 @@
             if (U.stop) return null;
             const side = Player.x >= Boss.x ? 1 : -1, near = Math.abs(Player.x - Boss.x) < 1700;
             if (U.ch && U.t > T1 - 1.0 && near && side === Boss.facing) return { tl: T1 - U.t, row: 1 };
-            if (U.sw && !U.sw.crossed && near && side === -U.f0) return { tl: TSW + SWI * 0.5 + CR * 0.5 - U.t + 0.08, row: 1 };
             return null;
           };
-          g.drawTop = () => { /* v0.8.271 橫掃回頭掠過鏡頭：一面火牆從前方往身後橫掃過整面螢幕（螢幕座標；紅圈倒數畫在它上面） */
-            const O = U.ov; if (!O || O.k < 0.01 || !U.sw) return;
-            const cv = ctx.canvas, W = cv.width, H = cv.height, cx = W / 2 + U.f0 * O.s * W * 2.2, ww = W * 1.7, x0 = cx - ww / 2; /* 從前方那側掃進、身後那側掃出（s：0.6→−0.6） */
-            ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-            const gr = ctx.createLinearGradient(x0, 0, x0 + ww, 0);
-            gr.addColorStop(0, "rgba(90, 10, 90, 0)"); gr.addColorStop(0.22, "rgba(120, 20, 120, 0.85)"); gr.addColorStop(0.5, "rgba(255, 140, 225, 0.95)"); gr.addColorStop(0.78, "rgba(120, 20, 120, 0.85)"); gr.addColorStop(1, "rgba(90, 10, 90, 0)");
-            ctx.globalAlpha = O.k * (fxReady("b5washgif") ? 0.55 : 1); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
-            if (fxReady("b5washgif")) { /* v0.8.273 生圖火牆（GIF 16 格：左進右出）：s 0.6→−0.6 對應第 0→15 格；噴火方向朝右時左右翻轉 */
-              const img = fxSheet("b5washgif").img, idx = Math.max(0, Math.min(15, Math.floor((0.6 - O.s) / 1.2 * 16)));
-              ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Math.min(1, 0.35 + O.k);
-              ctx.translate(U.f0 > 0 ? W : 0, 0); ctx.scale(U.f0 > 0 ? -1 : 1, 1); ctx.drawImage(img, (idx % 4) * 256, Math.floor(idx / 4) * 256, 256, 256, 0, 0, W, H);
-            } else if (fxReady("boss5beam")) { const img = fxSheet("boss5beam").img, c0 = Math.floor(performance.now() / 70);
-              ctx.globalCompositeOperation = "lighter";
-              for (let i = 0; i < 3; i++) { const c = (c0 + i) % 4, y = H * (0.2 + 0.32 * i);
-                ctx.save(); ctx.globalAlpha = O.k * 0.85; ctx.translate(x0 + (i % 2 ? ww : 0), y); ctx.scale(i % 2 ? -1 : 1, 1); ctx.drawImage(img, c * 256, 2 * 256, 256, 256, 0, -H * 0.9, ww, H * 1.8); ctx.restore(); } }
-            ctx.restore();
+          g.drawTop = () => { /* v0.8.271 橫掃回頭掠過鏡頭：一面火牆從前方往身後橫掃過整面螢幕（螢幕座標；紅圈倒數畫在它上面）；v0.8.278 畫到離屏畫布，主角周圍挖半透明洞 */
+            const O = U.ov, T = ctx.getTransform();
+            if (O && O.k >= 0.01 && U.sw) {
+              const cv = ctx.canvas, W = cv.width, H = cv.height, cx = W / 2 + U.f0 * O.s * W * 2.2, ww = W * 1.7, x0 = cx - ww / 2; /* 從前方那側掃進、身後那側掃出（s：0.6→−0.6） */
+              const oc = U.oc || (U.oc = document.createElement("canvas")); if (oc.width !== W || oc.height !== H) { oc.width = W; oc.height = H; }
+              const c = oc.getContext("2d"); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; c.clearRect(0, 0, W, H);
+              const gr = c.createLinearGradient(x0, 0, x0 + ww, 0);
+              gr.addColorStop(0, "rgba(90, 10, 90, 0)"); gr.addColorStop(0.22, "rgba(120, 20, 120, 0.85)"); gr.addColorStop(0.5, "rgba(255, 140, 225, 0.95)"); gr.addColorStop(0.78, "rgba(120, 20, 120, 0.85)"); gr.addColorStop(1, "rgba(90, 10, 90, 0)");
+              c.globalAlpha = O.k * (fxReady("b5washgif") ? 0.55 : 1); c.fillStyle = gr; c.fillRect(0, 0, W, H);
+              if (fxReady("b5washgif")) { /* v0.8.273 生圖火牆（GIF 16 格：左進右出）：s 0.6→−0.6 對應第 0→15 格；噴火方向朝右時左右翻轉 */
+                const img = fxSheet("b5washgif").img, idx = Math.max(0, Math.min(15, Math.floor((0.6 - O.s) / 1.2 * 16)));
+                c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = Math.min(1, 0.35 + O.k);
+                c.translate(U.f0 > 0 ? W : 0, 0); c.scale(U.f0 > 0 ? -1 : 1, 1); c.drawImage(img, (idx % 4) * 256, Math.floor(idx / 4) * 256, 256, 256, 0, 0, W, H); c.restore();
+              } else if (fxReady("boss5beam")) { const img = fxSheet("boss5beam").img, c0 = Math.floor(performance.now() / 70);
+                c.globalCompositeOperation = "lighter";
+                for (let i = 0; i < 3; i++) { const cc = (c0 + i) % 4, y = H * (0.2 + 0.32 * i);
+                  c.save(); c.globalAlpha = O.k * 0.85; c.translate(x0 + (i % 2 ? ww : 0), y); c.scale(i % 2 ? -1 : 1, 1); c.drawImage(img, cc * 256, 2 * 256, 256, 256, 0, -H * 0.9, ww, H * 1.8); c.restore(); } }
+              { const q = T.transformPoint(new DOMPoint(Player.x, Player.y - 80)), r = 170 * T.a; /* 主角周圍挖洞：中心只留 30% 火 */
+                c.globalCompositeOperation = "destination-out"; c.globalAlpha = 1; const hg = c.createRadialGradient(q.x, q.y, 0, q.x, q.y, r);
+                hg.addColorStop(0, "rgba(0,0,0,0.7)"); hg.addColorStop(0.6, "rgba(0,0,0,0.55)"); hg.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = hg; c.fillRect(q.x - r, q.y - r, r * 2, r * 2); }
+              ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(oc, 0, 0); ctx.restore();
+            }
+            const w = U.wh; /* v0.8.278 回頭前就在主角身上亮紅圈（最後 0.35 秒交給標準縮圈倒數） */
+            if (w && !w.done && GU.hz.includes(w) && w.delay - w.t > 0.35) {
+              const pu = 0.5 + 0.5 * Math.sin(performance.now() / 90);
+              ctx.save(); ctx.strokeStyle = `rgba(248, 113, 113, ${0.55 + 0.35 * pu})`; ctx.lineWidth = 5; ctx.shadowColor = "#ef4444"; ctx.shadowBlur = 14;
+              ctx.beginPath(); ctx.arc(Player.x, Player.y - 70, 78 + 6 * pu, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+            }
           };
           g.tick = (dt) => {
             gMove(U, dt);
-            if (U.fin) Game.ultDimY = mouth().y;
+            if (U.fin) Game.ultDimY = mouth().y; else if (U.hold) Game.ultDimY = bmo().y;
             const B = U.bm;
             if (U.sw && B) { /* 橫掃回頭：s 由 1 → −1（cos），|s|＝火柱可見長度，過 0＝掠過鏡頭、頭轉向身後 */
               const S = U.sw; S.t += dt; const hi = SWI * 0.5, tt = S.t; /* v0.8.274 三段：起步慢（s 1→0.6）→ 掠過鏡頭等速 CR 秒（0.6→−0.6，使用者調參定案 1.5 秒）→ 甩到身後變慢（−0.6→−1） */
@@ -763,10 +795,12 @@
               Game.camera.trauma = Math.max(Game.camera.trauma || 0, 0.28 * B.str);
               if (B.dmg && B.str > 0.2 && Player.state !== "execution") { /* 水平火柱：頂天、從嘴往前 L 的範圍持續傷害（每 0.3 秒） */
                 const m = bmo(), lo = Math.min(m.x, m.x + B.dir * B.L), hi = Math.max(m.x, m.x + B.dir * B.L);
-                if (Player.x >= lo && Player.x <= hi && Player.invulnTimer <= 0) {
-                  if (!B.hb) { B.hb = true; if (ultHardBlock(130, B.dir, "【硬接火柱】")) B.k = 0.25; }
-                  B.bt -= dt; if (B.bt <= 0) { B.bt = 0.3; zoneDamage(260 * 0.3 * (B.k || 1) * Math.max(0.35, B.str), "身陷魔焰！"); }
-                } else B.bt = Math.min(B.bt, 0.05);
+                B.hc = Math.max(0, (B.hc || 0) - dt);
+                if (Player.x >= lo && Player.x <= hi && Player.invulnTimer <= 0 && !(Player.hurtInv > 0) && B.hc <= 0) { /* v0.8.278 碰到火柱＝正式受擊：硬直、往火外擊飛 */
+                  B.hc = 0.7; const kd = Player.x >= m.x ? 1 : -1;
+                  if (ultHardBlock(120, kd, "【硬接火柱】")) Player.vx = kd * 520;
+                  else { takeDamage(bossDmg(120), kd, "【魔焰灼身】"); Player.vx = kd * 900; Player.vy = Math.min(Player.vy || 0, -380); }
+                }
               }
             }
             if (U.dn && B) { /* 白色光焰柱：朝下打地 DH 秒 → 上甩 UP 秒（角度 A0→A1，二次加速）；沿地面炸碎石 */
@@ -787,8 +821,11 @@
               { const want = B.rot > 0.3 ? "u5_firedown" : B.rot > -0.25 ? "u5_turn" : "u5_fireup"; /* v0.8.276 依光柱角度換頭：朝下 → 平噴 → 抬頭；起點＝當下那張圖的嘴（原本兩格嘴之間內插、頭卻在 45% 一次跳，光柱與頭各自往上） */
                 if (Boss._ultFrame !== want) { ghost("#e0e7ff", 2, -24, -60, 140, 2.0); gFrOr(want, Boss._ultFrame); } U.mo = null; } /* 抬頭：舊姿勢殘影往下、往後沉 */
               if (B.rot > 0.06) { const m = bmo(), cx = m.x + U.f1 * ((G - m.y) / Math.tan(B.rot)); /* 光柱與地面交點 */
-                if (D.lastX == null) { D.lastX = cx; erupt(cx, true); Sound.play("b3_plunge", 0.9, 0.7); }
-                else if (Math.abs(cx - D.lastX) >= 110) { D.lastX = cx; erupt(cx, false); if ((D.n = (D.n || 0) + 1) % 2 === 0) Sound.play("b3_plunge", 0.6, 0.85 + Math.random() * 0.2); } }
+                U.cp = { x: cx, y: G }; U.cpx = cx;
+                if (!U.cpFx && fxReady("boss5white")) U.cpFx = fxH("boss5white", 2, cx, groundFxY("boss5white", 2, 380), { anchor: "b", w: 380, dur: 99, loop: true, fps: 16, c0: 1, nf: 3, follow: () => ({ x: U.cpx, y: groundFxY("boss5white", 2, 380) }) }); /* v0.8.278 落點持續爆光 */
+                if (D.lastX == null) { D.lastX = cx; erupt(cx, true); rubble(cx); Sound.play("b3_plunge", 0.9, 0.7); }
+                else while (Math.abs(cx - D.lastX) >= 65) { D.lastX += Math.sign(cx - D.lastX) * 65; D.k2 = (D.k2 || 0) + 1; if (D.k2 % 2 === 0) erupt(D.lastX, false); else emitDust(D.lastX, G, U.f1 || 1, 2, 0.9); rubble(D.lastX); if ((D.n = (D.n || 0) + 1) % 3 === 0) Sound.play("b3_plunge", 0.6, 0.85 + Math.random() * 0.2); } }
+              else killCp();
               if (D.t >= DH + UP + 0.3) { U.dn = null; U.mo = null; beamOff(); if (!U.won) { gFrOr("u5_spent", "63_br_rec"); g.rest = [U.t + 0.3, 1.5]; } }
             }
             if (U.ch) { /* 砍頭計數：空中砍中（扣血或受擊閃白）算一下 */
