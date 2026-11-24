@@ -562,7 +562,7 @@
             if (fxReady("boss5shadow")) spawnFx("boss5shadow", 2, x, groundFxY("boss5shadow", 2, big ? 560 : 440), { anchor: "b", w: big ? 560 : 440, dur: 0.5, add: false, alpha: 0.85 }); }; /* 撲落墨濺 */
           const coil = () => { fr("48_sp_coil"); Boss.y = G; Boss.facing = gSide(); Sound.play("w_snarl", 0.7, 1.15); };
           const rise = (x1, y1, dur) => { fr("49_sp_rise"); Boss._ultAir = true; if (fxReady("boss5shadow")) spawnFx("boss5shadow", 3, Boss.x, groundFxY("boss5shadow", 3, 380), { anchor: "b", w: 380, dur: 0.55, add: false, alpha: 0.8 }); /* 化影竄起 */ mv(x1, y1, dur, y1 < G - 600 ? "in" : "out", true); Sound.play("w_claw", 0.8, 0.9); emitDust(Boss.x, G, -Boss.facing, 3, 1.0); };
-          ev.push([0.05, () => { fr("59_s_howl"); Sound.play("w_howl", 0.8, 1.15); hintOnce("gu5a", "幽影噬月｜地上黑影＝落點：前兩撲移動或瞬步　第三撲完美招架"); }]);
+          ev.push([0.05, () => { fr("59_s_howl"); Sound.play("w_howl", 0.8, 1.15); hintOnce("gu5a", "幽影噬月｜地上黑影＝落點：前兩撲移動或瞬步　第三撲（黃圈跟著你）：瞬步閃開或完美招架"); }]);
           const pounce = (t0, i) => {
             at(t0, coil);
             at(t0 + 0.15, () => {
@@ -584,10 +584,10 @@
             const fo = () => ({ x: Boss.x, y: Boss.y - 60 });
             if (Tune.v("gifFx") && fxReady("gathergif")) spawnFx("gathergif", 0, fo().x, fo().y, { w: 420, dur: 0.32 + FIN, loop: true, fps: 12, seq: true, alpha: 0.8, follow: fo });
             else if (fxReady("boss5charge")) spawnFx("boss5charge", 0, fo().x, fo().y, { w: 460, dur: 0.32 + FIN, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.85, follow: fo });
-            const h = guStrike({ x: Player.x, track: true, lock: FRZ + DV + 0.02, w: 240, delay: 0.32 + FIN + FRZ + DV, kind: "parry", dmg: 220, post: 30, dodgePlain: true, shadow: true, quiet: true, label: "【幽影噬月】",
+            const h = guStrike({ x: Player.x, track: true, lock: 0, w: 240, chase: true, /* v0.8.281 落點一路跟著主角（原本撲下前 0.62 秒鎖定，走開就躲掉）：只能瞬步或格擋 */ delay: 0.32 + FIN + FRZ + DV, kind: "parry", dmg: 220, post: 30, dodgePlain: true, shadow: true, quiet: true, label: "【幽影噬月】",
               onParry: () => { U.won = true; },
               onFire: (hh) => {
-                U.mv = null; U.fin = false; Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.06; g.camF = 0; screenFlash("rgba(245,235,255,0.75)", 0.7, 0.35); addTrauma(0.45); triggerHitstopMs(100); /* 暗場瞬間放開＋亮暗閃 */
+                U.mv = null; U.dive = false; U.fin = false; Game.gDimOn = false; Game.ultDim *= 0.25; g.camZ = 0.06; g.camF = 0; screenFlash("rgba(245,235,255,0.75)", 0.7, 0.35); addTrauma(0.45); triggerHitstopMs(100); /* 暗場瞬間放開＋亮暗閃 */
                 if (U.won) { /* 完美招架：小狼被彈飛、摔地破綻 */
                   const d = -Boss.facing; gFrOr("u5_knock", "15_hurt"); Boss._ultAir = true; mv(gClampX(Boss.x + d * 320), G, 0.45, "arc", true); /* 往俯衝的反方向彈開 */
                   damageBossPosture(35, "【彈飛幽影】架勢 +"); Sound.play("c_clang_big", 1.0, 1.1); Sound.play("w_yelp", 1.0, 0.95); Game.slowT = 0.35; Game.slowScale = 0.35; triggerHitstopMs(120); addTrauma(0.6);
@@ -596,8 +596,7 @@
                   g.rest = [U.t + 0.5, 3.0]; g.restText = "〔小狼被彈飛・摔地破綻〕";
                 } else { /* 沒擋或閃開：落地震出左右矮波 */
                   Boss.x = gClampX(hh.x); Boss._ultAir = false; fr("51_sp_land"); landFx(Boss.x, true); Sound.play("m_stomp", 0.7, 1.35); Boss.facing = gSide();
-                  const ink = fxReady("boss5shadow"); /* v0.8.274 震波改水墨墨濺沿地面竄（原本程式畫的黃色方塊）、射程約 680px */
-                  U.wv = [1, -1].map(d => { guWave({ x: hh.x, dir: d, low: true, kind: "parry", speed: 760, dmg: 110, life: 0.9, noDraw: ink, label: "【落地震波】" }); const w = GU.hz[GU.hz.length - 1]; w.lx = hh.x; return w; });
+                                    U.wv = [1, -1].map(d => ({ x: hh.x, dir: d, lx: hh.x, t: 0 })); /* v0.8.281 墨濺震波只剩演出、不扣血（落點跟著主角後，震波從主角腳下發出，瞬步閃過後必中，不合理） */
                   at(U.t + 0.6, () => fr("17_kneel")); g.rest = [U.t + 0.6, 1.8];
                 }
               } });
@@ -605,14 +604,15 @@
             at(U.t + 0.32 + FIN, () => { U.hover = null; U.mv = null; Game.ultLock = true; Player.vx = 0; g.camZ = 0.12; hapticBuzz(30); }); /* 時停：懸在空中 */
             at(U.t + 0.32 + FIN + FRZ, () => { Game.ultLock = false; Sound.play("c_shing", 1.0, 1.05); screenFlash("rgba(245,235,255,0.6)", 0.5, 0.18); /* 閃光＝出手訊號 */
               if (fxReady("spark")) spawnFx("spark", 2, Boss.x, Boss.y - 60, { w: 340, dur: 0.3 });
-              Boss.facing = h.x >= Boss.x ? 1 : -1; gFrOr("u5_dive", "50_sp_dive"); mv(gClampX(h.x - Boss.facing * 40), G, DV, "in", true); Sound.play("w_bark", 1.0, 0.9); });
+              Boss.facing = h.x >= Boss.x ? 1 : -1; gFrOr("u5_dive", "50_sp_dive"); mv(gClampX(h.x - Boss.facing * 40), G, DV, "in", true); U.dive = true; Sound.play("w_bark", 1.0, 0.9); });
           });
           g.tick = (dt) => {
             gMove(U, dt);
+            { const F = GU.hz.find(q => q.chase && !q.done); if (F) { F.x = Player.x; if (U.mv && U.dive) U.mv.x1 = gClampX(F.x - Boss.facing * 40); } } /* 俯衝途中也追著主角改落點 */
             if (U.hover) { const s = Boss.x <= U.hover.x ? 1 : -1; Boss.facing = s; Boss.x += (gClampX(U.hover.x - s * 90) - Boss.x) * Math.min(1, dt * 4); Boss.y = G - HV + Math.sin(U.t * 7) * 8; }
             if (U.fin) Game.ultDimY = Boss.y - 60;
-            if (U.wv && fxReady("boss5shadow")) for (const w of U.wv) { /* 落地震波：波頭每 95px 炸一朵墨濺 */
-              if (!GU.hz.includes(w) || Math.abs(w.x - w.lx) < 95) continue; w.lx = w.x;
+            if (U.wv && fxReady("boss5shadow")) for (const w of U.wv) { /* 落地墨濺：波頭每 95px 炸一朵（演出） */
+              w.t += dt; w.x += w.dir * 760 * dt; if (w.t > 0.9 || Math.abs(w.x - w.lx) < 95) continue; w.lx = w.x;
               spawnFx("boss5shadow", 2, w.x, groundFxY("boss5shadow", 2, 300), { anchor: "b", w: 300, dur: 0.45, add: false, alpha: 0.8, facing: w.dir }); emitDust(w.x, Config.groundY, w.dir, 2, 0.8);
             }
           };
