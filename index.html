@@ -2490,6 +2490,9 @@
         { k: "s4_swGap", n: "天劍每下間隔（秒）", d: 0.8, min: 0.5, max: 1.4, s: 0.05 },
         { g: "第 5 關大招【幽影噬月／魔焰獸玉】" },
         { k: "s5a_fin", n: "噬月第三撲：懸空聚氣（秒）", d: 0.9, min: 0.4, max: 2, s: 0.1 },
+        { k: "s5a_fake", n: "噬月偷襲：落地後假裝收招（秒）", d: 0.9, min: 0.3, max: 2.5, s: 0.1 },
+        { k: "s5a_tell", n: "噬月偷襲：抬頭低吼預兆（秒）", d: 0.35, min: 0.15, max: 1, s: 0.05 },
+        { k: "s5a_wspd", n: "噬月偷襲：墨濺震波速度", d: 760, min: 300, max: 1400, s: 20 },
         { k: "s5b_charge", n: "獸玉蓄力（秒）", d: 2.3, min: 1.2, max: 4, s: 0.1 },
         { k: "s5b_beam1", n: "獸玉：前噴火柱（秒）", d: 1.6, min: 0.8, max: 3, s: 0.1 },
         { k: "s5b_sweep", n: "獸玉：橫掃起步＋收尾（秒）", d: 0.9, min: 0.4, max: 3, s: 0.1 },
@@ -10048,10 +10051,17 @@ const Config = {
                   spawnFloatingText(Player.x, Player.y - 150, "〔看破幽影〕", "#fde047", 1.2);
                   at(U.t + 0.45, () => { Boss._ultAir = false; landFx(Boss.x, true); gFrOr("u5_crash", "16_stagger"); });
                   g.rest = [U.t + 0.5, 3.0]; g.restText = "〔小狼被彈飛・摔地破綻〕";
-                } else { /* 沒擋或閃開：落地震出左右矮波 */
+                } else { /* 沒擋、瞬步閃過或普通格擋：落地 → 假裝收招 → 小偷襲 */
                   Boss.x = gClampX(hh.x); Boss._ultAir = false; fr("51_sp_land"); landFx(Boss.x, true); Sound.play("m_stomp", 0.7, 1.35); Boss.facing = gSide();
-                                    U.wv = [1, -1].map(d => ({ x: hh.x, dir: d, lx: hh.x, t: 0 })); /* v0.8.281 墨濺震波只剩演出、不扣血（落點跟著主角後，震波從主角腳下發出，瞬步閃過後必中，不合理） */
-                  at(U.t + 0.6, () => fr("17_kneel")); g.rest = [U.t + 0.6, 1.8];
+                  /* v0.8.282 小偷襲（使用者定案）：瞬步閃過／普通格擋／被打中 → 跪地假裝收招 → 突然抬頭低吼（預兆）→ 墨濺震波左右竄出（可跳、招架、瞬步）→ 才真正喘息；完美招架彈飛就沒有這段 */
+                  const FK = Tune.v("s5a_fake"), TL = Tune.v("s5a_tell"), WS = Tune.v("s5a_wspd"), t0 = U.t;
+                  at(t0 + 0.3, () => fr("17_kneel"));
+                  at(t0 + FK, () => { fr("59_s_howl"); Boss.facing = gSide(); Sound.play("w_snarl", 1.0, 0.9); hapticBuzz(25); /* 預兆：抬頭低吼＋腳下墨氣竄起 */
+                    if (fxReady("boss5shadow")) spawnFx("boss5shadow", 3, Boss.x, groundFxY("boss5shadow", 3, 420), { anchor: "b", w: 420, dur: TL + 0.2, add: false, alpha: 0.85 });
+                    spawnFloatingText(Boss.x, G - 260, "！", "#fde047", 0.6); });
+                  at(t0 + FK + TL, () => { const x = Boss.x; fr("51_sp_land"); landFx(x, true); Sound.play("m_stomp", 0.9, 1.2); Sound.play("w_bark", 0.9, 0.9);
+                    U.wsp = WS; U.wv = [1, -1].map(d => { guWave({ x, dir: d, low: true, kind: "parry", speed: WS, dmg: 110, life: 0.9, noDraw: fxReady("boss5shadow"), label: "【墨影偷襲】" }); return { x, dir: d, lx: x, t: 0 }; }); });
+                  at(t0 + FK + TL + 0.35, () => fr("17_kneel")); g.rest = [t0 + FK + TL + 0.35, 1.8];
                 }
               } });
             at(U.t + 0.32, () => { gFrOr("u5_hover", "23_pounce_fly"); U.hover = h; });
@@ -10066,7 +10076,7 @@ const Config = {
             if (U.hover) { const s = Boss.x <= U.hover.x ? 1 : -1; Boss.facing = s; Boss.x += (gClampX(U.hover.x - s * 90) - Boss.x) * Math.min(1, dt * 4); Boss.y = G - HV + Math.sin(U.t * 7) * 8; }
             if (U.fin) Game.ultDimY = Boss.y - 60;
             if (U.wv && fxReady("boss5shadow")) for (const w of U.wv) { /* 落地墨濺：波頭每 95px 炸一朵（演出） */
-              w.t += dt; w.x += w.dir * 760 * dt; if (w.t > 0.9 || Math.abs(w.x - w.lx) < 95) continue; w.lx = w.x;
+              w.t += dt; w.x += w.dir * (U.wsp || 760) * dt; if (w.t > 0.9 || Math.abs(w.x - w.lx) < 95) continue; w.lx = w.x;
               spawnFx("boss5shadow", 2, w.x, groundFxY("boss5shadow", 2, 300), { anchor: "b", w: 300, dur: 0.45, add: false, alpha: 0.8, facing: w.dir }); emitDust(w.x, Config.groundY, w.dir, 2, 0.8);
             }
           };
