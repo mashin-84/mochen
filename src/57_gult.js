@@ -81,7 +81,7 @@
         return best;
       }
       function gultCleanup(cancel) { /* ultEnd 呼叫 */
-        Boss._introHide = false; Boss._gImm = false; Game.ultNoFace = false; Game.gDimOn = false; Game.ultDimRGB = null;
+        Boss._introHide = false; Boss._gImm = false; Boss._xfDur = 0; Game.ultNoFace = false; Game.gDimOn = false; Game.ultDimRGB = null;
         if (cancel) GU.hz.length = 0;
         const p = Game.partner; if (p && p.state === "ultchant") { p.state = "idle"; p.cd = 3; p.kind = null; }
       }
@@ -659,8 +659,8 @@
           const MO = { "64_br_deep": [194, -150], "65_br_g1": [180, -250], "66_br_g2": [180, -250], "67_br_coil2": [136, -380], "68_br_lunge": [236, -286], "69_br_fire2": [236, -286], "63_br_rec": [200, -260] }; /* 嘴部座標（同 b_breath.beam） */
           const mouth = () => { const k = Boss._ultFrame, m = MO[k]; if (!m) return { x: Boss.x + Boss.facing * 200, y: Boss.y - 260 }; return toW(k, m); };
           const BMO = { "69_br_fire2": [236, -286], u5_turn: [196, -305], u5_firedown: [190, -169], u5_fireup: [177, -402] }; /* v0.8.273 噴射格的嘴（cut_keys 量） */
-          Object.assign(MO, BMO, { u5_lowgather: [196, -152], u5_spent: [200, -250], u5_recoil: [190, -330] });
-          const IMO = { u5_turn: 1, u5_firedown: 1, u5_fireup: 1, u5_lowgather: 1, u5_spent: 1, u5_recoil: 1 }; /* v0.8.276 新生圖格的嘴座標是原圖像素：要乘上大狼縮放 k、加 GROUND_SINK（原本沒乘，偏 5%） */
+          Object.assign(MO, BMO, { u5_lowgather: [196, -152], u5_spent: [200, -250], u5_recoil: [190, -330], u5_raise1: [194, -151], u5_raise2: [200, -144], u5_raise3: [201, -176], u5_raise4: [202, -300], u5_raise5: [209, -349], u5_raise6: [201, -369] }); /* v0.8.293 集氣抬頭 6 格（嘴裡白光位置量） */
+          const IMO = { u5_turn: 1, u5_firedown: 1, u5_fireup: 1, u5_lowgather: 1, u5_spent: 1, u5_recoil: 1, u5_raise1: 1, u5_raise2: 1, u5_raise3: 1, u5_raise4: 1, u5_raise5: 1, u5_raise6: 1 }; /* v0.8.276 新生圖格的嘴座標是原圖像素：要乘上大狼縮放 k、加 GROUND_SINK（原本沒乘，偏 5%） */
           const toW = (k, m) => { const K = IMO[k] ? bossVis(Stages[Boss.stageId]).k : 1; return { x: Boss.x + Boss.facing * m[0] * K, y: Boss.y + (IMO[k] ? GROUND_SINK : 0) + m[1] * K }; };
           const ghost = (col, n, dx, vx, vy, dec, ff) => { const im = Boss._curImg, F = ff || Boss.facing; if (!im || Game.afterimages.length > 26) return; /* v0.8.277 空洞騎士式殘影：舊姿勢的單色剪影，往動作反方向漂移淡出 */
             for (let i = 0; i < n; i++) Game.afterimages.push({ x: Boss.x + F * dx * i, y: Boss.y, w: Boss.w, h: Boss.h, alpha: 0.6 / (1 + i * 0.7), spr: im, s: bossVis(Stages[Boss.stageId]).k, f: F, color: col, by: 40, vx: F * vx, vy, decay: dec }); };
@@ -689,10 +689,12 @@
           { const s = gSide(), back = s > 0 ? Boss.x - 140 : Config.worldWidth - 140 - Boss.x;
             if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
           const PA = Tune.v("s5b_hold"), T0 = 0.4, T1 = T0 + CH, TH = T1 + B1, TSW = TH + PA + FRZ, TS = TSW + SW + DEC, TC = TS + 0.3, TF = TC + CH2 + FRZ;
-          at(T0, () => { U.ch = true; Boss.facing = gSide(); gFrOr("u5_lowgather", "64_br_deep"); /* v0.8.292 64／65／66 原圖嘴尖被切成直線（早期切圖），改用完整的新生圖格 */
+          const R6 = (() => { const SPn = getBossSprite("boss5b"); return SPn && SPn.imgs.u5_raise6 && SPn.imgs.u5_raise6.naturalWidth; })(); /* v0.8.293 有抬頭 6 格就用 */
+          at(T0, () => { U.ch = true; Boss.facing = gSide(); if (R6) { fr("u5_raise1"); Boss._xfDur = 260; } else gFrOr("u5_lowgather", "64_br_deep"); /* v0.8.292 64／65／66 原圖嘴尖被切成直線（早期切圖），改用完整的新生圖格 */
             Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.dim.push([T0, T1]); Sound.play("m_growl", 1.0, 0.85);
             hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後躲　回頭回掃：紅圈縮到底按瞬步　白色熱線：完美招架劈開`); });
-          [["u5_lowgather", "65_br_g1"], ["u5_turn", "66_br_g2"], ["67_br_coil2", "67_br_coil2"]].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) gFrOr(k[0], k[1]); }));
+          if (R6) [2, 3, 4, 5, 6].forEach((n, i) => at(T0 + CH * (i + 1) / 6, () => { if (!U.stop) fr("u5_raise" + n); })); /* 6 格平均、每次換格 0.26 秒疊化 */
+          else [["u5_lowgather", "65_br_g1"], ["u5_turn", "66_br_g2"], ["67_br_coil2", "67_br_coil2"]].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) gFrOr(k[0], k[1]); }));
           const orbAt = () => { const B = U.bm, q = B ? bmo() : mouth(), d = B ? B.dir : Boss.facing; return { x: q.x + d * 70, y: q.y }; }; /* v0.8.287 魔焰球：嘴前 70px（不蓋狼頭） */
           at(T0 + 0.5, () => { if (U.stop) return; const m = mouth();
             if (fxReady("b5gathergif")) { /* v0.8.287 GIF 集氣（prompts/5/20）；播到 78% 時接上「集滿脈動」循環（最後 4 格），一路留到火柱噴完 */
@@ -703,7 +705,7 @@
             fxH("boss5charge", 0, m.x, m.y, { w: 620, dur: CH - 0.5, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: mouth }); }
             Sound.play("c_gather", 0.9, 0.8); Sound.play("peril", 0.8, 0.45); hapticBuzz([20, 20, 30]); });
           at(T1 - 0.3, () => { if (U.stop) return; const m = mouth(); fxH("boss5charge", 1, m.x, m.y, { w: 460, dur: 0.3, alpha: 0.95, follow: mouth }); Sound.play("assist", 0.7, 1.6); hapticBuzz(30); });
-          at(T1, () => { if (U.stop) return; U.ch = false; Game.gDimOn = false; gFrOr("u5_turn", "69_br_fire2"); U.f0 = Boss.facing; beamOn(false, 200);
+          at(T1, () => { Boss._xfDur = 0; if (U.stop) return; U.ch = false; Game.gDimOn = false; gFrOr("u5_turn", "69_br_fire2"); U.f0 = Boss.facing; beamOn(false, 200);
             if (fxReady("boss5charge")) spawnFx("boss5charge", 2, Boss.x + Boss.facing * 464, Boss.y - 280, { w: 800, dur: 0.55, facing: Boss.facing, alpha: 0.95 }); });
           at(TH, () => { if (U.stop) return; /* v0.8.278 回頭前：暗場＋鏡頭拉近（火柱照噴、不再扣血）→ 時停 → 閃光 → 回頭；回頭掠過鏡頭那一刻＝紅（只能瞬步） */
             if (U.bm) U.bm.dmg = false; U.hold = true; Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.camZ = 0.08; g.camF = 0.5; g.dim.push([TH, TSW]);

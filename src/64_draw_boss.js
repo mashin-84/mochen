@@ -408,8 +408,9 @@
             ctx.globalAlpha = keepA; ctx.filter = keepF;
           }
           ctx.drawImage(bossImg, -450, -560);
-          if (BOSS_XF.prev && !Boss._ilDraw && BOSS_XF.prev !== bossImg && performance.now() - BOSS_XF.t < 70) {
-            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * 0.55 * (1 - (performance.now() - BOSS_XF.t) / 70); ctx.drawImage(BOSS_XF.prev, -450, -560); ctx.globalAlpha = ga;
+          { const XD = Boss._xfDur || 70; /* v0.8.293 Boss._xfDur：大招指定較長的完整疊化（第 5 關集氣抬頭 260ms） */
+          if (BOSS_XF.prev && !Boss._ilDraw && BOSS_XF.prev !== bossImg && performance.now() - BOSS_XF.t < XD) {
+            const ga = ctx.globalAlpha; ctx.globalAlpha = ga * (Boss._xfDur ? 1 : 0.55) * (1 - (performance.now() - BOSS_XF.t) / XD); ctx.drawImage(BOSS_XF.prev, -450, -560); ctx.globalAlpha = ga; }
           }
           if (!Boss._ilDraw && !deathRot) { const hy = Boss.y + GROUND_SINK - (560 - opaqueTop(bossImg)) * bossK; Boss._headY = Boss._headY == null ? hy : Boss._headY + (hy - Boss._headY) * 0.25; } /* v0.8.84 頭頂高度（平滑，換格不跳） */
           
