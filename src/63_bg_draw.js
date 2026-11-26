@@ -224,28 +224,49 @@
         drawThreatMarker(m);
       }
 
-      /* v0.8.187 連擊段數提示（程式畫，待換生圖）：頭上 N 道爪痕／刀痕，起手時全亮，出一下滅一下；最後一下放大 */
+      /* v0.8.187 連擊段數提示：頭上 N 道痕，起手時全亮，出一下少一道；最後一道放大。
+         v0.8.284 生圖版（prompts/common/2、3）：依 Boss 武器換圖案（pips_a：0 戟、2 劍；pips_b：0 重劍、2 爪），亮著播循環列、出一下播碎裂列（下一列）；霸體藍＝同圖調色。第 6～9 關沒對應圖時退回程式斜線。 */
+      const PIPS = { used: [], x0: 0, y: 0, n: 0, gap: 0, art: null, armor: false };
+      function pipArt() {
+        const s = Boss.stageId, st = Boss.stance;
+        const a = s === 1 ? ["pips_a", 0] : s === 2 || s === 4 ? ["pips_a", 2] : s === 3 ? (st === "B" ? ["pips_b", 0] : ["pips_a", 2]) : s === 5 ? ["pips_b", 2] : null;
+        return a && fxReady(a[0]) ? a : null;
+      }
+      function drawPip(A, row, col, x, y, z, armor, alpha) {
+        { const r = z * 0.42, g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(24, 16, 36, ${0.42 * alpha})`); g.addColorStop(1, "rgba(24, 16, 36, 0)"); /* 墊一小團暗影：亮背景上疊加發光圖才看得清楚 */
+          ctx.save(); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.restore(); }
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha; if (armor) ctx.filter = "hue-rotate(170deg) saturate(1.6)";
+        ctx.drawImage(fxSheet(A[0]).img, col * 256, row * 256, 256, 256, x - z / 2, y - z / 2, z, z); ctx.restore();
+      }
       function drawComboPips() {
-        if (Boss.state !== "windup" && Boss.state !== "active") return;
-        const stC = Stages[Boss.stageId], m = stC && stC.moves[Boss.moveType];
-        if (!m) return;
-        const n = m.isCombo ? (m.comboTotalHits || 3) : 0;
-        if (n < 2 || Boss._ilDraw) return;
-        const left = Boss.state === "windup" ? n : Math.max(0, Boss.comboHitsLeft | 0);
-        if (Boss.state === "active" && left <= 0) return;
-        const col = m.armor ? "96,165,250" : "250,204,21", gap = 30, x0 = Boss.x - (n - 1) * gap / 2, y = Boss.y - Math.max(Boss.h, 165) - 60;
-        const t = performance.now() / 1000;
-        ctx.save();
-        ctx.lineCap = "round";
-        for (let i = 0; i < n; i++) {
-          const used = i < n - left, last = i === n - 1, x = x0 + i * gap, s = (last ? 1.35 : 1) * (used ? 0.8 : 1 + 0.08 * Math.sin(t * 14));
-          ctx.globalAlpha = used ? 0.22 : 0.95;
-          ctx.strokeStyle = used ? "rgba(203,213,225,1)" : `rgba(${col},1)`;
-          ctx.shadowColor = `rgba(${col},0.9)`; ctx.shadowBlur = used ? 0 : 10;
-          ctx.lineWidth = 5 * s;
-          ctx.beginPath(); ctx.moveTo(x - 7 * s, y - 13 * s); ctx.lineTo(x + 7 * s, y + 13 * s); ctx.stroke();
+        const now = performance.now() / 1000;
+        const busy = Boss.state === "windup" || Boss.state === "active";
+        const stC = Stages[Boss.stageId], m = busy && stC && stC.moves[Boss.moveType];
+        const n = m && m.isCombo ? (m.comboTotalHits || 3) : 0;
+        if (busy && n >= 2 && !Boss._ilDraw) {
+          if (Boss.state === "windup" && PIPS.used.length) PIPS.used = []; /* 新的連擊起手：全部重亮 */
+          const left = Boss.state === "windup" ? n : Math.max(0, Boss.comboHitsLeft | 0);
+          const A = pipArt(), gap = A ? 40 : 30;
+          PIPS.n = n; PIPS.gap = gap; PIPS.x0 = Boss.x - (n - 1) * gap / 2; PIPS.y = (Boss._headY != null ? Boss._headY : Boss.y - Math.max(Boss.h, 165)) - (A ? 46 : 60); /* v0.8.284 改用圖上頭頂（原本用碰撞框高，大圖 Boss 會壓在胸口） */ PIPS.art = A; PIPS.armor = !!m.armor;
+          for (let i = 0; i < n - left; i++) if (!PIPS.used[i]) PIPS.used[i] = now; /* 這一道剛打出：記下時間播碎裂 */
+        } else if (!PIPS.used.some(t => t && now - t < 0.4)) return; /* 招式結束：等最後一道碎完 */
+        const A = PIPS.art, n2 = PIPS.n, t = now;
+        if (!A) { /* 沒有對應生圖：程式斜線（備案） */
+          if (!busy || n < 2) return;
+          const col = PIPS.armor ? "96,165,250" : "250,204,21";
+          ctx.save(); ctx.lineCap = "round";
+          for (let i = 0; i < n2; i++) {
+            const used = !!PIPS.used[i], last = i === n2 - 1, x = PIPS.x0 + i * PIPS.gap, sc = (last ? 1.35 : 1) * (used ? 0.8 : 1 + 0.08 * Math.sin(t * 14));
+            ctx.globalAlpha = used ? 0.22 : 0.95; ctx.strokeStyle = used ? "rgba(203,213,225,1)" : `rgba(${col},1)`; ctx.shadowColor = `rgba(${col},0.9)`; ctx.shadowBlur = used ? 0 : 10; ctx.lineWidth = 5 * sc;
+            ctx.beginPath(); ctx.moveTo(x - 7 * sc, PIPS.y - 13 * sc); ctx.lineTo(x + 7 * sc, PIPS.y + 13 * sc); ctx.stroke();
+          }
+          ctx.restore(); return;
         }
-        ctx.restore();
+        for (let i = 0; i < n2; i++) {
+          const last = i === n2 - 1, x = PIPS.x0 + i * PIPS.gap, z = 58 * (last ? 1.4 : 1), u = PIPS.used[i];
+          if (!u) drawPip(A, A[1], Math.floor(t * 8 + i) % 4, x, PIPS.y, z * (1 + 0.05 * Math.sin(t * 14 + i)), PIPS.armor, last ? 1 : 0.92);
+          else { const e = t - u; if (e < 0.4) drawPip(A, A[1] + 1, Math.min(3, Math.floor(e / 0.1)), x, PIPS.y, z * 1.15, PIPS.armor, 1); }
+        }
       }
 
       /* v0.8.1 預警顏色統一：黃＝可招架、紅＝危（閃／跳／側閃）、藍＝霸體（打不斷，用蓄力重斬破、或閃開） */

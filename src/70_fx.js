@@ -99,7 +99,7 @@
         }
       }
       function initAmbient() {
-        ["slash", "air", "spark", "boss1", "boss2", "ult", "mark", "scene", "exec", "exec2", "ink", "ink2", "heavyhit", "heavyhitgif", "exec_t1", "exec_t2"].forEach(fxSheet); /* 預載，避免第一次出招沒有特效 */
+        ["slash", "air", "spark", "boss1", "boss2", "ult", "mark", "scene", "exec", "exec2", "ink", "ink2", "heavyhit", "heavyhitgif", "exec_t1", "exec_t2", "pips_a", "pips_b"].forEach(fxSheet); /* 預載，避免第一次出招沒有特效 */
         Game.leaves = []; Game.mist = [];
         if (Boss.stageId !== 1) return;
         const cx = Game.camera ? Game.camera.x : 0;
@@ -141,7 +141,7 @@
       }
       /* v0.8.4 處決特效：普通版一斬＋地面光環；極版三段斬（斜／反斜／橫貫）＋裂空＋碎光＋光環；擊殺再加光點與魂光上升 */
       function executionFx(ji) {
-        ["exec", "exec2", "ink", "exec_t1", "exec_t2"].forEach(fxSheet);
+        ["exec", "exec2", "ink", "exec_t1", "exec_t2", "pips_a", "pips_b"].forEach(fxSheet);
         const f = Player.facing, cy = () => Boss.y - 150;
         const strike = (row, w, h, dur) => spawnFx("exec", row, Boss.x, cy(), { w, h, dur, facing: f });
         const ring = (w) => spawnFx("exec2", 3, Boss.x, Config.groundY + w * 0.06, { w, dur: 0.6 });
