@@ -1,0 +1,14 @@
+第 5 關大招音效（ElevenLabs Sound Effects）4 條。檔名＝每條代號，Claude 裁切、正規化（峰值 −1.5 dBFS、單聲道 mp3）後接入 assets/sfx/。
+每條建議生 2～4 個挑最乾淨的。Prompt Influence 建議 0.6～0.7。循環音（1、2）會由 Claude 做頭尾交叉淡化。
+
+1. s5_beam_loop（3.0 秒，循環；大狼魔焰火柱持續噴射期間一直響）
+Exactly 3.0 seconds long. A continuous roaring jet of demonic flame blasting out of a giant beast's mouth, a steady powerful torrent of fire with a deep low rumble and crackling, constant intensity from start to end with no build-up and no fade, suitable for seamless looping, no animal vocal, no music, no human voice. The sound starts immediately and ends cleanly at 3.0 seconds.
+
+2. s5_ray_loop（2.0 秒，循環；白色熱線射出期間一直響）
+Exactly 2.0 seconds long. A continuous high-energy atomic heat ray beam, an intense electric searing hum with a bright crackling sizzle and a deep humming core, like a giant monster's atomic breath, constant intensity from start to end with no build-up and no fade, suitable for seamless looping, no animal vocal, no music, no human voice. The sound starts immediately and ends cleanly at 2.0 seconds.
+
+3. s5_flesh_peel（2.0 秒；二階段蛻變：小狼全身血肉剝落、燃燒飄散）
+Exactly 2.0 seconds long. Flesh and fur cracking and peeling away from a creature's body in many pieces, wet tearing and crackling, each piece catching fire with soft whooshing flames and drifting embers, eerie and dark, no animal vocal, no music, no human voice. The sound starts immediately and ends cleanly at 2.0 seconds.
+
+4. s5_rebirth_blast（2.0 秒；二階段蛻變：大狼在魔焰爆發中現身）
+Exactly 2.0 seconds long. A massive eruption of demonic flame bursting up from the ground, a huge deep boom with a roaring fireball whoosh and a low rumbling shockwave, then crackling embers settling, epic and heavy, no animal vocal, no music, no human voice. The sound starts immediately and ends cleanly at 2.0 seconds.
