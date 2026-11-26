@@ -11852,7 +11852,7 @@ const Config = {
         return a && fxReady(a[0]) ? a : null;
       }
       function drawPip(A, row, col, x, y, z, armor, alpha) {
-        { const r = z * 0.42, g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(24, 16, 36, ${0.42 * alpha})`); g.addColorStop(1, "rgba(24, 16, 36, 0)"); /* 墊一小團暗影：亮背景上疊加發光圖才看得清楚 */
+        { const r = z * 0.55, g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(24, 16, 36, ${0.62 * alpha})`); g.addColorStop(0.55, `rgba(24, 16, 36, ${0.4 * alpha})`); g.addColorStop(1, "rgba(24, 16, 36, 0)"); /* 墊一小團暗影：亮背景上疊加發光圖才看得清楚 */
           ctx.save(); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.restore(); }
         ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = alpha; if (armor) ctx.filter = "hue-rotate(170deg) saturate(1.6)";
         ctx.drawImage(fxSheet(A[0]).img, col * 256, row * 256, 256, 256, x - z / 2, y - z / 2, z, z); ctx.restore();
@@ -11866,7 +11866,7 @@ const Config = {
           if (Boss.state === "windup" && PIPS.used.length) PIPS.used = []; /* 新的連擊起手：全部重亮 */
           const left = Boss.state === "windup" ? n : Math.max(0, Boss.comboHitsLeft | 0);
           const A = pipArt(), gap = A ? 40 : 30;
-          PIPS.n = n; PIPS.gap = gap; PIPS.x0 = Boss.x - (n - 1) * gap / 2; PIPS.y = (Boss._headY != null ? Boss._headY : Boss.y - Math.max(Boss.h, 165)) - (A ? 46 : 60); /* v0.8.284 改用圖上頭頂（原本用碰撞框高，大圖 Boss 會壓在胸口） */ PIPS.art = A; PIPS.armor = !!m.armor;
+          PIPS.n = n; PIPS.gap = gap; PIPS.x0 = Boss.x - (n - 1) * gap / 2; PIPS.y = (Boss._headY != null ? Boss._headY : Boss.y - Math.max(Boss.h, 165)) - (A ? 46 : 60); if (typeof ultViewTop === "function") PIPS.y = Math.max(PIPS.y, ultViewTop() + 150); /* 不超出畫面上緣（第 4 關古靈很高） */ /* v0.8.284 改用圖上頭頂（原本用碰撞框高，大圖 Boss 會壓在胸口） */ PIPS.art = A; PIPS.armor = !!m.armor;
           for (let i = 0; i < n - left; i++) if (!PIPS.used[i]) PIPS.used[i] = now; /* 這一道剛打出：記下時間播碎裂 */
         } else if (!PIPS.used.some(t => t && now - t < 0.4)) return; /* 招式結束：等最後一道碎完 */
         const A = PIPS.art, n2 = PIPS.n, t = now;
