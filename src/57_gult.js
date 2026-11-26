@@ -673,17 +673,18 @@
             const FS = FG && fxReady("b5beamsolid"), H0 = RG ? 560 : W5 ? 260 : FG ? 1000 : 1250; /* v0.8.288 火柱 1300→1000（使用者：再細一點） */
             const f = RG ? fxH("b5raygif", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, follow: wfo })
               : W5 ? fxH("boss5white", 1, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, follow: wfo }) /* v0.8.273 生圖白色熱線；v0.8.274 高 640→260（射線感） */
-              : FS ? fxH("b5beamsolid", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, add: false, follow: bmo }) /* v0.8.288 不透明版（使用者：不要這麼透明、要凝實）：依亮度轉透明度、一般混色 */
+              : FS ? fxH("b5beamsolid", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, add: false, follow: bmo, hole: () => ({ x: Player.x, y: Player.y - 85, r: 150, a: 0.7 }) }) /* v0.8.291 主角周圍挖半透明洞；v0.8.288 不透明版（使用者：不要這麼透明、要凝實）：依亮度轉透明度、一般混色 */
               : FG ? fxH("b5beamgif", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo })
               : fxReady("boss5beam") ? fxH("boss5beam", 2, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, fps: 14, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo }) : null;
             if (f && white && !W5 && !RG) f.filter = "saturate(0.12) brightness(1.55)";
             U.bm = { f, dir: Boss.facing, L: L0, Lt: 1500, rot: 0, dmg: !white, bt: 0, hb: false, H: H0 };
+            if (white && fxReady("boss5white")) { const gl = () => { const q = wfo(), B = U.bm; return B ? { x: q.x + B.dir * Math.cos(B.rot) * 45, y: q.y + Math.sin(B.rot) * 45 } : q; }; U.wglow = fxH("boss5white", 0, gl().x, gl().y, { w: 125, dur: 99, loop: true, fps: 10, c0: 2, nf: 2, alpha: 1, follow: gl }); } /* v0.8.291 白光球蓋住熱線接嘴的垂直線 */
             if (!white && U.orb && fxReady("b5gathergif")) { U.orb.dur = U.orb.age; U.orb.loop = false; const ob = () => { const q = orbAt(), d = U.bm ? U.bm.dir : Boss.facing; return { x: q.x + d * 30, y: q.y }; }; U.orb = fxH("b5gathergif", 0, ob().x, ob().y, { w: 300, dur: 99, loop: true, fps: 10, c0: 12, nf: 4, alpha: 1, follow: ob }); } /* v0.8.289 魔焰球重新放到火柱上層（原本先產生、被不透明火柱蓋住），蓋住火柱接嘴處 */
             screenFlash(white ? "rgba(240,245,255,0.7)" : "rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); hapticBuzz([40, 20, 60]);
             Sound.play("execution", 0.8, white ? 0.7 : 0.5); Sound.play("m_roar", 1.0, white ? 0.72 : 0.85);
           };
           const killCp = () => { if (U.cpFx) { U.cpFx.dur = U.cpFx.age + 0.15; U.cpFx.loop = false; } U.cpFx = null; U.cp = null; };
-          const beamOff = () => { killCp(); if (U.orb) { U.orb.dur = U.orb.age + 0.35; U.orb.loop = false; U.orb = null; } /* 火柱噴完：嘴邊魔焰球收掉 */ const B = U.bm; if (!B) return; if (B.f) { B.f.dur = B.f.age + 0.3; } U.bm = null; };
+          const beamOff = () => { killCp(); if (U.wglow) { U.wglow.dur = U.wglow.age + 0.25; U.wglow.loop = false; U.wglow = null; } if (U.orb) { U.orb.dur = U.orb.age + 0.35; U.orb.loop = false; U.orb = null; } /* 火柱噴完：嘴邊魔焰球收掉 */ const B = U.bm; if (!B) return; if (B.f) { B.f.dur = B.f.age + 0.3; } U.bm = null; };
           /* 背後離牆太近：先往場中挪一步，否則繞不到身後 */
           { const s = gSide(), back = s > 0 ? Boss.x - 140 : Config.worldWidth - 140 - Boss.x;
             if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
@@ -695,8 +696,8 @@
           const orbAt = () => { const B = U.bm, q = B ? bmo() : mouth(), d = B ? B.dir : Boss.facing; return { x: q.x + d * 70, y: q.y }; }; /* v0.8.287 魔焰球：嘴前 70px（不蓋狼頭） */
           at(T0 + 0.5, () => { if (U.stop) return; const m = mouth();
             if (fxReady("b5gathergif")) { /* v0.8.287 GIF 集氣（prompts/5/20）；播到 78% 時接上「集滿脈動」循環（最後 4 格），一路留到火柱噴完 */
-              fxH("b5gathergif", 0, orbAt().x, orbAt().y, { w: 400, dur: CH - 0.5, seq: true, alpha: 1, follow: orbAt });
-              at(T0 + 0.5 + (CH - 0.5) * 0.76, () => { if (U.stop) return; U.orb = fxH("b5gathergif", 0, orbAt().x, orbAt().y, { w: 300, dur: 99, loop: true, fps: 10, c0: 12, nf: 4, alpha: 1, follow: orbAt }); });
+              fxH("b5gathergif", 0, orbAt().x, orbAt().y, { w: 400, dur: CH - 0.5, seq: true, alpha: 1, back: true, follow: orbAt }); /* v0.8.291 畫在狼後面（原本白光吃掉嘴尖，看起來像嘴被切掉） */
+              at(T0 + 0.5 + (CH - 0.5) * 0.76, () => { if (U.stop) return; U.orb = fxH("b5gathergif", 0, orbAt().x, orbAt().y, { w: 300, dur: 99, loop: true, fps: 10, c0: 12, nf: 4, alpha: 1, back: true, follow: orbAt }); });
             } else {
             fxH("boss5beam", 0, m.x, m.y, { w: 340, dur: CH - 0.5, alpha: 0.95, follow: mouth });
             fxH("boss5charge", 0, m.x, m.y, { w: 620, dur: CH - 0.5, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: mouth }); }

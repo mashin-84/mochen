@@ -41,7 +41,7 @@
           facing: o.facing || 1, anchor: o.anchor || "c", rot: o.rot || 0, alpha: o.alpha == null ? 1 : o.alpha,
           loop: !!o.loop, fps: o.fps || 12, follow: o.follow || null, add: o.add !== false,
           vx: o.vx || 0, vy: o.vy || 0, grav: o.grav || 0, grow: o.grow || 0,
-          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back, c0: o.c0 || 0, nf: o.nf || (o.seq ? 16 : 4) /* v0.8.243 seq:true＝16 格連播（gif2sheet.py 轉的序列圖，格數超過 4 自動跨列）； v0.8.94 只播該列的第 c0 起 nf 格（2 格一組的特效） */
+          col: o.col == null ? -1 : o.col, spin: o.spin || 0, back: !!o.back, hole: o.hole || null, c0: o.c0 || 0, nf: o.nf || (o.seq ? 16 : 4) /* v0.8.243 seq:true＝16 格連播（gif2sheet.py 轉的序列圖，格數超過 4 自動跨列）； v0.8.94 只播該列的第 c0 起 nf 格（2 格一組的特效） */
         });
         if (Game.fxList.length > 140) Game.fxList.shift(); /* v0.8.124 灰塵也走 fxList，上限 60→140 */
       }
@@ -75,6 +75,7 @@
           if (m.x < cx - 520) m.x = cx + Config.baseWidth + 300;
         }
       }
+      let FXOC = null;
       function drawFx(back) {
         for (const f of Game.fxList) {
           if (!!f.back !== !!back) continue;
@@ -83,19 +84,26 @@
           const t = f.age / f.dur;
           const col = f.col >= 0 ? f.col : f.c0 + (f.loop ? Math.floor(f.age * f.fps) % f.nf : Math.min(f.nf - 1, Math.floor(t * f.nf)));
           const a = f.alpha * (t > 0.78 ? (1 - t) / 0.22 : 1);
-          ctx.save();
-          ctx.globalCompositeOperation = f.add ? "lighter" : "source-over";
-          ctx.globalAlpha = Math.max(0, Math.min(1, a));
-          if (f.filter) ctx.filter = f.filter; /* v0.8.270 濾鏡（第 5 關白色光焰柱佔位：火柱去彩提亮） */
-          ctx.translate(f.x, f.y);
-          if (f.rot) ctx.rotate(f.rot);
-          ctx.scale(f.facing, 1);
+          const H = f.hole ? f.hole() : null; /* v0.8.291 挖洞：先畫到離屏畫布，{x,y,r}（世界座標）周圍挖半透明洞再貼回（第 5 關不透明火柱擋住主角） */
+          let X = ctx;
+          if (H) { const cv = ctx.canvas; FXOC = FXOC || document.createElement("canvas"); if (FXOC.width !== cv.width || FXOC.height !== cv.height) { FXOC.width = cv.width; FXOC.height = cv.height; }
+            X = FXOC.getContext("2d"); X.setTransform(1, 0, 0, 1, 0, 0); X.globalCompositeOperation = "source-over"; X.globalAlpha = 1; X.filter = "none"; X.clearRect(0, 0, cv.width, cv.height); X.setTransform(ctx.getTransform()); }
+          X.save();
+          X.globalCompositeOperation = H ? "source-over" : f.add ? "lighter" : "source-over";
+          X.globalAlpha = Math.max(0, Math.min(1, a));
+          if (f.filter) X.filter = f.filter; /* v0.8.270 濾鏡（第 5 關白色光焰柱佔位：火柱去彩提亮） */
+          X.translate(f.x, f.y);
+          if (f.rot) X.rotate(f.rot);
+          X.scale(f.facing, 1);
           const k = 1 + f.grow * t, w = f.w * k, h = f.h * k;
           let dx = -w / 2, dy = -h / 2;
           if (f.anchor === "l") dx = 0;
           if (f.anchor === "b") dy = -h;
-          ctx.drawImage(sh.img, (col % 4) * 256, (f.row + Math.floor(col / 4)) * 256, 256, 256, dx, dy, w, h);
-          ctx.restore();
+          X.drawImage(sh.img, (col % 4) * 256, (f.row + Math.floor(col / 4)) * 256, 256, 256, dx, dy, w, h);
+          X.restore();
+          if (H) { X.save(); X.globalCompositeOperation = "destination-out"; const g = X.createRadialGradient(H.x, H.y, 0, H.x, H.y, H.r); g.addColorStop(0, `rgba(0,0,0,${H.a || 0.65})`); g.addColorStop(0.6, `rgba(0,0,0,${(H.a || 0.65) * 0.8})`); g.addColorStop(1, "rgba(0,0,0,0)");
+            X.fillStyle = g; X.fillRect(H.x - H.r, H.y - H.r, H.r * 2, H.r * 2); X.restore();
+            ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = f.add ? "lighter" : "source-over"; ctx.drawImage(FXOC, 0, 0); ctx.restore(); }
         }
       }
       function initAmbient() {
