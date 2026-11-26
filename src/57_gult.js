@@ -678,6 +678,7 @@
               : fxReady("boss5beam") ? fxH("boss5beam", 2, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, fps: 14, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo }) : null;
             if (f && white && !W5 && !RG) f.filter = "saturate(0.12) brightness(1.55)";
             U.bm = { f, dir: Boss.facing, L: L0, Lt: 1500, rot: 0, dmg: !white, bt: 0, hb: false, H: H0 };
+            if (!white && U.orb && fxReady("b5gathergif")) { U.orb.dur = U.orb.age; U.orb.loop = false; const ob = () => { const q = orbAt(), d = U.bm ? U.bm.dir : Boss.facing; return { x: q.x + d * 30, y: q.y }; }; U.orb = fxH("b5gathergif", 0, ob().x, ob().y, { w: 300, dur: 99, loop: true, fps: 10, c0: 12, nf: 4, alpha: 1, follow: ob }); } /* v0.8.289 魔焰球重新放到火柱上層（原本先產生、被不透明火柱蓋住），蓋住火柱接嘴處 */
             screenFlash(white ? "rgba(240,245,255,0.7)" : "rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); hapticBuzz([40, 20, 60]);
             Sound.play("execution", 0.8, white ? 0.7 : 0.5); Sound.play("m_roar", 1.0, white ? 0.72 : 0.85);
           };
