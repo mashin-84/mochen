@@ -10134,10 +10134,10 @@ const Config = {
             if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
           const PA = Tune.v("s5b_hold"), T0 = 0.4, T1 = T0 + CH, TH = T1 + B1, TSW = TH + PA + FRZ, TS = TSW + SW + DEC, TC = TS + 0.3, TF = TC + CH2 + FRZ;
           const R6 = (() => { const SPn = getBossSprite("boss5b"); return SPn && SPn.imgs.u5_raise6 && SPn.imgs.u5_raise6.naturalWidth; })(); /* v0.8.293 有抬頭 6 格就用 */
-          at(T0, () => { U.ch = true; Boss.facing = gSide(); if (R6) { fr("u5_raise1"); Boss._xfDur = 260; } else gFrOr("u5_lowgather", "64_br_deep"); /* v0.8.292 64／65／66 原圖嘴尖被切成直線（早期切圖），改用完整的新生圖格 */
+          at(T0, () => { U.ch = true; Boss.facing = gSide(); if (R6) { fr("u5_raise1"); } /* v0.8.294 拿掉 260ms 長疊化（使用者：淡化反而奇怪），恢復預設短淡化 */ else gFrOr("u5_lowgather", "64_br_deep"); /* v0.8.292 64／65／66 原圖嘴尖被切成直線（早期切圖），改用完整的新生圖格 */
             Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.dim.push([T0, T1]); Sound.play("m_growl", 1.0, 0.85);
             hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後躲　回頭回掃：紅圈縮到底按瞬步　白色熱線：完美招架劈開`); });
-          if (R6) [2, 3, 4, 5, 6].forEach((n, i) => at(T0 + CH * (i + 1) / 6, () => { if (!U.stop) fr("u5_raise" + n); })); /* 6 格平均、每次換格 0.26 秒疊化 */
+          if (R6) [2, 3, 4, 5, 6].forEach((n, i) => at(T0 + CH * (i + 1) / 6, () => { if (!U.stop) fr("u5_raise" + n); })); /* 6 格平均 */
           else [["u5_lowgather", "65_br_g1"], ["u5_turn", "66_br_g2"], ["67_br_coil2", "67_br_coil2"]].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) gFrOr(k[0], k[1]); }));
           const orbAt = () => { const B = U.bm, q = B ? bmo() : mouth(), d = B ? B.dir : Boss.facing; return { x: q.x + d * 70, y: q.y }; }; /* v0.8.287 魔焰球：嘴前 70px（不蓋狼頭） */
           at(T0 + 0.5, () => { if (U.stop) return; const m = mouth();
