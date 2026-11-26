@@ -653,10 +653,14 @@
           const beamOn = (white, L0) => { /* 自繪火柱：每幀改 w（長度）、facing（方向）、rot（仰俯角） */
             const m = bmo(), W5 = white && fxReady("boss5white");
             const wfo = () => { const q = bmo(), B = U.bm; return B ? { x: q.x + B.dir * Math.cos(B.rot) * 28, y: q.y + Math.sin(B.rot) * 28 } : q; }; /* v0.8.274 起點往嘴前 28px，不蓋狼臉 */
-            const f = W5 ? fxH("boss5white", 1, m.x, m.y, { w: L0, h: 260, dur: 99, loop: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, follow: wfo }) /* v0.8.273 生圖白色熱線；v0.8.274 高 640→260（射線感） */
-              : fxReady("boss5beam") ? fxH("boss5beam", 2, m.x, m.y, { w: L0, h: 1250, dur: 99, loop: true, fps: 14, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo }) : null;
-            if (f && white && !W5) f.filter = "saturate(0.12) brightness(1.55)";
-            U.bm = { f, dir: Boss.facing, L: L0, Lt: 1500, rot: 0, dmg: !white, bt: 0, hb: false, H: W5 ? 260 : 1250 };
+            const RG = white && fxReady("b5raygif"), FG = !white && fxReady("b5beamgif"); /* v0.8.286 GIF 循環版（prompts/5/18、19，16 格序列）優先 */
+            const H0 = RG ? 560 : W5 ? 260 : FG ? 1300 : 1250;
+            const f = RG ? fxH("b5raygif", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, follow: wfo })
+              : W5 ? fxH("boss5white", 1, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, follow: wfo }) /* v0.8.273 生圖白色熱線；v0.8.274 高 640→260（射線感） */
+              : FG ? fxH("b5beamgif", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo })
+              : fxReady("boss5beam") ? fxH("boss5beam", 2, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, fps: 14, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo }) : null;
+            if (f && white && !W5 && !RG) f.filter = "saturate(0.12) brightness(1.55)";
+            U.bm = { f, dir: Boss.facing, L: L0, Lt: 1500, rot: 0, dmg: !white, bt: 0, hb: false, H: H0 };
             screenFlash(white ? "rgba(240,245,255,0.7)" : "rgba(210,160,255,0.55)", 0.4, 0.3); addTrauma(0.6); triggerHitstopMs(70); hapticBuzz([40, 20, 60]);
             Sound.play("execution", 0.8, white ? 0.7 : 0.5); Sound.play("m_roar", 1.0, white ? 0.72 : 0.85);
           };

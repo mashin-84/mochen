@@ -5,6 +5,12 @@
 
 ## 最新版本
 
+**v0.8.286 第 5 關大狼火柱、白色熱線改 GIF 循環版（使用者：1～5 關還有哪些適合 GIF → 先做這兩項）**（`src/57_gult.js` `beamOn`）
+- 素材：使用者生 GIF（`prompts/5/18_gif_flame_beam_loop`、`19_gif_white_ray_loop`，640×360、30 格、首尾差≈相鄰格差＝本身近無縫）→ `tools/gif2sheet.py --frames 0:29 --rect 0,0,640,360 --edge 1` → `assets/fx/b5beamgif.webp`、`b5raygif.webp`（16 格）；再後處理：右端 34px、上下 10px 淡出；**嘴端改喇叭形**（左端從核心粗細〔火柱半高 14、熱線 12〕平滑張開到全寬，火柱 90px、熱線 40px；原本整條粗火柱在嘴端是一道垂直直邊）。
+- 程式：`beamOn` 有 GIF 就用（`seq:true` 循環 12fps、`anchor:"l"`），否則退回 `boss5beam` 列 2／`boss5white` 列 1。高度：火柱 1300（GIF 內火焰佔 63%）、熱線 560（光暈佔 29%、核心 12%＝約 68px）。`Stages[5].fxSheets` 登記。
+- 另給 GIF 提示詞 2 份（等圖）：`20_gif_beast_orb_gather`（獸玉集氣：火焰螺旋吸入凝成光球，一次性 16 格 1.8 秒，置中正方形範圍）、`21_gif_rebirth_eruption`（二階段蛻變「爆焰重生」：底部中央魔焰爆發，取代 `boss5morph` 列 3）。
+- 驗證：截圖前噴火柱、白色熱線朝下／上甩、火牆；smoke 第 5 關 ok。
+
 **v0.8.285 拿掉「替身殘影反切」（使用者：受擊中按瞬步會突然瞬移到敵人身後，不知道為什麼）**
 - `src/40_player.js` `doDash`：刪掉受擊硬直中按瞬步＝瞬移到 Boss 背後 140px（無敵 1.2 秒、反擊加成）那段；受擊中按瞬步一律 `bufferAction("dash")`（硬直結束後才瞬步，原本超出 420px 時就是這樣）。
 - `src/21_stages.js`：第 3 關通關結算原本顯示「【機制解鎖：替身殘影反切】…」→ 改戰果文字。舊 15 關資料 `20_legacy_stages.js` 的原文保留（不顯示）。
