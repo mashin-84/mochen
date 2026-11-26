@@ -517,12 +517,18 @@
                 if ((sky.z >= 0.85) === front && sky.sa > 0) body(sky.pv.x, sky.pv.y, sky.th, sky.L, Math.min(1, al) * sky.sa * (sky.z < 0.85 ? 0.8 : 1), false, sky.z);
               };
               U.drawSky(false);
-              if (U.ph === "merge" || (U.ph === "swing" && !sky.sw)) { ctx.save(); ctx.font = "800 22px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = sky.lv >= N ? "#fca5a5" : "#e0f2fe"; ctx.globalAlpha = 0.9; ctx.fillText("天劍 " + "◆".repeat(sky.lv) + "◇".repeat(N - sky.lv), sky.pv.x, sky.pv.y - 120); ctx.restore(); }
+              if (U.ph === "merge" || (U.ph === "swing" && !sky.sw)) {
+                if (fxReady("boss4uis")) U.cntOn = true; /* v0.8.288 匯劍計數改生圖，畫在最上層（drawTop） */
+                else { ctx.save(); ctx.font = "800 22px 'Noto Serif TC', serif"; ctx.textAlign = "center"; ctx.fillStyle = sky.lv >= N ? "#fca5a5" : "#e0f2fe"; ctx.globalAlpha = 0.9; ctx.fillText("天劍 " + "◆".repeat(sky.lv) + "◇".repeat(N - sky.lv), sky.pv.x, sky.pv.y - 120); ctx.restore(); }
+              }
             }
             for (const s of U.sw) {
               if (s.st === "gone" || s.a <= 0) continue;
               const planted = s.st === "planted";
-              if (s.st === "aim") { ctx.save(); ctx.strokeStyle = "rgba(253, 224, 71, 0.55)"; ctx.setLineDash([12, 10]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(Player.x, Player.y - 100); ctx.stroke(); ctx.restore(); }
+              if (s.st === "aim") { const tx = Player.x - s.x, ty = Player.y - 100 - s.y, d = Math.hypot(tx, ty);
+                if (fxReady("boss4ui")) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.9; ctx.translate(s.x, s.y); ctx.rotate(Math.atan2(ty, tx)); /* v0.8.288 瞄準線改生圖金色靈絲（列 0 循環、拉長到兩點距離） */
+                  ctx.drawImage(fxSheet("boss4ui").img, (Math.floor(now / 90) % 4) * 256, 0, 256, 256, 0, -70, d, 140); ctx.restore(); }
+                else { ctx.save(); ctx.strokeStyle = "rgba(253, 224, 71, 0.55)"; ctx.setLineDash([12, 10]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(Player.x, Player.y - 100); ctx.stroke(); ctx.restore(); } }
               const img = partImg(s.d + (s.st === "aim" || s.st === "fly" ? "2" : "1"));
               if (img) { /* v0.8.250 劍陣生圖（劍尖朝下、劍尖約在 (147, 398)）：以劍尖為準旋到 phi 方向 */
                 const K = 0.45;
@@ -536,7 +542,17 @@
               }
             }
           };
-          g.drawTop = () => { if (U.drawSky && !sky.broken && sky.a > 0) U.drawSky(true); };
+          g.drawTop = () => { if (U.drawSky && !sky.broken && sky.a > 0) U.drawSky(true);
+            if (U.cntOn && (U.ph === "merge" || (U.ph === "swing" && !sky.sw))) { /* v0.8.288 匯劍計數（prompts/4/10，不透明版 boss4uis）：列 1 已匯入、列 2 空槽、列 3 點亮 0.4 秒；位置＝Boss 血條下方，避開天劍白光 */
+              const I = fxSheet("boss4uis").img, t = performance.now() / 1000, z = 64, gp = 32, cx = Game.camera.x + Config.baseWidth * 0.8, x0 = cx - (N - 1) * gp / 2, y = ultViewTop() + 112; sky.lt = sky.lt || [];
+              { const bw = N * gp + 46, g2 = ctx.createLinearGradient(cx - bw / 2, 0, cx + bw / 2, 0); g2.addColorStop(0, "rgba(10,14,28,0)"); g2.addColorStop(0.2, "rgba(10,14,28,0.6)"); g2.addColorStop(0.8, "rgba(10,14,28,0.6)"); g2.addColorStop(1, "rgba(10,14,28,0)");
+                ctx.save(); ctx.fillStyle = g2; ctx.fillRect(cx - bw / 2, y - 30, bw, 60); ctx.restore(); }
+              ctx.save();
+              for (let i = 0; i < N; i++) { const on = i < sky.lv; if (on && !sky.lt[i]) sky.lt[i] = t; const e = on ? t - sky.lt[i] : 0;
+                const row = !on ? 2 : e < 0.4 ? 3 : 1, col = row === 3 ? Math.min(3, Math.floor(e / 0.1)) : Math.floor(t * 7 + i) % 4;
+                ctx.globalAlpha = !on ? 0.9 : sky.lv >= N ? 0.85 + 0.15 * Math.sin(t * 12) : 1; ctx.drawImage(I, col * 256, row * 256, 256, 256, x0 + i * gp - z / 2, y - z / 2, z, z); }
+              ctx.restore();
+            } };
           g.cue = () => { /* 招架光圈：依劍實際還要多久碰到主角倒數（與判定同源） */
             let best = null;
             for (const s of U.sw) {
@@ -654,9 +670,10 @@
             const m = bmo(), W5 = white && fxReady("boss5white");
             const wfo = () => { const q = bmo(), B = U.bm; return B ? { x: q.x + B.dir * Math.cos(B.rot) * 28, y: q.y + Math.sin(B.rot) * 28 } : q; }; /* v0.8.274 起點往嘴前 28px，不蓋狼臉 */
             const RG = white && fxReady("b5raygif"), FG = !white && fxReady("b5beamgif"); /* v0.8.286 GIF 循環版（prompts/5/18、19，16 格序列）優先 */
-            const H0 = RG ? 560 : W5 ? 260 : FG ? 1300 : 1250;
+            const FS = FG && fxReady("b5beamsolid"), H0 = RG ? 560 : W5 ? 260 : FG ? 1000 : 1250; /* v0.8.288 火柱 1300→1000（使用者：再細一點） */
             const f = RG ? fxH("b5raygif", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, follow: wfo })
               : W5 ? fxH("boss5white", 1, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, follow: wfo }) /* v0.8.273 生圖白色熱線；v0.8.274 高 640→260（射線感） */
+              : FS ? fxH("b5beamsolid", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 1, add: false, follow: bmo }) /* v0.8.288 不透明版（使用者：不要這麼透明、要凝實）：依亮度轉透明度、一般混色 */
               : FG ? fxH("b5beamgif", 0, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, seq: true, fps: 12, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo })
               : fxReady("boss5beam") ? fxH("boss5beam", 2, m.x, m.y, { w: L0, h: H0, dur: 99, loop: true, fps: 14, facing: Boss.facing, anchor: "l", alpha: 0.96, follow: bmo }) : null;
             if (f && white && !W5 && !RG) f.filter = "saturate(0.12) brightness(1.55)";
