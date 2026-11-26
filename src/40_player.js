@@ -316,23 +316,8 @@
         Mirror.noteDash(); Reader.note("dash");
         if (Player.state === "execution") return;
 
-        // 【替身殘影反切】(Stage 3+ Unlocked mechanic):
-        // If in hitstun and pressing Dash, instantly trigger talisman decoy and counter behind!
-        // 規則要求：【替身殘影反切】（受擊中按瞬步）維持不耗體力
-        if (Player.state === "hitstun" && Progress.unlockedStages >= 3 && Math.abs(Boss.x - Player.x) <= 420 && !Boss._ultAir && Boss.y >= Config.groundY - 40) { /* v0.8.170 限制距離：Boss 420px 內且在地面才反切（原本不限距離，被遠處劍雨／投射物打中時會瞬移一大段、甚至瞬移到浮空 Boss 底下） */
-          Player.state = "idle";
-          Player.invulnTimer = 1.2;
-          Player.x = Math.max(120, Math.min(Config.worldWidth - 120, Boss.x - Boss.facing * 140));
-          Player.facing = Boss.facing;
-          Player.riposteTimer = 1.2;
-          Sound.play("assist", 0.5, 1.4); /* 替身反切 */
-          triggerHitstop(5);
-          triggerShake(0, 1, 16, 0.2);
-          spawnSparks(Player.x, Player.y - 50, "mikiri", 1);
-          spawnFloatingText(Player.x, Player.y - 120, "【替身殘影反切】移形換位！", "#fde047", 1.35);
-          setTelemetry("★ 觸發【替身殘影反切】！移形換位至敵將身後，下一次斬擊威力暴漲！");
-          return;
-        } else if (Player.state === "hitstun") {
+        /* v0.8.285 拿掉【替身殘影反切】（受擊中按瞬步瞬移到 Boss 背後）：使用者回報常突然瞬移、不知道為什麼。受擊中按瞬步＝記住，硬直結束後才瞬步 */
+        if (Player.state === "hitstun") {
           bufferAction("dash");
           return;
         }
