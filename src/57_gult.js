@@ -119,14 +119,16 @@
         const st = Stages[Boss.stageId], sp = (st.stances && st.stances[Boss.stance] && st.stances[Boss.stance].sprite) || st.sprite, SP = getBossSprite(sp), im = SP && SP.imgs[k];
         Boss._ultFrame = im && im.naturalWidth ? k : fb;
       }
+      function s5sh() { return fxReady("boss5soul") ? ["boss5soul", true] : fxReady("boss5shadow") ? ["boss5shadow", false] : null; } /* v0.8.283 小狼大招特效：魂焰發光版優先，否則水墨版 */
+      function s5fx(row, x, w, o) { const S5 = s5sh(); if (!S5) return; spawnFx(S5[0], row, x, groundFxY(S5[0], row, w), Object.assign({ anchor: "b", w }, o, S5[1] ? { add: true, alpha: Math.min(1, (o.alpha || 1) + 0.15) } : { add: false })); }
       function gShadows() { /* v0.8.269 第 5 關幽影噬月：落點上的黑影（程式畫的佔位，待換生圖）；越接近落下越濃越大 */
         const G = Config.groundY;
         for (const h of GU.hz) {
           if (!h.shadow || h.done || h.type !== "strike") continue;
           const pr = Math.min(1, h.t / h.delay), w = h.w * (0.55 + 0.45 * pr);
-          if (fxReady("boss5shadow")) { /* v0.8.273 生圖水墨黑影（橢圓中心約在格高 0.55） */
-            const img = fxSheet("boss5shadow").img, z = h.w * 1.9 * (0.75 + 0.25 * pr), row = pr < 0.4 ? 0 : 1, col = row === 0 ? Math.min(3, Math.floor(pr / 0.4 * 4)) : Math.floor(performance.now() / 110) % 4;
-            ctx.save(); ctx.globalAlpha = 0.6 + 0.4 * pr; ctx.drawImage(img, col * 256, row * 256, 256, 256, h.x - z / 2, G + 4 - z * 0.55, z, z); ctx.restore(); continue; }
+          const S5 = s5sh(); if (S5) { /* v0.8.273 生圖水墨黑影（橢圓中心約在格高 0.55）；v0.8.283 魂焰版（疊加、中心 0.6） */
+            const img = fxSheet(S5[0]).img, z = h.w * 1.9 * (0.75 + 0.25 * pr), row = pr < 0.4 ? 0 : 1, col = row === 0 ? Math.min(3, Math.floor(pr / 0.4 * 4)) : Math.floor(performance.now() / 110) % 4;
+            ctx.save(); ctx.globalAlpha = S5[1] ? 0.75 + 0.25 * pr : 0.6 + 0.4 * pr; if (S5[1]) ctx.globalCompositeOperation = "lighter"; ctx.drawImage(img, col * 256, row * 256, 256, 256, h.x - z / 2, G + 4 - z * (S5[1] ? 0.6 : 0.55), z, z); ctx.restore(); continue; }
           ctx.save(); const gr = ctx.createRadialGradient(h.x, G + 2, 4, h.x, G + 2, w * 0.6);
           gr.addColorStop(0, `rgba(16, 4, 34, ${0.55 + 0.4 * pr})`); gr.addColorStop(0.6, `rgba(30, 8, 60, ${0.35 + 0.35 * pr})`); gr.addColorStop(1, "rgba(20, 6, 40, 0)");
           ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(h.x, G + 2, w * 0.6, 22 + 10 * pr, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
@@ -559,9 +561,9 @@
           const mv = (x1, y1, dur, ease, trail) => { U.mv = { x0: Boss.x, y0: Boss.y, x1, y1, t: 0, dur, ease, trail }; };
           const landFx = (x, big) => { Boss.y = G; emitDust(x, G, -1, 3, big ? 1.6 : 1.1); emitDust(x, G, 1, 3, big ? 1.6 : 1.1);
             if (fxReady("wolf2")) spawnFx("wolf2", 3, x, groundFxY("wolf2", 3, big ? 520 : 400), { anchor: "b", w: big ? 520 : 400, dur: 0.45 }); triggerShake(0, 0.3, big ? 18 : 10, 0.2);
-            if (fxReady("boss5shadow")) spawnFx("boss5shadow", 2, x, groundFxY("boss5shadow", 2, big ? 560 : 440), { anchor: "b", w: big ? 560 : 440, dur: 0.5, add: false, alpha: 0.85 }); }; /* 撲落墨濺 */
+            s5fx(2, x, big ? 560 : 440, { dur: 0.5, alpha: 0.85 }); }; /* 撲落衝擊 */
           const coil = () => { fr("48_sp_coil"); Boss.y = G; Boss.facing = gSide(); Sound.play("w_snarl", 0.7, 1.15); };
-          const rise = (x1, y1, dur) => { fr("49_sp_rise"); Boss._ultAir = true; if (fxReady("boss5shadow")) spawnFx("boss5shadow", 3, Boss.x, groundFxY("boss5shadow", 3, 380), { anchor: "b", w: 380, dur: 0.55, add: false, alpha: 0.8 }); /* 化影竄起 */ mv(x1, y1, dur, y1 < G - 600 ? "in" : "out", true); Sound.play("w_claw", 0.8, 0.9); emitDust(Boss.x, G, -Boss.facing, 3, 1.0); };
+          const rise = (x1, y1, dur) => { fr("49_sp_rise"); Boss._ultAir = true; s5fx(3, Boss.x, 380, { dur: 0.55, alpha: 0.8 }); /* 化影竄起 */ mv(x1, y1, dur, y1 < G - 600 ? "in" : "out", true); Sound.play("w_claw", 0.8, 0.9); emitDust(Boss.x, G, -Boss.facing, 3, 1.0); };
           ev.push([0.05, () => { fr("59_s_howl"); Sound.play("w_howl", 0.8, 1.15); hintOnce("gu5a", "幽影噬月｜地上黑影＝落點：前兩撲移動或瞬步　第三撲（黃圈跟著你）：瞬步閃開或完美招架"); }]);
           const pounce = (t0, i) => {
             at(t0, coil);
@@ -600,10 +602,10 @@
                   const FK = Tune.v("s5a_fake"), TL = Tune.v("s5a_tell"), WS = Tune.v("s5a_wspd"), t0 = U.t;
                   at(t0 + 0.3, () => fr("17_kneel"));
                   at(t0 + FK, () => { fr("59_s_howl"); Boss.facing = gSide(); Sound.play("w_snarl", 1.0, 0.9); hapticBuzz(25); /* 預兆：抬頭低吼＋腳下墨氣竄起 */
-                    if (fxReady("boss5shadow")) spawnFx("boss5shadow", 3, Boss.x, groundFxY("boss5shadow", 3, 420), { anchor: "b", w: 420, dur: TL + 0.2, add: false, alpha: 0.85 });
+                    s5fx(3, Boss.x, 420, { dur: TL + 0.2, alpha: 0.85 });
                     spawnFloatingText(Boss.x, G - 260, "！", "#fde047", 0.6); });
                   at(t0 + FK + TL, () => { const x = Boss.x; fr("51_sp_land"); landFx(x, true); Sound.play("m_stomp", 0.9, 1.2); Sound.play("w_bark", 0.9, 0.9);
-                    U.wsp = WS; U.wv = [1, -1].map(d => { guWave({ x, dir: d, low: true, kind: "parry", speed: WS, dmg: 110, life: 0.9, noDraw: fxReady("boss5shadow"), label: "【墨影偷襲】" }); return { x, dir: d, lx: x, t: 0 }; }); });
+                    U.wsp = WS; U.wv = [1, -1].map(d => { guWave({ x, dir: d, low: true, kind: "parry", speed: WS, dmg: 110, life: 0.9, noDraw: !!s5sh(), label: "【墨影偷襲】" }); return { x, dir: d, lx: x, t: 0 }; }); });
                   at(t0 + FK + TL + 0.35, () => fr("17_kneel")); g.rest = [t0 + FK + TL + 0.35, 1.8];
                 }
               } });
@@ -618,9 +620,9 @@
             { const F = GU.hz.find(q => q.chase && !q.done); if (F) { F.x = Player.x; if (U.mv && U.dive) U.mv.x1 = gClampX(F.x - Boss.facing * 40); } } /* 俯衝途中也追著主角改落點 */
             if (U.hover) { const s = Boss.x <= U.hover.x ? 1 : -1; Boss.facing = s; Boss.x += (gClampX(U.hover.x - s * 90) - Boss.x) * Math.min(1, dt * 4); Boss.y = G - HV + Math.sin(U.t * 7) * 8; }
             if (U.fin) Game.ultDimY = Boss.y - 60;
-            if (U.wv && fxReady("boss5shadow")) for (const w of U.wv) { /* 落地墨濺：波頭每 95px 炸一朵（演出） */
+            if (U.wv && s5sh()) for (const w of U.wv) { /* 落地墨濺：波頭每 95px 炸一朵（演出） */
               w.t += dt; w.x += w.dir * (U.wsp || 760) * dt; if (w.t > 0.9 || Math.abs(w.x - w.lx) < 95) continue; w.lx = w.x;
-              spawnFx("boss5shadow", 2, w.x, groundFxY("boss5shadow", 2, 300), { anchor: "b", w: 300, dur: 0.45, add: false, alpha: 0.8, facing: w.dir }); emitDust(w.x, Config.groundY, w.dir, 2, 0.8);
+              s5fx(2, w.x, 300, { dur: 0.45, alpha: 0.8, facing: w.dir }); emitDust(w.x, Config.groundY, w.dir, 2, 0.8);
             }
           };
           g.draw = () => gShadows();
