@@ -10133,10 +10133,10 @@ const Config = {
           { const s = gSide(), back = s > 0 ? Boss.x - 140 : Config.worldWidth - 140 - Boss.x;
             if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
           const PA = Tune.v("s5b_hold"), T0 = 0.4, T1 = T0 + CH, TH = T1 + B1, TSW = TH + PA + FRZ, TS = TSW + SW + DEC, TC = TS + 0.3, TF = TC + CH2 + FRZ;
-          at(T0, () => { U.ch = true; Boss.facing = gSide(); fr("64_br_deep");
+          at(T0, () => { U.ch = true; Boss.facing = gSide(); gFrOr("u5_lowgather", "64_br_deep"); /* v0.8.292 64／65／66 原圖嘴尖被切成直線（早期切圖），改用完整的新生圖格 */
             Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.dim.push([T0, T1]); Sound.play("m_growl", 1.0, 0.85);
             hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後躲　回頭回掃：紅圈縮到底按瞬步　白色熱線：完美招架劈開`); });
-          ["65_br_g1", "66_br_g2", "67_br_coil2"].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) fr(k); }));
+          [["u5_lowgather", "65_br_g1"], ["u5_turn", "66_br_g2"], ["67_br_coil2", "67_br_coil2"]].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) gFrOr(k[0], k[1]); }));
           const orbAt = () => { const B = U.bm, q = B ? bmo() : mouth(), d = B ? B.dir : Boss.facing; return { x: q.x + d * 70, y: q.y }; }; /* v0.8.287 魔焰球：嘴前 70px（不蓋狼頭） */
           at(T0 + 0.5, () => { if (U.stop) return; const m = mouth();
             if (fxReady("b5gathergif")) { /* v0.8.287 GIF 集氣（prompts/5/20）；播到 78% 時接上「集滿脈動」循環（最後 4 格），一路留到火柱噴完 */
