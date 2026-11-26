@@ -5,6 +5,11 @@
 
 ## 最新版本
 
+**v0.8.287 第 5 關獸玉集氣、蛻變爆焰改 GIF；噴火時嘴邊留魔焰球（使用者：噴火柱時也可以放集氣的魔焰球在嘴邊，連接會比較順）**
+- 集氣：使用者給兩版，選第 2 版（漩渦飽滿；第 1 版 Gemini 把火焰切在正方形內、四邊硬邊）→ `gif2sheet.py --frames 0:29 --center 320,180 --size 360 --edge 40`，背景帶紫（9,2,9）→ 扣底 14 → `assets/fx/b5gathergif.webp`。`g_s5b` 蓄力 T0+0.5 起播一次（寬 400、`seq`、跟著嘴前 70px），播到 76% 時接「集滿脈動」循環（第 12～15 格、寬 300），一路留到火柱噴完（`beamOff` 收掉）。沒圖退回 `boss5beam` 列 0＋`boss5charge` 列 0。
+- 蛻變爆焰重生：`prompts/5/21` GIF → `--rect 0,0,640,360 --edge 20`、扣底 6 → `assets/fx/b5rebirthgif.webp`（地面光環腳底 240）；`54_director.js` morph 的 `burstAt` 有圖就播（寬 1500、高 844、1.6 秒），否則退回 `boss5morph` 列 3。
+- 驗證：截圖蛻變爆焰 2 張、集氣中、集滿、噴火（嘴邊球與火柱根部融合）；第一次接入時球寬 600 整顆蓋住狼頭 → 縮小、往前挪；smoke 第 5 關 ok。
+
 **v0.8.286 第 5 關大狼火柱、白色熱線改 GIF 循環版（使用者：1～5 關還有哪些適合 GIF → 先做這兩項）**（`src/57_gult.js` `beamOn`）
 - 素材：使用者生 GIF（`prompts/5/18_gif_flame_beam_loop`、`19_gif_white_ray_loop`，640×360、30 格、首尾差≈相鄰格差＝本身近無縫）→ `tools/gif2sheet.py --frames 0:29 --rect 0,0,640,360 --edge 1` → `assets/fx/b5beamgif.webp`、`b5raygif.webp`（16 格）；再後處理：右端 34px、上下 10px 淡出；**嘴端改喇叭形**（左端從核心粗細〔火柱半高 14、熱線 12〕平滑張開到全寬，火柱 90px、熱線 40px；原本整條粗火柱在嘴端是一道垂直直邊）。
 - 程式：`beamOn` 有 GIF 就用（`seq:true` 循環 12fps、`anchor:"l"`），否則退回 `boss5beam` 列 2／`boss5white` 列 1。高度：火柱 1300（GIF 內火焰佔 63%）、熱線 560（光暈佔 29%、核心 12%＝約 68px）。`Stages[5].fxSheets` 登記。

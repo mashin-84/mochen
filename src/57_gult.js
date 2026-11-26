@@ -665,7 +665,7 @@
             Sound.play("execution", 0.8, white ? 0.7 : 0.5); Sound.play("m_roar", 1.0, white ? 0.72 : 0.85);
           };
           const killCp = () => { if (U.cpFx) { U.cpFx.dur = U.cpFx.age + 0.15; U.cpFx.loop = false; } U.cpFx = null; U.cp = null; };
-          const beamOff = () => { killCp(); const B = U.bm; if (!B) return; if (B.f) { B.f.dur = B.f.age + 0.3; } U.bm = null; };
+          const beamOff = () => { killCp(); if (U.orb) { U.orb.dur = U.orb.age + 0.35; U.orb.loop = false; U.orb = null; } /* 火柱噴完：嘴邊魔焰球收掉 */ const B = U.bm; if (!B) return; if (B.f) { B.f.dur = B.f.age + 0.3; } U.bm = null; };
           /* 背後離牆太近：先往場中挪一步，否則繞不到身後 */
           { const s = gSide(), back = s > 0 ? Boss.x - 140 : Config.worldWidth - 140 - Boss.x;
             if (back < 380) { fr("04_walk2"); U.mv = { x0: Boss.x, y0: G, x1: gClampX(Boss.x + s * (380 - back)), y1: G, t: 0, dur: 0.35, ease: "out", trail: true }; } }
@@ -674,9 +674,14 @@
             Game.gDimOn = true; Game.ultDimRGB = "200, 120, 255"; g.dim.push([T0, T1]); Sound.play("m_growl", 1.0, 0.85);
             hintOnce("gu5b", `魔焰獸玉｜蓄力：繞到背後躲　回頭回掃：紅圈縮到底按瞬步　白色熱線：完美招架劈開`); });
           ["65_br_g1", "66_br_g2", "67_br_coil2"].forEach((k, i) => at(T0 + CH * (i + 1) / 4, () => { if (!U.stop) fr(k); }));
+          const orbAt = () => { const B = U.bm, q = B ? bmo() : mouth(), d = B ? B.dir : Boss.facing; return { x: q.x + d * 70, y: q.y }; }; /* v0.8.287 魔焰球：嘴前 70px（不蓋狼頭） */
           at(T0 + 0.5, () => { if (U.stop) return; const m = mouth();
+            if (fxReady("b5gathergif")) { /* v0.8.287 GIF 集氣（prompts/5/20）；播到 78% 時接上「集滿脈動」循環（最後 4 格），一路留到火柱噴完 */
+              fxH("b5gathergif", 0, orbAt().x, orbAt().y, { w: 400, dur: CH - 0.5, seq: true, alpha: 1, follow: orbAt });
+              at(T0 + 0.5 + (CH - 0.5) * 0.76, () => { if (U.stop) return; U.orb = fxH("b5gathergif", 0, orbAt().x, orbAt().y, { w: 300, dur: 99, loop: true, fps: 10, c0: 12, nf: 4, alpha: 1, follow: orbAt }); });
+            } else {
             fxH("boss5beam", 0, m.x, m.y, { w: 340, dur: CH - 0.5, alpha: 0.95, follow: mouth });
-            fxH("boss5charge", 0, m.x, m.y, { w: 620, dur: CH - 0.5, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: mouth });
+            fxH("boss5charge", 0, m.x, m.y, { w: 620, dur: CH - 0.5, loop: true, fps: 9, c0: 0, nf: 3, alpha: 0.9, follow: mouth }); }
             Sound.play("c_gather", 0.9, 0.8); Sound.play("peril", 0.8, 0.45); hapticBuzz([20, 20, 30]); });
           at(T1 - 0.3, () => { if (U.stop) return; const m = mouth(); fxH("boss5charge", 1, m.x, m.y, { w: 460, dur: 0.3, alpha: 0.95, follow: mouth }); Sound.play("assist", 0.7, 1.6); hapticBuzz(30); });
           at(T1, () => { if (U.stop) return; U.ch = false; Game.gDimOn = false; gFrOr("u5_turn", "69_br_fire2"); U.f0 = Boss.facing; beamOn(false, 200);
